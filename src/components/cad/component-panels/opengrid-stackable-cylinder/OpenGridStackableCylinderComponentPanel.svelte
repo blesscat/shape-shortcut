@@ -11,6 +11,7 @@
     type OpenGridStackableCylinderOpeningDirection,
     type OpenGridStackableCylinderOpeningParameterKey,
     type OpenGridStackableCylinderParameters,
+    type OpenGridStackableCylinderSeatMode,
   } from '../../../../cad-contract/units'
   import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
   import ParameterControl from '../ParameterControl.svelte'
@@ -30,7 +31,7 @@
   let bottomPlateMode = $derived(rawParameters.bottomPlateMode === 'true')
 
   type CylinderMode = 'default' | 'thin' | 'bottom-plate'
-  type CylinderSeatMode = 'none' | 'hole' | 'integrated'
+  type CylinderSeatMode = OpenGridStackableCylinderSeatMode
 
   const seatModeOptions: ReadonlyArray<{
     value: CylinderSeatMode
@@ -52,11 +53,18 @@
       labelKey: 'panel.seat.integrated',
       descriptionKey: 'panel.seat.integratedDescription',
     },
+    {
+      value: 'center-hook',
+      labelKey: 'panel.seat.centerHook',
+      descriptionKey: 'panel.seat.centerHookDescription',
+    },
   ]
 
   function seatModeForRawParameters(): CylinderSeatMode {
     const value = rawParameters.bottomSeatMode
-    if (value === 'none' || value === 'integrated') return value
+    if (value === 'none' || value === 'integrated' || value === 'center-hook') {
+      return value
+    }
     return 'hole'
   }
 

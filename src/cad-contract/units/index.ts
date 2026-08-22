@@ -54,6 +54,8 @@ import {
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_DIRECTIONS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
+  OPENGRID_STACKABLE_CYLINDER_SEAT_MODES,
+  isOpenGridStackableCylinderSeatMode,
   validateOpenGridStackableCylinderParameters,
 } from './opengrid-stackable-cylinder'
 import type {
@@ -65,6 +67,7 @@ import type {
   OpenGridStackableCylinderParameters,
   OpenGridStackableCylinderProfile,
   OpenGridStackableCylinderPoint2D,
+  OpenGridStackableCylinderSeatMode,
   OpenGridStackableCylinderValidation,
   OpenGridStackableCylinderValidationIssue,
 } from './opengrid-stackable-cylinder'
@@ -268,6 +271,8 @@ export {
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_DIRECTIONS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
+  OPENGRID_STACKABLE_CYLINDER_SEAT_MODES,
+  isOpenGridStackableCylinderSeatMode,
   validateOpenGridStackableCylinderParameters,
 } from './opengrid-stackable-cylinder'
 export {
@@ -338,6 +343,7 @@ export type {
   OpenGridStackableCylinderParameters,
   OpenGridStackableCylinderProfile,
   OpenGridStackableCylinderPoint2D,
+  OpenGridStackableCylinderSeatMode,
   OpenGridStackableCylinderValidation,
   OpenGridStackableCylinderValidationIssue,
 } from './opengrid-stackable-cylinder'

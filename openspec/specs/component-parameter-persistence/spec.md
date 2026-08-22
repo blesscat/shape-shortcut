@@ -1,7 +1,9 @@
 ## Purpose
 
 讓每個已註冊 CAD component 的有效參數在同一個瀏覽器與網站 origin 中跨 workspace 初始化保留，同時在沒有可用保存資料時安全地回到 component 預設值。
+
 ## Requirements
+
 ### Requirement: Per-component parameter state
 
 The system MUST maintain a runtime parameter state entry keyed by each
@@ -385,17 +387,20 @@ pre-half-cell OpenGrid entry MAY normalize missing half-cell fields to none.
 
 The versioned browser persistence MUST store valid
 `opengrid-stackable-cylinder` parameters under that stable model ID. The entry
-MUST contain typed integer `diameter` and `height`, typed enum
-`bottomSeatMode`, the existing profile flags, and all opening values accepted by
-the current validator. It MUST remain independent from the board, box, and all
-other component entries. Legacy `bottomHolesEnabled=false/true` values MUST
-migrate to `bottomSeatMode='none'/'hole'`; missing legacy values MUST migrate to
+MUST contain typed integer `diameter` and `height`, typed cylinder enum
+`bottomSeatMode` including the cylinder-only `center-hook` value, the existing
+profile flags, and all opening values accepted by the current validator. It
+MUST remain independent from the board, box, and all other component entries.
+Legacy `bottomHolesEnabled=false/true` values MUST migrate to
+`bottomSeatMode='none'/'hole'`; missing legacy values MUST migrate to
 `'hole'`. Invalid or incomplete input MUST NOT overwrite the last accepted
-entry.
+entry. The shared Box seat enum MUST remain limited to `none`, `hole`, and
+`integrated`.
 
 #### Scenario: Restore valid cylinder seat mode
 
-- **WHEN** persistence contains a valid cylinder entry with a seat mode
+- **WHEN** persistence contains a valid cylinder entry with any supported seat
+  mode, including `center-hook`
 - **THEN** the controls MUST display the saved typed seat selection
 - **AND** the first generation MUST use that selection
 
@@ -411,7 +416,7 @@ entry.
 
 - **WHEN** a cylinder snapshot passes validation
 - **THEN** persistence MUST update only the cylinder entry
-- **AND** `bottomSeatMode` MUST be stored as its typed enum value
+- **AND** `bottomSeatMode` MUST be stored as its typed cylinder enum value
 - **AND** the old `bottomHolesEnabled` field MUST NOT be written
 
 #### Scenario: Invalid cylinder input does not overwrite persistence

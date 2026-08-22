@@ -568,6 +568,39 @@ describe('component parameter store', () => {
     store.dispose()
   })
 
+  it('persists and restores the cylinder center-hook mode canonically', () => {
+    const storage = createMemoryStorage()
+    const store = createComponentParameterStore({ storage })
+    const centerHookParameters = {
+      ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+      bottomSeatMode: 'center-hook',
+    }
+
+    expect(store.set('opengrid-stackable-cylinder', centerHookParameters)).toBe(
+      true,
+    )
+    expect(store.get('opengrid-stackable-cylinder')).toEqual(
+      centerHookParameters,
+    )
+
+    const persisted = JSON.parse(
+      storage.data.get(COMPONENT_PARAMETER_STORAGE_KEY) ?? '{}',
+    ) as { values?: { legacy?: Record<string, Record<string, unknown>> } }
+    expect(
+      persisted.values?.legacy?.['opengrid-stackable-cylinder'],
+    ).toMatchObject({ bottomSeatMode: 'center-hook' })
+    expect(
+      persisted.values?.legacy?.['opengrid-stackable-cylinder'],
+    ).not.toHaveProperty('bottomHolesEnabled')
+
+    store.dispose()
+    const restoredStore = createComponentParameterStore({ storage })
+    expect(restoredStore.get('opengrid-stackable-cylinder')).toEqual(
+      centerHookParameters,
+    )
+    restoredStore.dispose()
+  })
+
   it('migrates legacy divider snapshots to the default wall thickness', () => {
     const storage = createMemoryStorage(
       createPayload({

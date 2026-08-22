@@ -22,6 +22,7 @@ import {
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   type OpenGridStackableCylinderParameters,
 } from '../../src/cad-contract/units'
+import { openGridSnapProfileFor } from '../../src/cad-kernel/components/opengrid-snap/profile'
 import { exportStlBytes, exportStepBytes } from '../../src/cad-kernel/export'
 import { meshBRep } from '../../src/cad-kernel/mesh'
 
@@ -105,6 +106,33 @@ function makeCompatibilityFixture(floorThickness: number): Shape3D {
 }
 
 describe('OpenGrid stackable-cylinder B-Rep', () => {
+  it.each(['Full', 'Lite'] as const)(
+    'keeps the center hook compatible with the Snap %s remover passage',
+    (variant) => {
+      const profile = openGridSnapProfileFor('Standard', variant)
+      const configuration = OPENGRID_STACKABLE_CYLINDER_CONFIGURATION
+      const upperPassageWidth = profile.centerRemoverUpperHalfWidth * 2
+      const upperPassageDepth = profile.centerRemoverHalfDepth * 2
+      const narrowBandDepth =
+        profile.expectedBounds.max[2] - profile.centerRemoverStepZ
+
+      expect(
+        configuration.centerHookWidth +
+          configuration.centerHookClearancePerSide * 2,
+      ).toBeCloseTo(upperPassageWidth, 2)
+      expect(
+        configuration.centerHookDepth +
+          configuration.centerHookClearancePerSide * 2,
+      ).toBeCloseTo(upperPassageDepth, 2)
+      expect(configuration.centerHookStemHeight).toBeGreaterThan(
+        narrowBandDepth,
+      )
+      expect(configuration.centerHookRotationClearance).toBeGreaterThan(0)
+      expect(configuration.centerHookHeight).toBeLessThan(3)
+      expect(configuration.centerHookQuarterTurnDegrees).toBe(90)
+    },
+  )
+
   it.each([
     {
       name: 'default',
@@ -426,7 +454,10 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
         const report = inspectOpenGridStackableCylinderInterface(shape, input)
         const expectedCenters = openGridStackableCylinderHoleCentersFor(input)
         expect(report.bottomSeatMode).toBe('integrated')
-        expect(report.bounds.min[2]).toBeCloseTo(-3, 2)
+        expect(report.bounds.min[2]).toBeCloseTo(
+          OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatMinZ,
+          2,
+        )
         expect(report.holeRecordCount).toBe(0)
         expect(report.holes).toEqual([])
         expect(report.integratedSeatRecordCount).toBe(expectedCenters.length)
@@ -439,6 +470,167 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     },
     120_000,
   )
+
+  it.each([
+    { name: 'default', thinBottomMode: false, bottomPlateMode: false },
+    { name: 'thin', thinBottomMode: true, bottomPlateMode: false },
+    { name: 'bottom-plate', thinBottomMode: false, bottomPlateMode: true },
+  ])(
+    'builds one centered quarter-turn hook with a rotation neck in the $name profile',
+    ({ thinBottomMode, bottomPlateMode }) => {
+      const input = parameters({
+        thinBottomMode,
+        bottomPlateMode,
+        bottomSeatMode: 'center-hook',
+      })
+      const shape = buildOpenGridStackableCylinder(input)
+      try {
+        const configuration = OPENGRID_STACKABLE_CYLINDER_CONFIGURATION
+        const report = inspectOpenGridStackableCylinderInterface(shape, input)
+        expect(report.bounds.min[2]).toBeCloseTo(
+          configuration.centerHookMinZ,
+          2,
+        )
+        expect(report.holeRecordCount).toBe(0)
+        expect(report.integratedSeatRecordCount).toBe(0)
+        expect(report.solidCount).toBe(1)
+        expect(report.brepValid).toBe(true)
+        expect(report.centerHook).toMatchObject({
+          planWidth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookWidth,
+            2,
+          ),
+          planDepth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookDepth,
+            2,
+          ),
+          minZ: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookMinZ,
+            2,
+          ),
+          insertionClearancePerSide: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookClearancePerSide,
+            2,
+          ),
+          quarterTurnCaptureOverhang: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookDepth -
+              OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookNominalShortSide,
+            2,
+          ),
+          headPlanWidth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookWidth,
+            2,
+          ),
+          headPlanDepth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookDepth,
+            2,
+          ),
+          stemPlanWidth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookStemDiameter,
+            2,
+          ),
+          stemPlanDepth: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookStemDiameter,
+            2,
+          ),
+          headHeight: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookHeadHeight,
+            2,
+          ),
+          stemHeight: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookStemHeight,
+            2,
+          ),
+          rotationClearance: expect.closeTo(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookRotationClearance,
+            2,
+          ),
+        })
+        const centerHook = report.centerHook
+        if (!centerHook) throw new Error('CENTER_HOOK_QUALITY_MISSING')
+        expect(centerHook.stemVolume).toBeLessThan(
+          centerHook.stemPlanWidth *
+            centerHook.stemPlanDepth *
+            centerHook.stemHeight *
+            0.85,
+        )
+        expect(
+          volumeInBox(
+            shape,
+            [
+              -configuration.centerHookWidth / 2 + 0.01,
+              -configuration.centerHookDepth / 2 + 0.01,
+              configuration.centerHookMinZ + 0.01,
+            ],
+            [
+              configuration.centerHookWidth / 2 - 0.01,
+              configuration.centerHookDepth / 2 - 0.01,
+              configuration.centerHookMaxZ - 0.01,
+            ],
+          ),
+        ).toBeGreaterThan(0.01)
+
+        const neckCenterZ =
+          configuration.centerHookMaxZ - configuration.centerHookHeight / 2
+        expect(
+          volumeInBox(
+            shape,
+            [
+              -configuration.centerHookWidth / 2 + 0.01,
+              configuration.centerHookWidth / 2 + 0.1,
+              neckCenterZ - 0.05,
+            ],
+            [
+              configuration.centerHookWidth / 2 - 0.01,
+              configuration.centerHookDepth / 2 - 0.1,
+              neckCenterZ + 0.05,
+            ],
+          ),
+        ).toBeLessThan(0.001)
+      } finally {
+        deleteShape(shape)
+      }
+    },
+    120_000,
+  )
+
+  it('keeps the center hook intact when honeycomb cuts are enabled', () => {
+    const input = parameters({
+      bottomSeatMode: 'center-hook',
+      honeycombMode: true,
+    })
+    const shape = buildOpenGridStackableCylinder(input)
+    try {
+      const report = inspectOpenGridStackableCylinderInterface(shape, input)
+      expect(report.honeycombMode).toBe(true)
+      expect(report.centerHook?.footprintVolume).toBeGreaterThan(0)
+      expect(report.solidCount).toBe(1)
+      expect(report.brepValid).toBe(true)
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it('meshes and exports the center-hook cylinder with deterministic geometry', async () => {
+    const input = parameters({ bottomSeatMode: 'center-hook' })
+    const shape = buildOpenGridStackableCylinder(input)
+    try {
+      const mesh = meshBRep(shape, {
+        tolerance: 0.05,
+        angularTolerance: 0.1,
+      })
+      const step = await exportStepBytes(shape)
+      const stl = await exportStlBytes(shape, {
+        tolerance: 0.01,
+        angularTolerance: 0.1,
+      })
+      expect(mesh.triangleCount).toBeGreaterThan(0)
+      expect(step.byteLength).toBeGreaterThan(0)
+      expect(stl.byteLength).toBeGreaterThan(84)
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
 
   it('keeps straight vertical U-opening sides above the rounded corners', () => {
     const input = parameters({
@@ -885,6 +1077,21 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
       buildOpenGridStackableCylinder(parameters(), {
         isGenerationCurrent: () => false,
       }),
+    ).toThrow('STALE_GENERATION')
+  })
+
+  it('stops before fusing a stale center hook candidate', () => {
+    let checks = 0
+    expect(() =>
+      buildOpenGridStackableCylinder(
+        parameters({ bottomSeatMode: 'center-hook' }),
+        {
+          isGenerationCurrent: () => {
+            checks += 1
+            return checks < 2
+          },
+        },
+      ),
     ).toThrow('STALE_GENERATION')
   })
 })

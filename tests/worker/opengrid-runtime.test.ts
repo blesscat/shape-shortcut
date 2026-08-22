@@ -896,6 +896,38 @@ describe('OpenGrid Worker runtime', () => {
     ).toBe(true)
   })
 
+  it('routes the cylinder center-hook mode through the typed Worker snapshot', async () => {
+    const events: unknown[] = []
+    const runtime = new CadWorkerRuntime(
+      'epoch-center-hook-cylinder',
+      (event) => events.push(event),
+    )
+    await runtime.handle(initCommand())
+    await runtime.handle(
+      stackableCylinderGenerateCommand(1, {
+        parameters: {
+          ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+          bottomSeatMode: 'center-hook',
+        },
+      }),
+    )
+
+    expect(mocks.buildModelBRep).toHaveBeenCalledWith(
+      'opengrid-stackable-cylinder',
+      {
+        ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+        bottomSeatMode: 'center-hook',
+      },
+      expect.any(Object),
+    )
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'model.candidate-ready',
+        modelId: 'opengrid-stackable-cylinder',
+      }),
+    )
+  })
+
   it('keeps latest-wins invalidation for divider generations', async () => {
     const events: unknown[] = []
     const runtime = new CadWorkerRuntime('epoch-divider-latest', (event) =>

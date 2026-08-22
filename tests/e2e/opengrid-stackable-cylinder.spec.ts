@@ -86,13 +86,13 @@ test('OpenGrid stackable-cylinder is listed and exposes 1 mm controls', async ({
     )
   expect(modeLabels).toEqual(['薄殼模式', '堆疊模式'])
   const seatMode = page.getByTestId('opengrid-stackable-cylinder-seat-mode')
-  await expect(seatMode.getByRole('radio')).toHaveCount(3)
+  await expect(seatMode.getByRole('radio')).toHaveCount(4)
   const seatModeLabels = await seatMode
     .getByRole('radio')
     .evaluateAll((radios) =>
       radios.map((radio) => radio.getAttribute('aria-label')),
     )
-  expect(seatModeLabels).toEqual(['無角座', '角座孔', '內建角座'])
+  expect(seatModeLabels).toEqual(['無角座', '角座孔', '內建角座', '中心卡勾'])
   await expect(
     modeOptions.locator(
       'xpath=following-sibling::p[@data-testid="opengrid-cylinder-mode-description"]',
@@ -110,6 +110,9 @@ test('OpenGrid stackable-cylinder is listed and exposes 1 mm controls', async ({
     0,
   )
   await expect(seatMode.getByRole('radio', { name: '角座孔' })).toBeChecked()
+  await seatMode.getByRole('radio', { name: '中心卡勾' }).check()
+  await expect(seatMode).toContainText('Snap')
+  await seatMode.getByRole('radio', { name: '角座孔' }).check()
   const openingDisclosure = page.getByTestId(
     'opengrid-cylinder-opening-disclosure',
   )
@@ -309,6 +312,25 @@ test('OpenGrid stackable-cylinder exports the integrated seat mode', async ({
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe(
     'opengrid-stackable-cylinder-d60-h20-seats-integrated.step',
+  )
+})
+
+test('OpenGrid stackable-cylinder exports the center-hook seat mode', async ({
+  page,
+  browserName,
+}) => {
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/zh-Hant/cad/opengrid-stackable-cylinder')
+  await waitForCadReady(page)
+
+  await page.getByRole('radio', { name: '中心卡勾' }).check()
+  await waitForCadReady(page)
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下載 STEP' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe(
+    'opengrid-stackable-cylinder-d60-h20-seats-center-hook.step',
   )
 })
 

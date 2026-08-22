@@ -4,6 +4,7 @@ import {
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+  type OpenGridStackableCylinderSeatMode,
   normalizePillarParameters,
   type ModelId,
   type ModelParameterValues,
@@ -58,9 +59,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function canonicalCylinderSeatModeFor(
   value: Record<string, unknown>,
-): 'none' | 'hole' | 'integrated' {
+): OpenGridStackableCylinderSeatMode {
   if (Object.prototype.hasOwnProperty.call(value, 'bottomSeatMode')) {
-    return value.bottomSeatMode as 'none' | 'hole' | 'integrated'
+    return value.bottomSeatMode as OpenGridStackableCylinderSeatMode
   }
   if (value.bottomHolesEnabled === false) return 'none'
   return 'hole'

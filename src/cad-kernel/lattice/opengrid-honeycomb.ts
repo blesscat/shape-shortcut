@@ -1175,6 +1175,18 @@ function cylinderBottomProtectedCircles(
 ): ProtectedCircle[] {
   const configuration = OPENGRID_STACKABLE_CYLINDER_CONFIGURATION
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+  if (parameters.bottomSeatMode === 'center-hook') {
+    return [
+      {
+        center: [0, 0],
+        radius:
+          Math.hypot(
+            configuration.centerHookWidth / 2,
+            configuration.centerHookDepth / 2,
+          ) + honeycomb.bottomHoleSafetyRing,
+      },
+    ]
+  }
   const protectedRadius =
     Math.max(
       configuration.bottomHoleDiameter,

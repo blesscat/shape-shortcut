@@ -421,6 +421,9 @@ export const zhHantMessages = {
   'panel.seat.holeDescription': '保留中心與安全外圈角座孔。',
   'panel.seat.integrated': '內建角座',
   'panel.seat.integratedDescription': '建立向下凸出的 Ø5 × 3 mm 內建角座。',
+  'panel.seat.centerHook': '中心卡勾',
+  'panel.seat.centerHookDescription':
+    '建立置中的矩形卡勾，插入 Snap 中央移除孔後旋轉 90 度固定。',
   'panel.boxMode': '盒體模式',
   'panel.thinShell': '薄殼模式',
   'panel.stackable': '堆疊模式',
@@ -996,6 +999,9 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.seat.integrated': 'Integrated seats',
   'panel.seat.integratedDescription':
     'Create downward Ø5 × 3 mm integrated seats.',
+  'panel.seat.centerHook': 'Center hook',
+  'panel.seat.centerHookDescription':
+    'Create a centered rectangular hook for the Snap center-remover opening; rotate it 90° to capture.',
   'panel.boxMode': 'Box mode',
   'panel.thinShell': 'Thin-shell mode',
   'panel.stackable': 'Stackable mode',

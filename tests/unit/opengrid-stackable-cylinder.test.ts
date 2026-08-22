@@ -11,8 +11,11 @@ import {
   openGridStackableCylinderStlFileName,
   OPENGRID_GRID_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  OPENGRID_LOCATING_SEAT_MODES,
+  OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+  validateOpenGridStackableBoxParameters,
   validateOpenGridStackableCylinderParameters,
   modelFileName,
   modelStlFileName,
@@ -390,6 +393,33 @@ describe('OpenGrid stackable-cylinder contract', () => {
 
     expect(validation.valid).toBe(false)
     if (!validation.valid) expect(validation.issues[0]?.field).toBe(field)
+  })
+
+  it('accepts the cylinder-only center hook without widening the shared seat contract', () => {
+    const value = parameters({ bottomSeatMode: 'center-hook' })
+
+    expect(validateOpenGridStackableCylinderParameters(value)).toEqual({
+      valid: true,
+      value,
+    })
+    expect(boundsForOpenGridStackableCylinder(value).min[2]).toBe(
+      OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.centerHookMinZ,
+    )
+    expect(openGridStackableCylinderOuterHoleIndexFor(value)).toBe(0)
+    expect(openGridStackableCylinderHoleCentersFor(value)).toEqual([])
+    expect(openGridStackableCylinderFileName(value)).toContain(
+      '-seats-center-hook',
+    )
+    expect(openGridStackableCylinderStlFileName(value)).toContain(
+      '-seats-center-hook',
+    )
+    expect(OPENGRID_LOCATING_SEAT_MODES).toEqual(['none', 'hole', 'integrated'])
+
+    const boxValidation = validateOpenGridStackableBoxParameters({
+      ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+      cornerSeatMode: 'center-hook' as never,
+    })
+    expect(boxValidation.valid).toBe(false)
   })
 
   it('rejects selecting thin and bottom-plate modes together', () => {

@@ -10,6 +10,7 @@ import {
   isOpenGridSnapMagnetHoleShape,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
+  OPENGRID_STACKABLE_CYLINDER_SEAT_MODES,
   OPENGRID_LOCATING_SEAT_MODES,
   parseOpenGridSnapDecimalInput,
   parseDimensionInput,
@@ -228,6 +229,33 @@ function parseSeatModeRawParameter(
     return {
       valid: true,
       value: value as (typeof OPENGRID_LOCATING_SEAT_MODES)[number],
+    }
+  }
+  return {
+    valid: false,
+    messageId: 'validation.invalid',
+    field,
+  }
+}
+
+function parseCylinderSeatModeRawParameter(
+  rawValue: string | undefined,
+  field: ModelParameterKey,
+):
+  | {
+      valid: true
+      value: (typeof OPENGRID_STACKABLE_CYLINDER_SEAT_MODES)[number]
+    }
+  | { valid: false; messageId: string; field: ModelParameterKey } {
+  const value = rawValue ?? 'hole'
+  if (
+    (OPENGRID_STACKABLE_CYLINDER_SEAT_MODES as readonly string[]).includes(
+      value,
+    )
+  ) {
+    return {
+      valid: true,
+      value: value as (typeof OPENGRID_STACKABLE_CYLINDER_SEAT_MODES)[number],
     }
   }
   return {
@@ -642,7 +670,10 @@ export function parseRawParameters(
       continue
     }
     if (key === 'cornerSeatMode' || key === 'bottomSeatMode') {
-      const seatMode = parseSeatModeRawParameter(raw[key], key)
+      const seatMode =
+        key === 'bottomSeatMode'
+          ? parseCylinderSeatModeRawParameter(raw[key], key)
+          : parseSeatModeRawParameter(raw[key], key)
       if (!seatMode.valid) return seatMode
       parsed[key] = seatMode.value
       continue

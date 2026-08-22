@@ -44,6 +44,11 @@ describe('CAD Worker error mapping', () => {
       'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',
     ],
     [
+      'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID:center-hook-envelope',
+      'model.generate',
+      'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',
+    ],
+    [
       'OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID:opening-profile',
       'model.generate',
       'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',

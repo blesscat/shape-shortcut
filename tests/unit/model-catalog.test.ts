@@ -873,6 +873,21 @@ describe('CAD component catalog', () => {
       },
     })
     expect(
+      definition?.validateParameters({
+        ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+        bottomSeatMode: 'center-hook',
+      }),
+    ).toEqual({
+      valid: true,
+      value: {
+        modelId: 'opengrid-stackable-cylinder',
+        parameters: {
+          ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+          bottomSeatMode: 'center-hook',
+        },
+      },
+    })
+    expect(
       definition?.exportFileName(
         OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       ),

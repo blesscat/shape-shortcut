@@ -536,4 +536,35 @@ describe('CAD workspace validation helpers', () => {
       field: 'diameter',
     })
   })
+
+  it('round-trips the cylinder-only center-hook value and rejects it for Box', () => {
+    const parameters: OpenGridStackableCylinderParameters = {
+      ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+      bottomSeatMode: 'center-hook',
+    }
+    const raw = rawFromParameters(parameters)
+
+    expect(raw.bottomSeatMode).toBe('center-hook')
+    expect(parseRawParameters(raw, 'opengrid-stackable-cylinder')).toEqual({
+      valid: true,
+      value: parameters,
+    })
+    expect(
+      parseRawParameters(
+        {
+          x: '2',
+          y: '2',
+          height: '20',
+          cornerSeatMode: 'center-hook',
+          fullBottomHoleGrid: 'false',
+          basePlateMode: 'false',
+        },
+        'opengrid-stackable-box',
+      ),
+    ).toEqual({
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'cornerSeatMode',
+    })
+  })
 })
