@@ -29,6 +29,7 @@ import {
   cellCenterForOpenGrid,
   openGridBoardConfiguration,
   openGridConnectorLocationsFor,
+  openGridNominalBoardConfiguration,
   openGridScrewCentersFor,
   openGridScrewPositionsFor,
 } from './profile'
@@ -709,7 +710,7 @@ function hasOpenGridHalfCell(parameters: OpenGridParameters): boolean {
 function halfExtensionTileSpecs(
   parameters: OpenGridParameters,
 ): HalfExtensionTileSpec[] {
-  const board = openGridBoardConfiguration(parameters)
+  const board = openGridNominalBoardConfiguration(parameters)
   const specs: HalfExtensionTileSpec[] = []
   const fullXCenters: number[] = []
   const fullYCenters: number[] = []
@@ -2423,6 +2424,76 @@ async function buildProductBase(
   }
 }
 
+const TARGET_FRAME_EPSILON = 0.000001
+const TARGET_FRAME_OVERLAP = 0.2
+
+function targetFramePartsFor(parameters: OpenGridParameters): Shape3D[] {
+  if (!parameters.fitToTarget) return []
+
+  const nominal = openGridNominalBoardConfiguration(parameters)
+  const target = openGridBoardConfiguration(parameters)
+  const hasXFrame = target.width - nominal.width > TARGET_FRAME_EPSILON
+  const hasYFrame = target.depth - nominal.depth > TARGET_FRAME_EPSILON
+  if (!hasXFrame && !hasYFrame) return []
+
+  const nominalMinX = -nominal.width / 2
+  const nominalMaxX = nominal.width / 2
+  const nominalMinY = -nominal.depth / 2
+  const nominalMaxY = nominal.depth / 2
+  const targetMinX = -target.width / 2
+  const targetMaxX = target.width / 2
+  const targetMinY = -target.depth / 2
+  const targetMaxY = target.depth / 2
+  const frameMinY = hasYFrame ? targetMinY : nominalMinY
+  const frameMaxY = hasYFrame ? targetMaxY : nominalMaxY
+  const frameMinX = hasXFrame ? targetMinX : nominalMinX
+  const frameMaxX = hasXFrame ? targetMaxX : nominalMaxX
+  const parts: Shape3D[] = []
+
+  try {
+    if (hasXFrame) {
+      parts.push(
+        makeBox(
+          [targetMinX, frameMinY, 0],
+          [nominalMinX + TARGET_FRAME_OVERLAP, frameMaxY, target.height],
+        ),
+        makeBox(
+          [nominalMaxX - TARGET_FRAME_OVERLAP, frameMinY, 0],
+          [targetMaxX, frameMaxY, target.height],
+        ),
+      )
+    }
+
+    if (hasYFrame) {
+      parts.push(
+        makeBox(
+          [frameMinX, targetMinY, 0],
+          [frameMaxX, nominalMinY + TARGET_FRAME_OVERLAP, target.height],
+        ),
+        makeBox(
+          [frameMinX, nominalMaxY - TARGET_FRAME_OVERLAP, 0],
+          [frameMaxX, targetMaxY, target.height],
+        ),
+      )
+    }
+
+    return parts
+  } catch (error) {
+    for (const part of parts) deleteShape(part)
+    throw error
+  }
+}
+
+async function addTargetFrame(
+  source: Shape3D,
+  parameters: OpenGridParameters,
+  context: OpenGridBuildContext,
+): Promise<Shape3D> {
+  const frameParts = targetFramePartsFor(parameters)
+  if (frameParts.length === 0) return source
+  return fuseBalanced([source, ...frameParts], context)
+}
+
 type CutterGroup = {
   shape: Shape3D
   parts: readonly Shape3D[]
@@ -2465,6 +2536,7 @@ function combineCutterGroups(groups: CutterGroup[]): CutterGroup[] {
 function chamferCenters(parameters: OpenGridParameters): OpenGridPoint2D[] {
   if (parameters.chamfers === 'none') return []
   const board = openGridBoardConfiguration(parameters)
+  const nominalBoard = openGridNominalBoardConfiguration(parameters)
   const fullGridWidth = parameters.columns * OPENGRID_CONFIGURATION.gridPitch
   const fullGridDepth = parameters.rows * OPENGRID_CONFIGURATION.gridPitch
   const fullGridMinX =
@@ -2485,15 +2557,35 @@ function chamferCenters(parameters: OpenGridParameters): OpenGridPoint2D[] {
         ])
       }
     }
+    if (
+      board.width !== nominalBoard.width ||
+      board.depth !== nominalBoard.depth
+    ) {
+      centers.push(
+        [-board.width / 2, board.depth / 2],
+        [board.width / 2, board.depth / 2],
+        [-board.width / 2, -board.depth / 2],
+        [board.width / 2, -board.depth / 2],
+      )
+    }
     return centers
   }
 
   const corners = parameters.chamferCorners
   const centers: OpenGridPoint2D[] = []
-  if (corners.topLeft) centers.push([-board.width / 2, board.depth / 2])
-  if (corners.topRight) centers.push([board.width / 2, board.depth / 2])
-  if (corners.bottomLeft) centers.push([-board.width / 2, -board.depth / 2])
-  if (corners.bottomRight) centers.push([board.width / 2, -board.depth / 2])
+  const addCorners = (width: number, depth: number): void => {
+    if (corners.topLeft) centers.push([-width / 2, depth / 2])
+    if (corners.topRight) centers.push([width / 2, depth / 2])
+    if (corners.bottomLeft) centers.push([-width / 2, -depth / 2])
+    if (corners.bottomRight) centers.push([width / 2, -depth / 2])
+  }
+  addCorners(nominalBoard.width, nominalBoard.depth)
+  if (
+    board.width !== nominalBoard.width ||
+    board.depth !== nominalBoard.depth
+  ) {
+    addCorners(board.width, board.depth)
+  }
   return centers
 }
 
@@ -3169,6 +3261,9 @@ export async function buildOpenGridBRepWithStrategy(
         !isOpenGridLayeredVariant(parameters.variant),
       )
     }
+    // Keep cutters on the nominal grid geometry. A narrow target-frame overlap
+    // can otherwise be severed by edge features and fail the single-solid gate.
+    base = await addTargetFrame(base, parameters, context)
     assertGenerationCurrent(context)
     return base
   } catch (error) {

@@ -13,6 +13,7 @@ export {
   boundsForOpenGrid,
   cellCenterForOpenGrid,
   openGridBoardConfiguration,
+  openGridNominalBoardConfiguration,
   openGridConnectorLocationsFor,
   openGridScrewCentersFor,
   openGridScrewLatticeDimensions,

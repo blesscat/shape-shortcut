@@ -1,4 +1,5 @@
 import {
+  HALF_CELL_CONFIGURATION,
   fullGridCenterOffsetX,
   fullGridCenterOffsetY,
   isHalfCellX,
@@ -25,6 +26,9 @@ export type OpenGridParameterKey =
   | 'columns'
   | 'halfCellX'
   | 'halfCellY'
+  | 'targetWidth'
+  | 'targetDepth'
+  | 'fitToTarget'
   | 'chamfers'
   | 'chamferCorners'
   | 'connectorHoles'
@@ -69,6 +73,9 @@ export type OpenGridParameters = {
   columns: number
   halfCellX: HalfCellX
   halfCellY: HalfCellY
+  targetWidth: number
+  targetDepth: number
+  fitToTarget: boolean
   chamfers: OpenGridChamferMode
   chamferCorners: OpenGridCornerFlags
   connectorHoles: OpenGridConnectorHoles
@@ -181,6 +188,7 @@ const DEFAULT_CONNECTOR_SIDES: OpenGridSideFlags = {
 
 const OPENGRID_WORKSPACE_MAX_DIMENSION = 500
 const OPENGRID_BOARD_MAX_GRID_COUNT = 10
+const TARGET_FRAME_MAX_SIDE_REMAINDER = HALF_CELL_CONFIGURATION.halfPitch
 
 export const OPENGRID_CONFIGURATION = {
   gridPitch: OPENGRID_GRID_CONFIGURATION.fullPitch,
@@ -217,6 +225,9 @@ export const OPENGRID_CONFIGURATION = {
     columns: 2,
     halfCellX: 'none' as HalfCellX,
     halfCellY: 'none' as HalfCellY,
+    targetWidth: 0,
+    targetDepth: 0,
+    fitToTarget: false,
     chamfers: 'corners' as OpenGridChamferMode,
     chamferCorners: DEFAULT_CHAMFER_CORNERS,
     connectorHoles: 'enabled' as OpenGridConnectorHoles,
@@ -255,6 +266,9 @@ const OPEN_GRID_PARAMETER_KEYS: readonly OpenGridParameterKey[] = [
   'columns',
   'halfCellX',
   'halfCellY',
+  'targetWidth',
+  'targetDepth',
+  'fitToTarget',
   'chamfers',
   'chamferCorners',
   'connectorHoles',
@@ -426,6 +440,20 @@ export function validateOpenGridParameters(value: unknown): OpenGridValidation {
     })
   }
 
+  for (const field of ['targetWidth', 'targetDepth'] as const) {
+    const target = value[field]
+    if (!isFiniteNumber(target) || target < 0) {
+      issues.push({ field, messageId: 'validation.invalid' })
+      continue
+    }
+    if (target > OPENGRID_CONFIGURATION.workspaceMaxDimension) {
+      issues.push({ field, messageId: 'validation.invalid' })
+    }
+  }
+  if (typeof value.fitToTarget !== 'boolean') {
+    issues.push({ field: 'fitToTarget', messageId: 'validation.invalid' })
+  }
+
   for (const field of ['rows', 'columns'] as const) {
     const count = value[field]
     if (!Number.isSafeInteger(count)) {
@@ -536,6 +564,48 @@ export function validateOpenGridParameters(value: unknown): OpenGridValidation {
     : null
   const rowsAreValid = rowCount !== null && rowCount >= 1
   const columnsAreValid = columnCount !== null && columnCount >= 1
+  const nominalWidth =
+    columnsAreValid && isHalfCellX(value.halfCellX)
+      ? openGridAxisSize(columnCount as number, value.halfCellX)
+      : null
+  const nominalDepth =
+    rowsAreValid && isHalfCellY(value.halfCellY)
+      ? openGridAxisSize(rowCount as number, value.halfCellY)
+      : null
+  if (
+    value.fitToTarget === true &&
+    nominalWidth !== null &&
+    isFiniteNumber(value.targetWidth) &&
+    (value.targetWidth as number) < nominalWidth
+  ) {
+    issues.push({ field: 'targetWidth', messageId: 'validation.invalid' })
+  }
+  if (
+    value.fitToTarget === true &&
+    nominalWidth !== null &&
+    isFiniteNumber(value.targetWidth) &&
+    (value.targetWidth as number) >
+      nominalWidth + TARGET_FRAME_MAX_SIDE_REMAINDER * 2
+  ) {
+    issues.push({ field: 'targetWidth', messageId: 'validation.invalid' })
+  }
+  if (
+    value.fitToTarget === true &&
+    nominalDepth !== null &&
+    isFiniteNumber(value.targetDepth) &&
+    (value.targetDepth as number) < nominalDepth
+  ) {
+    issues.push({ field: 'targetDepth', messageId: 'validation.invalid' })
+  }
+  if (
+    value.fitToTarget === true &&
+    nominalDepth !== null &&
+    isFiniteNumber(value.targetDepth) &&
+    (value.targetDepth as number) >
+      nominalDepth + TARGET_FRAME_MAX_SIDE_REMAINDER * 2
+  ) {
+    issues.push({ field: 'targetDepth', messageId: 'validation.invalid' })
+  }
   const rowsHaveInternalIntersections = rowCount !== null && rowCount >= 2
   const columnsHaveInternalIntersections =
     columnCount !== null && columnCount >= 2
@@ -680,6 +750,9 @@ export function validateOpenGridParameters(value: unknown): OpenGridValidation {
       columns: value.columns as number,
       halfCellX: value.halfCellX as HalfCellX,
       halfCellY: value.halfCellY as HalfCellY,
+      targetWidth: value.targetWidth as number,
+      targetDepth: value.targetDepth as number,
+      fitToTarget: value.fitToTarget as boolean,
       chamfers: value.chamfers as OpenGridChamferMode,
       chamferCorners: { ...(value.chamferCorners as OpenGridCornerFlags) },
       connectorHoles: value.connectorHoles as OpenGridConnectorHoles,
@@ -727,6 +800,32 @@ export function isOpenGridGenerationSupported(
 }
 
 export function openGridBoardConfiguration(
+  parameters: Pick<OpenGridParameters, 'variant' | 'rows' | 'columns'> &
+    Partial<
+      Pick<
+        OpenGridParameters,
+        | 'halfCellX'
+        | 'halfCellY'
+        | 'targetWidth'
+        | 'targetDepth'
+        | 'fitToTarget'
+      >
+    >,
+): OpenGridBoardConfiguration {
+  const nominal = openGridNominalBoardConfiguration(parameters)
+  const useTarget = parameters.fitToTarget === true
+  let width = nominal.width
+  let depth = nominal.depth
+  if (useTarget && isFiniteNumber(parameters.targetWidth)) {
+    if (parameters.targetWidth > 0) width = parameters.targetWidth
+  }
+  if (useTarget && isFiniteNumber(parameters.targetDepth)) {
+    if (parameters.targetDepth > 0) depth = parameters.targetDepth
+  }
+  return { width, depth, height: nominal.height }
+}
+
+export function openGridNominalBoardConfiguration(
   parameters: Pick<OpenGridParameters, 'variant' | 'rows' | 'columns'> &
     Partial<Pick<OpenGridParameters, 'halfCellX' | 'halfCellY'>>,
 ): OpenGridBoardConfiguration {
@@ -1251,7 +1350,10 @@ function buildOpenGridFileName(
   const fingerprint = hasScrewPatternModifiers
     ? `-${openGridScrewPatternFingerprint(parameters)}`
     : ''
-  return `opengrid-${parameters.variant.toLowerCase()}-${parameters.columns}x${parameters.rows}-x${parameters.halfCellX}-y${parameters.halfCellY}-${parameters.screwKind}-${parameters.screwMode}-${parameters.chamfers}-${parameters.connectorHoles}${fingerprint}${extension}`
+  const targetSuffix = parameters.fitToTarget
+    ? `-fit-${Number(parameters.targetWidth.toFixed(2))}x${Number(parameters.targetDepth.toFixed(2))}`
+    : ''
+  return `opengrid-${parameters.variant.toLowerCase()}-${parameters.columns}x${parameters.rows}-x${parameters.halfCellX}-y${parameters.halfCellY}-${parameters.screwKind}-${parameters.screwMode}-${parameters.chamfers}-${parameters.connectorHoles}${targetSuffix}${fingerprint}${extension}`
 }
 
 export function openGridFileName(parameters: OpenGridParameters): string {

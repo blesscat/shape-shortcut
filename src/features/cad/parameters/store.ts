@@ -172,16 +172,23 @@ function normalizeLegacyHalfCellParameters(
 ): unknown {
   if (!isRecord(candidate)) return candidate
   if (modelId !== 'opengrid') return candidate
-  const hasHalfCellX = Object.prototype.hasOwnProperty.call(
-    candidate,
-    'halfCellX',
-  )
-  const hasHalfCellY = Object.prototype.hasOwnProperty.call(
-    candidate,
-    'halfCellY',
-  )
-  if (hasHalfCellX || hasHalfCellY) return candidate
-  return { ...candidate, halfCellX: 'none', halfCellY: 'none' }
+  const normalized = { ...candidate }
+  if (!Object.prototype.hasOwnProperty.call(normalized, 'halfCellX')) {
+    normalized.halfCellX = 'none'
+  }
+  if (!Object.prototype.hasOwnProperty.call(normalized, 'halfCellY')) {
+    normalized.halfCellY = 'none'
+  }
+  if (!Object.prototype.hasOwnProperty.call(normalized, 'targetWidth')) {
+    normalized.targetWidth = 0
+  }
+  if (!Object.prototype.hasOwnProperty.call(normalized, 'targetDepth')) {
+    normalized.targetDepth = 0
+  }
+  if (!Object.prototype.hasOwnProperty.call(normalized, 'fitToTarget')) {
+    normalized.fitToTarget = false
+  }
+  return normalized
 }
 
 function getBrowserStorage(): ComponentParameterStorage | null {

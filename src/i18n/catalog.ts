@@ -509,6 +509,12 @@ export const zhHantMessages = {
   'panel.opengrid.halfY': 'Y 半格方向',
   'panel.opengrid.halfXRestore': 'OpenGrid X 半格方向',
   'panel.opengrid.halfYRestore': 'OpenGrid Y 半格方向',
+  'panel.opengrid.targetDimensionDescription':
+    '輸入單一底板目標長寬；會依目前半格設定取不超過目標的最大格數。',
+  'panel.opengrid.fitToTarget': '用實體邊框補足目標尺寸',
+  'panel.opengrid.fitToTargetRestore': 'OpenGrid 實體邊框補足目標尺寸',
+  'panel.opengrid.fitToTargetDescription':
+    '啟用後以置中的實體周邊帶填滿剩餘距離，不新增格點或介面。',
   'panel.opengrid.none': '無',
   'panel.opengrid.left': '左',
   'panel.opengrid.right': '右',
@@ -1132,6 +1138,12 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.opengrid.halfY': 'Y half-cell direction',
   'panel.opengrid.halfXRestore': 'OpenGrid X half-cell direction',
   'panel.opengrid.halfYRestore': 'OpenGrid Y half-cell direction',
+  'panel.opengrid.targetDimensionDescription':
+    'Enter the target size for one board; the largest grid that fits the current half-cell settings will be selected.',
+  'panel.opengrid.fitToTarget': 'Fill target size with physical frame',
+  'panel.opengrid.fitToTargetRestore': 'OpenGrid physical target-frame fitting',
+  'panel.opengrid.fitToTargetDescription':
+    'Adds a centered solid perimeter frame for the remainder without adding grid hosts or interfaces.',
   'panel.opengrid.none': 'None',
   'panel.opengrid.left': 'Left',
   'panel.opengrid.right': 'Right',

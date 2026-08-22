@@ -17,18 +17,39 @@
     y: number
   }
 
+  type TargetDimensions = {
+    x: number
+    y: number
+  }
+
   type Props = {
     locale: Locale
     calculate: (input: GridDimensionInput) => GridDimensionResult
-    onApply: (parameters: GridParameters) => void
+    onApply: (
+      parameters: GridParameters,
+      target?: TargetDimensions,
+      actualDimensions?: ActualDimensions,
+    ) => void
     description?: string
     onInvalid?: () => void
+    testId?: string
+    initialTargetX?: string
+    initialTargetY?: string
   }
 
-  let { locale, calculate, onApply, description, onInvalid }: Props = $props()
+  let {
+    locale,
+    calculate,
+    onApply,
+    description,
+    onInvalid,
+    testId = 'grid-dimension-calculator',
+    initialTargetX = '',
+    initialTargetY = '',
+  }: Props = $props()
 
-  let targetX = $state('')
-  let targetY = $state('')
+  let targetX = $state(initialTargetX)
+  let targetY = $state(initialTargetY)
   let errors = $state<GridDimensionErrors>({})
   let actualDimensions = $state<ActualDimensions | null>(null)
 
@@ -58,7 +79,11 @@
 
     errors = {}
     actualDimensions = result.actualDimensions
-    onApply(result.parameters)
+    onApply(
+      result.parameters,
+      { x: Number(targetX), y: Number(targetY) },
+      result.actualDimensions,
+    )
   }
 
   function formatDimension(value: number): string {
@@ -68,7 +93,7 @@
 
 <div
   class="grid gap-3 rounded-xl border border-border-card bg-page p-3"
-  data-testid="grid-dimension-calculator"
+  data-testid={testId}
 >
   <div>
     <h3 class="m-0 text-base font-semibold">

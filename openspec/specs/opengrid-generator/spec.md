@@ -65,6 +65,8 @@ parameters MUST include:
 - variant Full, Lite, Heavy, or Hybrid;
 - integer rows and columns from 1 through 17;
 - halfCellX none, left, or right, and halfCellY none, top, or bottom;
+- targetWidth and targetDepth as finite millimetre dimensions, where zero means no saved target;
+- fitToTarget as a boolean;
 - chamfers none, corners, or everywhere plus four outer-corner flags;
 - connectorHoles none or enabled plus independent top, right, bottom, and left
   side flags;
@@ -76,16 +78,11 @@ parameters MUST include:
 - sorted custom positions on the internal rows-minus-one by
   columns-minus-one intersection lattice.
 
-The standard pitch MUST be 28 mm. Without half-cell directions, the board
-width and depth MUST be columns times 28 mm and rows times 28 mm. Each
-selected half-cell direction MUST add exactly 14 mm on its axis while keeping
-the board centered and within the 500 mm workspace limit. Hybrid MUST use the
-same normalized field shape as the other OpenGrid variants and MUST NOT add a
-variant-specific persistence or Worker field.
+The standard pitch MUST be 28 mm. Without half-cell directions, the nominal board width and depth MUST be columns times 28 mm and rows times 28 mm. Each selected half-cell direction MUST add exactly 14 mm on its nominal axis while keeping the board centered and within the 500 mm workspace limit. When `fitToTarget=false`, the target dimensions MUST NOT affect the generated board envelope. When `fitToTarget=true`, each positive target dimension MUST be at least its corresponding nominal dimension. Because the target remainder is centered, each side MUST receive no more than one 14 mm half-cell; equivalently, each target dimension MUST be no more than 28 mm beyond its corresponding nominal dimension. The physical target envelope MUST remain within the 500 mm workspace limit. Hybrid MUST use the same normalized field shape as the other OpenGrid variants and MUST NOT add a variant-specific persistence or Worker field.
 
 The official default MUST be Lite 2 by 2 with corner chamfers, all connector
 sides enabled, corner screws, and screw dimensions 4.1 mm, 7.2 mm, 1 mm,
-countersunk enabled, and 90 degrees.
+countersunk enabled, and 90 degrees. Its targetWidth and targetDepth MUST be zero and fitToTarget MUST be false.
 
 The normalized snapshot MUST use generic dimensions and MUST NOT retain the
 former 16 mm opening, four-slot, small/large connector, or M3/M4/M5-only
@@ -97,23 +94,26 @@ the generic dimensions.
 - **WHEN** the opengrid route has no valid saved snapshot
 - **THEN** the workspace MUST use the official default snapshot
 - **AND** the derived board size MUST be 56 by 56 mm with 4 mm thickness
+- **AND** target fitting MUST be disabled by default
 
 #### Scenario: Hybrid is accepted without schema branching
 
 - **WHEN** a complete OpenGrid snapshot has `variant=Hybrid`
-- **THEN** validation MUST accept it when all existing fields are valid
+- **THEN** validation MUST accept it when all existing fields and target fields are valid
 - **AND** normalization MUST preserve the Hybrid variant and all feature
   values
 - **AND** generated requests MUST use the existing `modelId=opengrid`
 
 #### Scenario: Invalid or legacy snapshot
 
-- **WHEN** a snapshot has an unsupported enum, invalid dimension, out-of-range
+- **WHEN** a snapshot has an unsupported enum, invalid target type or range, invalid dimension, out-of-range
   grid, duplicate or out-of-range intersection, old schema field, or invalid
   half-cell value
 - **THEN** validation MUST reject it before native work
 - **AND** the previous accepted preview MUST remain stale
 - **AND** incompatible persisted data MUST fall back to the component default
+- **WHEN** a legacy snapshot is missing targetWidth, targetDepth, or fitToTarget
+- **THEN** persistence hydration MUST add zero, zero, and false respectively before validation
 
 ### Requirement: Official tile profile and variants
 
@@ -317,9 +317,9 @@ silently moved into cells.
 The board MUST preserve the official full-cell profile and add a 14 mm
 boundary host on each selected half-cell axis. left/right MUST map to the
 negative/positive X outer side, and top/bottom MUST map to the
-positive/negative Y outer side. Feature coordinates, connector placement,
-screw placement, centering, and variant thickness MUST use the final board
-envelope.
+positive/negative Y outer side. Feature coordinates, connector placement, screw placement, centering, and variant thickness MUST use the final nominal grid envelope.
+
+When `fitToTarget=true`, the generator MUST add a centered physical outer frame around the nominal grid envelope. The frame MUST use the selected variant's board height, MUST fill only the requested remainder on each axis, and MUST be fused to the completed nominal grid geometry after board feature cutters run on that nominal geometry. The frame MUST NOT receive or create a new grid host, connector seam, screw center, or Snap interface. The final physical bounds MUST equal the requested target dimensions on enabled axes.
 
 The detailed shared half-cell direction, interface, and persistence contract
 is defined by the opengrid-half-cell capability.
@@ -357,6 +357,23 @@ produced from the quality-gated committed B-Rep revision.
 - **AND** it MUST verify Heavy-layer occupancy on the perimeter and Full-layer
   occupancy in the interior
 - **AND** it MUST verify all requested cell openings and a single valid solid
+
+### Requirement: Target frame quality evidence
+
+The OpenGrid quality gate MUST verify target-frame geometry when `fitToTarget=true`. It MUST verify the final centered bounds, positive frame material on every enabled remainder axis, preservation of all nominal cell openings, and the absence of a second grid-host seam or feature location in the frame. A disabled target frame MUST use the existing nominal quality evidence.
+
+#### Scenario: Target frame reaches the requested space
+
+- **WHEN** a target-fitted board is quality-checked
+- **THEN** its X/Y bounds MUST match the requested target dimensions within the existing bounds tolerance
+- **AND** probes in each requested outer frame strip MUST intersect positive material
+- **AND** all nominal cell openings MUST remain through-open
+
+#### Scenario: Target frame keeps the OpenGrid interface stable
+
+- **WHEN** a target-fitted board has connector holes or generated screws
+- **THEN** those feature centers MUST equal the corresponding non-fitted nominal board centers
+- **AND** probes in the added frame MUST NOT be reported as additional OpenGrid hosts
 
 ### Requirement: Optional official reference comparison
 
@@ -454,25 +471,15 @@ binary STL lifecycle.
 
 ### Requirement: OpenGrid board controls
 
-The /cad/opengrid workspace MUST expose Full/Lite/Heavy/Hybrid variant,
-rows, columns, X/Y half-cell directions, chamfer mode and corner flags,
-connector enable and side flags, generic screw dimensions, screw mode,
-center/interval modifiers, and an internal-intersection custom screw matrix.
-It MUST display derived width, depth, and maximum board thickness in
-millimetres. The Hybrid description MUST identify its Heavy outer perimeter
-and standard Full interior rather than presenting it as a uniform 13.8 mm
-plate. The accessible screw-mode control MUST be rendered before the
-screw-size-source control, and any conditional row/column interval controls
-MUST remain associated with the screw-mode control.
+The /cad/opengrid workspace MUST expose Full/Lite/Heavy/Hybrid variant, rows, columns, X/Y half-cell directions, target X/Y dimensions, a persisted physical-target-frame checkbox, chamfer mode and corner flags, connector enable and side flags, generic screw dimensions, screw mode, center/interval modifiers, and an internal-intersection custom screw matrix. It MUST display the derived nominal or target width, depth, and maximum board thickness in millimetres. The target-frame control MUST explain that it adds a centered outer border and does not add grid hosts. The Hybrid description MUST identify its Heavy outer perimeter and standard Full interior rather than presenting it as a uniform 13.8 mm plate. The accessible screw-mode control MUST be rendered before the screw-size-source control, and any conditional row/column interval controls MUST remain associated with the screw-mode control.
 
 #### Scenario: Configure current OpenGrid controls
 
-- **WHEN** a user changes variant, grid, half-cell, chamfer, connector, screw,
-  or custom-intersection values
+- **WHEN** a user changes variant, grid, half-cell, target, chamfer, connector, screw, or custom-intersection values
 - **THEN** the pending typed snapshot MUST contain those normalized fields
-- **AND** selecting Hybrid MUST preserve the existing rows, columns,
-  half-cell, feature, and persistence fields
-- **AND** derived dimensions MUST use the final half-cell envelope
+- **AND** selecting Hybrid MUST preserve the existing rows, columns, half-cell, target, feature, and persistence fields
+- **AND** derived dimensions MUST use the nominal half-cell envelope unless target fitting is enabled
+- **AND** target fitting MUST show the centered physical target envelope when enabled
 - **AND** the derived dimensions MUST show Hybrid's 13.8 mm maximum thickness
 - **AND** the settled input MUST use the existing debounce and Worker lifecycle
 

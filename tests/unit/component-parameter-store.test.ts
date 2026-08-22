@@ -353,6 +353,27 @@ describe('component parameter store', () => {
     store.dispose()
   })
 
+  it('hydrates legacy OpenGrid snapshots with half-cell and target defaults', () => {
+    const legacy = { ...opengridParameters() } as Record<string, unknown>
+    delete legacy.halfCellX
+    delete legacy.halfCellY
+    delete legacy.targetWidth
+    delete legacy.targetDepth
+    delete legacy.fitToTarget
+
+    const storage = createMemoryStorage(createPayload({ opengrid: legacy }))
+    const store = createComponentParameterStore({ storage })
+
+    expect(store.get('opengrid')).toMatchObject({
+      halfCellX: 'none',
+      halfCellY: 'none',
+      targetWidth: 0,
+      targetDepth: 0,
+      fitToTarget: false,
+    })
+    store.dispose()
+  })
+
   it('restores valid typed values for every component', () => {
     const storage = createMemoryStorage(
       createPayload({

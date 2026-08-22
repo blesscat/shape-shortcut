@@ -12,6 +12,7 @@ import {
   HALF_CELL_CONFIGURATION,
   OPENGRID_CONFIGURATION,
   isOpenGridLayeredVariant,
+  openGridNominalBoardConfiguration,
   type ModelBounds,
   type OpenGridParameters,
 } from '../../../cad-contract/units'
@@ -140,12 +141,20 @@ function volumeInProbe(
   }
 }
 
+function nominalBoundsForOpenGrid(parameters: OpenGridParameters): ModelBounds {
+  const nominal = openGridNominalBoardConfiguration(parameters)
+  return {
+    min: [-nominal.width / 2, -nominal.depth / 2, 0],
+    max: [nominal.width / 2, nominal.depth / 2, nominal.height],
+  }
+}
+
 function inspectOfficialProfile(
   shape: Shape3D,
   parameters: OpenGridParameters,
   failures: string[],
 ): void {
-  const board = boundsForOpenGrid(parameters)
+  const board = nominalBoundsForOpenGrid(parameters)
   const [firstCellX, firstCellY] = cellCenterForOpenGrid(parameters, 0, 0)
   const isLayered = isOpenGridLayeredVariant(parameters.variant)
   const layerThickness = isLayered
@@ -212,7 +221,7 @@ function inspectHalfCellBoundary(
   if (parameters.halfCellX === 'none' && parameters.halfCellY === 'none') {
     return
   }
-  const board = boundsForOpenGrid(parameters)
+  const board = nominalBoundsForOpenGrid(parameters)
   const isLayered = isOpenGridLayeredVariant(parameters.variant)
   const layerThickness = isLayered
     ? OPENGRID_CONFIGURATION.variants.Full.thickness
@@ -467,6 +476,54 @@ function inspectHybridTransition(
   }
 }
 
+function inspectTargetFrame(
+  shape: Shape3D,
+  parameters: OpenGridParameters,
+  failures: string[],
+): void {
+  if (!parameters.fitToTarget) return
+
+  const nominal = nominalBoundsForOpenGrid(parameters)
+  const target = boundsForOpenGrid(parameters)
+  const probeHalf = 0.5
+  const zHalf = Math.min(0.2, (target.max[2] - target.min[2]) / 8)
+  const zCenter = (target.max[2] + target.min[2]) / 2
+  const frameProbeRemainder = 0.2
+
+  if (target.min[0] < nominal.min[0] - frameProbeRemainder) {
+    const volume = volumeInProbe(
+      shape,
+      [target.min[0] + 0.1, -probeHalf, zCenter - zHalf],
+      [nominal.min[0] - 0.05, probeHalf, zCenter + zHalf],
+    )
+    if (volume <= 0.01) failures.push('target-frame:left-strip-missing')
+  }
+  if (target.max[0] > nominal.max[0] + frameProbeRemainder) {
+    const volume = volumeInProbe(
+      shape,
+      [nominal.max[0] + 0.05, -probeHalf, zCenter - zHalf],
+      [target.max[0] - 0.1, probeHalf, zCenter + zHalf],
+    )
+    if (volume <= 0.01) failures.push('target-frame:right-strip-missing')
+  }
+  if (target.min[1] < nominal.min[1] - frameProbeRemainder) {
+    const volume = volumeInProbe(
+      shape,
+      [-probeHalf, target.min[1] + 0.1, zCenter - zHalf],
+      [probeHalf, nominal.min[1] - 0.05, zCenter + zHalf],
+    )
+    if (volume <= 0.01) failures.push('target-frame:bottom-strip-missing')
+  }
+  if (target.max[1] > nominal.max[1] + frameProbeRemainder) {
+    const volume = volumeInProbe(
+      shape,
+      [-probeHalf, nominal.max[1] + 0.05, zCenter - zHalf],
+      [probeHalf, target.max[1] - 0.1, zCenter + zHalf],
+    )
+    if (volume <= 0.01) failures.push('target-frame:top-strip-missing')
+  }
+}
+
 function inspectCellOpenings(
   shape: Shape3D,
   parameters: OpenGridParameters,
@@ -610,6 +667,7 @@ export function inspectOpenGridShapeQuality(
   inspectHybridProfile(shape, parameters, failures)
   inspectHybridTransition(shape, parameters, failures)
   inspectHalfCellBoundary(shape, parameters, failures)
+  inspectTargetFrame(shape, parameters, failures)
   if (mesh.triangleCount <= 0 || !meshIsFinite(mesh)) {
     failures.push('mesh:empty-or-non-finite')
   }

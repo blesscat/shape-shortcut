@@ -229,6 +229,25 @@ describe('OpenGrid dimension calculation', () => {
     })
   })
 
+  it('leaves a sub-half-cell remainder available for a physical target frame', () => {
+    const result = calculateOpenGridCounts({
+      x: '100',
+      y: '58',
+      halfCellX: 'right',
+      halfCellY: 'none',
+    })
+
+    expect(result).toMatchObject({
+      valid: true,
+      parameters: { columns: 3, rows: 2 },
+      actualDimensions: { x: 98, y: 56 },
+    })
+    if (result.valid) {
+      expect(100 - result.actualDimensions.x).toBe(2)
+      expect(58 - result.actualDimensions.y).toBe(2)
+    }
+  })
+
   it('keeps selected directions and reports an axis-specific minimum error', () => {
     const result = calculateOpenGridCounts({
       x: '41.99',

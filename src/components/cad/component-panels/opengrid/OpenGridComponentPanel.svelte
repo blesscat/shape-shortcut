@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { calculateOpenGridPrintPlan } from '../../../../features/cad/grid-dimensions'
+  import {
+    calculateOpenGridCounts,
+    calculateOpenGridPrintPlan,
+    type GridDimensionInput,
+  } from '../../../../features/cad/grid-dimensions'
   import {
     OPENGRID_CONFIGURATION,
     isOpenGridParameters,
@@ -19,6 +23,7 @@
     getSystemPreset,
     type OpenGridSystemContext,
   } from '../../../../features/cad/system-entry-context'
+  import GridDimensionCalculator from '../GridDimensionCalculator.svelte'
   import OpenGridPrintPlanCalculator from './OpenGridPrintPlanCalculator.svelte'
   import ParameterField from '../ParameterField.svelte'
   import RestoreButton from '../RestoreButton.svelte'
@@ -287,6 +292,7 @@
 
   function updateGridCounts(
     changes: Pick<OpenGridParameters, 'rows' | 'columns'>,
+    target?: Pick<OpenGridParameters, 'targetWidth' | 'targetDepth'>,
   ): void {
     const positions = clonePositions().filter(
       (position) =>
@@ -294,6 +300,7 @@
     )
     updateParameters({
       ...changes,
+      ...target,
       screwCenter: centerScrewAvailable(changes.rows, changes.columns)
         ? parameters.screwCenter
         : false,
@@ -368,10 +375,33 @@
     rows: number
     columns: number
   }): void {
-    // Planning changes only the primary piece dimensions. Keep screw settings
-    // and custom positions intact; manual slider edits retain their existing
-    // position-cleanup behavior through updateGridCounts.
-    updateParameters(changes)
+    // The plan's primary piece dimensions replace the single-board target.
+    // Disable target fitting so the saved target does not invalidate or
+    // prevent generation of the selected primary piece.
+    updateParameters({ ...changes, fitToTarget: false })
+  }
+
+  function calculateGridDimensions(input: GridDimensionInput) {
+    return calculateOpenGridCounts({
+      ...input,
+      halfCellX: parameters.halfCellX,
+      halfCellY: parameters.halfCellY,
+    })
+  }
+
+  function handleDimensionCalculation(
+    changes: { rows: number; columns: number },
+    target?: { x: number; y: number },
+  ): void {
+    updateGridCounts(
+      changes,
+      target ? { targetWidth: target.x, targetDepth: target.y } : undefined,
+    )
+  }
+
+  function updateFitToTarget(event: Event): void {
+    if (!(event.currentTarget instanceof HTMLInputElement)) return
+    updateParameters({ fitToTarget: event.currentTarget.checked })
   }
 
   function updateHalfCellX(event: Event): void {
@@ -520,6 +550,46 @@
         >{translate(locale, 'panel.opengrid.variant.hybrid')}</option
       >
     </select>
+  </ParameterField>
+
+  <GridDimensionCalculator
+    {locale}
+    calculate={calculateGridDimensions}
+    onApply={handleDimensionCalculation}
+    onInvalid={onDimensionCalculationInvalid}
+    testId="opengrid-target-dimension-calculator"
+    initialTargetX={parameters.targetWidth > 0
+      ? String(parameters.targetWidth)
+      : ''}
+    initialTargetY={parameters.targetDepth > 0
+      ? String(parameters.targetDepth)
+      : ''}
+    description={translate(locale, 'panel.opengrid.targetDimensionDescription')}
+  />
+
+  <ParameterField
+    {locale}
+    label={translate(locale, 'panel.opengrid.fitToTarget')}
+    changed={parameterChanged('fitToTarget')}
+    error={fieldError('fitToTarget')}
+    errorId="opengrid-fit-to-target-error"
+    restoreLabel={translate(locale, 'panel.opengrid.fitToTargetRestore')}
+    onRestore={() => restoreParameter('fitToTarget')}
+  >
+    <label class="flex min-w-0 items-start gap-2 text-sm">
+      <input
+        type="checkbox"
+        aria-describedby={fieldError('fitToTarget')
+          ? 'opengrid-fit-to-target-error'
+          : undefined}
+        aria-invalid={Boolean(fieldError('fitToTarget'))}
+        aria-label={translate(locale, 'panel.opengrid.fitToTarget')}
+        checked={parameters.fitToTarget}
+        disabled={parameters.targetWidth <= 0 || parameters.targetDepth <= 0}
+        onchange={updateFitToTarget}
+      />
+      <span>{translate(locale, 'panel.opengrid.fitToTargetDescription')}</span>
+    </label>
   </ParameterField>
 
   <OpenGridPrintPlanCalculator
