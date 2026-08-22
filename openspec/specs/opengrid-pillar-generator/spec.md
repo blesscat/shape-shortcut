@@ -285,3 +285,41 @@ component's parameters.
 - **THEN** the workspace MUST show a diagnosable field error
 - **AND** it MUST send `model.invalidate` rather than `model.generate` for that invalid snapshot
 - **AND** export MUST remain disabled while the input is invalid or stale
+
+### Requirement: Detachable corner-seat male bottom indicator
+
+When `opengrid-pillar` generates the fixed
+`{ mode: 'detachable-corner-seat' }` profile, the exposed Z=0 bottom face MUST
+contain the shared 2 mm by 2 mm triangular indicator recessed by 0.15 mm. The
+indicator MUST remain centered on the male seat's local rotational datum, MUST
+not change the outer XY or Z bounds, and MUST not change any user parameters or
+the deterministic export identity. Standard, thin-shell, and positioning pillar
+modes MUST remain unchanged and MUST NOT receive this indicator.
+
+#### Scenario: Detachable pillar exposes the lock indicator
+
+- **WHEN** the detachable-corner-seat pillar is generated and viewed from its
+  bottom
+- **THEN** one readable triangular recess MUST be present on the Z=0 face
+- **AND** the recess depth MUST be 0.15 mm within geometry tolerance
+- **AND** its footprint MUST be nominally 2 mm wide by 2 mm long
+
+#### Scenario: Detachable indicator preserves the fixed pillar contract
+
+- **WHEN** the marked detachable pillar is prepared for mesh, quality checks,
+  or export
+- **THEN** it MUST remain one valid connected solid with finite non-empty mesh
+  data
+- **AND** its bounds MUST remain `[-2.5, -2.5, 0]` through
+  `[2.5, 2.5, 5.3]` within geometry tolerance
+- **AND** its keyed retaining head, 3.8 mm locating section, and hand-fit
+  interface MUST remain unchanged
+- **AND** its export stem MUST remain
+  `pillar-5.3-detachable-corner-seat`
+
+#### Scenario: Other pillar modes remain unmarked
+
+- **WHEN** a standard, thin-shell, or positioning pillar is generated
+- **THEN** its existing geometry, quality checks, bounds, mesh, and export
+  identity MUST remain unchanged
+- **AND** no detachable-seat indicator MUST be added

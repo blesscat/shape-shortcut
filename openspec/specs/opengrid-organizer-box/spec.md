@@ -292,3 +292,59 @@ MUST fall back to organizer-box defaults without affecting other components.
 - **WHEN** a valid organizer-box parameter update is accepted
 - **THEN** only the `opengrid-organizer-box` persistence entry MUST change
 - **AND** navigating to another model MUST NOT inherit organizer-box values
+
+### Requirement: Detachable socket bottom lock indicators
+
+When `bottomInterfaceMode=detachable-corner-seat`, the Organizer Box MUST add
+one shared 2 mm by 2 mm triangular recess beside each of its four female socket
+openings. Each recess MUST be 0.15 mm deep, remain on the exposed box-bottom
+surface outside the nominal Ø7 mm socket envelope, and remain clear of the
+keyed passage, retaining tabs, storage cavities, and outer boundary.
+
+The four socket poses MUST retain the existing bottom-view orientations:
+upper-left 0°, upper-right 90°, lower-right 180°, and lower-left 270°. For each
+pose, the indicator center MUST remain on the deterministic locked centerline
+outside the socket envelope. The upper-left and lower-right canonical
+indicators MUST be moved to the opposite side of their sockets, as shown by the
+reference arrows, while retaining the same 0.15 mm boundary clearance. The
+upper-right and lower-left indicators MUST remain on their existing sides. With
+the shared triangle's local apex pointing along +X, these directions MUST
+remain deterministic in the same corner order.
+
+#### Scenario: Locking corner-seat mode shows four indicators
+
+- **WHEN** a valid Organizer Box snapshot selects `鎖定角座`, normalized as
+  `bottomInterfaceMode=detachable-corner-seat`
+- **THEN** the generated single box solid MUST contain four readable triangular
+  recesses on its bottom surface
+- **AND** every recess MUST be nominally 2 mm by 2 mm and 0.15 mm deep within
+  geometry tolerance
+- **AND** all four recesses MUST remain outside their socket openings and
+  preserve the existing socket passage and retaining tabs
+
+#### Scenario: Corner indicators follow deterministic locked directions
+
+- **WHEN** the detachable socket layout is inspected from the box bottom
+- **THEN** the indicator rotations MUST be 270°, 0°, 90°, and 180° in
+  upper-left, upper-right, lower-right, and lower-left order
+- **AND** each indicator center MUST lie on the corresponding locked male
+  triangle's apex direction, outside the socket envelope
+- **AND** each socket MUST accept the same unmirrored male seat in its existing
+  insertion orientation
+- **AND** turning that male clockwise 90° MUST make the two visible triangles
+  point to one another
+
+#### Scenario: Indicators do not change Organizer Box interfaces
+
+- **WHEN** a marked detachable Organizer Box is validated, meshed, or exported
+- **THEN** it MUST remain one valid connected watertight solid
+- **AND** its socket roof thickness, cavity floors, lower Z datum, bounds, and
+  export identity MUST remain unchanged
+- **AND** the box MUST still contain neither built-in downward feet nor the
+  full stacking guide
+
+#### Scenario: Other bottom-interface modes remain unmarked
+
+- **WHEN** the Organizer Box uses `corner-seat` or `stackable`
+- **THEN** no detachable socket indicator recess MUST be generated
+- **AND** the existing bottom interface geometry MUST remain unchanged

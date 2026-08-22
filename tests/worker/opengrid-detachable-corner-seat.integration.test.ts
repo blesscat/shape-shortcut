@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { measureVolume, setOC, type Shape3D } from 'replicad'
 import { OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION } from '../../src/cad-contract/units'
 import {
+  buildOpenGridDetachableCornerSeatIndicatorCutter,
   buildOpenGridDetachableCornerSeatHolderFromReference,
   buildOpenGridDetachableCornerSeatSocketVoid,
   importOpenGridDetachableCornerSeatHolderReference,
@@ -119,6 +120,35 @@ afterAll(() => {
 })
 
 describe('OpenGrid detachable corner-seat canonical references', () => {
+  it('builds the shared 2 mm triangular cutter at the requested recess depth', () => {
+    const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+    const cutter = buildOpenGridDetachableCornerSeatIndicatorCutter()
+    try {
+      expectBoundsClose(shapeBounds(cutter), [
+        [
+          -configuration.indicator.width / 2,
+          -configuration.indicator.radialLength / 2,
+          -configuration.indicator.cutterOverlap,
+        ],
+        [
+          configuration.indicator.width / 2,
+          configuration.indicator.radialLength / 2,
+          configuration.indicator.depth,
+        ],
+      ])
+      expect(measureVolume(cutter)).toBeCloseTo(
+        configuration.indicator.nominalRemovedVolume +
+          (configuration.indicator.width *
+            configuration.indicator.radialLength *
+            configuration.indicator.cutterOverlap) /
+            2,
+        5,
+      )
+    } finally {
+      deleteShape(cutter)
+    }
+  })
+
   it('imports the fixed male and retaining-tab holder as compatible solids', () => {
     const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
     const report = inspectOpenGridDetachableCornerSeatCompatibility(

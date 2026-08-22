@@ -351,7 +351,8 @@ export function inspectPillarShapeQuality(
       parameters.mode === 'detachable-corner-seat' &&
       Math.abs(
         volume -
-          OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male.nominalVolume,
+          OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male
+            .markedNominalVolume,
       ) > OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.volumeTolerance
     ) {
       failures.push('volume:detachable-reference-mismatch')

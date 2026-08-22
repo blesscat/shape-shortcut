@@ -2,13 +2,14 @@ import {
   loft,
   makeCompound,
   makeCylinder,
+  type Shape3D,
   Sketcher,
   sketchRoundedRectangle,
-  type Shape3D,
   type Wire,
 } from 'replicad'
 import {
   openGridOrganizerBoxLayoutFor,
+  openGridOrganizerBoxDetachableIndicatorPlacementFor,
   openGridOrganizerBoxDetachableSocketPosesFor,
   openGridOrganizerBoxPolygonPointsFor,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
@@ -31,7 +32,9 @@ import {
 } from '../opengrid-stackable-box/shared'
 import { assertOpenGridOrganizerBoxGeometry } from './quality'
 import {
+  buildOpenGridDetachableCornerSeatIndicatorCutter,
   buildOpenGridDetachableCornerSeatSocketVoid,
+  placeOpenGridDetachableCornerSeatIndicatorShape,
   placeOpenGridDetachableCornerSeatSocketShape,
 } from '../opengrid-locating-assembly/reference'
 
@@ -302,14 +305,22 @@ function cutDetachableCornerSeatSockets(
 
   const sourceVoid =
     buildOpenGridDetachableCornerSeatSocketVoid(holderReference)
+  let sourceIndicator: Shape3D | null = null
   const cutters: Shape3D[] = []
   let compound: Shape3D | null = null
   try {
+    sourceIndicator = buildOpenGridDetachableCornerSeatIndicatorCutter()
     for (const pose of openGridOrganizerBoxDetachableSocketPosesFor(
       parameters,
     )) {
       cutters.push(
         placeOpenGridDetachableCornerSeatSocketShape(sourceVoid, pose),
+      )
+      cutters.push(
+        placeOpenGridDetachableCornerSeatIndicatorShape(
+          sourceIndicator,
+          openGridOrganizerBoxDetachableIndicatorPlacementFor(pose),
+        ),
       )
     }
     compound = makeCompound(cutters).asShape3D()
@@ -327,6 +338,7 @@ function cutDetachableCornerSeatSockets(
   } finally {
     deleteShape(compound)
     cutters.forEach(deleteShape)
+    deleteShape(sourceIndicator)
     deleteShape(sourceVoid)
   }
 }

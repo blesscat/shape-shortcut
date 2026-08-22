@@ -229,3 +229,55 @@ when lifted, and remain intentionally removable by hand.
 - **AND** each seat MUST remain removable by an intentional hand pull
 - **AND** failure of any criterion MUST keep other OpenGrid model integrations
   outside the accepted scope
+
+### Requirement: Detachable corner-seat visual lock indicators
+
+The shared detachable corner-seat interface MUST define one consistent visual
+indicator contract for the mating male seat and female socket. Each indicator
+MUST be an exposed-bottom, shallow recessed isosceles triangle with a nominal
+2 mm width, a nominal 2 mm radial length, and a 0.15 mm recess depth. The
+indicator depth MUST be shared by both mating parts and MUST remain within the
+requested 0.1–0.2 mm printable range.
+
+The shared triangle's local radial direction MUST run from its flat edge toward
+its apex along the local positive X axis before any socket-pose transform is
+applied. Both mating indicators MUST use this same local profile datum.
+
+Viewed from the box underside, the indicator orientation MUST communicate the
+clockwise 90-degree locking motion: after the male seat has been turned
+clockwise 90 degrees from its insertion orientation, the male triangle's apex
+MUST point along the corresponding female indicator centerline. The female
+indicator MUST follow the canonical corner direction: the upper-left and
+lower-right indicators point away from their sockets, while the upper-right and
+lower-left indicators point back toward their sockets. These reference-aligned
+directions MUST represent the locked state.
+
+#### Scenario: Shared indicator dimensions are published once
+
+- **WHEN** the male-seat or female-socket generator reads the detachable
+  corner-seat indicator contract
+- **THEN** it MUST receive the same 2 mm by 2 mm triangular profile and 0.15 mm
+  recess depth
+- **AND** neither consumer MUST define a conflicting local indicator depth or
+  profile
+
+#### Scenario: Clockwise locked pose follows the reference directions
+
+- **WHEN** a compatible male seat is placed in the canonical female socket
+  insertion orientation and then turned clockwise 90 degrees around the shared
+  Z axis as viewed from below
+- **THEN** the male triangle MUST point along the corresponding female
+  indicator centerline
+- **AND** the female triangle MUST use its canonical corner direction, with
+  the upper-left and lower-right markers reversed from the other two corners
+- **AND** the reference-aligned triangles MUST identify the locked state
+- **AND** the insertion orientation MUST remain distinguishable from the locked
+  orientation
+
+#### Scenario: Visual indicators preserve the locating fit
+
+- **WHEN** the indicator geometry is added to the detachable interface
+- **THEN** the male and female locating geometry MUST retain the existing
+  nominal diameters, keyed passage, retaining tabs, and seating datum
+- **AND** the indicators MUST NOT create positive-volume interference in either
+  the insertion or locked pose

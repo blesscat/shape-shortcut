@@ -44,6 +44,7 @@ import type {
 import {
   boundsForOpenGridOrganizerBox,
   isOpenGridOrganizerBoxParameters,
+  openGridOrganizerBoxDetachableIndicatorPlacementFor,
   openGridOrganizerBoxFileName,
   openGridOrganizerBoxStlFileName,
   OPENGRID_ORGANIZER_BOX_CONFIGURATION,
@@ -51,6 +52,7 @@ import {
   validateOpenGridOrganizerBoxParameters,
 } from './opengrid-organizer-box'
 import type {
+  OpenGridOrganizerBoxDetachableIndicatorPlacement,
   OpenGridOrganizerBoxParameterKey,
   OpenGridOrganizerBoxParameters,
 } from './opengrid-organizer-box'
@@ -272,6 +274,7 @@ export {
   boundsForOpenGridOrganizerBox,
   isOpenGridOrganizerBoxParameters,
   openGridOrganizerBoxCavityEnvelopeFor,
+  openGridOrganizerBoxDetachableIndicatorPlacementFor,
   openGridOrganizerBoxDetachableSocketPosesFor,
   openGridOrganizerBoxFileName,
   openGridOrganizerBoxLayoutFor,
@@ -360,6 +363,7 @@ export type {
   OpenGridOrganizerBoxBottomInterfaceMode,
   OpenGridOrganizerBoxCavityEnvelope,
   OpenGridOrganizerBoxCavityEnvelopeInput,
+  OpenGridOrganizerBoxDetachableIndicatorPlacement,
   OpenGridOrganizerBoxDetachableSocketCorner,
   OpenGridOrganizerBoxDetachableSocketPose,
   OpenGridOrganizerBoxLayout,

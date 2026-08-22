@@ -26,6 +26,11 @@ export type OpenGridOrganizerBoxDetachableSocketPose = {
   rotationDegrees: 0 | 90 | 180 | 270
 }
 
+export type OpenGridOrganizerBoxDetachableIndicatorPlacement = {
+  center: OpenGridOrganizerBoxPoint2D
+  rotationDegrees: 0 | 90 | 180 | 270
+}
+
 export type OpenGridOrganizerBoxParameterKey =
   | 'holeCountX'
   | 'holeCountY'
@@ -649,6 +654,51 @@ export function openGridOrganizerBoxDetachableSocketPosesFor(
       rotationDegrees: 270,
     },
   ]
+}
+
+function detachableIndicatorRotationFor(
+  socketRotation: OpenGridOrganizerBoxDetachableSocketPose['rotationDegrees'],
+): OpenGridOrganizerBoxDetachableIndicatorPlacement['rotationDegrees'] {
+  const lockRotation =
+    OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.indicator.lockRotationDegrees
+  const indicatorRotation = (socketRotation + lockRotation + 180) % 360
+  if (indicatorRotation === 0) return 0
+  if (indicatorRotation === 90) return 90
+  if (indicatorRotation === 180) return 180
+  if (indicatorRotation === 270) return 270
+  throw new Error('OPENGRID_ORGANIZER_BOX_INDICATOR_ROTATION_INVALID')
+}
+
+function detachableIndicatorApexDirectionFor(
+  rotationDegrees: OpenGridOrganizerBoxDetachableSocketPose['rotationDegrees'],
+): OpenGridOrganizerBoxPoint2D {
+  if (rotationDegrees === 0) return [1, 0]
+  if (rotationDegrees === 90) return [0, 1]
+  if (rotationDegrees === 180) return [-1, 0]
+  return [0, -1]
+}
+
+export function openGridOrganizerBoxDetachableIndicatorPlacementFor(
+  pose: OpenGridOrganizerBoxDetachableSocketPose,
+): OpenGridOrganizerBoxDetachableIndicatorPlacement {
+  const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+  const offsetFromSocket =
+    configuration.female.outerDiameter / 2 +
+    configuration.indicator.socketBoundaryClearance +
+    configuration.indicator.radialLength / 2
+  const lockRotation = ((pose.rotationDegrees +
+    configuration.indicator.lockRotationDegrees) %
+    360) as OpenGridOrganizerBoxDetachableSocketPose['rotationDegrees']
+  const apexDirection = detachableIndicatorApexDirectionFor(lockRotation)
+  const referenceArrowSign =
+    pose.corner === 'upper-left' || pose.corner === 'lower-right' ? -1 : 1
+  return {
+    center: [
+      pose.center[0] + referenceArrowSign * apexDirection[0] * offsetFromSocket,
+      pose.center[1] + referenceArrowSign * apexDirection[1] * offsetFromSocket,
+    ],
+    rotationDegrees: detachableIndicatorRotationFor(pose.rotationDegrees),
+  }
 }
 
 export function validateOpenGridOrganizerBoxParameters(

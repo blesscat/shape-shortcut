@@ -6,6 +6,7 @@ import {
   isShape3D,
   makeCylinder,
   measureVolume,
+  Sketcher,
   Solid,
   Vector,
   type Face,
@@ -46,6 +47,11 @@ export type OpenGridDetachableCornerSeatCompatibilityReport = {
 export type OpenGridDetachableCornerSeatSocketPlacement = {
   center: [number, number]
   rotationDegrees: 0 | 90 | 180 | 270
+}
+
+export type OpenGridDetachableCornerSeatIndicatorPlacement = {
+  center: [number, number]
+  rotationDegrees: number
 }
 
 function deleteShape(shape: { delete(): void } | null | undefined): void {
@@ -190,7 +196,7 @@ function assertGeneratedMale(shape: Shape3D): void {
   const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
   const expected = configuration.male
   const volumeMatches =
-    Math.abs(inspection.volume - expected.nominalVolume) <=
+    Math.abs(inspection.volume - expected.markedNominalVolume) <=
     configuration.volumeTolerance
   if (
     inspection.solidCount !== 1 ||
@@ -201,6 +207,78 @@ function assertGeneratedMale(shape: Shape3D): void {
     throw new Error(
       `OPENGRID_DETACHABLE_CORNER_SEAT_GENERATED_MALE_INVALID:${JSON.stringify({ inspection, expected })}`,
     )
+  }
+}
+
+export function buildOpenGridDetachableCornerSeatIndicatorCutter(): Shape3D {
+  const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.indicator
+  const sketcher = new Sketcher('XY', [0, 0, -configuration.cutterOverlap])
+  let sketch: ReturnType<Sketcher['close']> | null = null
+  let cutter: Shape3D | null = null
+  try {
+    const halfWidth = configuration.width / 2
+    const halfRadialLength = configuration.radialLength / 2
+    // The shared local radial datum runs from the flat edge at negative X to
+    // the triangle apex at positive X.
+    sketcher.movePointerTo([-halfRadialLength, halfWidth])
+    sketcher.lineTo([-halfRadialLength, -halfWidth])
+    sketcher.lineTo([halfRadialLength, 0])
+    sketch = sketcher.close()
+    cutter = sketch.extrude(configuration.depth + configuration.cutterOverlap, {
+      extrusionDirection: [0, 0, 1],
+    })
+    const result = cutter
+    cutter = null
+    return result
+  } finally {
+    deleteShape(cutter)
+    deleteShape(sketch)
+    sketcher.delete()
+  }
+}
+
+export function placeOpenGridDetachableCornerSeatIndicatorShape(
+  source: Shape3D,
+  placement: OpenGridDetachableCornerSeatIndicatorPlacement,
+): Shape3D {
+  let placed: Shape3D | null = null
+  try {
+    placed = source.clone()
+    // Positive Z rotation is clockwise when the bottom of the assembly is viewed.
+    if (placement.rotationDegrees % 360 !== 0) {
+      placed = replaceOwnedShape(
+        placed,
+        placed.rotate(placement.rotationDegrees, [0, 0, 0], [0, 0, 1]),
+      )
+    }
+    placed = replaceOwnedShape(
+      placed,
+      placed.translate(placement.center[0], placement.center[1], 0),
+    )
+    const result = placed
+    placed = null
+    return result
+  } catch (error) {
+    deleteShape(placed)
+    throw error
+  }
+}
+
+function cutDetachableCornerSeatIndicator(shape: Shape3D): Shape3D {
+  let cutter: Shape3D | null = null
+  try {
+    cutter = buildOpenGridDetachableCornerSeatIndicatorCutter()
+    const marked = runGeometryStage(
+      'OPENGRID_DETACHABLE_CORNER_SEAT_INDICATOR_CUT_FAILED',
+      () => shape.cut(cutter!, { optimisation: 'none' }),
+    )
+    deleteShape(shape)
+    return marked
+  } catch (error) {
+    deleteShape(shape)
+    throw error
+  } finally {
+    deleteShape(cutter)
   }
 }
 
@@ -229,6 +307,7 @@ export function buildOpenGridDetachableCornerSeatFromReference(
   assertReference(reference, 'male')
   let result: Shape3D | null = reference.clone()
   try {
+    result = cutDetachableCornerSeatIndicator(result)
     assertGeneratedMale(result)
     const generated = result
     result = null

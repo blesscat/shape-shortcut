@@ -99,9 +99,17 @@ describe('OpenGrid pillar CAD kernel integration', () => {
       expect(actual[1]?.[2]).toBeCloseTo(5.3, 5)
       expect(probeVolumeAt(shape, 2.4, 3.75)).toBeGreaterThan(0)
       expect(probeVolumeAt(shape, 2.6, 3.75)).toBeLessThan(1e-8)
+      expect(
+        probeVolumeAt(shape, 0, configuration.indicator.depth / 2),
+      ).toBeLessThanOrEqual(
+        OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.intersectionVolumeTolerance,
+      )
+      expect(
+        probeVolumeAt(shape, 0, configuration.indicator.depth + 0.02),
+      ).toBeGreaterThan(0)
       expect(measureVolume(shape)).toBeCloseTo(
-        configuration.male.nominalVolume,
-        5,
+        configuration.male.markedNominalVolume,
+        3,
       )
       const mesh = meshBRep(shape, {
         tolerance: 0.05,

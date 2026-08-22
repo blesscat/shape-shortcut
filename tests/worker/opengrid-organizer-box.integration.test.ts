@@ -3,9 +3,16 @@ import { readFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { makeBox, measureVolume, setOC, type Shape3D } from 'replicad'
+import {
+  makeBox,
+  measureVolume,
+  setOC,
+  type Edge,
+  type Shape3D,
+} from 'replicad'
 import {
   boundsForOpenGridOrganizerBox,
+  openGridOrganizerBoxDetachableIndicatorPlacementFor,
   openGridOrganizerBoxDetachableSocketPosesFor,
   openGridStackableBoxSocketCentersFor,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
@@ -22,6 +29,7 @@ import {
 import { buildOpenGridOrganizerBox } from '../../src/cad-kernel/components/opengrid-organizer-box/builder'
 import { assertOpenGridOrganizerBoxGeometry } from '../../src/cad-kernel/components/opengrid-organizer-box/quality'
 import {
+  buildOpenGridDetachableCornerSeatFromReference,
   buildOpenGridDetachableCornerSeatSocketVoid,
   importOpenGridDetachableCornerSeatHolderReference,
   importOpenGridDetachableCornerSeatReference,
@@ -111,7 +119,191 @@ function horizontalFaceZValuesAt(
   return values
 }
 
+function readEdgeStart(edge: Edge): [number, number] {
+  const point = edge.startPoint
+  try {
+    return [point.x ?? Number.NaN, point.y ?? Number.NaN]
+  } finally {
+    point.delete()
+  }
+}
+
+function markerTriangleVerticesAt(
+  shape: Shape3D,
+  center: [number, number],
+): [number, number][] | null {
+  const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+  for (const face of shape.faces) {
+    const boundingBox = face.boundingBox
+    let edges: Edge[] = []
+    try {
+      const [minimum, maximum] = boundingBox.bounds as [
+        [number, number, number],
+        [number, number, number],
+      ]
+      const isMarkerFloor =
+        face.surface.surfaceType === 'PLANE' &&
+        Math.abs(minimum[2] - configuration.indicator.depth) <= 0.02 &&
+        Math.abs(maximum[2] - configuration.indicator.depth) <= 0.02 &&
+        maximum[0] - minimum[0] <= configuration.indicator.width + 0.2 &&
+        maximum[1] - minimum[1] <= configuration.indicator.radialLength + 0.2 &&
+        minimum[0] <= center[0] &&
+        maximum[0] >= center[0] &&
+        minimum[1] <= center[1] &&
+        maximum[1] >= center[1]
+      if (!isMarkerFloor) continue
+      edges = face.edges
+      if (edges.length !== 3) continue
+      return edges
+        .map(readEdgeStart)
+        .sort(([firstX, firstY], [secondX, secondY]) => {
+          if (firstX !== secondX) return firstX - secondX
+          return firstY - secondY
+        })
+    } finally {
+      edges.forEach((edge) => edge.delete())
+      boundingBox.delete()
+      face.delete()
+    }
+  }
+  return null
+}
+
+function markerTriangleFloorCount(shape: Shape3D): number {
+  const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+  let count = 0
+  for (const face of shape.faces) {
+    const boundingBox = face.boundingBox
+    let edges: Edge[] = []
+    try {
+      const [minimum, maximum] = boundingBox.bounds as [
+        [number, number, number],
+        [number, number, number],
+      ]
+      const isMarkerFloor =
+        face.surface.surfaceType === 'PLANE' &&
+        Math.abs(minimum[2] - configuration.indicator.depth) <= 0.02 &&
+        Math.abs(maximum[2] - configuration.indicator.depth) <= 0.02 &&
+        maximum[0] - minimum[0] <= configuration.indicator.width + 0.2 &&
+        maximum[1] - minimum[1] <= configuration.indicator.radialLength + 0.2
+      if (!isMarkerFloor) continue
+      edges = face.edges
+      if (edges.length === 3) count += 1
+    } finally {
+      edges.forEach((edge) => edge.delete())
+      boundingBox.delete()
+      face.delete()
+    }
+  }
+  return count
+}
+
+function rotateBottomViewPoint(
+  point: [number, number],
+  rotationDegrees: number,
+): [number, number] {
+  const radians = (rotationDegrees * Math.PI) / 180
+  const cosine = Math.cos(radians)
+  const sine = Math.sin(radians)
+  return [
+    point[0] * cosine - point[1] * sine,
+    point[0] * sine + point[1] * cosine,
+  ]
+}
+
+function markerVerticesRelativeTo(
+  vertices: readonly [number, number][],
+  center: [number, number],
+): [number, number][] {
+  return vertices
+    .map(([x, y]) => [x - center[0], y - center[1]] as [number, number])
+    .sort(([firstX, firstY], [secondX, secondY]) => {
+      if (firstX !== secondX) return firstX - secondX
+      return firstY - secondY
+    })
+}
+
 describe('OpenGrid organizer-box B-Rep', () => {
+  it('places each female marker on its locked reference-arrow side', async () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      bottomInterfaceMode: 'detachable-corner-seat',
+    })
+    const [maleReference, holderReference] = await Promise.all([
+      importOpenGridDetachableCornerSeatReference(
+        new Blob([await readFile(DETACHABLE_CORNER_SEAT_ASSET_URL)], {
+          type: 'model/step',
+        }),
+      ),
+      importOpenGridDetachableCornerSeatHolderReference(
+        new Blob([await readFile(DETACHABLE_CORNER_SEAT_HOLDER_ASSET_URL)], {
+          type: 'model/step',
+        }),
+      ),
+    ])
+    const markedMale =
+      buildOpenGridDetachableCornerSeatFromReference(maleReference)
+    const box = buildOpenGridOrganizerBox(input, {
+      detachableCornerSeatReference: maleReference,
+      detachableCornerSeatHolderReference: holderReference,
+    })
+    try {
+      const maleVertices = markerTriangleVerticesAt(markedMale, [0, 0])
+      expect(maleVertices).not.toBeNull()
+      if (!maleVertices) return
+      const maleRelativeVertices = markerVerticesRelativeTo(
+        maleVertices,
+        [0, 0],
+      )
+      const maleApex = [...maleRelativeVertices].sort(
+        ([firstX], [secondX]) => secondX - firstX,
+      )[0]
+      expect(maleApex?.[0]).toBeCloseTo(
+        OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.indicator.radialLength /
+          2,
+        3,
+      )
+      expect(maleApex?.[1]).toBeCloseTo(0, 3)
+
+      for (const pose of openGridOrganizerBoxDetachableSocketPosesFor(input)) {
+        const placement =
+          openGridOrganizerBoxDetachableIndicatorPlacementFor(pose)
+        const femaleVertices = markerTriangleVerticesAt(box, placement.center)
+        expect(femaleVertices, pose.corner).not.toBeNull()
+        if (!femaleVertices) continue
+
+        const expectedVertices = markerVerticesRelativeTo(
+          maleVertices.map((vertex) =>
+            rotateBottomViewPoint(
+              vertex,
+              pose.rotationDegrees +
+                OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.indicator
+                  .lockRotationDegrees +
+                180,
+            ),
+          ),
+          [0, 0],
+        )
+        const actualVertices = markerVerticesRelativeTo(
+          femaleVertices,
+          placement.center,
+        )
+        expect(actualVertices, pose.corner).toHaveLength(3)
+        actualVertices.forEach((actual, index) => {
+          const expected = expectedVertices[index]
+          expect(actual[0], pose.corner).toBeCloseTo(expected?.[0] ?? NaN, 3)
+          expect(actual[1], pose.corner).toBeCloseTo(expected?.[1] ?? NaN, 3)
+        })
+      }
+    } finally {
+      deleteShape(box)
+      deleteShape(markedMale)
+      deleteShape(maleReference)
+      deleteShape(holderReference)
+    }
+  }, 180_000)
+
   it('cuts four B-oriented retaining sockets directly into one box solid', async () => {
     const [maleReference, holderReference] = await Promise.all([
       importOpenGridDetachableCornerSeatReference(
@@ -134,6 +326,8 @@ describe('OpenGrid organizer-box B-Rep', () => {
       detachableCornerSeatReference: maleReference,
       detachableCornerSeatHolderReference: holderReference,
     })
+    const markedMale =
+      buildOpenGridDetachableCornerSeatFromReference(maleReference)
     const socketVoid =
       buildOpenGridDetachableCornerSeatSocketVoid(holderReference)
     try {
@@ -150,6 +344,34 @@ describe('OpenGrid organizer-box B-Rep', () => {
       expect(poses.map((pose) => pose.rotationDegrees)).toEqual([
         0, 90, 180, 270,
       ])
+      expect(markerTriangleFloorCount(shape)).toBe(4)
+
+      for (const pose of poses) {
+        const indicator =
+          openGridOrganizerBoxDetachableIndicatorPlacementFor(pose)
+        const recessProbe = probeVolume(shape, [
+          [indicator.center[0] - 0.08, indicator.center[1] - 0.08, 0.05],
+          [indicator.center[0] + 0.08, indicator.center[1] + 0.08, 0.13],
+        ])
+        const materialProbe = probeVolume(shape, [
+          [indicator.center[0] - 0.08, indicator.center[1] - 0.08, 0.17],
+          [indicator.center[0] + 0.08, indicator.center[1] + 0.08, 0.25],
+        ])
+        expect(recessProbe, pose.corner).toBeLessThanOrEqual(
+          OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.intersectionVolumeTolerance,
+        )
+        expect(materialProbe, pose.corner).toBeGreaterThan(0)
+        expect(
+          horizontalFaceZValuesAt(shape, indicator.center).some(
+            (z) =>
+              Math.abs(
+                z -
+                  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.indicator.depth,
+              ) <= 0.02,
+          ),
+          pose.corner,
+        ).toBe(true)
+      }
 
       const layout = openGridOrganizerBoxLayoutFor(input)
       const cavityCenter = layout.cavityCenters[0]
@@ -172,7 +394,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
           pose,
         )
         const placedMale = placeOpenGridDetachableCornerSeatMaleShape(
-          maleReference,
+          markedMale,
           pose,
         )
         let voidIntersection: Shape3D | null = null
@@ -239,11 +461,29 @@ describe('OpenGrid organizer-box B-Rep', () => {
       ).toBe(0)
     } finally {
       deleteShape(socketVoid)
+      deleteShape(markedMale)
       deleteShape(shape)
       deleteShape(maleReference)
       deleteShape(holderReference)
     }
   }, 180_000)
+
+  it.each(['corner-seat', 'stackable'] as const)(
+    'does not add detachable marker floors in %s mode',
+    (bottomInterfaceMode) => {
+      const input = parameters({
+        holeCountX: 1,
+        holeCountY: 1,
+        bottomInterfaceMode,
+      })
+      const shape = buildOpenGridOrganizerBox(input)
+      try {
+        expect(markerTriangleFloorCount(shape)).toBe(0)
+      } finally {
+        deleteShape(shape)
+      }
+    },
+  )
 
   it('builds blind circular cavities with a solid top and four-corner mode', () => {
     const input = parameters({

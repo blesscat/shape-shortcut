@@ -123,6 +123,22 @@ describe('OpenGrid locating and assembly interface contract', () => {
     ).toBeCloseTo(configuration.female.keySideClearance * 2, 8)
   })
 
+  it('publishes the visual lock-indicator contract', () => {
+    const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+
+    expect(configuration.indicator).toMatchObject({
+      width: 2,
+      radialLength: 2,
+      depth: 0.15,
+      lockRotationDegrees: 90,
+    })
+    expect(configuration.male.markedNominalVolume).toBeCloseTo(
+      configuration.male.nominalVolume -
+        configuration.indicator.nominalRemovedVolume,
+      8,
+    )
+  })
+
   it.each(['translateZ', 'rotate', 'translate'] as const)(
     'deletes the owned clone when %s placement fails',
     (failedTransform) => {

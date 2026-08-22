@@ -4,6 +4,7 @@ import {
   openGridOrganizerBoxCavityEnvelopeFor,
   openGridOrganizerBoxLayoutFor,
   openGridOrganizerBoxDetachableSocketPosesFor,
+  openGridOrganizerBoxDetachableIndicatorPlacementFor,
   openGridOrganizerBoxFileName,
   openGridOrganizerBoxStlFileName,
   OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
@@ -194,6 +195,55 @@ describe('OpenGrid organizer-box contract', () => {
     expect(boundsForOpenGridOrganizerBox(value).min[2]).toBe(0)
     expect(openGridOrganizerBoxFileName(value)).toContain(
       'idetachable-corner-seat',
+    )
+  })
+
+  it('places lock indicators on the reference-arrow sides', () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      bottomInterfaceMode: 'detachable-corner-seat',
+    })
+    const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+    const poses = openGridOrganizerBoxDetachableSocketPosesFor(value)
+    const placements = poses.map(
+      openGridOrganizerBoxDetachableIndicatorPlacementFor,
+    )
+    const offset =
+      configuration.female.outerDiameter / 2 +
+      configuration.indicator.socketBoundaryClearance +
+      configuration.indicator.radialLength / 2
+
+    expect(placements.map(({ rotationDegrees }) => rotationDegrees)).toEqual([
+      270, 0, 90, 180,
+    ])
+    expect(placements[0]?.center[0]).toBe(poses[0]?.center[0])
+    expect(placements[0]?.center[1]).toBeCloseTo(
+      (poses[0]?.center[1] ?? 0) - offset,
+      8,
+    )
+    expect(placements[1]?.center[0]).toBeCloseTo(
+      (poses[1]?.center[0] ?? 0) - offset,
+      8,
+    )
+    expect(placements[1]?.center[1]).toBe(poses[1]?.center[1])
+    expect(placements[2]?.center[0]).toBe(poses[2]?.center[0])
+    expect(placements[2]?.center[1]).toBeCloseTo(
+      (poses[2]?.center[1] ?? 0) + offset,
+      8,
+    )
+    expect(placements[3]?.center[0]).toBeCloseTo(
+      (poses[3]?.center[0] ?? 0) + offset,
+      8,
+    )
+    expect(placements[3]?.center[1]).toBe(poses[3]?.center[1])
+    expect(
+      Math.abs((placements[0]?.center[1] ?? 0) - (poses[0]?.center[1] ?? 0)) -
+        configuration.indicator.radialLength / 2,
+    ).toBeCloseTo(
+      configuration.female.outerDiameter / 2 +
+        configuration.indicator.socketBoundaryClearance,
+      8,
     )
   })
 
