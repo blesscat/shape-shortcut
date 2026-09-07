@@ -385,7 +385,7 @@ export const zhHantMessages = {
   'cad.attribution.author.openConnectRole': 'OpenConnect 設計與 OpenSCAD',
   'cad.attribution.author.openConnectProjectRole': 'OpenConnect 專案',
   'cad.attribution.snap.modified':
-    '`snap-half` 與 `snap-quarter` 是根據原始 Snap 修改的衍生版本，固定下載檔名為 `Half.step` 與 `Quarter.step`；OpenConnect head 與底部介面缺口則根據 mitufy 的 OpenConnect 系統整合，來源授權為 CC BY 4.0。',
+    '`snap-half` 與 `snap-quarter` 是根據原始 Snap 修改的衍生版本；OpenConnect head 與底部介面缺口則根據 mitufy 的 OpenConnect 系統整合，來源授權為 CC BY 4.0。',
   'cad.attribution.openConnectShelf.modified':
     '產生器以附帶的鎖定孔 STEP 作為減法模板，並建立原生 OpenGrid Full 層板、支撐與列印朝向。',
   'cad.attribution.openConnectOrganizer.modified':
@@ -1181,7 +1181,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'cad.attribution.author.openConnectRole': 'OpenConnect design and OpenSCAD',
   'cad.attribution.author.openConnectProjectRole': 'OpenConnect project',
   'cad.attribution.snap.modified':
-    "`snap-half` and `snap-quarter` are modified derivatives of the original Snap design; the fixed download filenames are `Half.step` and `Quarter.step`. The OpenConnect head and underside interface notch are derived from mitufy's OpenConnect system under CC BY 4.0.",
+    "`snap-half` and `snap-quarter` are modified derivatives of the original Snap design. The OpenConnect head and underside interface notch are derived from mitufy's OpenConnect system under CC BY 4.0.",
   'cad.attribution.openConnectShelf.modified':
     'The generator uses the supplied locked-socket STEP as a subtractive template and builds the OpenGrid Full shelf, support structure, and print orientation natively.',
   'cad.attribution.openConnectOrganizer.modified':
