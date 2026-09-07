@@ -16,6 +16,7 @@
     "test:branch": "node scripts/affected-tests.mjs branch",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "playwright test -c playwright.prod.config.ts",
     "capture:model-previews": "CAPTURE_MODEL_PREVIEWS=1 playwright test tests/e2e/model-card-previews.spec.ts --project=chromium --workers=1",
     "verify:model-previews": "playwright test tests/e2e/model-card-previews.spec.ts --project=chromium --workers=1",
     "generate:desk-diagrams": "node scripts/desk-diagrams/generate.mjs",
