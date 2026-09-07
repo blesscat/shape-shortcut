@@ -51,34 +51,43 @@ The system MUST package the supplied `snap remover.step` under the `opengrid-sna
 
 ### Requirement: Zero-parameter OpenGrid workspace
 
-The `opengrid-snap-remover` definition MUST use an empty parameter object `{}` and an empty parameter schema. Its workspace sidebar MUST NOT render text fields, sliders, or parameter error controls for this component. The sidebar MUST still expose the component name, state/progress, retry behavior when applicable, and the existing STEP download action.
+The `opengrid-snap-remover` definition MUST use an empty parameter object `{}` and an empty parameter schema. Its workspace sidebar MUST NOT render text fields, sliders, or parameter error controls for this component. The sidebar MUST still expose the component name, state/progress, and retry behavior when applicable. The sidebar MUST present the existing STEP download action only in local dev builds; a production build MUST NOT render the STEP download action.
 
 #### Scenario: No parameter controls
 
 - **WHEN** a user opens `/cad/opengrid-snap-remover`
 - **THEN** the sidebar MUST show the OpenGrid component name
 - **AND** it MUST NOT show a parameter field, slider, parameter legend, or parameter validation message
-- **AND** the existing status area and `下載 STEP` action MUST remain available
+- **AND** the status area MUST remain available
+- **AND** in a local dev build the `下載 STEP` action MUST remain available
 
 #### Scenario: Fixed component export
 
-- **WHEN** the imported OpenGrid model reaches ready state and the user activates `下載 STEP`
+- **WHEN** the imported OpenGrid model reaches ready state and the user activates `下載 STEP` in a local dev build
 - **THEN** the Worker MUST export the committed OpenGrid revision
 - **AND** the browser MUST download a non-empty `.step` file named `snap remover.step`
 - **AND** the export MUST not require a parameter change
 
+#### Scenario: Production build hides the STEP download action
+
+- **WHEN** a production build renders `/cad/opengrid-snap-remover` and the model reaches ready state
+- **THEN** the `下載 STEP` action MUST NOT be rendered
+- **AND** the component name, status/progress, and retry behavior MUST remain available
+
 ### Requirement: Existing catalog and export preservation
 
-The new preview-only component MUST be additive. It MUST NOT replace, hide, or remove the existing `box` and `modular-grid-base` catalog entries, routes, parameter controls, preview behavior, or dynamic STEP export behavior.
+The new preview-only component MUST be additive. It MUST NOT replace, hide, or remove the existing `box` and `modular-grid-base` catalog entries, routes, parameter controls, preview behavior, or dynamic STEP export behavior. Consistent with the workspace-wide STEP presentation rule, the STEP download action on every generator page MUST be presented only in local dev builds; a production build MUST NOT render it, while the catalog entries, routes, parameter controls, and preview behavior MUST remain unchanged.
 
 #### Scenario: Existing box remains usable
 
 - **WHEN** a user opens `/cad/box`
 - **THEN** the box width, depth, and height controls MUST remain visible
-- **AND** the box preview and STEP export MUST remain available
+- **AND** the box preview MUST remain available
+- **AND** in a local dev build the box STEP export MUST remain available
 
 #### Scenario: Existing modular grid remains usable
 
 - **WHEN** a user opens `/cad/modular-grid-base`
 - **THEN** the rows and columns controls MUST remain visible
-- **AND** the modular grid preview and STEP export MUST remain available
+- **AND** the modular grid preview MUST remain available
+- **AND** in a local dev build the modular grid STEP export MUST remain available

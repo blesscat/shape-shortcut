@@ -697,7 +697,7 @@ The Snap panel MUST display the red warning `格型測試中 不保證可使用`
 
 ### Requirement: Fixed half and quarter STEP downloads
 
-When the user selects `footprint=half`, the Snap workspace MUST provide a fixed repository-owned STEP download named `Half.step`; when the user selects `footprint=quarter`, it MUST provide a fixed repository-owned STEP download named `Quarter.step`. These downloads MUST use `snap-half.step` and `snap-quarter.step` respectively, MUST NOT send an incremental `export.step` request to the Worker, and MUST NOT depend on the profile, variant, optional-hole fields, or offset values. The preview for Half and Quarter MUST also load and display the corresponding fixed STEP asset, without an incremental Worker build. The fixed assets MUST be validated as millimetre STEP B-Reps with non-empty solid geometry. The Snap panel MUST disable the shared X/Y offset control and both optional-hole controls for Half and Quarter, reset the offset and optional-hole parameters to their inactive values when either footprint is selected, and explain that 增量無效、定位孔無效、移除孔無效. Full MUST retain the adjustable offset and optional-hole controls.
+When the user selects `footprint=half`, the Snap workspace MUST provide a fixed repository-owned STEP download named `Half.step`; when the user selects `footprint=quarter`, it MUST provide a fixed repository-owned STEP download named `Quarter.step`. These downloads MUST use `snap-half.step` and `snap-quarter.step` respectively, MUST NOT send an incremental `export.step` request to the Worker, and MUST NOT depend on the profile, variant, optional-hole fields, or offset values. The preview for Half and Quarter MUST also load and display the corresponding fixed STEP asset, without an incremental Worker build. The fixed assets MUST be validated as millimetre STEP B-Reps with non-empty solid geometry. The Snap panel MUST disable the shared X/Y offset control and both optional-hole controls for Half and Quarter, reset the offset and optional-hole parameters to their inactive values when either footprint is selected, and explain that 增量無效、定位孔無效、移除孔無效. Full MUST retain the adjustable offset and optional-hole controls. The fixed STEP download action MUST be presented only in local dev builds; a production build MUST NOT render it, while the fixed STEP preview assets and panel control behavior MUST remain unchanged.
 
 #### Scenario: Half uses the fixed STEP asset
 
@@ -718,6 +718,13 @@ When the user selects `footprint=half`, the Snap workspace MUST provide a fixed 
 - **THEN** the shared X/Y offset control MUST be disabled and show zero
 - **AND** the locating-hole and remover-hole controls MUST be disabled and show that they are invalid
 - **AND** selecting Full MUST re-enable the offset control
+
+#### Scenario: Production build hides the fixed STEP download action
+
+- **WHEN** a production build renders the Snap workspace with `footprint=half` or `footprint=quarter`
+- **THEN** the `下載 STEP` action MUST NOT be rendered
+- **AND** the Half/Quarter preview MUST still load and display the corresponding fixed STEP asset
+- **AND** the offset and optional-hole controls MUST still be disabled with their explanations visible
 
 ### Requirement: OpenGrid Snap workspace controls
 
