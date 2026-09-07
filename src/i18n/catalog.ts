@@ -467,8 +467,7 @@ export const zhHantMessages = {
   'cad.action.step': '下載 STEP',
   'cad.action.stl': '下載 STL',
   'cad.action.threeMf': '下載 3MF',
-  'cad.wallCover.threeMfNote':
-    '雙色效果僅適用於 3MF；STEP 不包含雙色列印資訊。',
+  'cad.wallCover.threeMfNote': '雙色效果僅適用於 3MF。',
   'cad.action.retry': '重試',
   'cad.system.current': '目前系統：{name}',
   'cad.error.title.initializing': 'CAD engine 載入失敗',
@@ -1265,8 +1264,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'cad.action.step': 'Download STEP',
   'cad.action.stl': 'Download STL',
   'cad.action.threeMf': 'Download 3MF',
-  'cad.wallCover.threeMfNote':
-    'The two-color effect is available only in 3MF; STEP does not include two-color printing information.',
+  'cad.wallCover.threeMfNote': 'The two-color effect is available only in 3MF.',
   'cad.action.retry': 'Retry',
   'cad.system.current': 'Current system: {name}',
   'cad.error.title.initializing': 'CAD engine failed to load',
