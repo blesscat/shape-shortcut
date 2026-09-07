@@ -8,7 +8,7 @@
 
 Prototype 目前包含由 model catalog 管理的多個獨立 CAD component、各 component
 自己的有效參數與 browser-local 參數保存、瀏覽器內的 B-Rep 建模與 3D 預覽，
-以及從目前成功模型下載 STEP 與 STL；catalog、route 與 component-specific
+以及從目前成功模型下載 STL（STEP 下載僅於本地 dev build 提供）；catalog、route 與 component-specific
 參數契約由各自 capability 規格負責。
 
 未註冊的模型、3MF、G-code、任意 CAD 匯入、生成檔案/模型的專案儲存、auth、collaboration 與後端 CAD 服務不屬於本 Prototype；目前可用模型以 model catalog 與其 capability specs 為準，各 component 的 STL、參數保存與模型選擇行為由其 capability 規格定義。
@@ -444,7 +444,10 @@ The system MUST generate STEP from the selected component's pinned committed mod
 revision in the Worker and MUST never reconstruct STEP from the viewport mesh.
 The selected catalog or component capability MUST supply the export metadata and
 deterministic filename; the generic workspace MUST not hardcode a
-component-specific filename.
+component-specific filename. The workspace MUST present the STEP download action
+only in local dev builds; a production build MUST NOT render a STEP download
+action for any model. The STEP export contract itself is unchanged and remains
+fully exercised in local dev builds, including fixed STEP downloads.
 
 #### Scenario: Component STEP 匯出成功
 
@@ -480,6 +483,19 @@ component-specific filename.
 - **When** request 尚未進入 accepted state
 - **Then** UI MUST NOT report a successful download
 - **And** export gate MUST remain tied to the accepted committed revision
+
+#### Scenario: 生產 build 不呈現 STEP 下載
+
+- **When** 使用者以 production build 開啟任一 generator 頁面並進入 ready 狀態
+- **THEN** 工作區 MUST NOT 渲染「下載 STEP」按鈕
+- **And** STEP 以外的下載動作（STL；`opengrid-wall-cover` 的 3MF）MUST 仍可用
+- **And** 匯出失敗或逾時的錯誤處理行為 MUST 不受隱藏按鈕影響
+
+#### Scenario: 本機 dev build 保留 STEP 下載
+
+- **When** 使用者以本地 dev build 開啟任一 generator 頁面並進入 ready 狀態
+- **THEN** 工作區 MUST 呈現「下載 STEP」按鈕
+- **And** 其行為 MUST 符合本需求其餘情境所述的 STEP 匯出契約
 
 ### Requirement: 狀態與錯誤
 The system MUST satisfy the following behavior:

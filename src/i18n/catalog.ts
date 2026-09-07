@@ -30,7 +30,7 @@ export const zhHantMessages = {
   'home.eyebrow': 'Shape Shortcut · 瀏覽器 CAD 工具',
   'home.metaTitle': 'OpenGrid 客製化產生器｜Shape Shortcut 瀏覽器 CAD',
   'home.metaDescription':
-    '在瀏覽器調整 OpenGrid 桌面與牆面收納模型：即時 3D 預覽、匯出 STEP 與 STL，模型下載永久免費、運算全程在本機完成。',
+    '在瀏覽器調整 OpenGrid 桌面與牆面收納模型：即時 3D 預覽、下載 STL，模型下載永久免費、運算全程在本機完成。',
   'home.title': '把 3D 列印收納模型集中在同一個地方',
   'home.description':
     'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：調整 3D 列印收納模型、即時預覽、直接下載——運算全程在你的瀏覽器完成，模型下載永久免費。',
@@ -54,9 +54,9 @@ export const zhHantMessages = {
   'home.feature.preview.title': '即時 3D 預覽',
   'home.feature.preview.description':
     '調整設定後直接檢查形狀，再決定是否下載。',
-  'home.feature.export.title': 'STEP 與 STL 匯出',
+  'home.feature.export.title': 'STL 與 3MF 匯出',
   'home.feature.export.description':
-    '不只 STL——匯出可回 CAD 軟體繼續編輯的 STEP，不是近似網格。',
+    '下載可直接列印的 STL；OpenGrid Wall Cover 另提供雙色 3MF 多色列印檔，全部在你的瀏覽器產生。',
   'home.desk.eyebrow': '主要使用情境',
   'home.desk.title': '從一塊 Board 開始，組出自己的 Desk System',
   'home.desk.description':
@@ -135,7 +135,7 @@ export const zhHantMessages = {
   'models.parameterRange': '{label}：{min}–{max} {unit}',
   'models.fixedParameters': '固定幾何，沒有可調參數。',
   'models.exportFormats': '匯出格式',
-  'models.exportFormatsValue': 'STEP、STL 與 OpenGrid Wall Cover 雙色 3MF',
+  'models.exportFormatsValue': 'STL 與 OpenGrid Wall Cover 雙色 3MF',
   'models.exportFormatsLine': '{label}：{value}',
   'models.previewUnavailable': '預覽圖片暫時無法載入',
   'models.edit': '編輯 →',
@@ -209,9 +209,9 @@ export const zhHantMessages = {
   'models.model.opengrid-snap-remover.name': 'OpenGrid Snap Remover',
   'models.model.opengrid-snap-remover.selection': 'Snap Remover',
   'models.model.opengrid-snap-remover.description':
-    '固定 STEP 預覽，不提供參數調整。',
+    '固定模型預覽，不提供參數調整。',
   'models.model.opengrid-snap-remover.staticParameters':
-    '固定 STEP 預覽，沒有可調參數。',
+    '固定模型預覽，沒有可調參數。',
   'models.model.opengrid-snap-remover.alt': 'OpenGrid Snap Remover 預覽',
   'models.model.opengrid-open-shelf.name': 'OpenGrid Open Shelf (斜開格櫃)',
   'models.model.opengrid-open-shelf.selection': 'Open Shelf (斜開格櫃)',
@@ -356,7 +356,7 @@ export const zhHantMessages = {
     '幾何尺寸使用 mm，角度使用度數，網格數與數量使用格或支；模型 ID、參數鍵與列舉值維持語系中立。',
   'docs.exportsHeading': '匯出格式',
   'docs.exportsBody':
-    '互動模型可從瀏覽器下載 STEP 與 STL；固定預覽模型則提供其對應的 STEP 檔案。',
+    '互動模型可從瀏覽器下載 STL；OpenGrid Wall Cover 另提供雙色 3MF。',
   'docs.browserHeading': '瀏覽器需求',
   'docs.browserBody':
     '互動 CAD 預覽需要 JavaScript、WebAssembly、Web Worker 與 WebGL；沒有 JavaScript 時仍可讀取本頁的靜態說明與參考文字。',
@@ -369,7 +369,7 @@ export const zhHantMessages = {
   'cad.staticSummary': '模型摘要',
   'cad.parametersHeading': '可調參數與限制',
   'cad.fixedParameters': '這個模型使用固定幾何，沒有可調參數。',
-  'cad.exportFormats': '可用匯出格式：STEP 與 STL。',
+  'cad.exportFormats': '可用匯出格式：STL。',
   'cad.attribution.heading': '來源與授權',
   'cad.attribution.opengrid.summary':
     '這個 OpenGrid Board 使用下列上游作者與授權資訊。',
@@ -545,8 +545,8 @@ export const zhHantMessages = {
   'cad.progress.stage.building.message': '正在建立 B-Rep…',
   'cad.progress.stage.meshing.label': '產生預覽 mesh',
   'cad.progress.stage.meshing.message': '正在產生預覽 mesh…',
-  'cad.progress.stage.exporting.label': '匯出 STEP',
-  'cad.progress.stage.exporting.message': '正在匯出 STEP…',
+  'cad.progress.stage.exporting.label': '匯出中',
+  'cad.progress.stage.exporting.message': '正在匯出模型…',
   'cad.progress.unit.cells': '格',
   'cad.progress.unit.batches': '批次',
   'cad.progress.unit.steps': '步驟',
@@ -817,7 +817,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'home.eyebrow': 'Shape Shortcut · Browser CAD tools',
   'home.metaTitle': 'OpenGrid customizer | Shape Shortcut browser CAD',
   'home.metaDescription':
-    'Customize OpenGrid desk and wall storage models in your browser: live 3D preview, STEP and STL export, free downloads, all computed locally.',
+    'Customize OpenGrid desk and wall storage models in your browser: live 3D preview, STL download, free downloads, all computed locally.',
   'home.title': 'Parametric 3D-printing storage models in one browser tab',
   'home.description':
     'Shape Shortcut is a no-install browser CAD tool: adjust 3D-printing storage models, preview live, and download the file—all computation runs in your browser, and model downloads are free forever.',
@@ -841,9 +841,9 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'home.feature.preview.title': 'Live 3D preview',
   'home.feature.preview.description':
     'Inspect the shape as you adjust it before deciding to download.',
-  'home.feature.export.title': 'STEP and STL export',
+  'home.feature.export.title': 'STL and 3MF export',
   'home.feature.export.description':
-    'Not just STL—export STEP geometry you can keep editing in CAD, not an approximated mesh.',
+    'Download print-ready STL files; OpenGrid Wall Cover also exports dual-color 3MF for multi-color printing, all generated in your browser.',
   'home.desk.eyebrow': 'Featured workflow',
   'home.desk.title': 'Start with a Board and build your Desk System',
   'home.desk.description':
@@ -927,8 +927,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'models.parameterRange': '{label}: {min}–{max} {unit}',
   'models.fixedParameters': 'Fixed geometry with no adjustable parameters.',
   'models.exportFormats': 'Export formats',
-  'models.exportFormatsValue':
-    'STEP, STL, and the OpenGrid Wall Cover two-color 3MF',
+  'models.exportFormatsValue': 'STL and the OpenGrid Wall Cover two-color 3MF',
   'models.exportFormatsLine': '{label}: {value}',
   'models.previewUnavailable': 'Preview image is temporarily unavailable',
   'models.edit': 'Edit →',
@@ -1002,9 +1001,9 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'models.model.opengrid-snap-remover.name': 'OpenGrid Snap Remover',
   'models.model.opengrid-snap-remover.selection': 'Snap Remover',
   'models.model.opengrid-snap-remover.description':
-    'A fixed STEP preview with no adjustable parameters.',
+    'A fixed model preview with no adjustable parameters.',
   'models.model.opengrid-snap-remover.staticParameters':
-    'Fixed STEP preview with no adjustable parameters.',
+    'Fixed model preview with no adjustable parameters.',
   'models.model.opengrid-snap-remover.alt': 'OpenGrid Snap Remover preview',
   'models.model.opengrid-open-shelf.name': 'OpenGrid Open Shelf',
   'models.model.opengrid-open-shelf.selection': 'Open Shelf',
@@ -1153,7 +1152,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'Geometry dimensions use mm, angles use degrees, and grid/count values use cells or columns. Model IDs, parameter keys, and enum values remain locale-neutral.',
   'docs.exportsHeading': 'Export formats',
   'docs.exportsBody':
-    'Interactive models can download STEP and STL files in the browser. Fixed preview models provide their corresponding STEP file.',
+    'Interactive models can download STL files in the browser; OpenGrid Wall Cover also provides a two-color 3MF.',
   'docs.browserHeading': 'Browser requirements',
   'docs.browserBody':
     'The interactive CAD preview requires JavaScript, WebAssembly, Web Worker, and WebGL. Without JavaScript, this page still exposes its static instructions and reference text.',
@@ -1167,7 +1166,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'cad.parametersHeading': 'Adjustable parameters and constraints',
   'cad.fixedParameters':
     'This model uses fixed geometry and has no adjustable parameters.',
-  'cad.exportFormats': 'Available export formats: STEP and STL.',
+  'cad.exportFormats': 'Available export format: STL.',
   'cad.attribution.heading': 'Source and licensing',
   'cad.attribution.opengrid.summary':
     'This OpenGrid Board uses the following upstream attribution and licensing information.',
@@ -1354,8 +1353,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'cad.progress.stage.building.message': 'Building B-Rep…',
   'cad.progress.stage.meshing.label': 'Generate preview mesh',
   'cad.progress.stage.meshing.message': 'Generating preview mesh…',
-  'cad.progress.stage.exporting.label': 'Export STEP',
-  'cad.progress.stage.exporting.message': 'Exporting STEP…',
+  'cad.progress.stage.exporting.label': 'Exporting',
+  'cad.progress.stage.exporting.message': 'Exporting model…',
   'cad.progress.unit.cells': 'cells',
   'cad.progress.unit.batches': 'batches',
   'cad.progress.unit.steps': 'steps',

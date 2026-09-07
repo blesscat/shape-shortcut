@@ -179,7 +179,7 @@ test('model chooser keeps compact cards and stable modal details', async ({
   await expect(dialog.getByRole('heading', { name: 'Grid Box' })).toBeVisible()
   await expect(dialog).not.toContainText('Adjustable settings:')
   await expect(dialog).toContainText('Inner clear height')
-  await expect(dialog).toContainText(/STEP.*STL/)
+  await expect(dialog).toContainText(/STL.*3MF/)
 
   const boundsAfter = await cards.evaluateAll((cardElements) =>
     cardElements.map((card) => {

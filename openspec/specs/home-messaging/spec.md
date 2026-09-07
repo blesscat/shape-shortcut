@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定義首頁行銷訊息的靜態可觀察要求：差異化主張（本機運算、模型下載永久免費、真 STEP 匯出）必須出現在第一屏、搜尋 metadata 與 hero 文案分離、HSW 不在首頁被點名為主打系統，以及 prototype 聲明的披露位置。
+定義首頁行銷訊息的靜態可觀察要求：差異化主張（本機運算、模型下載永久免費、STL 與 Wall Cover 雙色 3MF 下載）必須出現在第一屏、搜尋 metadata 與 hero 文案分離、HSW 不在首頁被點名為主打系統，以及 prototype 聲明的披露位置。
 
 ## Requirements
 
@@ -12,18 +12,20 @@
 
 1. CAD 運算在使用者的瀏覽器完成（本機運算主張）。
 2. 模型下載永久免費。
-3. 匯出可回 CAD 軟體繼續編輯的 STEP，而非僅有近似網格。
+3. 可下載直接列印的 STL；`opengrid-wall-cover` 另提供雙色 3MF。公開首頁文案 MUST NOT 以 STEP 匯出作為產品主張。
 
 #### Scenario: 繁中首頁呈現三項主張
 
 - **WHEN** 使用者開啟 `/zh-Hant/`
-- **THEN** 首頁可見文案 MUST 同時包含本機運算、模型下載永久免費與真 STEP 匯出三個主張
+- **THEN** 首頁可見文案 MUST 同時包含本機運算、模型下載永久免費與 STL（含 Wall Cover 雙色 3MF）下載三個主張
+- **AND** 首頁可見文案與搜尋 metadata MUST NOT 宣稱提供 STEP 匯出
 - **AND** 這些主張 MUST 存在於 server-rendered HTML，不需要執行 JavaScript 即可讀取
 
 #### Scenario: 英文首頁呈現對應主張
 
 - **WHEN** 使用者開啟 `/en/`
 - **THEN** 首頁可見文案 MUST 以英文呈現相同的三個主張
+- **AND** 首頁可見文案與搜尋 metadata MUST NOT 宣稱提供 STEP 匯出
 
 ### Requirement: 首頁搜尋 metadata 與 hero 文案分離
 

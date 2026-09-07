@@ -235,9 +235,7 @@ test('home, model selection, and docs are static Astro pages', async ({
     'MakerWorld Customizer',
   )
   await expect(page.getByText('即時 3D 預覽', { exact: true })).toBeVisible()
-  await expect(
-    page.getByText('STEP 與 STL 匯出', { exact: true }),
-  ).toBeVisible()
+  await expect(page.getByText('STL 與 3MF 匯出', { exact: true })).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Shape Shortcut' }),
   ).toHaveAttribute('aria-current', 'page')
@@ -608,7 +606,7 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   )
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    '在瀏覽器調整 OpenGrid 桌面與牆面收納模型：即時 3D 預覽、匯出 STEP 與 STL，模型下載永久免費、運算全程在本機完成。',
+    '在瀏覽器調整 OpenGrid 桌面與牆面收納模型：即時 3D 預覽、下載 STL，模型下載永久免費、運算全程在本機完成。',
   )
   await expect(
     page.getByRole('heading', {
@@ -618,7 +616,7 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   await expect(
     page.getByText('運算全程在你的瀏覽器完成，模型下載永久免費'),
   ).toBeVisible()
-  await expect(page.getByText(/不是近似網格/)).toBeVisible()
+  await expect(page.getByText(/雙色 3MF 多色列印檔/)).toBeVisible()
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
     'content',
@@ -659,7 +657,7 @@ test('English homepage uses localized promotional content and routes', async ({
   )
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    'Customize OpenGrid desk and wall storage models in your browser: live 3D preview, STEP and STL export, free downloads, all computed locally.',
+    'Customize OpenGrid desk and wall storage models in your browser: live 3D preview, STL download, free downloads, all computed locally.',
   )
   await expect(
     page.getByRole('heading', {
@@ -671,7 +669,9 @@ test('English homepage uses localized promotional content and routes', async ({
       /all computation runs in your browser, and model downloads are free forever/,
     ),
   ).toBeVisible()
-  await expect(page.getByText(/not an approximated mesh/)).toBeVisible()
+  await expect(
+    page.getByText(/dual-color 3MF for multi-color printing/),
+  ).toBeVisible()
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expectHomepageExploreCards(page)
   await expect(

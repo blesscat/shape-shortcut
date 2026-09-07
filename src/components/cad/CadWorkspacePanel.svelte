@@ -97,14 +97,16 @@
     {/key}
   {/if}
   <div class="flex flex-wrap gap-[0.6rem]">
-    <button
-      class={ACTION_BUTTON_CLASS}
-      type="button"
-      disabled={!canExport}
-      onclick={() => onExport('step')}
-    >
-      {t('cad.action.step')}
-    </button>
+    {#if import.meta.env.DEV}
+      <button
+        class={ACTION_BUTTON_CLASS}
+        type="button"
+        disabled={!canExport}
+        onclick={() => onExport('step')}
+      >
+        {t('cad.action.step')}
+      </button>
+    {/if}
     {#if modelId !== 'opengrid-wall-cover'}
       <button
         class={ACTION_BUTTON_CLASS}
