@@ -22,11 +22,12 @@ rules:
 # Per-operation guidance (optional)
 # Add advisory guidance for how apply and archive work should be conducted.
 # This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - "Scope automated test runs by default - use `pnpm test:changed` or
+        `pnpm test:branch` for unit/worker coverage, and run only the e2e
+        specs that touch the changed surfaces. Reserve the full vitest suite
+        and the full dev-server e2e suite for cross-cutting changes (shared
+        catalogs, shared UI, contract files), a final pre-publish gate, or an
+        explicit user request."
