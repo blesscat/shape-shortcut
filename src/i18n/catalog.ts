@@ -492,6 +492,8 @@ export const zhHantMessages = {
     'OpenGrid 可堆疊圓柱參數無效，請檢查內徑與高度。',
   'diagnostic.opengridQualityInvalid':
     'OpenGrid 幾何未通過品質檢查，請調整參數後重試。',
+  'diagnostic.honeycombMemoryLimit':
+    '此尺寸的省料模式格數超過瀏覽器幾何引擎上限，請縮小尺寸或關閉省料模式。',
   'diagnostic.cylinderQualityInvalid':
     'OpenGrid 可堆疊圓柱幾何未通過品質檢查，請調整參數後重試。',
   'diagnostic.snapQualityInvalid':
@@ -1295,6 +1297,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'The OpenGrid stackable-cylinder parameters are invalid. Check the inner diameter and height.',
   'diagnostic.opengridQualityInvalid':
     'The OpenGrid geometry did not pass quality checks. Adjust the parameters and try again.',
+  'diagnostic.honeycombMemoryLimit':
+    'The saving-mode lattice exceeds the browser geometry engine memory limit for this size. Reduce the footprint or turn off the saving mode.',
   'diagnostic.cylinderQualityInvalid':
     'The OpenGrid stackable-cylinder geometry did not pass quality checks. Adjust the parameters and try again.',
   'diagnostic.snapQualityInvalid':

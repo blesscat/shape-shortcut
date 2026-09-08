@@ -33,7 +33,10 @@ import {
 import {
   makeOpenGridOpenShelfPlateHoneycombCutters,
   makeOpenGridOpenShelfWallHoneycombCutters,
+  openGridOpenShelfHoneycombCellCountFor,
 } from '../../lattice/opengrid-honeycomb'
+import { OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS } from '../../../cad-contract/units'
+import { toGeometryError } from '../../geometry-errors'
 import { makeOpenGridIntegratedSeat } from '../opengrid-locating-assembly/integrated'
 
 const HONEYCOMB_CUT_BATCH_SIZE = 128
@@ -162,7 +165,7 @@ async function applyHoneycombMode(
     if (error instanceof Error && error.message === 'STALE_GENERATION') {
       throw error
     }
-    const message = error instanceof Error ? error.message : String(error)
+    const message = toGeometryError(error).message
     throw new Error(`OPENGRID_OPEN_SHELF_HONEYCOMB_INVALID:${message}`)
   } finally {
     wallCutters.forEach(deleteShape)
@@ -509,6 +512,18 @@ export async function buildOpenGridOpenShelf(
   if (!validation.valid) throw new Error('INVALID_INPUT')
   const normalizedParameters = validation.value
   assertGenerationCurrent(context)
+
+  // Fail before any geometry work when the saving-mode lattice cannot fit
+  // the geometry engine's memory ceiling.
+  if (normalizedParameters.honeycombMode) {
+    const estimatedCells =
+      openGridOpenShelfHoneycombCellCountFor(normalizedParameters)
+    if (estimatedCells > OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS) {
+      throw new Error(
+        `OPENGRID_HONEYCOMB_MEMORY_LIMIT:${estimatedCells}:${OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS}`,
+      )
+    }
+  }
 
   const pieces = makeAssemblyPieces(normalizedParameters)
   const honeycombSteps = normalizedParameters.honeycombMode ? 2 : 0

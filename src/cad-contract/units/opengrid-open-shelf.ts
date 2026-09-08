@@ -80,6 +80,16 @@ export const OPENGRID_OPEN_SHELF_CONFIGURATION = {
   minimumClearCellHeight: 0.5,
 } as const
 
+/**
+ * Honeycomb lattice memory scales with the deterministic cell count, and the
+ * geometry engine has a fixed wasm32 memory ceiling. Measured on the shipped
+ * engine: 1,465 cells builds fine while 4,689 cells (5x8) exhausts memory
+ * during cutting. The limit is intentionally conservative: rejecting a size
+ * that might have succeeded costs less than minutes of cutting followed by a
+ * cryptic crash.
+ */
+export const OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS = 3000
+
 export const OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS = {
   x: OPENGRID_OPEN_SHELF_CONFIGURATION.defaultX,
   y: OPENGRID_OPEN_SHELF_CONFIGURATION.defaultY,

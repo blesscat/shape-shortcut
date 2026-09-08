@@ -59,6 +59,9 @@ export function cadErrorCodeFor(
   if (message.includes('OPENGRID_DETACHABLE_CORNER_SEAT_')) {
     return 'MODEL_ASSET_INVALID'
   }
+  if (message.includes('OPENGRID_HONEYCOMB_MEMORY_LIMIT')) {
+    return 'OPENGRID_HONEYCOMB_MEMORY_LIMIT'
+  }
   if (
     message.includes('OPENGRID_QUALITY_INVALID') ||
     message.includes('OPENGRID_OPENCONNECT_SHELF_QUALITY_FAILED') ||
@@ -123,6 +126,9 @@ export function cadErrorStageFor(
     return 'initializing'
   }
   if (message.includes('OPENGRID_SNAP_HOLD_')) return 'meshing'
+  if (message.includes('OPENGRID_HONEYCOMB_MEMORY_LIMIT')) {
+    return 'building'
+  }
   if (
     message.includes('OPENGRID_QUALITY_INVALID') ||
     message.includes('OPENGRID_OPENCONNECT_SHELF_QUALITY_FAILED') ||

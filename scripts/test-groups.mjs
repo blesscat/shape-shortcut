@@ -7,6 +7,8 @@ export const nativeCadUnitTests = [
   'tests/unit/opengrid-honeycomb-modes.test.ts',
   'tests/unit/opengrid-honeycomb-sides.test.ts',
   'tests/unit/opengrid-honeycomb-volume.test.ts',
+  'tests/unit/opengrid-honeycomb-quality-regions.test.ts',
+  'tests/unit/opengrid-honeycomb-inspection-booleans.test.ts',
 ]
 
 export const fastTestIncludes = ['tests/unit/**/*.test.ts']

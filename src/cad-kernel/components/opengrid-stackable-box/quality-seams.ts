@@ -41,6 +41,7 @@ export function measureBottomGridSeamBand(
   zMax: number,
   halfWidth: number,
   offset = 0,
+  target: Shape3D = shape,
 ): number {
   const probe = makeBottomGridSeamBandProbe(
     seam,
@@ -52,10 +53,10 @@ export function measureBottomGridSeamBand(
   )
   let intersection: Shape3D | null = null
   try {
-    intersection = shape.intersect(probe)
+    intersection = target.intersect(probe)
     return measureVolume(intersection)
   } finally {
-    if (intersection && intersection !== shape) deleteShape(intersection)
+    if (intersection && intersection !== target) deleteShape(intersection)
     deleteShape(probe)
   }
 }
@@ -64,6 +65,7 @@ export function measureBottomGridSeamSupportThickness(
   shape: Shape3D,
   seam: OpenGridStackableBoxBottomGridSeam,
   parameters: OpenGridStackableBoxParameters,
+  target: Shape3D = shape,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const probe = makeBottomGridSeamBandProbe(
@@ -76,12 +78,12 @@ export function measureBottomGridSeamSupportThickness(
   )
   let intersection: Shape3D | null = null
   try {
-    intersection = shape.intersect(probe)
+    intersection = target.intersect(probe)
     if (measureVolume(intersection) <= 0.001) return 0
     const [min, max] = readBounds(intersection)
     return max[2] - min[2]
   } finally {
-    if (intersection && intersection !== shape) deleteShape(intersection)
+    if (intersection && intersection !== target) deleteShape(intersection)
     deleteShape(probe)
   }
 }

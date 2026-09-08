@@ -277,6 +277,7 @@ export {
   openGridOpenShelfTopOuterRearZFor,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+  OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS,
   validateOpenGridOpenShelfParameters,
 } from './opengrid-open-shelf'
 export {

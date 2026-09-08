@@ -52,6 +52,11 @@ describe('CAD Worker error mapping', () => {
       'model.generate',
       'OPENGRID_DIVIDER_QUALITY_INVALID',
     ],
+    [
+      'OPENGRID_HONEYCOMB_MEMORY_LIMIT:4689:3000',
+      'model.generate',
+      'OPENGRID_HONEYCOMB_MEMORY_LIMIT',
+    ],
     ['MODEL_PARAMETERS_INVALID', 'model.generate', 'INVALID_INPUT'],
     [
       'MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder',
@@ -99,6 +104,9 @@ describe('CAD Worker error mapping', () => {
     expect(cadErrorStageFor('engine.init')).toBe('initializing')
     expect(cadErrorStageFor('export.step')).toBe('exporting')
     expect(cadErrorStageFor('model.generate')).toBe('building')
+    expect(
+      cadErrorStageFor('model.generate', 'OPENGRID_HONEYCOMB_MEMORY_LIMIT'),
+    ).toBe('building')
     expect(cadErrorStageFor('model.generate', 'MESH_INVALID')).toBe('meshing')
     expect(
       cadErrorStageFor(

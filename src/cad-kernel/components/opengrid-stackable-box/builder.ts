@@ -24,6 +24,7 @@ import {
   makeOpenGridStackableBoxSideHoneycombCutters,
 } from '../../lattice/opengrid-honeycomb'
 import { measureBooleanInScope } from '../../boolean-progress'
+import { toGeometryError } from '../../geometry-errors'
 
 const HONEYCOMB_CUT_BATCH_SIZE = 128
 
@@ -165,7 +166,7 @@ function applyHoneycombMode(
     if (error instanceof Error && error.message === 'STALE_GENERATION') {
       throw error
     }
-    const message = error instanceof Error ? error.message : String(error)
+    const message = toGeometryError(error).message
     throw new Error(`OPENGRID_STACKABLE_BOX_HONEYCOMB_INVALID:${message}`)
   } finally {
     sideCutters.forEach(deleteShape)

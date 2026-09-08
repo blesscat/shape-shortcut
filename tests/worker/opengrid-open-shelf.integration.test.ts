@@ -22,6 +22,7 @@ import {
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+  OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS,
   type OpenGridOpenShelfParameters,
 } from '../../src/cad-contract/units'
 import { buildOpenGridOpenShelf } from '../../src/cad-kernel/components/opengrid-open-shelf/builder'
@@ -30,6 +31,7 @@ import { exportStepBytes, exportStlBytes } from '../../src/cad-kernel/export'
 import {
   makeOpenGridOpenShelfPlateHoneycombCutters,
   makeOpenGridOpenShelfWallHoneycombCutters,
+  openGridOpenShelfHoneycombCellCountFor,
 } from '../../src/cad-kernel/lattice/opengrid-honeycomb'
 import { meshBRep } from '../../src/cad-kernel/mesh'
 
@@ -157,6 +159,36 @@ function countPegChamferFaces(shape: Shape3D): number {
 }
 
 describe('OpenGrid open-shelf CAD kernel integration', () => {
+  it('fails fast with OPENGRID_HONEYCOMB_MEMORY_LIMIT above the engine cell ceiling', async () => {
+    const oversizedParameters: OpenGridOpenShelfParameters = {
+      ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+      x: 5,
+      y: 8,
+      height: 100,
+      honeycombMode: true,
+    }
+    expect(
+      openGridOpenShelfHoneycombCellCountFor(oversizedParameters),
+    ).toBeGreaterThan(OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS)
+    await expect(buildOpenGridOpenShelf(oversizedParameters)).rejects.toThrow(
+      'OPENGRID_HONEYCOMB_MEMORY_LIMIT',
+    )
+    // The solid profile of the same footprint must never hit the limit check.
+    await expect(
+      buildOpenGridOpenShelf({ ...oversizedParameters, honeycombMode: false }),
+    ).resolves.toBeDefined()
+  }, 600_000)
+
+  it('keeps an in-limit honeycomb candidate below the declared ceiling', () => {
+    const inLimitParameters: OpenGridOpenShelfParameters = {
+      ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+      honeycombMode: true,
+    }
+    expect(
+      openGridOpenShelfHoneycombCellCountFor(inLimitParameters),
+    ).toBeLessThanOrEqual(OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS)
+  })
+
   it('uses protected Hex Mesh to reduce material without changing bounds or pegs', async () => {
     const baselineParameters: OpenGridOpenShelfParameters = {
       ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,

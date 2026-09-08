@@ -4,10 +4,12 @@ import {
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
   nominalOpenGridStackableBoxFootprintFor,
   openGridStackableBoxSocketCentersFor,
+  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
 import { bottomGridSeamsFor } from './geometry'
+import { toGeometryError } from '../../geometry-errors'
 import {
   inspectOpenGridStackableBoxInterface,
   integratedSeatRecordCountFor,
@@ -21,11 +23,41 @@ import {
   type OpenGridStackableBoxThinShellQualityReport,
 } from './quality-thin'
 import type { OpenGridStackableBoxInterfaceQualityReport } from './quality-types'
-import { closeEnough, readBounds } from './shared'
+import {
+  closeEnough,
+  createOpenGridStackableBoxQualityRegions,
+  deleteShape,
+  openGridStackableBoxQualityRegionZBounds,
+  readBounds,
+  type Bounds,
+  type OpenGridStackableBoxQualityRegions,
+} from './shared'
 import {
   assertOpenGridDetachableCornerSeatConsumers,
   type OpenGridDetachableCornerSeatConsumerContext,
 } from '../opengrid-locating-assembly/consumer'
+
+export function socketSeatChipZone(
+  parameters: OpenGridStackableBoxParameters,
+  center: readonly [number, number],
+): Bounds {
+  const seatConfiguration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+  const zBounds = openGridStackableBoxQualityRegionZBounds(parameters)
+  // The socket-void probe is the widest seat measurement: its circular
+  // envelope (holder diameter minus the host overlap) must fit inside the
+  // chip or the residual check would silently ignore material in the outer
+  // annulus and weaken the rejection verdict.
+  const radius =
+    Math.max(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.baseFlangeDiameter / 2,
+      seatConfiguration.female.outerDiameter / 2 +
+        seatConfiguration.geometryTolerance,
+    ) + 1
+  return [
+    [center[0] - radius, center[1] - radius, zBounds.bottomMinZ],
+    [center[0] + radius, center[1] + radius, zBounds.bottomMaxZ],
+  ]
+}
 
 function assertExpectedBounds(
   shape: Shape3D,
@@ -79,10 +111,13 @@ function assertValidShape(shape: Shape3D): void {
       throw new Error('OPENGRID_STACKABLE_BOX_BREP_INVALID')
     }
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-      throw error
+    const normalized = toGeometryError(error)
+    if (normalized.message.startsWith('OPENGRID_')) {
+      throw normalized
     }
-    throw new Error('OPENGRID_STACKABLE_BOX_GEOMETRY_INVALID')
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_GEOMETRY_INVALID:${normalized.message}`,
+    )
   }
 }
 
@@ -356,13 +391,47 @@ export function assertOpenGridStackableBoxGeometry(
   assertInterfaceConstants()
   assertOpenGridStackableBoxOpenings(shape, parameters)
 
+  // Lattice candidates have too many faces for every measurement to run
+  // against the full shape within the engine memory ceiling: pre-cut the two
+  // measurement regions once and reuse small chips of them for every probe.
+  const regions: OpenGridStackableBoxQualityRegions | undefined =
+    parameters.honeycombMode
+      ? createOpenGridStackableBoxQualityRegions(shape, parameters)
+      : undefined
+  try {
+    inspectWithRegions(shape, parameters, context, regions)
+  } finally {
+    regions?.dispose()
+  }
+}
+
+function inspectWithRegions(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridDetachableCornerSeatConsumerContext,
+  regions: OpenGridStackableBoxQualityRegions | undefined,
+): void {
   if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    assertOpenGridDetachableCornerSeatConsumers(
-      shape,
-      openGridStackableBoxSocketCentersFor(parameters),
-      context,
-      'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
-    )
+    try {
+      assertOpenGridDetachableCornerSeatConsumers(
+        shape,
+        openGridStackableBoxSocketCentersFor(parameters),
+        context,
+        'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
+        regions
+          ? (center) =>
+              regions.bottomZone(socketSeatChipZone(parameters, center))
+          : undefined,
+      )
+    } catch (error) {
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
+      }
+      throw new Error(
+        `OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID:${normalized.message}`,
+      )
+    }
   }
 
   if (parameters.thinShellMode) {
@@ -371,8 +440,9 @@ export function assertOpenGridStackableBoxGeometry(
         inspectOpenGridStackableBoxThinShell(shape, parameters),
       )
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-        throw error
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
       }
       throw new Error('OPENGRID_STACKABLE_BOX_THIN_SHELL_GEOMETRY_INVALID')
     }
@@ -386,8 +456,9 @@ export function assertOpenGridStackableBoxGeometry(
     try {
       assertBasePlateMountingInterface(shape, parameters)
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-        throw error
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
       }
       throw new Error('OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID')
     }
@@ -396,12 +467,15 @@ export function assertOpenGridStackableBoxGeometry(
 
   let quality: OpenGridStackableBoxInterfaceQualityReport
   try {
-    quality = inspectOpenGridStackableBoxInterface(shape, parameters)
+    quality = inspectOpenGridStackableBoxInterface(shape, parameters, regions)
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-      throw error
+    const normalized = toGeometryError(error)
+    if (normalized.message.startsWith('OPENGRID_')) {
+      throw normalized
     }
-    throw new Error('OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID')
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID:${normalized.message}`,
+    )
   }
 
   assertThickShell(quality)
