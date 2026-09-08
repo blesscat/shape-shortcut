@@ -1,6 +1,7 @@
 import { makeBox, type Shape3D } from 'replicad'
 import type { BooleanOperationReporter } from '../../boolean-progress'
 import { bottomGridSeamApexTopZ } from './geometry'
+import { toGeometryError } from '../../geometry-errors'
 import {
   externalOpenGridStackableBoxHeightFor,
   nominalOpenGridStackableBoxFootprintFor,
@@ -127,30 +128,38 @@ export function createOpenGridStackableBoxQualityRegions(
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const { bottomMinZ, bottomMaxZ, topMinZ, topMaxZ } =
     openGridStackableBoxQualityRegionZBounds(parameters)
-  const top: Shape3D = cutRegion(shape, [
-    [
-      -width / 2 - BOTTOM_REGION_MARGIN,
-      -depth / 2 - BOTTOM_REGION_MARGIN,
-      topMinZ,
-    ],
-    [
-      width / 2 + BOTTOM_REGION_MARGIN,
-      depth / 2 + BOTTOM_REGION_MARGIN,
-      topMaxZ,
-    ],
-  ])
-  const bottom: Shape3D = cutRegion(shape, [
-    [
-      -width / 2 - BOTTOM_REGION_MARGIN,
-      -depth / 2 - BOTTOM_REGION_MARGIN,
-      bottomMinZ,
-    ],
-    [
-      width / 2 + BOTTOM_REGION_MARGIN,
-      depth / 2 + BOTTOM_REGION_MARGIN,
-      bottomMaxZ,
-    ],
-  ])
+  let top: Shape3D | null = null
+  let bottom: Shape3D | null = null
+  try {
+    top = cutRegion(shape, [
+      [
+        -width / 2 - BOTTOM_REGION_MARGIN,
+        -depth / 2 - BOTTOM_REGION_MARGIN,
+        topMinZ,
+      ],
+      [
+        width / 2 + BOTTOM_REGION_MARGIN,
+        depth / 2 + BOTTOM_REGION_MARGIN,
+        topMaxZ,
+      ],
+    ])
+    bottom = cutRegion(shape, [
+      [
+        -width / 2 - BOTTOM_REGION_MARGIN,
+        -depth / 2 - BOTTOM_REGION_MARGIN,
+        bottomMinZ,
+      ],
+      [
+        width / 2 + BOTTOM_REGION_MARGIN,
+        depth / 2 + BOTTOM_REGION_MARGIN,
+        bottomMaxZ,
+      ],
+    ])
+  } catch (error) {
+    deleteShape(top)
+    deleteShape(bottom)
+    throw toGeometryError(error)
+  }
   const chips = new Map<string, Shape3D>()
   return {
     bottom,
