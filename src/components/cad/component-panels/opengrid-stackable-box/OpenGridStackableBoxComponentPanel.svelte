@@ -341,6 +341,11 @@
         }}
       />
       <span class="font-[650]">{translate(locale, 'panel.honeycomb')}</span>
+      <span
+        class="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary"
+      >
+        {translate(locale, 'panel.honeycombBeta')}
+      </span>
     </label>
     {#if rawParameters.honeycombMode === 'true'}
       <HoneycombRenderWarning {locale} />
