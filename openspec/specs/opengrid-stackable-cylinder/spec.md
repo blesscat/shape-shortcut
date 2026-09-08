@@ -702,7 +702,8 @@ unavailable.
 - **WHEN** a user views the cylinder parameter panel
 - **THEN** it MUST show exactly `無角座`, `鎖定角座`, and `內建角座` as
   mutually exclusive radio choices
-- **AND** the existing selected profile descriptions MUST remain unchanged
+- **AND** the thin-shell and stacking profile descriptions MUST NOT state or
+  imply different locating-post sizes between the two profiles
 - **AND** it MUST not show rectangular X/Y, box full-grid, or
   individual-seat controls
 
