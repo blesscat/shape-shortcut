@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { skipHeadlessFirefoxWithoutWebGL, waitForCadReady } from './helpers'
 
 const HONEYCOMB_RENDER_WARNING =
-  '省料模式會明顯降低模型渲染速度。建議先使用一般模式確認形狀，下載前再啟用省料模式。'
+  '省料模式會明顯降低模型渲染速度；物件太大時可能導致建模失敗。建議先使用一般模式確認形狀，下載前再啟用省料模式。'
 
 test('Desk System starts the stackable-box with its thin-shell preset', async ({
   page,
@@ -255,7 +255,12 @@ test('OpenGrid stackable-box persists the honeycomb saving switch and filename',
     exact: true,
   })
   const honeycombWarning = page.getByTestId('honeycomb-render-warning')
+  const honeycombBetaBadge = page
+    .locator('label')
+    .filter({ has: honeycomb })
+    .getByText('Beta', { exact: true })
   await expect(honeycomb).toBeVisible()
+  await expect(honeycombBetaBadge).toBeVisible()
   await expect(honeycomb).not.toBeChecked()
   await expect(honeycombWarning).toHaveCount(0)
   await expect(page.getByRole('radio', { name: '堆疊模式' })).toBeChecked()
@@ -283,4 +288,5 @@ test('OpenGrid stackable-box persists the honeycomb saving switch and filename',
   )
   await honeycomb.uncheck()
   await expect(honeycombWarning).toHaveCount(0)
+  await expect(honeycombBetaBadge).toBeVisible()
 })

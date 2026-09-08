@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { skipHeadlessFirefoxWithoutWebGL, waitForCadReady } from './helpers'
 
 const HONEYCOMB_RENDER_WARNING =
-  '省料模式會明顯降低模型渲染速度。建議先使用一般模式確認形狀，下載前再啟用省料模式。'
+  '省料模式會明顯降低模型渲染速度；物件太大時可能導致建模失敗。建議先使用一般模式確認形狀，下載前再啟用省料模式。'
 
 test('OpenGrid Open Shelf exposes its Desk controls and front-opening workspace', async ({
   page,
@@ -78,6 +78,6 @@ test('OpenGrid Open Shelf localizes the honeycomb render warning', async ({
   await expect(honeycomb).not.toBeChecked()
   await honeycomb.check()
   await expect(honeycombWarning).toHaveText(
-    'Material-saving mode can significantly slow model rendering. Check the shape in normal mode first, then enable material-saving mode before downloading.',
+    'Material-saving mode can significantly slow model rendering; very large objects may fail to build. Check the shape in normal mode first, then enable material-saving mode before downloading.',
   )
 })

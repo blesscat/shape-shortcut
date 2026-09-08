@@ -621,8 +621,9 @@ export const zhHantMessages = {
   'panel.stackableDescription': '預設模式：可堆疊滑動，使用 9mm 定位柱',
   'panel.fullBottomHole': '底部全孔模式',
   'panel.honeycomb': '省料模式（六角鏤空）',
+  'panel.honeycombBeta': 'Beta',
   'panel.honeycombWarning':
-    '省料模式會明顯降低模型渲染速度。建議先使用一般模式確認形狀，下載前再啟用省料模式。',
+    '省料模式會明顯降低模型渲染速度；物件太大時可能導致建模失敗。建議先使用一般模式確認形狀，下載前再啟用省料模式。',
   'panel.organizerBox.description':
     '頂部為實體盲孔；孔距以孔的外圍到外圍計算，所有孔固定同一方向。',
   'panel.organizerBox.spacingMode': 'X/Y 孔距設定',
@@ -1432,8 +1433,9 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'Default mode: stackable slide fit; uses 9 mm locating posts',
   'panel.fullBottomHole': 'Full-bottom hole mode',
   'panel.honeycomb': 'Material-saving mode (hexagonal voids)',
+  'panel.honeycombBeta': 'Beta',
   'panel.honeycombWarning':
-    'Material-saving mode can significantly slow model rendering. Check the shape in normal mode first, then enable material-saving mode before downloading.',
+    'Material-saving mode can significantly slow model rendering; very large objects may fail to build. Check the shape in normal mode first, then enable material-saving mode before downloading.',
   'panel.organizerBox.description':
     'The top is a solid plate with blind cavities. Spacing is measured outer-envelope to outer-envelope, with one fixed orientation for every cavity.',
   'panel.organizerBox.spacingMode': 'X/Y hole spacing',
