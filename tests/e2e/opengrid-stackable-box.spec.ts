@@ -93,25 +93,17 @@ test('OpenGrid stackable-box is listed and exposes the half-cell controls', asyn
   const thinShell = page.getByRole('radio', { name: '薄殼模式' })
   await expect(thinShell).toBeVisible()
   await expect(thinShell).not.toBeChecked()
-  await expect(
-    page.getByText(/預設模式：可堆疊滑動，使用 9mm 定位柱/),
-  ).toBeVisible()
+  await expect(page.getByText(/預設模式：可堆疊滑動/)).toBeVisible()
   await thinShell.check()
   await expect(thinShell).toBeChecked()
   await expect(defaultMode).not.toBeChecked()
-  await expect(
-    page.getByText(/薄殼模式：不可堆疊，使用 6mm 定位柱/),
-  ).toBeVisible()
+  await expect(page.getByText(/薄殼模式：不可堆疊/)).toBeVisible()
   await page.reload()
   await expect(page.getByRole('radio', { name: '薄殼模式' })).toBeChecked()
   await defaultMode.check()
   await expect(defaultMode).toBeChecked()
-  await expect(
-    page.getByText(/預設模式：可堆疊滑動，使用 9mm 定位柱/),
-  ).toBeVisible()
-  await expect(
-    page.getByText(/薄殼模式：不可堆疊，使用 6mm 定位柱/),
-  ).toHaveCount(0)
+  await expect(page.getByText(/預設模式：可堆疊滑動/)).toBeVisible()
+  await expect(page.getByText(/薄殼模式：不可堆疊/)).toHaveCount(0)
   await seatMode.getByRole('radio', { name: '無角座' }).check()
   await expect(seatMode.getByRole('radio', { name: '無角座' })).toBeChecked()
   await fullGrid.check()

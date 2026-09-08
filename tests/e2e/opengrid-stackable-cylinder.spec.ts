@@ -100,7 +100,7 @@ test('OpenGrid stackable-cylinder is listed and exposes 1 mm controls', async ({
     modeOptions.locator(
       'xpath=following-sibling::p[@data-testid="opengrid-cylinder-mode-description"]',
     ),
-  ).toHaveText('預設模式：可堆疊滑動，使用 9mm 定位柱')
+  ).toHaveText('預設模式：可堆疊滑動')
   await expect(
     page.getByText(/高度文字輸入為 10–500 mm、slider 為 10–200 mm/),
   ).toHaveCount(0)
@@ -288,7 +288,7 @@ test('OpenGrid stackable-cylinder exports the selected thin and no-seat state', 
   await page.getByRole('radio', { name: '無角座' }).check()
   await expect(
     page.getByTestId('opengrid-cylinder-mode-description'),
-  ).toHaveText('薄殼模式：不可堆疊，使用 6mm 定位柱')
+  ).toHaveText('薄殼模式：不可堆疊')
   await expect(page.locator('p').filter({ hasText: '底部孔洞：' })).toHaveCount(
     0,
   )

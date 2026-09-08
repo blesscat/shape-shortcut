@@ -617,8 +617,8 @@ export const zhHantMessages = {
   'panel.boxMode': '盒體模式',
   'panel.thinShell': '薄殼模式',
   'panel.stackable': '堆疊模式',
-  'panel.thinShellDescription': '薄殼模式：不可堆疊，使用 6mm 定位柱',
-  'panel.stackableDescription': '預設模式：可堆疊滑動，使用 9mm 定位柱',
+  'panel.thinShellDescription': '薄殼模式：不可堆疊',
+  'panel.stackableDescription': '預設模式：可堆疊滑動',
   'panel.fullBottomHole': '底部全孔模式',
   'panel.honeycomb': '省料模式（六角鏤空）',
   'panel.honeycombWarning':
@@ -1426,10 +1426,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.boxMode': 'Box mode',
   'panel.thinShell': 'Thin-shell mode',
   'panel.stackable': 'Stackable mode',
-  'panel.thinShellDescription':
-    'Thin-shell mode: not stackable; uses 6 mm locating posts',
-  'panel.stackableDescription':
-    'Default mode: stackable slide fit; uses 9 mm locating posts',
+  'panel.thinShellDescription': 'Thin-shell mode: not stackable',
+  'panel.stackableDescription': 'Default mode: stackable slide fit',
   'panel.fullBottomHole': 'Full-bottom hole mode',
   'panel.honeycomb': 'Material-saving mode (hexagonal voids)',
   'panel.honeycombWarning':
