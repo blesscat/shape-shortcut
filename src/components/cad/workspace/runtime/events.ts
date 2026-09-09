@@ -155,27 +155,62 @@ export function createWorkerEventHandler(
 ): (event: WorkerEvent) => void {
   return (event) => {
     if (!isWorkerEvent(event)) return
+    if (
+      event.kind !== 'engine.ready' &&
+      'workerEpoch' in event &&
+      event.workerEpoch !== context.refs.workerEpoch.current
+    )
+      return
 
     switch (event.kind) {
       case 'engine.ready': {
+        const session = context.refs.session.current
+        const operation = context.refs.operations.current.get(event.operationId)
+        if (session.ready || operation?.kind !== 'init') return
         context.clearTimer(event.operationId)
+        context.refs.operations.current.delete(event.operationId)
+        context.clearOperationProgress(event.operationId)
+        session.ready = true
+        context.refs.workerEpoch.current = event.workerEpoch
+        context.dispatch({
+          type: 'engine-ready',
+          workerEpoch: event.workerEpoch,
+        })
         if (
-          context.refs.workerEpoch.current === event.workerEpoch &&
-          context.refs.initialModelSent.current
+          session.invalidGeneration === context.refs.latestGeneration.current
+        ) {
+          context.generation.sendInvalidate(
+            session.invalidGeneration,
+            'invalid-input',
+          )
+          return
+        }
+        const pending = session.pending
+        if (
+          pending &&
+          pending.generation === context.refs.latestGeneration.current
+        ) {
+          context.dispatch({
+            type: 'generation-start',
+            generation: pending.generation,
+          })
+          context.generation.sendGenerate(
+            pending.modelId,
+            pending.parameters,
+            pending.generation,
+          )
+          return
+        }
+        if (
+          session.mode === 'replacement' ||
+          context.refs.latestGeneration.current > 0
         )
           return
-
-        context.refs.workerEpoch.current = event.workerEpoch
-        context.refs.initialModelSent.current = true
         const initialGeneration = Math.max(
           1,
           context.refs.latestGeneration.current,
         )
         context.refs.latestGeneration.current = initialGeneration
-        context.dispatch({
-          type: 'engine-ready',
-          workerEpoch: event.workerEpoch,
-        })
         const modelId = context.refs.state.current.modelId
         const parsed = parseInitialModelParameters(context, modelId)
         if (parsed.valid) {
@@ -183,6 +218,11 @@ export function createWorkerEventHandler(
             type: 'generation-start',
             generation: initialGeneration,
           })
+          session.pending = {
+            modelId,
+            parameters: parsed.value,
+            generation: initialGeneration,
+          }
           context.generation.sendGenerate(
             modelId,
             parsed.value,
@@ -359,8 +399,7 @@ export function createWorkerEventHandler(
         context.refs.operations.current.delete(event.operationId)
         delete operation.candidateMesh
         delete operation.candidatePartMeshes
-        if (event.operationId === 'initial-model')
-          context.refs.autoRecoveryAttempts.current = 0
+        context.refs.autoRecoveryAttempts.current = 0
         context.dispatch({
           type: 'model-ready',
           model: {
@@ -412,6 +451,7 @@ export function createWorkerEventHandler(
       case 'operation.error': {
         context.clearTimer(event.operationId)
         const operation = context.refs.operations.current.get(event.operationId)
+        if (!operation) return
         if (
           operation?.kind === 'model' &&
           !isCurrentModelOperation(context, operation, event.generation)

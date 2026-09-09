@@ -117,7 +117,7 @@ function createContext(
     state: { current: state },
     workerEpoch: { current: 'epoch-1' },
     latestGeneration: { current: 1 },
-    initialModelSent: { current: true },
+    session: { current: { mode: 'bootstrap', ready: false, pending: null } },
     autoRecoveryAttempts: { current: 0 },
     operations: { current: new Map() },
     activeProgressOperationId: { current: null },

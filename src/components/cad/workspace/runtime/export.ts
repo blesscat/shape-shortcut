@@ -193,6 +193,7 @@ export function createExportHandlers(context: RuntimeContext): ExportHandlers {
       operationId,
       PROTOTYPE_CONFIGURATION.operationTimeoutMs,
       () => {
+        if (context.refs.exportRequest.current !== request) return
         context.refs.exportRequest.current = null
         context.clearOperationProgress(operationId)
         context.dispatch({ type: 'export-end' })
