@@ -23,6 +23,10 @@ export type OpenGridStackableBoxOpeningQuality = {
   cylindricalFaceCount: number
 }
 
+export type OpenGridStackableBoxOpeningInspectionOptions = Readonly<{
+  volumeProbes?: boolean
+}>
+
 function tangentAxisFor(
   direction: OpenGridStackableBoxOpeningDirection,
 ): 0 | 1 {
@@ -123,6 +127,7 @@ function openingQualityFor(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
   direction: OpenGridStackableBoxOpeningDirection,
+  volumeProbes: boolean,
 ): OpenGridStackableBoxOpeningQuality {
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   const opening = derived.openings[direction]
@@ -139,39 +144,45 @@ function openingQualityFor(
     derived.activeUpperInnerRimZ - 0.05,
     wallThickness - 0.05,
   )
-  const cutProbeVolume = volumeInBox(shape, ...cutProbeBounds)
-  const topEdgeProbeVolume = volumeInBox(
-    shape,
-    ...sideProbeBounds(
-      direction,
-      width,
-      depth,
-      -probeHalf,
-      probeHalf,
-      derived.activeUpperOuterEdgeZ - 1.5,
-      derived.activeUpperOuterEdgeZ - 0.1,
-      wallThickness - 0.05,
-    ),
-  )
+  const cutProbeVolume = volumeProbes
+    ? volumeInBox(shape, ...cutProbeBounds)
+    : 0
+  const topEdgeProbeVolume = volumeProbes
+    ? volumeInBox(
+        shape,
+        ...sideProbeBounds(
+          direction,
+          width,
+          depth,
+          -probeHalf,
+          probeHalf,
+          derived.activeUpperOuterEdgeZ - 1.5,
+          derived.activeUpperOuterEdgeZ - 0.1,
+          wallThickness - 0.05,
+        ),
+      )
+    : 0
   const upperRailInnerInset =
     wallThickness +
     (parameters.thinShellMode
       ? OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellTopChamfer
       : OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerChamfer)
-  const topRailProbeVolume = volumeInBox(
-    shape,
-    ...sideProbeBounds(
-      direction,
-      width,
-      depth,
-      -probeHalf,
-      probeHalf,
-      derived.activeUpperInnerRimZ + 0.05,
-      derived.activeUpperOuterEdgeZ - 0.1,
-      upperRailInnerInset + 0.05,
-      0.02,
-    ),
-  )
+  const topRailProbeVolume = volumeProbes
+    ? volumeInBox(
+        shape,
+        ...sideProbeBounds(
+          direction,
+          width,
+          depth,
+          -probeHalf,
+          probeHalf,
+          derived.activeUpperInnerRimZ + 0.05,
+          derived.activeUpperOuterEdgeZ - 0.1,
+          upperRailInnerInset + 0.05,
+          0.02,
+        ),
+      )
+    : 0
 
   const sillProbeMin = Math.max(
     derived.activeFloorTopZ + 0.02,
@@ -179,7 +190,7 @@ function openingQualityFor(
   )
   const sillProbeMax = opening.bottomZ - 0.02
   const sillProbeVolume =
-    sillProbeMax > sillProbeMin
+    volumeProbes && sillProbeMax > sillProbeMin
       ? volumeInBox(
           shape,
           ...sideProbeBounds(
@@ -201,7 +212,7 @@ function openingQualityFor(
   const bridgeZMax = derived.activeUpperInnerRimZ - 0.08
   const bridgeZMin = Math.max(opening.bottomZ + 0.1, bridgeZMax - 0.25)
   const cornerBridgeVolumes =
-    bridgeHalfEnd > bridgeHalfStart && bridgeZMax > bridgeZMin
+    volumeProbes && bridgeHalfEnd > bridgeHalfStart && bridgeZMax > bridgeZMin
       ? [
           volumeInBox(
             shape,
@@ -315,22 +326,77 @@ function openingQualityFor(
 export function inspectOpenGridStackableBoxOpenings(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
+  options: OpenGridStackableBoxOpeningInspectionOptions = {},
 ): OpenGridStackableBoxOpeningQuality[] {
+  const volumeProbes = options.volumeProbes ?? true
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   return OPENGRID_STACKABLE_BOX_OPENING_DIRECTIONS.filter(
     (direction) => derived.openings[direction].enabled,
-  ).map((direction) => openingQualityFor(shape, parameters, direction))
+  ).map((direction) =>
+    openingQualityFor(shape, parameters, direction, volumeProbes),
+  )
+}
+
+function hasClosedWallFace(
+  records: ReturnType<typeof readFaceQualityRecords>,
+  direction: OpenGridStackableBoxOpeningDirection,
+  width: number,
+  depth: number,
+  zMin: number,
+  zMax: number,
+  wallThickness: number,
+): boolean {
+  const normalAxis = normalAxisFor(direction)
+  const normalSign = direction === '+X' || direction === '+Y' ? 1 : -1
+  const envelope = sideProbeBounds(
+    direction,
+    width,
+    depth,
+    -0.35,
+    0.35,
+    zMin,
+    zMax,
+    wallThickness + 0.15,
+    0.15,
+  )
+  return records.some(
+    (record) =>
+      record.surfaceType === 'PLANE' &&
+      record.normal !== null &&
+      record.normal[normalAxis] * normalSign > 0.85 &&
+      faceOverlapsBounds(record, envelope),
+  )
 }
 
 export function assertOpenGridStackableBoxOpenings(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
+  options: OpenGridStackableBoxOpeningInspectionOptions = {},
 ): void {
+  const volumeProbes = options.volumeProbes ?? true
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const wallThickness = wallThicknessFor(parameters)
+  const records = volumeProbes ? null : readFaceQualityRecords(shape)
   for (const direction of OPENGRID_STACKABLE_BOX_OPENING_DIRECTIONS) {
     if (derived.openings[direction].enabled) continue
+    if (
+      !volumeProbes &&
+      !hasClosedWallFace(
+        records ?? [],
+        direction,
+        width,
+        depth,
+        derived.activeFloorTopZ + 0.05,
+        derived.activeUpperInnerRimZ - 0.05,
+        wallThickness,
+      )
+    ) {
+      throw new Error(
+        `OPENGRID_STACKABLE_BOX_OPENING_CLOSED_WALL_INVALID:${direction}`,
+      )
+    }
+    if (!volumeProbes) continue
     const closedWallVolume = volumeInBox(
       shape,
       ...sideProbeBounds(
@@ -354,28 +420,36 @@ export function assertOpenGridStackableBoxOpenings(
   for (const quality of inspectOpenGridStackableBoxOpenings(
     shape,
     parameters,
+    options,
   )) {
-    if (quality.cutProbeVolume > 0.01) {
+    if (volumeProbes && quality.cutProbeVolume > 0.01) {
       throw new Error(
         `OPENGRID_STACKABLE_BOX_OPENING_NOT_CUT:${quality.direction}:${quality.cutProbeVolume}`,
       )
     }
-    if (quality.topEdgeProbeVolume > 0.01) {
+    if (volumeProbes && quality.topEdgeProbeVolume > 0.01) {
       throw new Error(
         `OPENGRID_STACKABLE_BOX_OPENING_TOP_EDGE_NOT_OPEN:${quality.direction}:${quality.topEdgeProbeVolume}`,
       )
     }
-    if (quality.topRailProbeVolume > 0.01) {
+    if (volumeProbes && quality.topRailProbeVolume > 0.01) {
       throw new Error(
         `OPENGRID_STACKABLE_BOX_OPENING_TOP_RAIL_NOT_OPEN:${quality.direction}:${quality.topRailProbeVolume}`,
       )
     }
-    if (quality.sillProbeVolume !== null && quality.sillProbeVolume <= 0.001) {
+    if (
+      volumeProbes &&
+      quality.sillProbeVolume !== null &&
+      quality.sillProbeVolume <= 0.001
+    ) {
       throw new Error(
         `OPENGRID_STACKABLE_BOX_OPENING_SILL_INVALID:${quality.direction}`,
       )
     }
-    if (quality.cornerBridgeVolumes.some((volume) => volume <= 0.001)) {
+    if (
+      volumeProbes &&
+      quality.cornerBridgeVolumes.some((volume) => volume <= 0.001)
+    ) {
       throw new Error(
         `OPENGRID_STACKABLE_BOX_OPENING_CORNER_BRIDGE_INVALID:${quality.direction}`,
       )

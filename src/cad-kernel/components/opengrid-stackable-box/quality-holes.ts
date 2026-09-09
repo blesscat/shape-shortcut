@@ -1,6 +1,7 @@
 import { makeCylinder, measureVolume, type Shape3D } from 'replicad'
 import {
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
+  OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
 import { OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION } from '../../../cad-contract/units/opengrid-locating-assembly'
@@ -12,7 +13,14 @@ import {
   readFaceQualityRecords,
   type FaceQualityRecord,
 } from './quality-metrics'
-import { closeEnough, deleteShape, readBounds } from './shared'
+import {
+  closeEnough,
+  deleteShape,
+  openGridStackableBoxQualityRegionZBounds,
+  readBounds,
+  type Bounds,
+  type OpenGridStackableBoxQualityRegions,
+} from './shared'
 
 function activeBottomThicknessFor(
   parameters?: OpenGridStackableBoxParameters,
@@ -38,6 +46,7 @@ export function measureMountingHoleStepVolumes(
   shape: Shape3D,
   centers: ReadonlyArray<[number, number]>,
   parameters?: OpenGridStackableBoxParameters,
+  regions?: OpenGridStackableBoxQualityRegions,
 ): number[] {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const stepHeight = mountingHoleStepHeightFor(parameters)
@@ -55,12 +64,15 @@ export function measureMountingHoleStepVolumes(
     const ring = outer.cut(inner)
     deleteShape(outer)
     deleteShape(inner)
+    const target = regions
+      ? regions.bottomZone(socketChipZone([centerX, centerY], parameters))
+      : shape
     let intersection: Shape3D | null = null
     try {
-      intersection = shape.intersect(ring)
+      intersection = target.intersect(ring)
       return measureVolume(intersection)
     } finally {
-      if (intersection && intersection !== shape) deleteShape(intersection)
+      if (intersection && intersection !== target) deleteShape(intersection)
       deleteShape(ring)
     }
   })
@@ -191,9 +203,29 @@ function makeFlangedSocketInsert(
   return insert
 }
 
+function socketChipZone(
+  center: readonly [number, number],
+  parameters?: OpenGridStackableBoxParameters,
+): Bounds {
+  const pad = 1
+  const zBounds = openGridStackableBoxQualityRegionZBounds(
+    parameters ?? OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+  )
+  const radius = Math.max(
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleTopOpeningDiameter,
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.baseFlangeDiameter,
+    OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.testFlangeDiameter,
+  )
+  return [
+    [center[0] - radius - pad, center[1] - radius - pad, zBounds.bottomMinZ],
+    [center[0] + radius + pad, center[1] + radius + pad, zBounds.bottomMaxZ],
+  ]
+}
+
 function volumeAtBottomOpeningBoundary(
   shape: Shape3D,
   center: [number, number],
+  target: Shape3D = shape,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const outer = makeCylinder(
@@ -211,10 +243,10 @@ function volumeAtBottomOpeningBoundary(
   deleteShape(inner)
   let intersection: Shape3D | null = null
   try {
-    intersection = shape.intersect(ring)
+    intersection = target.intersect(ring)
     return measureVolume(intersection)
   } finally {
-    if (intersection && intersection !== shape) deleteShape(intersection)
+    if (intersection && intersection !== target) deleteShape(intersection)
     deleteShape(ring)
   }
 }
@@ -223,32 +255,40 @@ export function inspectCaptiveSocketInterface(
   shape: Shape3D,
   center: [number, number],
   parameters?: OpenGridStackableBoxParameters,
+  regions?: OpenGridStackableBoxQualityRegions,
 ): OpenGridStackableBoxCaptiveSocketRecord {
   const bottomThickness = activeBottomThicknessFor(parameters)
   const stepHeight = mountingHoleStepHeightFor(parameters)
   const insert = makeFlangedSocketInsert(center, parameters)
+  const target = regions
+    ? regions.bottomZone(socketChipZone(center, parameters))
+    : shape
   let seatedIntersection: Shape3D | null = null
   let loweredInsert: Shape3D | null = null
   let loweredIntersection: Shape3D | null = null
   try {
-    seatedIntersection = shape.intersect(insert)
+    seatedIntersection = target.intersect(insert)
     const retentionProbeOffset = Math.max(
       0.2,
       bottomThickness - stepHeight + 0.2,
     )
     loweredInsert = insert.clone().translateZ(-retentionProbeOffset)
-    loweredIntersection = shape.intersect(loweredInsert)
+    loweredIntersection = target.intersect(loweredInsert)
     return {
       seatedIntersectionVolume: measureVolume(seatedIntersection),
       loweredIntersectionVolume: measureVolume(loweredIntersection),
-      bottomOpeningBoundaryVolume: volumeAtBottomOpeningBoundary(shape, center),
+      bottomOpeningBoundaryVolume: volumeAtBottomOpeningBoundary(
+        shape,
+        center,
+        target,
+      ),
       shaftBounds: readBounds(insert),
     }
   } finally {
-    if (seatedIntersection && seatedIntersection !== shape) {
+    if (seatedIntersection && seatedIntersection !== target) {
       deleteShape(seatedIntersection)
     }
-    if (loweredIntersection && loweredIntersection !== shape) {
+    if (loweredIntersection && loweredIntersection !== target) {
       deleteShape(loweredIntersection)
     }
     deleteShape(loweredInsert)

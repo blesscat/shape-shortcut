@@ -1,4 +1,4 @@
-import { makeCompound, type Shape3D } from 'replicad'
+import { makeBox, makeCompound, type Shape3D } from 'replicad'
 import {
   validateOpenGridStackableBoxParameters,
   type OpenGridStackableBoxParameters,
@@ -12,6 +12,7 @@ import {
 } from './geometry'
 import {
   assertOpenGridStackableBoxGeometry,
+  captureOpenGridStackableBoxHoneycombQualityBaseline,
   inspectOpenGridStackableBoxInterface,
 } from './quality'
 import {
@@ -20,12 +21,14 @@ import {
   type OpenGridStackableBoxBuildContext,
 } from './shared'
 import {
-  makeOpenGridStackableBoxProtectedBottomHoneycombCutters,
-  makeOpenGridStackableBoxSideHoneycombCutters,
+  estimateOpenGridStackableBoxHoneycombMemory,
+  OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE,
+  makeOpenGridStackableBoxBottomHoneycombPanel,
+  makeOpenGridStackableBoxSideHoneycombPanel,
+  makeOpenGridStackableBoxSideHoneycombPanelSlot,
+  OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE,
 } from '../../lattice/opengrid-honeycomb'
 import { measureBooleanInScope } from '../../boolean-progress'
-
-const HONEYCOMB_CUT_BATCH_SIZE = 128
 
 export type { OpenGridStackableBoxBuildContext } from './shared'
 export type { OpenGridStackableBoxBottomGridSeam } from './geometry'
@@ -47,48 +50,183 @@ export type {
 } from './quality'
 export * from './snap-hold'
 
+function normalizedParametersOrThrow(
+  parameters: OpenGridStackableBoxParameters,
+): OpenGridStackableBoxParameters {
+  const validation = validateOpenGridStackableBoxParameters(parameters)
+  if (!validation.valid) throw new Error('INVALID_INPUT')
+  return validation.value
+}
+
+function assertHoneycombMemoryWithinBudget(
+  parameters: OpenGridStackableBoxParameters,
+): void {
+  const estimate = estimateOpenGridStackableBoxHoneycombMemory(parameters)
+  if (!parameters.honeycombMode || estimate.withinBudget) return
+  throw new Error(
+    `OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:${estimate.estimatedCells}`,
+  )
+}
+
 export function buildOpenGridStackableBox(
   parameters: OpenGridStackableBoxParameters,
   context: OpenGridStackableBoxBuildContext = {},
 ): Shape3D {
-  const validation = validateOpenGridStackableBoxParameters(parameters)
-  if (!validation.valid) throw new Error('INVALID_INPUT')
-  const normalizedParameters = validation.value
+  const normalizedParameters = normalizedParametersOrThrow(parameters)
   assertGenerationCurrent(context)
+  assertHoneycombMemoryWithinBudget(normalizedParameters)
 
-  let shape = makeBoxShell(normalizedParameters, context.booleanOperations)
-  assertGenerationCurrent(context)
-  shape = applyStackingProfile(shape, normalizedParameters, context)
-  const deferDetachableCornerSeats =
-    normalizedParameters.cornerSeatMode === 'detachable-corner-seat'
-  if (
-    normalizedParameters.basePlateMode &&
-    normalizedParameters.cornerSeatMode !== 'detachable-corner-seat'
-  ) {
-    shape = applyBasePlateMode(
-      shape,
-      normalizedParameters,
-      context.booleanOperations,
-    )
-    shape = addMountingSockets(shape, normalizedParameters, context)
-  } else {
-    if (!deferDetachableCornerSeats) {
-      shape = addMountingSockets(shape, normalizedParameters, context)
-    }
-    shape = applyBasePlateMode(
-      shape,
-      normalizedParameters,
-      context.booleanOperations,
-    )
-  }
-  shape = addSideOpenings(shape, normalizedParameters, context)
-  shape = applyHoneycombMode(shape, normalizedParameters, context)
-  if (deferDetachableCornerSeats) {
-    shape = addMountingSockets(shape, normalizedParameters, context)
-  }
+  let shape: Shape3D | null = null
+  let honeycombBaseline:
+    | ReturnType<typeof captureOpenGridStackableBoxHoneycombQualityBaseline>
+    | undefined
   try {
+    shape = makeBoxShell(normalizedParameters, context.booleanOperations)
     assertGenerationCurrent(context)
-    assertOpenGridStackableBoxGeometry(shape, normalizedParameters, context)
+    const deferDetachableCornerSeats =
+      normalizedParameters.cornerSeatMode === 'detachable-corner-seat'
+    if (normalizedParameters.honeycombMode) {
+      shape = applyStackingProfile(shape, normalizedParameters, context)
+      shape = applyBasePlateMode(
+        shape,
+        normalizedParameters,
+        context.booleanOperations,
+      )
+      // Build every host interface before applying the lattice. The exact
+      // bottom masks protect these features, and the solid host can therefore
+      // receive the complete, bounded interface quality inspection before its
+      // face count becomes too large for the wasm32 volume probes.
+      shape = addMountingSockets(shape, normalizedParameters, context)
+      shape = addSideOpenings(shape, normalizedParameters, context)
+      honeycombBaseline = captureOpenGridStackableBoxHoneycombQualityBaseline(
+        shape,
+        normalizedParameters,
+      )
+      assertOpenGridStackableBoxGeometry(
+        shape,
+        { ...normalizedParameters, honeycombMode: false },
+        context,
+      )
+      shape = applyHoneycombMode(shape, normalizedParameters, context)
+    } else {
+      shape = applyStackingProfile(shape, normalizedParameters, context)
+      if (
+        normalizedParameters.basePlateMode &&
+        normalizedParameters.cornerSeatMode !== 'detachable-corner-seat'
+      ) {
+        shape = applyBasePlateMode(
+          shape,
+          normalizedParameters,
+          context.booleanOperations,
+        )
+        shape = addMountingSockets(shape, normalizedParameters, context)
+      } else {
+        if (!deferDetachableCornerSeats) {
+          shape = addMountingSockets(shape, normalizedParameters, context)
+        }
+        shape = applyBasePlateMode(
+          shape,
+          normalizedParameters,
+          context.booleanOperations,
+        )
+      }
+    }
+    if (!normalizedParameters.honeycombMode) {
+      shape = addSideOpenings(shape, normalizedParameters, context)
+      if (deferDetachableCornerSeats) {
+        shape = addMountingSockets(shape, normalizedParameters, context)
+      }
+    }
+    assertGenerationCurrent(context)
+    assertOpenGridStackableBoxGeometry(
+      shape,
+      normalizedParameters,
+      context,
+      honeycombBaseline,
+    )
+    return shape
+  } catch (error) {
+    deleteShape(shape)
+    throw error
+  }
+}
+
+export async function buildOpenGridStackableBoxAsync(
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridStackableBoxBuildContext = {},
+): Promise<Shape3D> {
+  const normalizedParameters = normalizedParametersOrThrow(parameters)
+  assertGenerationCurrent(context)
+  assertHoneycombMemoryWithinBudget(normalizedParameters)
+
+  let shape: Shape3D | null = null
+  let honeycombBaseline:
+    | ReturnType<typeof captureOpenGridStackableBoxHoneycombQualityBaseline>
+    | undefined
+  try {
+    shape = makeBoxShell(normalizedParameters, context.booleanOperations)
+    assertGenerationCurrent(context)
+    const deferDetachableCornerSeats =
+      normalizedParameters.cornerSeatMode === 'detachable-corner-seat'
+    if (normalizedParameters.honeycombMode) {
+      shape = applyStackingProfile(shape, normalizedParameters, context)
+      shape = applyBasePlateMode(
+        shape,
+        normalizedParameters,
+        context.booleanOperations,
+      )
+      shape = addMountingSockets(shape, normalizedParameters, context)
+      shape = addSideOpenings(shape, normalizedParameters, context)
+      honeycombBaseline = captureOpenGridStackableBoxHoneycombQualityBaseline(
+        shape,
+        normalizedParameters,
+      )
+      assertOpenGridStackableBoxGeometry(
+        shape,
+        { ...normalizedParameters, honeycombMode: false },
+        context,
+      )
+      shape = await applyHoneycombModeAsync(
+        shape,
+        normalizedParameters,
+        context,
+      )
+    } else {
+      shape = applyStackingProfile(shape, normalizedParameters, context)
+      if (
+        normalizedParameters.basePlateMode &&
+        normalizedParameters.cornerSeatMode !== 'detachable-corner-seat'
+      ) {
+        shape = applyBasePlateMode(
+          shape,
+          normalizedParameters,
+          context.booleanOperations,
+        )
+        shape = addMountingSockets(shape, normalizedParameters, context)
+      } else {
+        if (!deferDetachableCornerSeats) {
+          shape = addMountingSockets(shape, normalizedParameters, context)
+        }
+        shape = applyBasePlateMode(
+          shape,
+          normalizedParameters,
+          context.booleanOperations,
+        )
+      }
+    }
+    if (!normalizedParameters.honeycombMode) {
+      shape = addSideOpenings(shape, normalizedParameters, context)
+      if (deferDetachableCornerSeats) {
+        shape = addMountingSockets(shape, normalizedParameters, context)
+      }
+    }
+    assertGenerationCurrent(context)
+    assertOpenGridStackableBoxGeometry(
+      shape,
+      normalizedParameters,
+      context,
+      honeycombBaseline,
+    )
     return shape
   } catch (error) {
     deleteShape(shape)
@@ -104,71 +242,254 @@ function applyHoneycombMode(
   if (!parameters.honeycombMode) return shape
   assertGenerationCurrent(context)
 
-  const cutPanel = (
-    current: Shape3D,
-    cutters: Shape3D[],
-    batchSize = HONEYCOMB_CUT_BATCH_SIZE,
-  ): Shape3D => {
-    const batchCount = Math.ceil(cutters.length / batchSize)
-    const scope = context.booleanOperations?.createScope(batchCount)
-    let result = current
-    try {
-      while (cutters.length > 0) {
-        assertGenerationCurrent(context)
-        const batch = cutters.splice(0, batchSize)
-        let cutter: Shape3D | null = null
-        try {
-          if (batch.length === 1) {
-            cutter = batch[0] ?? null
-          } else {
-            cutter = makeCompound(batch).asShape3D()
-          }
-          if (!cutter) throw new Error('OPENGRID_HONEYCOMB_CUTTER_EMPTY')
-          const activeCutter = cutter
-          const cut = measureBooleanInScope(scope, 'cut', () =>
-            result.cut(activeCutter),
-          )
-          deleteShape(result)
-          result = cut
-        } finally {
-          batch.forEach(deleteShape)
-          if (cutter !== batch[0]) deleteShape(cutter)
-        }
-      }
-      return result
-    } catch (error) {
-      if (result !== current) deleteShape(result)
-      throw error
-    }
+  const estimate = estimateOpenGridStackableBoxHoneycombMemory(parameters)
+  if (!estimate.withinBudget) {
+    deleteShape(shape)
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:${estimate.estimatedCells}`,
+    )
   }
 
-  let sideCutters: Shape3D[] = []
-  let bottomCutters: Shape3D[] = []
+  let current = shape
+  const panelCutters: Shape3D[] = []
+  let operation = 'bottom'
   try {
-    sideCutters = makeOpenGridStackableBoxSideHoneycombCutters(
-      parameters,
-      context,
-    )
-    assertGenerationCurrent(context)
-    shape = cutPanel(shape, sideCutters)
-    sideCutters = []
-    assertGenerationCurrent(context)
-    bottomCutters = makeOpenGridStackableBoxProtectedBottomHoneycombCutters(
-      parameters,
-      context,
-    )
-    shape = cutPanel(shape, bottomCutters, 1)
-    bottomCutters = []
-    return shape
+    for (
+      let batchStart = 0;
+      ;
+      batchStart += OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE
+    ) {
+      assertGenerationCurrent(context)
+      operation = `bottom:${batchStart}`
+      const bottom = makeOpenGridStackableBoxBottomHoneycombPanel(
+        parameters,
+        context,
+        batchStart,
+        OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE,
+      )
+      if (!bottom.panel || !bottom.slot) {
+        deleteShape(bottom.panel)
+        deleteShape(bottom.slot)
+        break
+      }
+      panelCutters.push(
+        makeHoneycombPanelCutter(bottom.panel, context, bottom.slot),
+      )
+    }
+    operation = 'bottom'
+    current = cutHoneycombPanelGroup(current, panelCutters, context)
+
+    for (const side of ['+X', '-X', '+Y', '-Y'] as const) {
+      panelCutters.length = 0
+      for (
+        let batchStart = 0;
+        ;
+        batchStart += OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE
+      ) {
+        assertGenerationCurrent(context)
+        operation = `side:${side}:${batchStart}`
+        const panel = makeOpenGridStackableBoxSideHoneycombPanel(
+          parameters,
+          side,
+          context,
+          batchStart,
+        )
+        if (!panel) break
+        panelCutters.push(
+          makeHoneycombPanelCutter(panel, context, undefined, () =>
+            makeOpenGridStackableBoxSideHoneycombPanelSlot(
+              parameters,
+              side,
+              panel,
+              context,
+            ),
+          ),
+        )
+      }
+      operation = `side:${side}`
+      current = cutHoneycombPanelGroup(current, panelCutters, context)
+    }
+    return current
   } catch (error) {
-    deleteShape(shape)
+    deleteShape(current)
+    panelCutters.forEach(deleteShape)
     if (error instanceof Error && error.message === 'STALE_GENERATION') {
       throw error
     }
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`OPENGRID_STACKABLE_BOX_HONEYCOMB_INVALID:${message}`)
+    if (message.startsWith('OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:')) {
+      throw error
+    }
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_HONEYCOMB_INVALID:${operation}:${message}`,
+    )
+  }
+}
+
+async function yieldAtHoneycombBatchBoundary(
+  context: OpenGridStackableBoxBuildContext,
+): Promise<void> {
+  await context.yieldToEventLoop?.()
+  assertGenerationCurrent(context)
+}
+
+async function applyHoneycombModeAsync(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridStackableBoxBuildContext,
+): Promise<Shape3D> {
+  if (!parameters.honeycombMode) return shape
+  assertGenerationCurrent(context)
+
+  const estimate = estimateOpenGridStackableBoxHoneycombMemory(parameters)
+  if (!estimate.withinBudget) {
+    deleteShape(shape)
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:${estimate.estimatedCells}`,
+    )
+  }
+
+  let current = shape
+  const panelCutters: Shape3D[] = []
+  let operation = 'bottom'
+  try {
+    await yieldAtHoneycombBatchBoundary(context)
+    for (
+      let batchStart = 0;
+      ;
+      batchStart += OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE
+    ) {
+      operation = `bottom:${batchStart}`
+      const bottom = makeOpenGridStackableBoxBottomHoneycombPanel(
+        parameters,
+        context,
+        batchStart,
+        OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE,
+      )
+      if (!bottom.panel || !bottom.slot) {
+        deleteShape(bottom.panel)
+        deleteShape(bottom.slot)
+        break
+      }
+      panelCutters.push(
+        makeHoneycombPanelCutter(bottom.panel, context, bottom.slot),
+      )
+      await yieldAtHoneycombBatchBoundary(context)
+    }
+    operation = 'bottom'
+    current = cutHoneycombPanelGroup(current, panelCutters, context)
+
+    for (const side of ['+X', '-X', '+Y', '-Y'] as const) {
+      panelCutters.length = 0
+      for (
+        let batchStart = 0;
+        ;
+        batchStart += OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE
+      ) {
+        operation = `side:${side}:${batchStart}`
+        const panel = makeOpenGridStackableBoxSideHoneycombPanel(
+          parameters,
+          side,
+          context,
+          batchStart,
+        )
+        if (!panel) break
+        panelCutters.push(
+          makeHoneycombPanelCutter(panel, context, undefined, () =>
+            makeOpenGridStackableBoxSideHoneycombPanelSlot(
+              parameters,
+              side,
+              panel,
+              context,
+            ),
+          ),
+        )
+        await yieldAtHoneycombBatchBoundary(context)
+      }
+      operation = `side:${side}`
+      current = cutHoneycombPanelGroup(current, panelCutters, context)
+      await yieldAtHoneycombBatchBoundary(context)
+    }
+    return current
+  } catch (error) {
+    deleteShape(current)
+    panelCutters.forEach(deleteShape)
+    if (error instanceof Error && error.message === 'STALE_GENERATION') {
+      throw error
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.startsWith('OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:')) {
+      throw error
+    }
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_HONEYCOMB_INVALID:${operation}:${message}`,
+    )
+  }
+}
+
+function cutHoneycombPanelGroup(
+  current: Shape3D,
+  panelCutters: Shape3D[],
+  context: OpenGridStackableBoxBuildContext,
+): Shape3D {
+  if (panelCutters.length === 0) return current
+  assertGenerationCurrent(context)
+  let compound: Shape3D | null = null
+  try {
+    const cutter =
+      panelCutters.length === 1
+        ? panelCutters[0]!
+        : (compound = makeCompound(panelCutters).asShape3D())
+    const result = measureBooleanInScope(
+      context.booleanOperations?.createScope(1),
+      'cut',
+      () => current.cut(cutter),
+    )
+    deleteShape(current)
+    return result
   } finally {
-    sideCutters.forEach(deleteShape)
-    bottomCutters.forEach(deleteShape)
+    panelCutters.forEach(deleteShape)
+    panelCutters.length = 0
+    deleteShape(compound)
+  }
+}
+
+function makeHoneycombPanelCutter(
+  panel: Shape3D,
+  context: OpenGridStackableBoxBuildContext,
+  providedSlot?: Shape3D,
+  slotFactory?: () => Shape3D,
+): Shape3D {
+  let slot: Shape3D | null = providedSlot ?? null
+  let cutter: Shape3D | null = null
+  try {
+    slot ??= slotFactory?.() ?? makeHoneycombPanelSlot(panel)
+    const activeSlot = slot
+    cutter = measureBooleanInScope(
+      context.booleanOperations?.createScope(1),
+      'cut',
+      () => activeSlot.cut(panel, { optimisation: 'commonFace' }),
+    )
+    return cutter
+  } catch (error) {
+    deleteShape(cutter)
+    throw error
+  } finally {
+    deleteShape(slot)
+    deleteShape(panel)
+  }
+}
+
+function makeHoneycombPanelSlot(panel: Shape3D): Shape3D {
+  const bounds = panel.boundingBox
+  try {
+    const [[minimumX, minimumY, minimumZ], [maximumX, maximumY, maximumZ]] =
+      bounds.bounds as number[][]
+    return makeBox(
+      [minimumX, minimumY, minimumZ],
+      [maximumX, maximumY, maximumZ],
+    )
+  } finally {
+    bounds.delete()
   }
 }

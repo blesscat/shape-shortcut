@@ -496,7 +496,7 @@ existing behavior.
 
 ### Requirement: Honeycomb material-saving box mode
 
-The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolean profile flag. `honeycombMode` MUST default to `false`, MUST be accepted in legacy hydration as `false` when absent, and MUST preserve the existing model ID `opengrid-stackable-box`, route, footprint, height semantics, normal/base-plate/thin-shell mode semantics, opening fields, bottom-hole fields, preview lifecycle, and STEP/STL export workflow. The parameter panel MUST expose the flag as `省料模式（六角鏤空）` without replacing the existing mutually exclusive box-mode choices. When enabled, the profile MUST be the Hex Mesh style: complete staggered hexagonal openings MUST be separated by a continuous printable rib network; the profile MUST NOT claim to implement the separate vertical-groove Ribbed style.
+The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolean profile flag. `honeycombMode` MUST default to `false`, MUST be accepted in legacy hydration as `false` when absent, and MUST preserve the existing model ID `opengrid-stackable-box`, route, footprint, height semantics, normal/base-plate/thin-shell mode semantics, opening fields, bottom-hole fields, preview lifecycle, and STEP/STL export workflow. The parameter panel MUST expose the flag as `省料模式（六角鏤空）` without replacing the existing mutually exclusive box-mode choices. When enabled, the profile MUST be the Hex Mesh style: complete staggered hexagonal openings MUST be separated by a continuous printable rib network; the profile MUST NOT claim to implement the separate vertical-groove Ribbed style. For a valid honeycomb candidate within the supported geometry-engine budget, generation MUST complete without requiring unbounded in-flight geometry state; if the requested candidate cannot fit that budget, generation MUST fail diagnostically before committing a partial candidate.
 
 #### Scenario: Legacy and default snapshots keep the solid profile
 
@@ -554,6 +554,13 @@ The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolea
 - **AND** a box-floor boundary MAY use a clipped partial cell when the retained frame and safety-ring constraints remain satisfied
 - **AND** a box side-panel or side-opening boundary MAY use a clipped partial cell when every retained frame and structural-bridge constraint remains satisfied
 
+#### Scenario: Supported tall boxes complete within the geometry budget
+
+- **WHEN** a normal stackable box has `x=7`, `y=7`, `height=60` or `height=100`, `honeycombMode=true`, and no invalid protected-feature inputs
+- **THEN** generation MUST complete with a valid candidate within the fixed geometry-engine memory ceiling
+- **AND** the candidate MUST remain eligible for preview and STEP/STL export
+- **AND** all existing corner-seat modes MUST preserve their supported geometry and protected interfaces
+
 #### Scenario: Honeycomb box output is distinguishable and materially lighter
 
 - **WHEN** a valid honeycomb box with at least one eligible lattice panel is exported
@@ -563,7 +570,7 @@ The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolea
 
 ### Requirement: Honeycomb box quality protection
 
-The stackable-box quality gate MUST inspect honeycomb-mode candidates separately from solid profiles. It MUST reject a candidate that changes any protected hole profile, cuts a protected interface or opening boundary, creates an invalid or multi-solid result, exceeds the existing bounds, or fails preview/export eligibility. The quality report MUST identify whether honeycomb mode was enabled and MUST distinguish a valid no-cell fallback from a failed lattice construction.
+The stackable-box quality gate MUST inspect honeycomb-mode candidates separately from solid profiles. It MUST reject a candidate that changes any protected hole profile, cuts a protected interface or opening boundary, creates an invalid or multi-solid result, exceeds the existing bounds, or fails preview/export eligibility. The quality report MUST identify whether honeycomb mode was enabled and MUST distinguish a valid no-cell fallback from a failed lattice construction. Memory-bounded construction and inspection MUST NOT weaken any protected-feature, validity, or export decision.
 
 #### Scenario: Honeycomb quality rejects protected-feature damage
 
@@ -575,6 +582,12 @@ The stackable-box quality gate MUST inspect honeycomb-mode candidates separately
 
 - **WHEN** a honeycomb candidate contains only safe complete cells and passes all existing box geometry, hole, opening, interface, and export checks
 - **THEN** the candidate MUST be eligible for commit, preview, STEP export, and STL export
+
+#### Scenario: Quality checks remain valid for supported tall boxes
+
+- **WHEN** a generated 7x7 honeycomb box at height 60 or 100 is inspected in each supported corner-seat mode
+- **THEN** the quality gate MUST apply the same protected-feature decisions as the corresponding existing honeycomb checks
+- **AND** successful inspection MUST leave a single valid exportable solid
 
 ### Requirement: OpenGrid stackable-box workspace integration
 

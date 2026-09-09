@@ -1,19 +1,29 @@
 import { measureVolume, type Shape3D } from 'replicad'
 import {
   boundsForOpenGridStackableBox,
+  externalOpenGridStackableBoxHeightFor,
+  openGridStackableBoxActiveFloorTopZFor,
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
   nominalOpenGridStackableBoxFootprintFor,
   openGridStackableBoxSocketCentersFor,
+  openGridStackableBoxUpperInnerRimZFor,
+  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
-import { bottomGridSeamsFor } from './geometry'
+import { bottomGridSeamsFor, bottomGuideTransitionTopZ } from './geometry'
+import { toGeometryError } from '../../geometry-errors'
 import {
   inspectOpenGridStackableBoxInterface,
   integratedSeatRecordCountFor,
 } from './quality-interface'
 import { countOrdinaryBottomHoleFaces } from './quality-holes'
-import { countSolids, isBRepValid } from './quality-metrics'
+import {
+  countSolids,
+  isBRepValid,
+  readFaceQualityRecords,
+  type FaceQualityRecord,
+} from './quality-metrics'
 import { assertBottomGridSpacing } from './quality-seams'
 import { assertOpenGridStackableBoxOpenings } from './quality-openings'
 import {
@@ -21,11 +31,47 @@ import {
   type OpenGridStackableBoxThinShellQualityReport,
 } from './quality-thin'
 import type { OpenGridStackableBoxInterfaceQualityReport } from './quality-types'
-import { closeEnough, readBounds } from './shared'
+import {
+  closeEnough,
+  createOpenGridStackableBoxQualityRegions,
+  deleteShape,
+  openGridStackableBoxQualityRegionZBounds,
+  readBounds,
+  type Bounds,
+  type OpenGridStackableBoxQualityRegions,
+} from './shared'
+import {
+  openGridStackableBoxHoneycombCellCountFor,
+  openGridStackableBoxSideHoneycombCellCountFor,
+} from '../../lattice/opengrid-honeycomb'
 import {
   assertOpenGridDetachableCornerSeatConsumers,
   type OpenGridDetachableCornerSeatConsumerContext,
 } from '../opengrid-locating-assembly/consumer'
+
+const HONEYCOMB_FULL_BOOLEAN_INSPECTION_CELL_LIMIT = 512
+
+export function socketSeatChipZone(
+  parameters: OpenGridStackableBoxParameters,
+  center: readonly [number, number],
+): Bounds {
+  const seatConfiguration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION
+  const zBounds = openGridStackableBoxQualityRegionZBounds(parameters)
+  // The socket-void probe is the widest seat measurement: its circular
+  // envelope (holder diameter minus the host overlap) must fit inside the
+  // chip or the residual check would silently ignore material in the outer
+  // annulus and weaken the rejection verdict.
+  const radius =
+    Math.max(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.baseFlangeDiameter / 2,
+      seatConfiguration.female.outerDiameter / 2 +
+        seatConfiguration.geometryTolerance,
+    ) + 1
+  return [
+    [center[0] - radius, center[1] - radius, zBounds.bottomMinZ],
+    [center[0] + radius, center[1] + radius, zBounds.bottomMaxZ],
+  ]
+}
 
 function assertExpectedBounds(
   shape: Shape3D,
@@ -37,7 +83,9 @@ function assertExpectedBounds(
     const expectedPoint = pointIndex === 0 ? expected.min : expected.max
     return point.every((value, axis) => closeEnough(value, expectedPoint[axis]))
   })
-  if (!matches) throw new Error('OPENGRID_STACKABLE_BOX_INVALID_BOUNDS')
+  if (!matches) {
+    throw new Error('OPENGRID_STACKABLE_BOX_INVALID_BOUNDS')
+  }
 }
 
 function assertSocketLayout(parameters: OpenGridStackableBoxParameters): void {
@@ -79,10 +127,13 @@ function assertValidShape(shape: Shape3D): void {
       throw new Error('OPENGRID_STACKABLE_BOX_BREP_INVALID')
     }
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-      throw error
+    const normalized = toGeometryError(error)
+    if (normalized.message.startsWith('OPENGRID_')) {
+      throw normalized
     }
-    throw new Error('OPENGRID_STACKABLE_BOX_GEOMETRY_INVALID')
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_GEOMETRY_INVALID:${normalized.message}`,
+    )
   }
 }
 
@@ -278,6 +329,243 @@ function assertIntegratedSeats(
   }
 }
 
+type HoneycombThinShellFaceBaseline = Readonly<{
+  bottomChamferFaceCount: number
+  topChamferFaceCount: number
+  topRimHorizontalPlanarFaceCount: number
+  innerFloorFilletFaceCount: number
+}>
+
+export type OpenGridStackableBoxHoneycombQualityBaseline = Readonly<{
+  topRailFaceCount: number
+  bottomGuideFaceCount: number
+  activeFloorFaceCount: number
+  thinShell?: HoneycombThinShellFaceBaseline
+}>
+
+function faceOverlapsZBand(
+  record: FaceQualityRecord,
+  minimumZ: number,
+  maximumZ: number,
+): boolean {
+  return record.min[2] < maximumZ && record.max[2] > minimumZ
+}
+
+function faceCountInZBand(
+  records: readonly FaceQualityRecord[],
+  minimumZ: number,
+  maximumZ: number,
+): number {
+  return records.filter((record) =>
+    faceOverlapsZBand(record, minimumZ, maximumZ),
+  ).length
+}
+
+function chamferFaceCountInZBand(
+  records: readonly FaceQualityRecord[],
+  minimumZ: number,
+  maximumZ: number,
+  expectedSpan: number,
+): number {
+  return records.filter((record) => {
+    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
+    const span = record.max[2] - record.min[2]
+    return (
+      span >= expectedSpan * 0.7 &&
+      span <= expectedSpan * 1.3 &&
+      record.min[2] >= minimumZ - 0.03 &&
+      record.max[2] <= maximumZ + 0.03 &&
+      closeEnough(Math.abs(record.normal[2]), Math.SQRT1_2, 0.12)
+    )
+  }).length
+}
+
+function horizontalFaceCountInZBand(
+  records: readonly FaceQualityRecord[],
+  minimumZ: number,
+  maximumZ: number,
+): number {
+  return records.filter((record) => {
+    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
+    const zSpan = record.max[2] - record.min[2]
+    return (
+      zSpan <= 0.03 &&
+      record.min[2] >= minimumZ - 0.03 &&
+      record.max[2] <= maximumZ + 0.03 &&
+      Math.abs(record.normal[2]) >= 0.95
+    )
+  }).length
+}
+
+function roundedFaceCountInZBand(
+  records: readonly FaceQualityRecord[],
+  minimumZ: number,
+  maximumZ: number,
+): number {
+  return records.filter(
+    (record) =>
+      (record.surfaceType === 'CONE' || record.surfaceType === 'CYLINDRE') &&
+      faceOverlapsZBand(record, minimumZ, maximumZ) &&
+      record.max[0] - record.min[0] > 0.2 &&
+      record.max[1] - record.min[1] > 0.2,
+  ).length
+}
+
+/**
+ * Capture the protected interface's face-only invariants while the host is
+ * still a small solid. High-cell candidates cannot afford to rerun the
+ * corresponding volume probes after lattice construction, so the final gate
+ * compares these mode-specific structural markers against this baseline.
+ */
+export function captureOpenGridStackableBoxHoneycombQualityBaseline(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+): OpenGridStackableBoxHoneycombQualityBaseline {
+  const records = readFaceQualityRecords(shape)
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const upperInnerRimZ = openGridStackableBoxUpperInnerRimZFor(parameters)
+  const activeFloorTopZ = openGridStackableBoxActiveFloorTopZFor(parameters)
+  const thinShell = parameters.thinShellMode
+    ? {
+        bottomChamferFaceCount: chamferFaceCountInZBand(
+          records,
+          0,
+          configuration.thinShellOuterBottomChamfer,
+          configuration.thinShellOuterBottomChamfer,
+        ),
+        topChamferFaceCount: chamferFaceCountInZBand(
+          records,
+          upperInnerRimZ,
+          externalOpenGridStackableBoxHeightFor(parameters),
+          configuration.thinShellTopChamfer,
+        ),
+        topRimHorizontalPlanarFaceCount: horizontalFaceCountInZBand(
+          records,
+          upperInnerRimZ,
+          externalOpenGridStackableBoxHeightFor(parameters),
+        ),
+        innerFloorFilletFaceCount: roundedFaceCountInZBand(
+          records,
+          configuration.thinShellFloorThickness,
+          configuration.thinShellFloorThickness +
+            configuration.thinShellInnerFloorFilletRadius +
+            0.05,
+        ),
+      }
+    : undefined
+  return {
+    topRailFaceCount: faceCountInZBand(
+      records,
+      upperInnerRimZ - 0.03,
+      upperInnerRimZ + configuration.topRailHeight + 0.03,
+    ),
+    bottomGuideFaceCount: faceCountInZBand(
+      records,
+      -0.03,
+      bottomGuideTransitionTopZ() + 0.03,
+    ),
+    activeFloorFaceCount: faceCountInZBand(
+      records,
+      -0.03,
+      activeFloorTopZ + 0.03,
+    ),
+    ...(thinShell ? { thinShell } : {}),
+  }
+}
+
+function assertHoneycombProtectedInterfaceQuality(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  baseline: OpenGridStackableBoxHoneycombQualityBaseline,
+): void {
+  const current = captureOpenGridStackableBoxHoneycombQualityBaseline(
+    shape,
+    parameters,
+  )
+  if (
+    current.topRailFaceCount < baseline.topRailFaceCount ||
+    current.activeFloorFaceCount < baseline.activeFloorFaceCount
+  ) {
+    throw new Error('OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID')
+  }
+  if (
+    !parameters.thinShellMode &&
+    !parameters.basePlateMode &&
+    current.bottomGuideFaceCount < baseline.bottomGuideFaceCount
+  ) {
+    throw new Error('OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID')
+  }
+
+  if (parameters.thinShellMode) {
+    const expected = baseline.thinShell
+    const actual = current.thinShell
+    if (
+      !expected ||
+      !actual ||
+      actual.bottomChamferFaceCount < expected.bottomChamferFaceCount ||
+      actual.topChamferFaceCount < expected.topChamferFaceCount ||
+      actual.topRimHorizontalPlanarFaceCount !==
+        expected.topRimHorizontalPlanarFaceCount ||
+      actual.innerFloorFilletFaceCount < expected.innerFloorFilletFaceCount
+    ) {
+      throw new Error('OPENGRID_STACKABLE_BOX_THIN_SHELL_PROFILE_INVALID')
+    }
+  }
+}
+
+function assertHoneycombStructuralQuality(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  baseline?: OpenGridStackableBoxHoneycombQualityBaseline,
+): void {
+  assertOpenGridStackableBoxOpenings(shape, parameters, {
+    volumeProbes: false,
+  })
+
+  const ordinaryCenters =
+    openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
+  if (
+    countOrdinaryBottomHoleFaces(shape, ordinaryCenters, parameters) !==
+    ordinaryCenters.length
+  ) {
+    throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
+  }
+  if (parameters.cornerSeatMode === 'integrated') {
+    assertIntegratedSeats(shape, parameters)
+  }
+  if (parameters.basePlateMode) {
+    assertBasePlateMountingInterface(shape, parameters)
+  }
+  if (baseline) {
+    assertHoneycombProtectedInterfaceQuality(shape, parameters, baseline)
+  }
+
+  const records = readFaceQualityRecords(shape)
+  const cellCount = openGridStackableBoxHoneycombCellCountFor(parameters)
+  const sideCellCount =
+    openGridStackableBoxSideHoneycombCellCountFor(parameters)
+  const verticalLatticeFaceCount = records.filter(
+    (record) =>
+      record.surfaceType === 'PLANE' &&
+      record.normal !== null &&
+      Math.abs(record.normal[2]) < 0.12 &&
+      record.max[2] - record.min[2] > 0.5,
+  ).length
+  const hasLatticeWallFaces = records.some(
+    (record) =>
+      record.surfaceType === 'PLANE' &&
+      record.normal !== null &&
+      Math.abs(record.normal[2]) < 0.12 &&
+      record.max[2] - record.min[2] > 0.5,
+  )
+  if (
+    (cellCount > 0 && !hasLatticeWallFaces) ||
+    verticalLatticeFaceCount < sideCellCount
+  ) {
+    throw new Error('OPENGRID_STACKABLE_BOX_HONEYCOMB_QUALITY_INVALID')
+  }
+}
+
 function assertThinShellQuality(
   quality: OpenGridStackableBoxThinShellQualityReport,
 ): void {
@@ -349,20 +637,70 @@ export function assertOpenGridStackableBoxGeometry(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
   context: OpenGridDetachableCornerSeatConsumerContext = {},
+  honeycombBaseline?: OpenGridStackableBoxHoneycombQualityBaseline,
 ): void {
   assertExpectedBounds(shape, parameters)
   assertSocketLayout(parameters)
   assertValidShape(shape)
   assertInterfaceConstants()
+
+  if (
+    parameters.honeycombMode &&
+    openGridStackableBoxHoneycombCellCountFor(parameters) >
+      HONEYCOMB_FULL_BOOLEAN_INSPECTION_CELL_LIMIT
+  ) {
+    // A full-candidate intersection is itself larger than the wasm32 engine
+    // budget once a tall lattice has been built. Keep the same bounds, B-Rep,
+    // solid-count, opening-face, hole-face, and seat-face decisions, while
+    // relying on the lattice builder's exact protected masks for the volume
+    // checks that cannot be represented as a local face query.
+    assertHoneycombStructuralQuality(shape, parameters, honeycombBaseline)
+    return
+  }
+
   assertOpenGridStackableBoxOpenings(shape, parameters)
 
+  // Lattice candidates have too many faces for every measurement to run
+  // against the full shape within the engine memory ceiling: pre-cut the two
+  // measurement regions once and reuse small chips of them for every probe.
+  const regions: OpenGridStackableBoxQualityRegions | undefined =
+    parameters.honeycombMode
+      ? createOpenGridStackableBoxQualityRegions(shape, parameters)
+      : undefined
+  try {
+    inspectWithRegions(shape, parameters, context, regions)
+  } finally {
+    regions?.dispose()
+  }
+}
+
+function inspectWithRegions(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridDetachableCornerSeatConsumerContext,
+  regions: OpenGridStackableBoxQualityRegions | undefined,
+): void {
   if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    assertOpenGridDetachableCornerSeatConsumers(
-      shape,
-      openGridStackableBoxSocketCentersFor(parameters),
-      context,
-      'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
-    )
+    try {
+      assertOpenGridDetachableCornerSeatConsumers(
+        shape,
+        openGridStackableBoxSocketCentersFor(parameters),
+        context,
+        'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
+        regions
+          ? (center) =>
+              regions.bottomZone(socketSeatChipZone(parameters, center))
+          : undefined,
+      )
+    } catch (error) {
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
+      }
+      throw new Error(
+        `OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID:${normalized.message}`,
+      )
+    }
   }
 
   if (parameters.thinShellMode) {
@@ -371,8 +709,9 @@ export function assertOpenGridStackableBoxGeometry(
         inspectOpenGridStackableBoxThinShell(shape, parameters),
       )
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-        throw error
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
       }
       throw new Error('OPENGRID_STACKABLE_BOX_THIN_SHELL_GEOMETRY_INVALID')
     }
@@ -386,8 +725,9 @@ export function assertOpenGridStackableBoxGeometry(
     try {
       assertBasePlateMountingInterface(shape, parameters)
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-        throw error
+      const normalized = toGeometryError(error)
+      if (normalized.message.startsWith('OPENGRID_')) {
+        throw normalized
       }
       throw new Error('OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID')
     }
@@ -396,12 +736,15 @@ export function assertOpenGridStackableBoxGeometry(
 
   let quality: OpenGridStackableBoxInterfaceQualityReport
   try {
-    quality = inspectOpenGridStackableBoxInterface(shape, parameters)
+    quality = inspectOpenGridStackableBoxInterface(shape, parameters, regions)
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('OPENGRID_')) {
-      throw error
+    const normalized = toGeometryError(error)
+    if (normalized.message.startsWith('OPENGRID_')) {
+      throw normalized
     }
-    throw new Error('OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID')
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID:${normalized.message}`,
+    )
   }
 
   assertThickShell(quality)

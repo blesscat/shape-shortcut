@@ -17,6 +17,7 @@ import {
   applyStackingProfile,
   bottomGridSeamApexTopZ,
   bottomGridSeamsFor,
+  type OpenGridStackableBoxBottomGridSeam,
   bottomGuideSupportInset,
   bottomGuideTransitionTopZ,
   bottomStackingProfileTopZ,
@@ -47,7 +48,14 @@ import {
   measureBottomGridSeamSupportThickness,
 } from './quality-seams'
 import type { OpenGridStackableBoxInterfaceQualityReport } from './quality-types'
-import { closeEnough, deleteShape, readBounds } from './shared'
+import {
+  closeEnough,
+  deleteShape,
+  openGridStackableBoxQualityRegionZBounds,
+  readBounds,
+  type Bounds,
+  type OpenGridStackableBoxQualityRegions,
+} from './shared'
 
 function isIntegratedSeatRecordFor(
   record: ReturnType<typeof readFaceQualityRecords>[number],
@@ -219,6 +227,7 @@ function inspectShellThickness(
   parameters: OpenGridStackableBoxParameters,
   width: number,
   depth: number,
+  regions?: OpenGridStackableBoxQualityRegions,
 ) {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const sideWallProbeBottom = configuration.bottomAssemblyHeight + 0.05
@@ -248,27 +257,41 @@ function inspectShellThickness(
     throw new Error('OPENGRID_STACKABLE_BOX_FLOOR_PROBE_INVALID')
   }
   const [floorProbeCenterX, floorProbeCenterY] = floorProbeCenterCoordinates
+  const floorProbeMin: [number, number, number] = [
+    floorProbeCenterX - floorProbeHalfExtent,
+    floorProbeCenterY - floorProbeHalfExtent,
+    configuration.bottomAssemblyHeight - configuration.floorThickness - 0.01,
+  ]
+  const floorProbeMax: [number, number, number] = [
+    floorProbeCenterX + floorProbeHalfExtent,
+    floorProbeCenterY + floorProbeHalfExtent,
+    configuration.bottomAssemblyHeight + 0.01,
+  ]
+  const floorProbeTarget = regions
+    ? regions.bottomZone(chipZoneAround(floorProbeMin, floorProbeMax))
+    : shape
   const floorProbeVolumes = [
-    volumeInBox(
-      shape,
-      [
-        floorProbeCenterX - floorProbeHalfExtent,
-        floorProbeCenterY - floorProbeHalfExtent,
-        configuration.bottomAssemblyHeight -
-          configuration.floorThickness -
-          0.01,
-      ],
-      [
-        floorProbeCenterX + floorProbeHalfExtent,
-        floorProbeCenterY + floorProbeHalfExtent,
-        configuration.bottomAssemblyHeight + 0.01,
-      ],
-    ),
+    volumeInBox(shape, floorProbeMin, floorProbeMax, floorProbeTarget),
   ]
   const floorProbeArea = (2 * floorProbeHalfExtent) ** 2
   const floorProbeThicknesses = floorProbeVolumes.map(
     (volume) => volume / floorProbeArea,
   )
+  const sideWallTargetFor = regions
+    ? sideChipTargetFor(
+        sideChipZones(
+          regions,
+          width,
+          depth,
+          configuration.wallThickness + 0.1,
+          0,
+          sideWallProbeBottom,
+          sideWallProbeTop,
+          {},
+          2,
+        ),
+      )
+    : undefined
   const sideWallProbeVolumes = edgeBandVolumes(
     shape,
     width,
@@ -277,6 +300,8 @@ function inspectShellThickness(
     0.05,
     sideWallProbeBottom,
     sideWallProbeTop,
+    {},
+    sideWallTargetFor,
   )
   const sideWallProbeExpectedVolumes = edgeBandExpectedVolumes(
     width,
@@ -436,11 +461,98 @@ function chooseSafeCrossCenter(
   )
 }
 
+function chipZoneAround(
+  min: readonly [number, number, number],
+  max: readonly [number, number, number],
+  pad = 0.5,
+): Bounds {
+  return [
+    [min[0] - pad, min[1] - pad, min[2] - pad],
+    [max[0] + pad, max[1] + pad, max[2] + pad],
+  ]
+}
+
+function sideChipZones(
+  regions: OpenGridStackableBoxQualityRegions,
+  width: number,
+  depth: number,
+  innerDistance: number,
+  outerDistance: number,
+  zMin: number,
+  zMax: number,
+  crossCenters: { x?: number; y?: number },
+  halfLength: number,
+): Record<string, Shape3D> {
+  const pad = 0.5
+  const zones: Record<string, Bounds> = {
+    'x,1': [
+      [
+        width / 2 - innerDistance - pad,
+        (crossCenters.y ?? 0) - halfLength - pad,
+        zMin - pad,
+      ],
+      [
+        width / 2 - outerDistance + pad,
+        (crossCenters.y ?? 0) + halfLength + pad,
+        zMax + pad,
+      ],
+    ],
+    'x,-1': [
+      [
+        -width / 2 + outerDistance - pad,
+        (crossCenters.y ?? 0) - halfLength - pad,
+        zMin - pad,
+      ],
+      [
+        -width / 2 + innerDistance + pad,
+        (crossCenters.y ?? 0) + halfLength + pad,
+        zMax + pad,
+      ],
+    ],
+    'y,1': [
+      [
+        (crossCenters.x ?? 0) - halfLength - pad,
+        depth / 2 - innerDistance - pad,
+        zMin - pad,
+      ],
+      [
+        (crossCenters.x ?? 0) + halfLength + pad,
+        depth / 2 - outerDistance + pad,
+        zMax + pad,
+      ],
+    ],
+    'y,-1': [
+      [
+        (crossCenters.x ?? 0) - halfLength - pad,
+        -depth / 2 + outerDistance - pad,
+        zMin - pad,
+      ],
+      [
+        (crossCenters.x ?? 0) + halfLength + pad,
+        -depth / 2 + innerDistance + pad,
+        zMax + pad,
+      ],
+    ],
+  }
+  const chips: Record<string, Shape3D> = {}
+  for (const [key, zone] of Object.entries(zones)) {
+    chips[key] = regions.bottomZone(zone)
+  }
+  return chips
+}
+
+function sideChipTargetFor(
+  chips: Record<string, Shape3D>,
+): (axis: 'x' | 'y', sign: -1 | 1) => Shape3D {
+  return (axis, sign) => chips[`${axis},${sign}`]!
+}
+
 function inspectBottomSupport(
   shape: Shape3D,
   width: number,
   depth: number,
   parameters: OpenGridStackableBoxParameters,
+  regions?: OpenGridStackableBoxQualityRegions,
 ) {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const crossCenters = {
@@ -448,6 +560,21 @@ function inspectBottomSupport(
     y: chooseSafeCrossCenter(depth, 'y', parameters),
   }
   const supportInset = bottomGuideSupportInset()
+  const sideTargetFor = regions
+    ? sideChipTargetFor(
+        sideChipZones(
+          regions,
+          width,
+          depth,
+          supportInset + 1.0,
+          supportInset - 0.1,
+          -0.01,
+          bottomGuideTransitionTopZ() + 0.05,
+          crossCenters,
+          2,
+        ),
+      )
+    : undefined
   const footInset = supportInset + configuration.bottomFootChamferHeight
   const footBandOuterDistance = footInset - 0.1
   const footBandInnerDistance = footBandOuterDistance + 0.2
@@ -462,6 +589,7 @@ function inspectBottomSupport(
     -0.01,
     configuration.bottomFootChamferHeight * 0.45,
     crossCenters,
+    sideTargetFor,
   )
   const bottomSupportVolumes = edgeBandVolumes(
     shape,
@@ -472,6 +600,7 @@ function inspectBottomSupport(
     configuration.bottomFootChamferHeight - 0.05,
     bottomStackingSupportTopZ() + 0.05,
     crossCenters,
+    sideTargetFor,
   )
   const bottomPerimeterResidualVolumes = edgeBandVolumes(
     shape,
@@ -482,6 +611,7 @@ function inspectBottomSupport(
     -0.01,
     configuration.bottomFootChamferHeight * 0.25,
     crossCenters,
+    sideTargetFor,
   )
   const bottomSupportFloorOuterDistance = supportBandOuterDistance
   const bottomSupportFloorInnerDistance = supportBandInnerDistance
@@ -494,6 +624,7 @@ function inspectBottomSupport(
     bottomStackingProfileTopZ() + 0.05,
     configuration.bottomAssemblyHeight + 0.01,
     crossCenters,
+    sideTargetFor,
   )
   const bottomSupportFloorExpectedVolumes = edgeBandExpectedVolumes(
     width,
@@ -519,6 +650,7 @@ function inspectBottomSupport(
     bottomStackingSupportTopZ() - 0.05,
     bottomGuideTransitionTopZ() + 0.05,
     crossCenters,
+    sideTargetFor,
   )
   const bottomTransitionExpectedVolumes = edgeBandExpectedVolumes(
     width,
@@ -547,6 +679,7 @@ function inspectBottomSupport(
 function inspectGridSeams(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
+  regions?: OpenGridStackableBoxQualityRegions,
 ) {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const bottomGridSeams = bottomGridSeamsFor(parameters)
@@ -554,6 +687,23 @@ function inspectGridSeams(
     0.25,
     configuration.bottomGridSeamOpeningWidth / 2 - 0.08,
   )
+  const seamChipFor = (seam: OpenGridStackableBoxBottomGridSeam): Shape3D => {
+    if (!regions) return shape
+    const { bottomMinZ, bottomMaxZ } =
+      openGridStackableBoxQualityRegionZBounds(parameters)
+    const extent = 3
+    const zone: Bounds =
+      seam.axis === 'x'
+        ? [
+            [seam.position - extent, -8.5, bottomMinZ],
+            [seam.position + extent, 8.5, bottomMaxZ],
+          ]
+        : [
+            [-8.5, seam.position - extent, bottomMinZ],
+            [8.5, seam.position + extent, bottomMaxZ],
+          ]
+    return regions.bottomZone(zone)
+  }
   const bottomGridSeamClearanceVolumes = bottomGridSeams.map((seam) =>
     measureBottomGridSeamBand(
       shape,
@@ -562,6 +712,8 @@ function inspectGridSeams(
       0.08,
       configuration.bottomGrooveDepth * 0.3,
       seamProbeHalfWidth,
+      0,
+      seamChipFor(seam),
     ),
   )
   const bottomGridSeamSupportVolumes = bottomGridSeams.map((seam) =>
@@ -573,10 +725,16 @@ function inspectGridSeams(
       bottomStackingSupportTopZ() - 0.03,
       0.2,
       configuration.bottomGridSeamSupportOpeningWidth / 2 + 0.25,
+      seamChipFor(seam),
     ),
   )
   const bottomGridSeamSupportThicknesses = bottomGridSeams.map((seam) =>
-    measureBottomGridSeamSupportThickness(shape, seam, parameters),
+    measureBottomGridSeamSupportThickness(
+      shape,
+      seam,
+      parameters,
+      seamChipFor(seam),
+    ),
   )
   const bottomGridSeamFloorVolumes = bottomGridSeams.map((seam) =>
     measureBottomGridSeamBand(
@@ -586,6 +744,8 @@ function inspectGridSeams(
       bottomGridSeamApexTopZ() + 0.03,
       configuration.bottomAssemblyHeight + 0.01,
       Math.max(0.1, configuration.bottomGridSeamOpeningWidth / 2 - 0.05),
+      0,
+      seamChipFor(seam),
     ),
   )
   const bottomGridSeamSlopeFaceCounts = bottomGridSeams.map((seam) =>
@@ -716,11 +876,12 @@ function inspectProfileSegments(
 export function inspectOpenGridStackableBoxInterface(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
+  regions?: OpenGridStackableBoxQualityRegions,
 ): OpenGridStackableBoxInterfaceQualityReport {
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const upperInnerRimZ = openGridStackableBoxUpperInnerRimZFor(parameters)
-  const shell = inspectShellThickness(shape, parameters, width, depth)
+  const shell = inspectShellThickness(shape, parameters, width, depth, regions)
   const stackingClearance = inspectStackingClearance(parameters)
   const profileSegments = inspectProfileSegments(shape, upperInnerRimZ)
   const topRailCornerContinuationFaceCount =
@@ -760,6 +921,7 @@ export function inspectOpenGridStackableBoxInterface(
       configuration.topRailOuterChamfer -
       0.05,
     railCrossCenters,
+    regions ? () => regions.top : undefined,
   )
   const topRailProbeVolumes = edgeBandVolumes(
     shape,
@@ -776,9 +938,10 @@ export function inspectOpenGridStackableBoxInterface(
       configuration.topRailOuterChamfer -
       0.05,
     railCrossCenters,
+    regions ? () => regions.top : undefined,
   )
-  const bottom = inspectBottomSupport(shape, width, depth, parameters)
-  const grid = inspectGridSeams(shape, parameters)
+  const bottom = inspectBottomSupport(shape, width, depth, parameters, regions)
+  const grid = inspectGridSeams(shape, parameters, regions)
   const topGuideLeadInFaceCount = countFortyFiveDegreeFaces(
     shape,
     upperInnerRimZ - 0.03,
@@ -803,12 +966,13 @@ export function inspectOpenGridStackableBoxInterface(
     shape,
     socketCenters,
     parameters,
+    regions,
   )
   const mountingHoleProfiles = measureMountingHoleProfiles(shape, socketCenters)
   const ordinaryBottomHoleCenters =
     openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
   const captiveSocketRecords = socketCenters.map((center) =>
-    inspectCaptiveSocketInterface(shape, center, parameters),
+    inspectCaptiveSocketInterface(shape, center, parameters, regions),
   )
   const integratedSeatRecordCount = integratedSeatRecordCountFor(
     shape,

@@ -53,17 +53,23 @@ export function volumeInBox(
   shape: Shape3D,
   min: [number, number, number],
   max: [number, number, number],
+  target: Shape3D = shape,
 ): number {
   const probe = makeBox(min, max)
   let intersection: Shape3D | null = null
   try {
-    intersection = shape.intersect(probe)
+    intersection = target.intersect(probe)
     return measureVolume(intersection)
   } finally {
-    if (intersection && intersection !== shape) deleteShape(intersection)
+    if (intersection && intersection !== target) deleteShape(intersection)
     deleteShape(probe)
   }
 }
+
+export type EdgeBandTargetFor = (
+  axis: 'x' | 'y',
+  sign: -1 | 1,
+) => Shape3D | undefined
 
 function edgeBandBounds(
   width: number,
@@ -106,6 +112,7 @@ export function edgeBandVolumes(
   zMin: number,
   zMax: number,
   crossCenters: { x?: number; y?: number } = {},
+  targetFor?: EdgeBandTargetFor,
 ): number[] {
   const volumes: number[] = []
   for (const axis of ['x', 'y'] as const) {
@@ -121,7 +128,7 @@ export function edgeBandVolumes(
         zMax,
         axis === 'x' ? (crossCenters.y ?? 0) : (crossCenters.x ?? 0),
       )
-      volumes.push(volumeInBox(shape, min, max))
+      volumes.push(volumeInBox(shape, min, max, targetFor?.(axis, sign)))
     }
   }
   return volumes

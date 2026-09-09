@@ -35,7 +35,7 @@ import { buildHexagonalColumn } from '../components/hexagonal-column/builder'
 import { buildModularGridBase } from '../components/modular-grid-base/builder'
 import { buildOpenGridBRep } from '../components/opengrid/builder'
 import { buildOpenGridDivider } from '../components/opengrid-divider/builder'
-import { buildOpenGridStackableBox } from '../components/opengrid-stackable-box/builder'
+import { buildOpenGridStackableBoxAsync } from '../components/opengrid-stackable-box/builder'
 import { buildOpenGridStackableCylinder } from '../components/opengrid-stackable-cylinder/builder'
 import {
   buildOpenGridSnap,
@@ -318,9 +318,10 @@ async function buildOpenGridStackableBoxModel(
       throw new Error('STALE_GENERATION')
     }
   }
-  return buildOpenGridStackableBox(validation.value, {
+  return buildOpenGridStackableBoxAsync(validation.value, {
     detachableCornerSeatReference,
     detachableCornerSeatHolderReference,
+    yieldToEventLoop: context.yieldToEventLoop,
     isGenerationCurrent: context.isGenerationCurrent,
     booleanOperations: context.booleanOperations,
   })

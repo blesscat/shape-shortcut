@@ -717,6 +717,107 @@ describe('OpenGrid Worker runtime', () => {
     )
   })
 
+  it('keeps the committed model available after a honeycomb memory-limit failure', async () => {
+    const events: unknown[] = []
+    const runtime = new CadWorkerRuntime(
+      'epoch-stackable-honeycomb-memory',
+      (event) => events.push(event),
+    )
+    const validParameters: OpenGridStackableBoxParameters = {
+      ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+      x: 1,
+      y: 1,
+      height: 20,
+      cornerSeatMode: 'none',
+      fullBottomHoleGrid: false,
+      basePlateMode: false,
+      honeycombMode: false,
+    }
+    const overBudgetParameters: OpenGridStackableBoxParameters = {
+      ...validParameters,
+      x: 7,
+      y: 7,
+      height: 500,
+      honeycombMode: true,
+    }
+
+    mocks.buildModelBRep
+      .mockResolvedValueOnce({ delete: vi.fn() })
+      .mockRejectedValueOnce(
+        new Error('OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:5000'),
+      )
+
+    await runtime.handle(initCommand())
+    await runtime.handle(
+      stackableBoxGenerateCommand(1, { parameters: validParameters }),
+    )
+    const candidate = events.find(
+      (event) =>
+        typeof event === 'object' &&
+        event !== null &&
+        'kind' in event &&
+        event.kind === 'model.candidate-ready',
+    ) as { candidateId: string } | undefined
+    expect(candidate).toBeDefined()
+
+    await runtime.handle({
+      ...base,
+      requestId: 'memory-commit-request',
+      operationId: 'stackable-operation-1',
+      kind: 'model.commit' as const,
+      generation: 1,
+      candidateId: candidate!.candidateId,
+      workerEpoch: 'epoch-stackable-honeycomb-memory',
+    })
+    const ready = events.find(
+      (event) =>
+        typeof event === 'object' &&
+        event !== null &&
+        'kind' in event &&
+        event.kind === 'model.ready',
+    ) as
+      | {
+          modelRevision: string
+          parameters: OpenGridStackableBoxParameters
+          workerEpoch: string
+        }
+      | undefined
+    expect(ready).toBeDefined()
+
+    await runtime.handle(
+      stackableBoxGenerateCommand(2, {
+        requestId: 'memory-failure-request',
+        operationId: 'memory-failure-operation',
+        parameters: overBudgetParameters,
+      }),
+    )
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'operation.error',
+        operationId: 'memory-failure-operation',
+        code: 'OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT',
+        stage: 'building',
+        recoverable: true,
+      }),
+    )
+
+    await runtime.handle({
+      ...base,
+      requestId: 'memory-export-request',
+      operationId: 'memory-export-operation',
+      kind: 'export.step' as const,
+      modelRevision: ready!.modelRevision,
+      workerEpoch: ready!.workerEpoch,
+      file: {
+        name: openGridStackableBoxFileName(ready!.parameters),
+        mime: 'model/step' as const,
+      },
+    })
+    expect(mocks.exportStepBytes).toHaveBeenCalledOnce()
+
+    await runtime.handle({ ...base, kind: 'worker.dispose' as const })
+  })
+
   it('routes divider commands through its own quality gate and exports', async () => {
     const events: unknown[] = []
     const runtime = new CadWorkerRuntime('epoch-divider', (event) =>
