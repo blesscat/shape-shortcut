@@ -6,6 +6,7 @@
   } from '../../../../features/cad/model-catalog'
   import {
     openGridStackableBoxOpeningBottomLengthMaximumFor,
+    validateOpenGridStackableBoxParameters,
     OPENGRID_STACKABLE_BOX_CONFIGURATION,
     OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
     OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
@@ -13,8 +14,10 @@
     type OpenGridStackableBoxOpeningParameterKey,
     type OpenGridStackableBoxParameters,
   } from '../../../../cad-contract/units'
+  import { openGridStackableBoxHoneycombPanelCellCountFor } from '../../../../cad-kernel/lattice/opengrid-honeycomb-cells'
   import { calculateOpenGridStackableBoxCounts } from '../../../../features/cad/grid-dimensions'
   import GridDimensionCalculator from '../GridDimensionCalculator.svelte'
+  import HoneycombCellCountEstimate from '../HoneycombCellCountEstimate.svelte'
   import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
@@ -210,6 +213,15 @@
     }
   }
 
+  let honeycombCellCount = $derived.by(() => {
+    if (rawParameters.honeycombMode !== 'true') return null
+    const candidate = parametersForRange()
+    if (!candidate) return null
+    const validation = validateOpenGridStackableBoxParameters(candidate)
+    if (!validation.valid) return null
+    return openGridStackableBoxHoneycombPanelCellCountFor(validation.value)
+  })
+
   function fieldsFor(
     keys: readonly OpenGridStackableBoxOpeningParameterKey[],
     direction: OpenGridStackableBoxOpeningDirection,
@@ -349,6 +361,9 @@
     </label>
     {#if rawParameters.honeycombMode === 'true'}
       <HoneycombRenderWarning {locale} />
+      {#if honeycombCellCount !== null}
+        <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
+      {/if}
     {/if}
   </div>
   <div

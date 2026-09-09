@@ -1130,6 +1130,13 @@ describe('OpenGrid honeycomb material-saving builders', () => {
             }
             return result
           },
+          measureCount<T>(
+            _kind: 'cut' | 'fuse' | 'intersect',
+            _count: number,
+            operation: () => T,
+          ) {
+            return this.measure(_kind, operation)
+          },
         }
       },
     }

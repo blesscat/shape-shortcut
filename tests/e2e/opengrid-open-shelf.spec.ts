@@ -81,3 +81,30 @@ test('OpenGrid Open Shelf localizes the honeycomb render warning', async ({
     'Material-saving mode can significantly slow model rendering; very large objects may fail to build. Check the shape in normal mode first, then enable material-saving mode before downloading.',
   )
 })
+
+test('OpenGrid Open Shelf estimates the honeycomb cut cell count', async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(180_000)
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/zh-Hant/cad/opengrid-open-shelf')
+  await waitForCadReady(page)
+
+  const honeycomb = page.getByTestId('opengrid-open-shelf-honeycomb-mode')
+  const estimate = page.getByTestId('honeycomb-cell-count-estimate')
+  const x = page.getByRole('slider', { name: 'X' }).first()
+
+  await expect(estimate).toHaveCount(0)
+  await honeycomb.check()
+  await expect(estimate).toBeVisible()
+  await expect(estimate).toContainText(/預計切除 \d+ 格/)
+  const initialEstimate = await estimate.innerText()
+
+  await x.fill('5')
+  await expect(estimate).toContainText(/預計切除 \d+ 格/)
+  await expect(estimate).not.toHaveText(initialEstimate)
+
+  await honeycomb.uncheck()
+  await expect(estimate).toHaveCount(0)
+})

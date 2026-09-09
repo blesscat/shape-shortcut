@@ -6,12 +6,15 @@
   } from '../../../../features/cad/model-catalog'
   import {
     openGridStackableCylinderOpeningBottomLengthMaximumFor,
+    validateOpenGridStackableCylinderParameters,
     OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
     OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
     type OpenGridStackableCylinderOpeningDirection,
     type OpenGridStackableCylinderOpeningParameterKey,
     type OpenGridStackableCylinderParameters,
   } from '../../../../cad-contract/units'
+  import { openGridStackableCylinderHoneycombCellCountFor } from '../../../../cad-kernel/lattice/opengrid-honeycomb-cells'
+  import HoneycombCellCountEstimate from '../HoneycombCellCountEstimate.svelte'
   import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
@@ -193,6 +196,15 @@
     }
   }
 
+  let honeycombCellCount = $derived.by(() => {
+    if (rawParameters.honeycombMode !== 'true') return null
+    const candidate = parametersForRange()
+    if (!candidate) return null
+    const validation = validateOpenGridStackableCylinderParameters(candidate)
+    if (!validation.valid) return null
+    return openGridStackableCylinderHoneycombCellCountFor(validation.value)
+  })
+
   function derivedOuterDiameterText(): string {
     const innerDiameter = rawNumberFor('innerDiameter')
     if (innerDiameter === null) return ''
@@ -351,6 +363,9 @@
   </label>
   {#if rawParameters.honeycombMode === 'true'}
     <HoneycombRenderWarning {locale} />
+    {#if honeycombCellCount !== null}
+      <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
+    {/if}
   {/if}
   {#each opengridStackableCylinderDefinition.parameterSchema.slice(0, 2) as field (field.key)}
     {@const value = rawParameters[field.key] ?? String(field.defaultValue)}

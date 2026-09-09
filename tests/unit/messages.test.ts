@@ -645,6 +645,32 @@ describe('Worker contract runtime validation', () => {
         },
       }),
     ).toBe(true)
+    expect(
+      isWorkerEvent({
+        ...booleanProgress,
+        booleanOperation: {
+          kind: 'cut',
+          state: 'running',
+          completed: 128,
+          total: 2016,
+          unit: 'cells',
+          elapsedMs: 250,
+        },
+      }),
+    ).toBe(true)
+    expect(
+      isWorkerEvent({
+        ...booleanProgress,
+        booleanOperation: {
+          kind: 'cut',
+          state: 'running',
+          completed: 128,
+          total: 2016,
+          unit: 'parsecs',
+          elapsedMs: 250,
+        },
+      }),
+    ).toBe(false)
 
     expect(
       isWorkerEvent({

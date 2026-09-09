@@ -81,3 +81,40 @@ generation, parameter persistence, or STEP/STL downloads.
 - **WHEN** the `Beta` badge is visible
 - **THEN** the user MUST still be able to toggle the saving-mode checkbox and
   use the panel normally
+
+### Requirement: Honeycomb estimated cut cell count
+
+When `省料模式（六角鏤空）` is enabled in each OpenGrid stackable-box,
+stackable-cylinder, or Open Shelf parameter panel, the panel MUST display an
+estimated honeycomb cut cell count derived from the current parameters without
+executing geometry. The estimate MUST use the active interface locale's
+localized label, be placed below the saving-mode checkbox together with the
+performance warning, and update while parameters change. The estimate MUST
+disappear when saving mode is disabled. The estimate MUST be informational
+only: it MUST NOT prevent mode selection, preview generation, parameter
+persistence, or STEP/STL downloads.
+
+#### Scenario: Estimate appears with saving mode
+
+- **WHEN** a user enables `省料模式（六角鏤空）` in
+  `/cad/opengrid-stackable-box`
+- **THEN** the parameter panel MUST display the estimated cut cell count below
+  the saving-mode checkbox
+
+#### Scenario: Estimate follows parameter changes
+
+- **WHEN** the user changes model dimensions while saving mode is enabled in
+  any of the three OpenGrid panels
+- **THEN** the displayed estimate MUST reflect the new parameters
+
+#### Scenario: Estimate hides with saving mode
+
+- **WHEN** a user disables `省料模式（六角鏤空）` in any of the three OpenGrid
+  panels
+- **THEN** the estimated cut cell count MUST no longer be visible
+
+#### Scenario: Estimate does not block existing workflow
+
+- **WHEN** the estimated cut cell count is visible
+- **THEN** the user MUST still be able to edit parameters, generate the
+  preview, persist the selected profile, and request STEP or STL downloads

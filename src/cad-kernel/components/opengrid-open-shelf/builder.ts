@@ -28,6 +28,7 @@ import {
 } from '../../../cad-contract/units'
 import { filletEdgesAtZ } from '../../bottom-edge-fillet'
 import {
+  measureBooleanCountInScope,
   measureBooleanInScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
@@ -107,8 +108,9 @@ async function cutHoneycombGroup(
   cutters: Shape3D[],
   context: OpenGridOpenShelfBuildContext,
 ): Promise<Shape3D> {
-  const batchCount = Math.ceil(cutters.length / HONEYCOMB_CUT_BATCH_SIZE)
-  const scope = context.booleanOperations?.createScope(batchCount)
+  const scope = context.booleanOperations?.createScope(cutters.length, {
+    unit: 'cells',
+  })
   let result = shape
   try {
     while (cutters.length > 0) {
@@ -122,7 +124,7 @@ async function cutHoneycombGroup(
             : makeCompound(batch).asShape3D()
         if (!compound) throw new Error('OPENGRID_HONEYCOMB_CUTTER_EMPTY')
         const activeCompound = compound
-        const cut = measureBooleanInScope(scope, 'cut', () =>
+        const cut = measureBooleanCountInScope(scope, 'cut', batch.length, () =>
           result.cut(activeCompound),
         )
         if (cut !== result) deleteShape(result)

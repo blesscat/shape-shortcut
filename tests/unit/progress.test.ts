@@ -84,6 +84,32 @@ describe('CAD progress messages', () => {
       booleanProgressLabel({
         stage: 'building',
         booleanOperation: {
+          kind: 'cut',
+          state: 'running',
+          completed: 128,
+          total: 2016,
+          unit: 'cells',
+          elapsedMs: 1200,
+        },
+      }),
+    ).toBe('切除（Cut） 128 / 2016 格 · 剩餘 1888')
+    expect(
+      booleanProgressLabel({
+        stage: 'building',
+        booleanOperation: {
+          kind: 'cut',
+          state: 'completed',
+          completed: 2016,
+          total: 2016,
+          unit: 'cells',
+          elapsedMs: 1200,
+        },
+      }),
+    ).toBe('切除（Cut） 2016 / 2016 格 · 剩餘 0')
+    expect(
+      booleanProgressLabel({
+        stage: 'building',
+        booleanOperation: {
           kind: 'intersect',
           state: 'running',
           elapsedMs: 1200,

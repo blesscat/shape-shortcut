@@ -10,6 +10,8 @@
     validateOpenGridOpenShelfParameters,
     type OpenGridOpenShelfParameters,
   } from '../../../../cad-contract/units'
+  import { openGridOpenShelfHoneycombCellCountFor } from '../../../../cad-kernel/lattice/opengrid-honeycomb-cells'
+  import HoneycombCellCountEstimate from '../HoneycombCellCountEstimate.svelte'
   import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
@@ -63,6 +65,13 @@
       parameters,
       space: openGridOpenShelfCellSpaceFor(parameters),
     }
+  })
+
+  let honeycombCellCount = $derived.by(() => {
+    if (rawParameters.honeycombMode !== 'true') return null
+    const parameters = parametersForDisplay()
+    if (!parameters) return null
+    return openGridOpenShelfHoneycombCellCountFor(parameters)
   })
 </script>
 
@@ -126,6 +135,9 @@
   </label>
   {#if rawParameters.honeycombMode === 'true'}
     <HoneycombRenderWarning {locale} />
+    {#if honeycombCellCount !== null}
+      <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
+    {/if}
   {/if}
   <fieldset class="m-0 grid gap-3 border-0 p-0">
     {#each opengridOpenShelfDefinition.parameterSchema as field (field.key)}

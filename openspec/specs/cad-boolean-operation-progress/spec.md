@@ -30,32 +30,60 @@ For each reported operation, the Worker MUST publish an active update before inv
 
 ### Requirement: Boolean counts and elapsed time have honest semantics
 
-When a builder can determine the number of boolean invocations in the current operation scope, progress MUST expose a count whose completed value starts at zero and increases only after a corresponding operation completes. The completed value MUST NOT exceed total, and the final completed value MUST equal total. When the total is unknown, progress MUST omit the total or mark the operation indeterminate rather than inventing a percentage.
+When a builder can determine the number of boolean invocations in the current
+operation scope, progress MUST expose a count whose completed value starts at
+zero and increases only after a corresponding operation completes. A builder
+MAY report the count in a derived domain unit instead of raw invocations when
+each operation processes a known number of units; in that case the total MUST
+be the domain-unit total and a completed operation MUST advance the count by
+the units it actually processed. The completed value MUST NOT exceed total,
+and the final completed value MUST equal total. When the total is unknown,
+progress MUST omit the total or mark the operation indeterminate rather than
+inventing a percentage.
 
-An active operation MUST expose elapsed time that is monotonic for the lifetime of that operation. The UI MUST continue advancing the displayed elapsed time while the native call is in flight, even when no inner native progress callback exists.
+An active operation MUST expose elapsed time that is monotonic for the
+lifetime of that operation. The UI MUST continue advancing the displayed
+elapsed time while the native call is in flight, even when no inner native
+progress callback exists.
 
 #### Scenario: Known boolean total
 
-- **WHEN** a builder declares a scope containing a known number of fuse, cut, or intersect calls
+- **WHEN** a builder declares a scope containing a known number of fuse, cut,
+  or intersect calls
 - **THEN** the UI can show the completed operation count and total
 - **AND** the count advances only after each native call returns successfully
 
+#### Scenario: Known domain-unit total
+
+- **WHEN** a builder declares a scope in a derived domain unit where each
+  native call processes a known number of units
+- **THEN** the UI can show the completed unit count and total
+- **AND** the count advances only after each native call returns successfully
+- **AND** one native call MAY advance the count by more than one unit
+
 #### Scenario: Unknown boolean total
 
-- **WHEN** the number of operations cannot be known without an extra geometry pass
-- **THEN** the UI shows the operation kind and elapsed time without a determinate percentage
+- **WHEN** the number of operations cannot be known without an extra geometry
+  pass
+- **THEN** the UI shows the operation kind and elapsed time without a
+  determinate percentage
 - **AND** the progress contract does not report a misleading total
 
 #### Scenario: Total is derived from build inputs
 
-- **WHEN** a builder can derive a boolean scope total from input arrays, feature flags, or a fixed operation shape without executing extra geometry
-- **THEN** the builder reports that total and the UI shows the remaining count while the scope is active
-- **AND** the builder keeps separate scopes when fuse, cut, or intersect counts have different meanings
+- **WHEN** a builder can derive a boolean scope total from input arrays,
+  feature flags, or a fixed operation shape without executing extra geometry
+- **THEN** the builder reports that total and the UI shows the remaining count
+  while the scope is active
+- **AND** the builder keeps separate scopes when fuse, cut, or intersect
+  counts have different meanings
 
 #### Scenario: Native operation has no inner callback
 
-- **WHEN** a native boolean call takes several seconds and exposes no reliable inner progress callback
-- **THEN** the UI continues to show the active operation and increasing elapsed time
+- **WHEN** a native boolean call takes several seconds and exposes no reliable
+  inner progress callback
+- **THEN** the UI continues to show the active operation and increasing
+  elapsed time
 - **AND** it does not present a guessed or synthetic percentage for that call
 
 ### Requirement: The progress indicator retains the four-stage model
@@ -118,3 +146,41 @@ Performance diagnostics and benchmark output MUST aggregate the elapsed duration
 - **WHEN** a build executes fuse, cut, and intersect calls
 - **THEN** the diagnostics expose a cumulative total and preserve per-kind attribution when the output format supports it
 - **AND** existing non-boolean phase timings remain separately identifiable
+
+### Requirement: Honeycomb saving-mode cuts report cell-unit progress
+
+While a material-saving (honeycomb) build is cutting, each OpenGrid
+stackable-box, stackable-cylinder, and Open Shelf builder MUST report cut
+progress with a total equal to the number of honeycomb cells being cut and
+MUST advance the completed count by the number of cells a native operation
+processed, immediately after that operation returns. The reported progress
+MUST identify the unit as honeycomb cells so the count is not read as native
+operation or batch counts. Cell-unit reporting MUST NOT change the number,
+grouping, or construction of native boolean operations.
+
+#### Scenario: Batched cutters report cells
+
+- **WHEN** a saving-mode builder cuts a batch of honeycomb cutters in one
+  native cut
+- **THEN** the reported cut progress advances by that batch's cell count after
+  the cut returns
+- **AND** the visible unit is honeycomb cells, not cutter batches
+
+#### Scenario: Panel cutters report cells
+
+- **WHEN** the stackable-box saving-mode builder cuts a lattice panel
+  containing multiple cells in one native cut
+- **THEN** the reported cut progress advances by that panel's cell count after
+  the cut returns
+
+#### Scenario: Final count equals the cell total
+
+- **WHEN** the last honeycomb cut of a saving-mode build returns
+- **THEN** the reported completed count equals the declared cell total
+
+#### Scenario: Preparation cuts do not corrupt cell counts
+
+- **WHEN** a saving-mode builder performs native cuts to prepare cutters, such
+  as clipping a protection slot out of a lattice panel
+- **THEN** those preparation operations do not advance the cell-unit count or
+  its total
