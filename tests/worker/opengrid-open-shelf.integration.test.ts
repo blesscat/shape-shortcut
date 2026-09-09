@@ -157,6 +157,72 @@ function countPegChamferFaces(shape: Shape3D): number {
 }
 
 describe('OpenGrid open-shelf CAD kernel integration', () => {
+  it('rejects oversized honeycomb while retaining the solid counterpart', async () => {
+    const parameters = {
+      ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+      x: 5,
+      y: 8,
+      height: 100,
+      honeycombMode: true,
+    }
+    await expect(buildOpenGridOpenShelf(parameters)).rejects.toThrow(
+      'OPENGRID_HONEYCOMB_MEMORY_LIMIT:',
+    )
+    const solid = await buildOpenGridOpenShelf({
+      ...parameters,
+      honeycombMode: false,
+    })
+    try {
+      expect(measureVolume(solid)).toBeGreaterThan(0)
+      expect((await exportStepBytes(solid)).byteLength).toBeGreaterThan(0)
+    } finally {
+      solid.delete()
+    }
+  }, 180_000)
+
+  it.each([
+    {
+      name: 'native exception',
+      thrown: 12345,
+      expected: 'OPENGRID_OPEN_SHELF_HONEYCOMB_INVALID:OCCT_EXCEPTION:12345',
+    },
+    {
+      name: 'cancellation',
+      thrown: new Error('STALE_GENERATION'),
+      expected: 'STALE_GENERATION',
+    },
+  ])(
+    'preserves $name during shelf honeycomb cutting',
+    async ({ thrown, expected }) => {
+      let cuts = 0
+      await expect(
+        buildOpenGridOpenShelf(
+          {
+            ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+            x: 2,
+            y: 2,
+            height: 30,
+            cellX: 1,
+            cellZ: 1,
+            honeycombMode: true,
+          },
+          {
+            booleanOperations: {
+              createScope: () => ({
+                measure: () => {
+                  cuts += 1
+                  throw thrown
+                },
+              }),
+            },
+          },
+        ),
+      ).rejects.toThrow(expected)
+      expect(cuts).toBe(1)
+    },
+    120_000,
+  )
+
   it('uses protected Hex Mesh to reduce material without changing bounds or pegs', async () => {
     const baselineParameters: OpenGridOpenShelfParameters = {
       ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,

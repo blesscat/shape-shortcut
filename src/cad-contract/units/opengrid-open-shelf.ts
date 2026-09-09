@@ -80,6 +80,10 @@ export const OPENGRID_OPEN_SHELF_CONFIGURATION = {
   minimumClearCellHeight: 0.5,
 } as const
 
+// Conservative shelf-specific admission ceiling; the per-cell cutter path
+// has a different memory profile from the stackable-box panel builder.
+export const OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS = 3000
+
 export const OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS = {
   x: OPENGRID_OPEN_SHELF_CONFIGURATION.defaultX,
   y: OPENGRID_OPEN_SHELF_CONFIGURATION.defaultY,

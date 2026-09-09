@@ -494,6 +494,8 @@ export const zhHantMessages = {
     'OpenGrid 幾何未通過品質檢查，請調整參數後重試。',
   'diagnostic.opengridHoneycombMemoryLimit':
     '此尺寸的省料模式蜂巢數量超過瀏覽器幾何引擎記憶體上限，請降低尺寸或高度後重試。',
+  'diagnostic.honeycombMemoryLimit':
+    '此尺寸的 OpenGrid 開放層架省料模式超過預設保護門檻，請縮小尺寸或關閉省料模式。',
   'diagnostic.cylinderQualityInvalid':
     'OpenGrid 可堆疊圓柱幾何未通過品質檢查，請調整參數後重試。',
   'diagnostic.snapQualityInvalid':
@@ -1299,6 +1301,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'The OpenGrid geometry did not pass quality checks. Adjust the parameters and try again.',
   'diagnostic.opengridHoneycombMemoryLimit':
     'This honeycomb saving-mode box exceeds the browser geometry engine memory budget. Reduce the footprint or height and try again.',
+  'diagnostic.honeycombMemoryLimit':
+    'This OpenGrid Open Shelf saving-mode model exceeds the configured safety limit. Reduce the footprint or turn off the saving mode.',
   'diagnostic.cylinderQualityInvalid':
     'The OpenGrid stackable-cylinder geometry did not pass quality checks. Adjust the parameters and try again.',
   'diagnostic.snapQualityInvalid':

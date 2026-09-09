@@ -238,3 +238,32 @@ The workspace MUST parse the six Open Shelf geometric fields and `honeycombMode`
 - **WHEN** all fields form a valid snapshot and the debounce settles
 - **THEN** the Worker request MUST contain typed `x`, `y`, `height`, `cellX`, `cellZ`, `angle`, and `honeycombMode`
 - **AND** only the latest valid candidate MUST be eligible for commit
+
+### Requirement: Open Shelf saving-mode admission is memory-bounded
+
+The `opengrid-open-shelf` model MUST estimate its deterministic honeycomb cell count from validated input before native geometry construction. Saving-mode candidates above a centralized declared ceiling MUST fail with the recoverable code `OPENGRID_HONEYCOMB_MEMORY_LIMIT`. Within-budget candidates MUST retain existing geometry, quality checks and export behavior. Solid mode MUST NOT be restricted by this ceiling.
+
+#### Scenario: Oversized shelf is rejected before construction
+- **WHEN** validated saving-mode input exceeds the declared shelf ceiling
+- **THEN** generation MUST fail before constructing native geometry
+- **AND** it MUST expose `OPENGRID_HONEYCOMB_MEMORY_LIMIT` with the estimated count and ceiling in the engine diagnostic
+
+#### Scenario: Within-budget shelf and solid shelf preserve behavior
+- **WHEN** a saving-mode shelf is within the ceiling, or a supported shelf disables saving mode
+- **THEN** it MUST follow its existing generation and export behavior
+- **AND** a solid shelf MUST remain admissible even when its saving-mode counterpart exceeds the ceiling
+
+### Requirement: Shelf engine failures remain actionable and distinguishable
+
+Shelf limit failures MUST map to localized zh-Hant and English diagnostics that suggest reducing size or disabling saving mode. These errors MUST remain recoverable building-stage errors, without changing the existing stackable-box limit code or its diagnostic. Raw non-Error native failures during shelf honeycomb cutting MUST retain a diagnosable `OCCT_EXCEPTION:` payload when wrapped, and cancellation MUST remain cancellation.
+
+#### Scenario: Localized shelf limit coexists with box limit
+- **WHEN** the Worker reports an oversized shelf in either supported locale
+- **THEN** it MUST expose a recoverable building-stage shelf-limit diagnostic
+- **AND** stackable-box limit failures MUST retain their existing error code and localized message
+
+#### Scenario: Raw native failure and cancellation are preserved
+- **WHEN** shelf honeycomb cutting throws a non-Error native exception
+- **THEN** the wrapper MUST retain its `OCCT_EXCEPTION:` diagnostic
+- **WHEN** shelf generation is cancelled
+- **THEN** it MUST retain the existing stale-generation cancellation behavior

@@ -279,6 +279,7 @@ export {
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
   validateOpenGridOpenShelfParameters,
 } from './opengrid-open-shelf'
+export { OPENGRID_OPEN_SHELF_HONEYCOMB_MAX_CELLS } from './opengrid-open-shelf'
 export {
   boundsForOpenGridOpenConnectShelf,
   isOpenGridOpenConnectShelfParameters,
