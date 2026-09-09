@@ -352,7 +352,7 @@ describe('CAD model generation debounce', () => {
     const { client, send, context } = createRuntimeContext('opengrid-pillar', {
       mode: 'positioning',
       length: 25,
-      offset: 0.25,
+      offset: 0.2,
     })
     const handlers = createModelGenerationHandlers(context)
 
@@ -410,7 +410,7 @@ describe('CAD model generation debounce', () => {
 
   it.each([
     ['fractional-step XY offset', 'offset', '0.03'],
-    ['out-of-range XY offset', 'offset', '0.55'],
+    ['out-of-range XY offset', 'offset', '1.1'],
     ['fractional-step negative XY offset', 'offset', '-0.03'],
   ] as const)(
     'invalidates a pillar %s without generating a snapshot',

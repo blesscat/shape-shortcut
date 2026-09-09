@@ -856,7 +856,7 @@ describe('CAD component catalog', () => {
       definition?.validateParameters({
         mode: 'detachable-corner-seat',
         length: 4.2,
-        offset: 0.15,
+        offset: 0.1,
       }),
     ).toEqual({
       valid: true,
@@ -865,7 +865,7 @@ describe('CAD component catalog', () => {
         parameters: {
           mode: 'detachable-corner-seat',
           length: 4.2,
-          offset: 0.15,
+          offset: 0.1,
         },
       },
     })
@@ -873,11 +873,11 @@ describe('CAD component catalog', () => {
       definition?.boundsForParameters({
         mode: 'positioning',
         length: 25,
-        offset: 0.25,
+        offset: 0.3,
       }),
     ).toEqual({
-      min: [-2.625, -2.625, 0],
-      max: [2.625, 2.625, 25],
+      min: [-2.6, -2.6, 0],
+      max: [2.6, 2.6, 25],
     })
     expect(
       definition?.boundsForParameters({
@@ -886,8 +886,8 @@ describe('CAD component catalog', () => {
         offset: 0,
       }),
     ).toEqual({
-      min: [-3.321716, -2.5, 0],
-      max: [3.321716, 2.5, 5.3],
+      min: [-3.321716, -2.45, 0],
+      max: [3.321716, 2.45, 5.3],
     })
     expect(
       definition?.boundsForParameters({
@@ -896,8 +896,8 @@ describe('CAD component catalog', () => {
         offset: 0.3,
       }),
     ).toEqual({
-      min: [-3.321716, -2.65, 0],
-      max: [3.321716, 2.65, 6.5],
+      min: [-3.321716, -2.6, 0],
+      max: [3.321716, 2.6, 6.5],
     })
     expect(
       definition?.exportFileName({
@@ -910,9 +910,9 @@ describe('CAD component catalog', () => {
       definition?.stlFileName({
         mode: 'positioning',
         length: 25,
-        offset: 0.25,
+        offset: 0.2,
       }),
-    ).toBe('pillar-25-positioning-xy0.25.stl')
+    ).toBe('pillar-25-positioning-xy0.2.stl')
     expect(
       definition?.exportFileName({
         mode: 'detachable-corner-seat',

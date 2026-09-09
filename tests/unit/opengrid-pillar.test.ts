@@ -11,20 +11,20 @@ import {
 describe('pillar contract', () => {
   it('uses the locking corner seat as the default and the positioning geometry contract', () => {
     expect(PILLAR_CONFIGURATION).toMatchObject({
-      bodyDiameter: 5,
+      bodyDiameter: 4.9,
       positioningDefaultLength: 10,
       positioningMinLength: 3,
       positioningMaxLength: 500,
-      positioningBodyDiameter: 5,
+      positioningBodyDiameter: 4.9,
       positioningLowerChamfer: 0.2,
       positioningUpperChamfer: 0.2,
       seatDefaultLength: 3.8,
       seatMinLength: 3,
       seatMaxLength: 100,
       seatLengthStep: 0.1,
-      offsetMin: -0.5,
-      offsetMax: 0.5,
-      offsetStep: 0.05,
+      offsetMin: -1,
+      offsetMax: 1,
+      offsetStep: 0.1,
       defaultParameters: {
         mode: 'detachable-corner-seat',
         length: 3.8,
@@ -50,11 +50,11 @@ describe('pillar contract', () => {
       validatePillarParameters({
         mode: 'detachable-corner-seat',
         length: 4.2,
-        offset: 0.15,
+        offset: 0.1,
       }),
     ).toEqual({
       valid: true,
-      value: { mode: 'detachable-corner-seat', length: 4.2, offset: 0.15 },
+      value: { mode: 'detachable-corner-seat', length: 4.2, offset: 0.1 },
     })
     expect(
       validatePillarParameters({ mode: 'positioning', length: 25, offset: 0 }),
@@ -93,7 +93,14 @@ describe('pillar contract', () => {
       validatePillarParameters({
         mode: 'detachable-corner-seat',
         length: 100,
-        offset: -0.5,
+        offset: -1,
+      }).valid,
+    ).toBe(true)
+    expect(
+      validatePillarParameters({
+        mode: 'detachable-corner-seat',
+        length: 3.8,
+        offset: 1,
       }).valid,
     ).toBe(true)
     for (const length of [2.9, 100.1, 3.85, 3.888, Number.NaN]) {
@@ -112,7 +119,17 @@ describe('pillar contract', () => {
       validatePillarParameters({
         mode: 'detachable-corner-seat',
         length: 4.2,
-        offset: 0.12,
+        offset: 0.05,
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [expect.objectContaining({ field: 'offset' })],
+    })
+    expect(
+      validatePillarParameters({
+        mode: 'detachable-corner-seat',
+        length: 4.2,
+        offset: 1.1,
       }),
     ).toMatchObject({
       valid: false,
@@ -126,10 +143,28 @@ describe('pillar contract', () => {
         .valid,
     ).toBe(true)
     expect(
+      validatePillarParameters({ mode: 'positioning', length: 10, offset: -1 })
+        .valid,
+    ).toBe(true)
+    expect(
+      validatePillarParameters({ mode: 'positioning', length: 10, offset: 1 })
+        .valid,
+    ).toBe(true)
+    expect(
       validatePillarParameters({
         mode: 'positioning',
         length: 10,
-        offset: 0.12,
+        offset: 0.05,
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [expect.objectContaining({ field: 'offset' })],
+    })
+    expect(
+      validatePillarParameters({
+        mode: 'positioning',
+        length: 10,
+        offset: -1.1,
       }),
     ).toMatchObject({
       valid: false,
@@ -156,18 +191,18 @@ describe('pillar contract', () => {
     }
   })
 
-  it('uses the shared positioning offset without moving the center', () => {
+  it('uses the pillar offset without moving the center', () => {
     expect(
-      boundsForPillar({ mode: 'positioning', length: 25, offset: 0.25 }),
+      boundsForPillar({ mode: 'positioning', length: 25, offset: 0.3 }),
     ).toEqual({
-      min: [-2.625, -2.625, 0],
-      max: [2.625, 2.625, 25],
+      min: [-2.6, -2.6, 0],
+      max: [2.6, 2.6, 25],
     })
     expect(
-      boundsForPillar({ mode: 'positioning', length: 25, offset: 0.5 }),
+      boundsForPillar({ mode: 'positioning', length: 25, offset: 1 }),
     ).toEqual({
-      min: [-2.75, -2.75, 0],
-      max: [2.75, 2.75, 25],
+      min: [-2.95, -2.95, 0],
+      max: [2.95, 2.95, 25],
     })
     expect(
       boundsForPillar({
@@ -176,8 +211,8 @@ describe('pillar contract', () => {
         offset: 0,
       }),
     ).toEqual({
-      min: [-3.321716, -2.5, 0],
-      max: [3.321716, 2.5, 5.3],
+      min: [-3.321716, -2.45, 0],
+      max: [3.321716, 2.45, 5.3],
     })
     expect(
       boundsForPillar({
@@ -186,19 +221,20 @@ describe('pillar contract', () => {
         offset: 0.3,
       }),
     ).toEqual({
-      min: [-3.321716, -2.65, 0],
-      max: [3.321716, 2.65, 6.5],
+      min: [-3.321716, -2.6, 0],
+      max: [3.321716, 2.6, 6.5],
     })
-    expect(
-      boundsForPillar({
-        mode: 'detachable-corner-seat',
-        length: 3,
-        offset: -0.5,
-      }),
-    ).toEqual({
-      min: [-3.321716, -2.25, 0],
-      max: [3.321716, 2.25, 4.5],
+    const negativeOffsetBounds = boundsForPillar({
+      mode: 'detachable-corner-seat',
+      length: 3,
+      offset: -1,
     })
+    expect(negativeOffsetBounds.min[0]).toBeCloseTo(-3.321716, 10)
+    expect(negativeOffsetBounds.min[1]).toBeCloseTo(-1.95, 10)
+    expect(negativeOffsetBounds.min[2]).toBe(0)
+    expect(negativeOffsetBounds.max[0]).toBeCloseTo(3.321716, 10)
+    expect(negativeOffsetBounds.max[1]).toBeCloseTo(1.95, 10)
+    expect(negativeOffsetBounds.max[2]).toBe(4.5)
   })
 
   it('migrates legacy snapshots to the remaining modes', () => {
@@ -243,8 +279,8 @@ describe('pillar contract', () => {
       'pillar-10-positioning.step',
     )
     expect(
-      pillarStlFileName({ mode: 'positioning', length: 25, offset: 0.25 }),
-    ).toBe('pillar-25-positioning-xy0.25.stl')
+      pillarStlFileName({ mode: 'positioning', length: 25, offset: 0.2 }),
+    ).toBe('pillar-25-positioning-xy0.2.stl')
     expect(
       pillarFileName({
         mode: 'detachable-corner-seat',
@@ -270,9 +306,9 @@ describe('pillar contract', () => {
       pillarStlFileName({
         mode: 'detachable-corner-seat',
         length: 3.8,
-        offset: -0.25,
+        offset: -0.2,
       }),
-    ).toBe('pillar-5.3-detachable-corner-seat-xy-0.25.stl')
+    ).toBe('pillar-5.3-detachable-corner-seat-xy-0.2.stl')
     expect(
       pillarFileName({
         mode: 'detachable-corner-seat',

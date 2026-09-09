@@ -1233,20 +1233,20 @@ describe('component parameter store', () => {
       store.set('opengrid-pillar', {
         mode: 'detachable-corner-seat',
         length: 4.2,
-        offset: 0.15,
+        offset: 0.1,
       }),
     ).toBe(true)
     expect(store.get('opengrid-pillar')).toEqual({
       mode: 'detachable-corner-seat',
       length: 4.2,
-      offset: 0.15,
+      offset: 0.1,
     })
 
     const restored = createComponentParameterStore({ storage })
     expect(restored.get('opengrid-pillar')).toEqual({
       mode: 'detachable-corner-seat',
       length: 4.2,
-      offset: 0.15,
+      offset: 0.1,
     })
     restored.dispose()
     store.dispose()

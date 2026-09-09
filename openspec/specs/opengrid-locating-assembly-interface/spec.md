@@ -1,6 +1,6 @@
 ## Purpose
 
-集中管理 OpenGrid 定位、一般裝配孔、階梯孔與品質 fixture 的共用尺寸，讓各 CAD 元件維持一致的 Ø5 mm 定位介面與既有的 Ø5.05／Ø7.05 mm 裝配間隙。
+集中管理 OpenGrid 定位、一般裝配孔、階梯孔與品質 fixture 的共用尺寸，讓共用 CAD 元件維持一致的 Ø5 mm 定位介面與既有的 Ø5.05／Ø7.05 mm 裝配間隙；獨立的 OpenGrid 定位柱則遵循自己的 Ø4.9 mm 柱身契約。
 
 ## Requirements
 
@@ -18,15 +18,12 @@ opening and test shaft MUST remain the current exact 5 mm interface rather than
 being expanded by the assembly increment. The retaining opening MUST equal the
 test flange diameter plus the shared increment. Detachable locking sockets MUST
 use the separate shared detachable-corner-seat contract rather than treating
-their 7 mm female envelope as a 7.05 mm stepped-hole retaining opening.
-opening and test shaft MUST remain the current exact 5 mm interface rather than
-being expanded by the assembly increment. The retaining opening MUST equal the
-test flange diameter plus the shared increment. Detachable locking sockets MUST
-use the separate shared detachable-corner-seat contract rather than treating
-their 7 mm female envelope as a 7.05 mm stepped-hole retaining opening. The same
-shared contract MUST define the integrated corner-seat diameter as exactly 5 mm,
-its total outward length as exactly 3.8 mm from the bottom datum at Z=0 to
-Z=-3.8 mm, and a bottom perimeter chamfer of exactly 0.2 mm within that length.
+their 7 mm female envelope as a 7.05 mm stepped-hole retaining opening. The
+same shared contract MUST define the integrated corner-seat diameter as exactly
+5 mm, its total outward length as exactly 3.8 mm from the bottom datum at Z=0
+to Z=-3.8 mm, and a bottom perimeter chamfer of exactly 0.2 mm within that
+length. The independent `opengrid-pillar` body diameter is governed by its
+separate pillar contract and is nominally Ø4.9 mm before its user offset.
 
 #### Scenario: Shared dimensions are published once
 
@@ -47,10 +44,12 @@ Z=-3.8 mm, and a bottom perimeter chamfer of exactly 0.2 mm within that length.
 - **WHEN** the system builds Snap locating holes, Divider locating pegs, an
   OpenGrid Pillar, or a Stackable Box nominal base-hole compatibility record
 - **THEN** Snap MUST use a 2.5 mm locating-hole radius
-- **AND** Divider pegDiameter, Pillar positioningBodyDiameter, and Stackable
-  Box baseHoleDiameter MUST remain 5 mm
-- **AND** the fixed locking corner-seat body MUST continue to use the shared
-  5 mm locating interface
+- **AND** Divider pegDiameter and Stackable Box baseHoleDiameter MUST remain
+  5 mm through the shared interface
+- **AND** both independent OpenGrid Pillar modes MUST use a nominal Ø4.9 mm
+  locating body before their pillar-specific XY offset
+- **AND** the fixed locking corner-seat reference body MUST continue to use the
+  shared 5 mm locating interface
 
 #### Scenario: Assembly openings use the shared increment
 
@@ -86,7 +85,8 @@ Z=-3.8 mm, and a bottom perimeter chamfer of exactly 0.2 mm within that length.
 - **AND** the socket MUST use the shared detachable male/female fit contract
   rather than a legacy Ø5-to-Ø7.05 stepped hole
 - **AND** the container MUST remain compatible with the separately generated
-  `opengrid-pillar` detachable male seat
+  `opengrid-pillar` detachable male seat, including its parameterized Ø4.9 mm
+  locating section and unchanged shared retaining head
 
 #### Scenario: Shaft and retaining openings use the shared fixture interface
 
@@ -138,8 +138,8 @@ NOT be used as the acceptance fixture for a detachable locking socket.
 #### Scenario: Fixture preserves Pillar mode dimensions
 
 - **WHEN** the OpenGrid Pillar model is generated
-- **THEN** the positioning body MUST remain nominally Ø5 mm before its shared
-  XY increment
+- **THEN** the positioning body MUST remain nominally Ø4.9 mm before its
+  pillar-specific XY increment
 - **AND** the fixed locking corner seat MUST continue to use the shared male
   reference geometry
 - **AND** the compatibility fixture MUST remain a separate Box/Cylinder
@@ -166,6 +166,7 @@ general quality tolerance.
   de-duplication threshold
 - **AND** other flange-envelope quality checks MUST remain independently
   applicable
+
 ### Requirement: OpenGrid locating model descriptions
 
 The system MUST ensure that the OpenGrid stackable-box and stackable-cylinder
@@ -198,34 +199,40 @@ display names and OpenGrid identities MUST remain unchanged.
 
 The shared OpenGrid locating-assembly contract MUST publish one fixed male
 detachable corner-seat geometry and one matching female socket-material
-geometry. The male MUST have a 5 mm maximum locating diameter, a 3.8 mm locating
-height, a 0.2 mm-high lead-in from Ø4.6 mm to Ø5 mm, and a total height of
-5.3 mm. Its retaining head MUST be a keyed leaf head of 1.96 mm constant
-thickness that begins at Z=3.8 mm with a nominal 4.24 mm length, flares
-continuously along its length to a maximum 6.64 mm at the taper top Z=5.15 mm,
-and finishes with a 0.15 mm-high flat wear surface at Z=5.3 mm; the complete
-head MUST remain inside the Ø7 mm circle. The female socket material MUST be
-the Ø11 mm by 1.5 mm flat base solid spanning Z=3.8 mm through Z=5.3 mm with
-its head-shaped twist-lock rotation pocket and 45-degree funnel lead-in, used
-as-supplied without any build-time extension. The pocket MUST keep at least
-0.02 mm of side clearance around the seated head in both the insertion and
-locked poses.
+geometry. The male MUST have a 5 mm maximum locating diameter, a 3.8 mm
+locating height, a 0.2 mm-high lead-in from Ø4.6 mm to Ø5 mm, and a total
+height of 5.3 mm. Its retaining head MUST be a keyed leaf head of 1.96 mm
+constant thickness that begins at Z=3.8 mm with a nominal 4.24 mm length,
+flares continuously along its length to a maximum 6.64 mm at the taper top
+Z=5.15 mm, and finishes with a 0.15 mm-high flat wear surface at Z=5.3 mm;
+the complete head MUST remain inside the Ø7 mm circle. The female socket
+material MUST be the Ø11 mm by 1.5 mm flat base solid spanning Z=3.8 mm
+through Z=5.3 mm with its head-shaped twist-lock rotation pocket and 45-degree
+funnel lead-in, used as-supplied without any build-time extension. The pocket
+MUST keep at least 0.02 mm of side clearance around the seated head in both
+the insertion and locked poses.
 
-The geometry MUST remain fixed during the Organizer Box prototype phase. No
-consumer MUST redefine a conflicting copy, apply the Pillar XY offset, or expose
-the male/female fit as a user parameter.
+The fixed reference geometry MUST remain unchanged during the Organizer Box
+prototype phase and MUST remain the source of the detachable pillar's keyed
+retaining head. The independent pillar builder MAY apply its pillar-specific
+XY offset only to its generated locating section; it MUST NOT redefine or
+reshape the shared male/female head and socket fit or expose those fixed fit
+dimensions as user parameters.
 
 #### Scenario: Shared detachable dimensions are published once
 
 - **WHEN** the Organizer Box socket builder or Pillar detachable-seat builder
   reads the shared locating-assembly contract
-- **THEN** it MUST receive male body diameter 5 mm, body height 3.8 mm, lead-in
-  height 0.2 mm, lead-in tip diameter 4.6 mm, key width 1.96 mm, leaf head
-  maximum length 6.64 mm, taper top Z 5.15 mm, wear height 0.15 mm, and total
-  height 5.3 mm
+- **THEN** the fixed male reference MUST provide body diameter 5 mm, body
+  height 3.8 mm, lead-in height 0.2 mm, lead-in tip diameter 4.6 mm, key width
+  1.96 mm, leaf head maximum length 6.64 mm, taper top Z 5.15 mm, wear height
+  0.15 mm, and total height 5.3 mm
+- **AND** the independent pillar locating section MUST use its separate nominal
+  Ø4.9 mm body contract plus the requested pillar offset
 - **AND** it MUST receive female outer diameter 11 mm, depth 1.5 mm, source Z
   band 3.8 mm through 5.3 mm, and minimum pocket side clearance 0.02 mm
-- **AND** neither consumer MUST define a conflicting local copy
+- **AND** neither consumer MUST define a conflicting copy of the fixed head or
+  female socket geometry
 
 #### Scenario: Male lead-in remains printable and insertable
 
@@ -239,8 +246,8 @@ the male/female fit as a user parameter.
 - **WHEN** the fixed male seat's retaining head is measured at any Z between
   3.8 mm and 5.3 mm
 - **THEN** its cross-section MUST keep the 1.96 mm nominal key width
-- **AND** its length MUST grow monotonically from nominally 4.24 mm at Z=3.8 mm
-  to the maximum 6.64 mm at the wear cap
+- **AND** its length MUST grow monotonically from nominally 4.24 mm at Z=3.8
+  mm to the maximum 6.64 mm at the wear cap
 - **AND** every point of the head MUST remain within 3.5 mm of the seat axis
 
 #### Scenario: Raised wear surface preserves the seating datum
@@ -248,9 +255,10 @@ the male/female fit as a user parameter.
 - **WHEN** the fixed male seat is seated in the matching female socket
 - **THEN** its locating section MUST still extend exactly 3.8 mm below the box
   bottom datum
-- **AND** the raised wear surface MUST occupy Z=5.15 mm through Z=5.3 mm in the
-  shared assembly coordinate system
+- **AND** the raised wear surface MUST occupy Z=5.15 mm through Z=5.3 mm in
+  the shared assembly coordinate system
 - **AND** the added wear height MUST NOT increase the box-to-support spacing
+
 ### Requirement: Detachable corner-seat reference compatibility
 
 The supplied v13 canonical male reference MUST be a valid non-empty single
@@ -296,6 +304,7 @@ the same male/female fit at every generated locating position.
 - **AND** each seat MUST remain removable by an intentional hand pull
 - **AND** after these criteria pass, the Stackable Box and Stackable Cylinder
   integrations MUST be eligible for their own geometry and fit validation
+
 ### Requirement: Detachable corner-seat visual lock indicators
 
 The detachable corner-seat interface MUST carry its visual lock indicator on

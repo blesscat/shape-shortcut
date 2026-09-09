@@ -29,7 +29,7 @@ import {
   openGridSnapOpenConnectNotchSegmentsFor,
 } from '../../src/cad-kernel/components/opengrid-snap/openconnect'
 import { openGridSnapProfileFor } from '../../src/cad-kernel/components/opengrid-snap/profile'
-import { OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION } from '../../src/cad-contract/units'
+import { pillarBodyDiameterForParameters } from '../../src/cad-contract/units'
 import { buildPillar } from '../../src/cad-kernel/components/opengrid-pillar/builder'
 import {
   assertOpenGridSnapOpenConnectShapeQuality,
@@ -364,12 +364,16 @@ function pillarCenterRemoverInterferenceVolume(
   definition: ReturnType<typeof openGridSnapProfileFor>,
 ): number {
   const pillarRadius =
-    OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter / 2
+    pillarBodyDiameterForParameters({
+      mode: 'positioning',
+      length: 10,
+      offset: 0,
+    }) / 2
   const passageRadius = definition.centerPassageRadius
   const halfWidth = definition.centerRemoverUpperHalfWidth
-  // Material the Ø5 pillar displaces above the step: the annulus between the
-  // pillar and the narrower passage, minus the part of that annulus already
-  // opened by the 4 mm-wide upper remover box.
+  // Material the Ø4.9 pillar displaces above the step: the annulus between
+  // the pillar and the narrower passage, minus the part of that annulus
+  // already opened by the 4 mm-wide upper remover box.
   const interferenceArea =
     Math.PI * (pillarRadius ** 2 - passageRadius ** 2) -
     (circularSegmentStripArea(pillarRadius, halfWidth) -
@@ -1592,11 +1596,7 @@ describe('OpenGrid Snap reference builder', () => {
             shrinkProbeVolumes.push(
               volumeInBox(
                 body,
-                [
-                  2.41,
-                  -0.15,
-                  definition.centerRemoverStepZ + 0.05,
-                ],
+                [2.41, -0.15, definition.centerRemoverStepZ + 0.05],
                 [2.49, 0.15, bounds[1]![2]! - 0.05],
               ),
             )

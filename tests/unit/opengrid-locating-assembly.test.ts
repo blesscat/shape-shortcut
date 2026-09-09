@@ -48,7 +48,7 @@ describe('OpenGrid locating and assembly interface contract', () => {
     expect(configuration.integratedSeatBottomChamfer).toBe(0.2)
   })
 
-  it('routes nominal locating consumers through the shared diameter', () => {
+  it('keeps shared nominal consumers separate from the pillar diameter', () => {
     const configuration = OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION
 
     expect(openGridSnapProfileFor('Standard', 'Lite').locatingHoleRadius).toBe(
@@ -63,9 +63,8 @@ describe('OpenGrid locating and assembly interface contract', () => {
     expect(OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer).toBe(
       configuration.integratedSeatBottomChamfer,
     )
-    expect(PILLAR_CONFIGURATION.bodyDiameter).toBe(
-      configuration.testShaftDiameter,
-    )
+    expect(PILLAR_CONFIGURATION.bodyDiameter).toBe(4.9)
+    expect(PILLAR_CONFIGURATION.positioningBodyDiameter).toBe(4.9)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleDiameter).toBe(
       configuration.nominalDiameter,
     )
