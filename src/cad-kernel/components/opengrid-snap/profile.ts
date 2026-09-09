@@ -131,9 +131,9 @@ function makeDefinition(
     snapLayerMinZ,
     locatingHoleRadius:
       OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter / 2,
-    // Press-fit experiment: the Ø4.8 center remover passage engages the
-    // nominal Ø5 positioning pillar with 0.2 mm diametral interference.
-    centerPassageRadius: 2.4,
+    // Press-fit experiment: the Ø4.9 center remover passage engages the
+    // nominal Ø5 positioning pillar with 0.1 mm diametral interference.
+    centerPassageRadius: 2.45,
     locatingHoleCenter,
     locatingHoleSlotHalfWidth: 1.5,
     locatingHoleSlotInnerHalfSpan: 5,

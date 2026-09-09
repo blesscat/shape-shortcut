@@ -58,7 +58,7 @@ describe('OpenGrid Snap profile registry', () => {
         expect(definition.locatingHoleRadius).toBe(
           OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter / 2,
         )
-        expect(definition.centerPassageRadius).toBe(2.4)
+        expect(definition.centerPassageRadius).toBe(2.45)
         expect(definition.locatingHoleCenter).toBe(distance)
         expect(definition.locatingHoleSlotHalfWidth).toBe(1.5)
         expect(definition.locatingHoleSlotInnerHalfSpan).toBe(5)
