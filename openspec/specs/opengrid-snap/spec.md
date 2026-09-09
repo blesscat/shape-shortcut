@@ -582,7 +582,7 @@ Deterministic Snap STEP and STL filenames MUST include the variant, profile, off
 
 The optional body feature controls apply to Full only. Half and Quarter fixed assets do not apply locating-hole or remover-hole changes.
 
-The generated Body MUST start from the selected Bare Standard or Directional baseline before optional cuts. `fourCornerLocatingHoles=true` MUST add exactly four fixed-profile locating-hole cutters at the selected profile's documented centers, with the documented underside elastic slots connected to those holes. `centerRemoverHole=true` MUST add the selected profile's documented stepped center-remover cutter together with one centered, vertical nominal 4.8 mm diameter circular passage at `(0, 0)`. The circular passage MUST extend through the selected Snap's full Z envelope and MUST engage the nominal Ø5 mm zero-offset positioning pillar with a deliberate press fit of 0.2 mm diametral interference (0.1 mm per side), confined to the band above the documented remover step. The existing lower remover opening and stepped upper profile MUST remain present around that passage with unchanged dimensions. After any requested non-hole XY assembly scaling, the two cutters MUST be applied independently to the transformed Body. Their diameter, slot width, circular passage diameter, step/profile dimensions, and documented centers MUST remain unchanged for every valid offset and footprint. They MUST NOT duplicate an intrinsic Directional feature already present in the selected source profile.
+The generated Body MUST start from the selected Bare Standard or Directional baseline before optional cuts. `fourCornerLocatingHoles=true` MUST add exactly four fixed-profile locating-hole cutters at the selected profile's documented centers, with the documented underside elastic slots connected to those holes. `centerRemoverHole=true` MUST add the selected profile's documented stepped center-remover cutter together with one centered, vertical nominal 4.9 mm diameter circular passage at `(0, 0)`. The circular passage MUST extend through the selected Snap's full Z envelope and MUST engage the nominal Ø5 mm zero-offset positioning pillar with a deliberate press fit of 0.1 mm diametral interference (0.05 mm per side), confined to the band above the documented remover step. The existing lower remover opening and stepped upper profile MUST remain present around that passage with unchanged dimensions. After any requested non-hole XY assembly scaling, the two cutters MUST be applied independently to the transformed Body. Their diameter, slot width, circular passage diameter, step/profile dimensions, and documented centers MUST remain unchanged for every valid offset and footprint. They MUST NOT duplicate an intrinsic Directional feature already present in the selected source profile.
 
 #### Scenario: Solid body with all optional features disabled
 
@@ -603,15 +603,15 @@ The generated Body MUST start from the selected Bare Standard or Directional bas
 
 - **WHEN** `fourCornerLocatingHoles=false` and `centerRemoverHole=true`
 - **THEN** the Body MUST contain the configured stepped center-remover profile with its existing lower 8 × 8 mm opening and upper 4 × 8 mm opening
-- **AND** the Body MUST contain exactly one centered nominal Ø4.8 mm circular passage extending through the full Snap Z envelope
-- **AND** a coaxially aligned nominal Ø5 mm positioning pillar with `offset=0` MUST interfere with the circular passage only in the band above the documented remover step, with 0.1 mm radial interference per side, and MUST pass without interference below the step where the lower 8 × 8 mm opening fully contains it
+- **AND** the Body MUST contain exactly one centered nominal Ø4.9 mm circular passage extending through the full Snap Z envelope
+- **AND** a coaxially aligned nominal Ø5 mm positioning pillar with `offset=0` MUST interfere with the circular passage only in the band above the documented remover step, with 0.05 mm radial interference per side, and MUST pass without interference below the step where the lower 8 × 8 mm opening fully contains it
 - **AND** the stepped profile, circular passage diameter, and center MUST remain unchanged after any non-hole XY scale
 - **AND** it MUST NOT contain optional locating holes
 
 #### Scenario: Both optional features
 
 - **WHEN** both optional feature fields are `true`
-- **THEN** the Body MUST contain both the four locating holes and the stepped center-remover profile with its centered nominal Ø4.8 mm circular passage
+- **THEN** the Body MUST contain both the four locating holes and the stepped center-remover profile with its centered nominal Ø4.9 mm circular passage
 - **AND** each feature MUST be independently probeable with unchanged dimensions and centers after scaling
 
 ### Requirement: Directional Snap profile selection

@@ -1563,6 +1563,7 @@ describe('OpenGrid Snap reference builder', () => {
       const definition = openGridSnapProfileFor(profile, variant)
       const expectedInterference =
         pillarCenterRemoverInterferenceVolume(definition)
+      const innerPassageProbeRadius = 2.43
       const passageVolumes: number[] = []
       const shrinkProbeVolumes: number[] = []
       const pillarCollisionVolumes: number[] = []
@@ -1581,13 +1582,13 @@ describe('OpenGrid Snap reference builder', () => {
             passageVolumes.push(
               volumeInCylinder(
                 body,
-                definition.centerPassageRadius - 0.1,
+                innerPassageProbeRadius,
                 bounds[0]![2]! - 0.1,
                 bounds[1]![2]! + 0.1,
               ),
             )
-            // Fully solid only when the passage is Ø4.8: the box spans
-            // radii 2.41–2.49, entirely void under the old Ø5.0 passage.
+            // The inner probe must be fully void inside the new Ø4.9 passage;
+            // the surrounding box still samples material outside its boundary.
             shrinkProbeVolumes.push(
               volumeInBox(
                 body,
@@ -1616,8 +1617,8 @@ describe('OpenGrid Snap reference builder', () => {
         expect(passageVolumes[0]).toBeLessThan(0.05)
         expect(passageVolumes[1]).toBeLessThan(0.05)
         expect(passageVolumes[1]).toBeCloseTo(passageVolumes[0]!, 3)
-        expect(shrinkProbeVolumes[0]).toBeGreaterThan(0.02)
-        expect(shrinkProbeVolumes[1]).toBeGreaterThan(0.02)
+        expect(shrinkProbeVolumes[0]).toBeGreaterThan(0.01)
+        expect(shrinkProbeVolumes[1]).toBeGreaterThan(0.01)
         expect(shrinkProbeVolumes[1]).toBeCloseTo(shrinkProbeVolumes[0]!, 3)
         expect(pillarCollisionVolumes[0]).toBeCloseTo(expectedInterference, 2)
         expect(pillarCollisionVolumes[1]).toBeCloseTo(expectedInterference, 2)
