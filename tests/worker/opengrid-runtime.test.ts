@@ -38,6 +38,8 @@ vi.mock('../../src/cad-kernel/export', () => ({
 }))
 
 import { CadWorkerRuntime } from '../../src/workers/cad.worker'
+import { translate } from '../../src/i18n'
+import { OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS } from '../../src/cad-contract/units'
 import {
   OPENGRID_CONFIGURATION,
   openGridStackableBoxFileName,
@@ -186,6 +188,49 @@ describe('OpenGrid Worker runtime', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     configureMocks()
+  })
+
+  it('reports an actionable shelf limit alongside the existing box diagnostic', async () => {
+    const events: unknown[] = []
+    const runtime = new CadWorkerRuntime('shelf-limit-epoch', (event) =>
+      events.push(event),
+    )
+    await runtime.handle(initCommand())
+    mocks.buildModelBRep.mockRejectedValueOnce(
+      new Error('OPENGRID_HONEYCOMB_MEMORY_LIMIT:4689:3000'),
+    )
+    await runtime.handle(
+      generateCommand({
+        modelId: 'opengrid-open-shelf',
+        parameters: {
+          ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+          x: 5,
+          y: 8,
+          height: 100,
+          honeycombMode: true,
+        },
+      }),
+    )
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'operation.error',
+        code: 'OPENGRID_HONEYCOMB_MEMORY_LIMIT',
+        stage: 'building',
+        recoverable: true,
+        messageId: 'diagnostic.honeycombMemoryLimit',
+      }),
+    )
+    expect(translate('zh-Hant', 'diagnostic.honeycombMemoryLimit')).toContain(
+      '關閉省料模式',
+    )
+    expect(translate('en', 'diagnostic.honeycombMemoryLimit')).toContain(
+      'turn off',
+    )
+    for (const locale of ['zh-Hant', 'en'] as const) {
+      expect(
+        translate(locale, 'diagnostic.opengridHoneycombMemoryLimit'),
+      ).not.toContain('⟦')
+    }
   })
 
   it('accepts the former blocked-size tuple when it uses official parameters', async () => {

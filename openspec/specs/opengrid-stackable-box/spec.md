@@ -633,3 +633,18 @@ builder.
 - **THEN** STEP and STL export MUST use the selected seat-mode metadata
 - **AND** exports MUST remain disabled while the current snapshot is invalid,
   stale, generating, or failed geometry validation
+
+### Requirement: Memory-bounded box inspection preserves measurement decisions
+
+Inspection of `opengrid-stackable-box` honeycomb candidates MUST avoid a number of full-candidate intersection operations that grows with individual measurement probes. Where regional measurement is used, it MUST cover each protected probe envelope and produce equivalent quality reports and detachable-seat records to full-shape measurement within existing numeric tolerances. The established large-candidate structural path and all existing geometry protections MUST remain intact.
+
+#### Scenario: Regional and full measurements agree
+- **WHEN** an inspectable small solid or honeycomb box is measured with full-shape and regional measurements
+- **THEN** corresponding quality reports MUST agree within existing numeric tolerances
+- **AND** detachable-seat residual, collision and roof measurements MUST agree for the honeycomb seat fixture
+
+#### Scenario: Probe containment and bounded inspection
+- **WHEN** regional quality inspection runs on a honeycomb box
+- **THEN** the measurement regions MUST contain their protected probe windows
+- **AND** full-candidate intersection count MUST remain bounded independently of the number of per-feature measurement probes
+- **AND** larger candidates MUST retain their established structural validation path
