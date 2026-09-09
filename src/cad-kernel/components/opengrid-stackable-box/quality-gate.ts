@@ -654,7 +654,18 @@ export function assertOpenGridStackableBoxGeometry(
     // solid-count, opening-face, hole-face, and seat-face decisions, while
     // relying on the lattice builder's exact protected masks for the volume
     // checks that cannot be represented as a local face query.
-    assertHoneycombStructuralQuality(shape, parameters, honeycombBaseline)
+    const regions =
+      parameters.cornerSeatMode === 'detachable-corner-seat'
+        ? createOpenGridStackableBoxQualityRegions(shape, parameters)
+        : undefined
+    try {
+      if (regions) {
+        assertDetachableCornerSeatQuality(shape, parameters, context, regions)
+      }
+      assertHoneycombStructuralQuality(shape, parameters, honeycombBaseline)
+    } finally {
+      regions?.dispose()
+    }
     return
   }
 
@@ -681,26 +692,7 @@ function inspectWithRegions(
   regions: OpenGridStackableBoxQualityRegions | undefined,
 ): void {
   if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    try {
-      assertOpenGridDetachableCornerSeatConsumers(
-        shape,
-        openGridStackableBoxSocketCentersFor(parameters),
-        context,
-        'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
-        regions
-          ? (center) =>
-              regions.bottomZone(socketSeatChipZone(parameters, center))
-          : undefined,
-      )
-    } catch (error) {
-      const normalized = toGeometryError(error)
-      if (normalized.message.startsWith('OPENGRID_')) {
-        throw normalized
-      }
-      throw new Error(
-        `OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID:${normalized.message}`,
-      )
-    }
+    assertDetachableCornerSeatQuality(shape, parameters, context, regions)
   }
 
   if (parameters.thinShellMode) {
@@ -762,5 +754,32 @@ function inspectWithRegions(
     quality.ordinaryBottomHoleCount !== quality.expectedOrdinaryBottomHoleCount
   ) {
     throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
+  }
+}
+
+function assertDetachableCornerSeatQuality(
+  shape: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridDetachableCornerSeatConsumerContext,
+  regions?: OpenGridStackableBoxQualityRegions,
+): void {
+  try {
+    assertOpenGridDetachableCornerSeatConsumers(
+      shape,
+      openGridStackableBoxSocketCentersFor(parameters),
+      context,
+      'OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID',
+      regions
+        ? (center) => regions.bottomZone(socketSeatChipZone(parameters, center))
+        : undefined,
+    )
+  } catch (error) {
+    const normalized = toGeometryError(error)
+    if (normalized.message.startsWith('OPENGRID_')) {
+      throw normalized
+    }
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_DETACHABLE_CORNER_SEAT_QUALITY_INVALID:${normalized.message}`,
+    )
   }
 }

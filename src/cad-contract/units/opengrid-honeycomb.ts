@@ -1,34 +1,38 @@
-const HONEYCOMB_RIB_THICKNESS = 1.25
+export const OPENGRID_HONEYCOMB_CELL_RADIUS = 3
+export const OPENGRID_HONEYCOMB_RIB_THICKNESS = 2.5
+export const OPENGRID_HONEYCOMB_LOWER_FRAME = 1.25
+export const OPENGRID_HONEYCOMB_BOTTOM_FEATURE_CLEARANCE = 1.25
 
 function honeycombLatticeFor(cellRadius: number) {
-  const anchorPitch = Math.sqrt(3) * cellRadius + HONEYCOMB_RIB_THICKNESS
+  const anchorPitch =
+    Math.sqrt(3) * cellRadius + OPENGRID_HONEYCOMB_RIB_THICKNESS
   return {
     anchorPitch,
     rowPitch: (Math.sqrt(3) * anchorPitch) / 2,
     cellRadius,
-    ribThickness: HONEYCOMB_RIB_THICKNESS,
+    ribThickness: OPENGRID_HONEYCOMB_RIB_THICKNESS,
     minimumPanelSpan: cellRadius * 2,
   } as const
 }
 
-const SIDE_HONEYCOMB_LATTICE = honeycombLatticeFor(3.1)
-const BOTTOM_HONEYCOMB_LATTICE = honeycombLatticeFor(2.6)
+const SHARED_HONEYCOMB_LATTICE = honeycombLatticeFor(
+  OPENGRID_HONEYCOMB_CELL_RADIUS,
+)
 
 /**
  * Fixed lattice dimensions shared by the OpenGrid containers and open shelf.
- * Side and plate pitches are each derived from their hex size and the same
- * printable rib width; horizontal plates use a finer pattern around protected
- * holes and interfaces.
+ * Side and plate cells use the same hex size and printable rib width. The
+ * protected-boundary clearances remain independent of the visible rib width.
  */
 export const OPENGRID_HONEYCOMB_CONFIGURATION = {
-  ...SIDE_HONEYCOMB_LATTICE,
-  bottomLattice: BOTTOM_HONEYCOMB_LATTICE,
+  ...SHARED_HONEYCOMB_LATTICE,
+  bottomLattice: SHARED_HONEYCOMB_LATTICE,
   sideFrame: 3.5,
   bottomFrame: 5,
   bottomHoleSafetyRing: 2,
   topFrame: 1.5,
-  lowerFrame: HONEYCOMB_RIB_THICKNESS,
+  lowerFrame: OPENGRID_HONEYCOMB_LOWER_FRAME,
   featureClearance: 3,
-  bottomFeatureClearance: HONEYCOMB_RIB_THICKNESS,
+  bottomFeatureClearance: OPENGRID_HONEYCOMB_BOTTOM_FEATURE_CLEARANCE,
   cutterMargin: 0.04,
 } as const

@@ -393,7 +393,9 @@ function sideBoundaryOverlappingLatticeCenters(
   const horizontalCellExtent = (Math.sqrt(3) * lattice.cellRadius) / 2
   const minimumU = -spanU / 2 - horizontalCellExtent + EPSILON
   const maximumU = spanU / 2 + horizontalCellExtent - EPSILON
-  const rowCount = Math.ceil(spanV / lattice.rowPitch) + 1
+  const availableRowSpan = Math.max(0, spanV - lattice.cellRadius * 2)
+  const rowCount =
+    Math.ceil((availableRowSpan + EPSILON) / lattice.rowPitch) + 1
   const firstRowV = -((rowCount - 1) * lattice.rowPitch) / 2
   const centers: Point2D[] = []
 
@@ -656,7 +658,9 @@ function periodicBoundaryOverlappingLatticeCenters(
   )
   if (columnCount < 1) return []
 
-  const rowCount = Math.ceil(spanV / lattice.rowPitch) + 1
+  const availableRowSpan = Math.max(0, spanV - lattice.cellRadius * 2)
+  const rowCount =
+    Math.ceil((availableRowSpan + EPSILON) / lattice.rowPitch) + 1
   const firstRowV = -((rowCount - 1) * lattice.rowPitch) / 2
   const periodicPitch = circumference / columnCount
   const centers: Point2D[] = []
@@ -1823,9 +1827,10 @@ export function openGridStackableBoxSideHoneycombCellCountFor(
  * can reject an input before starting native lattice construction.
  * This is an admission ceiling, not a guarantee of completion within the
  * model-generation timeout; the 10x10 h101 thin-shell target can exceed that
- * timeout.
+ * timeout. Keep the ceiling at 5000 cells so the unified-lattice 10x10 h200
+ * candidate remains rejected before native construction.
  */
-export const OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET = 6000
+export const OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET = 5000
 
 export type OpenGridStackableBoxHoneycombMemoryEstimate = Readonly<{
   estimatedCells: number

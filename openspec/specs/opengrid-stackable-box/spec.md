@@ -496,7 +496,28 @@ existing behavior.
 
 ### Requirement: Honeycomb material-saving box mode
 
-The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolean profile flag. `honeycombMode` MUST default to `false`, MUST be accepted in legacy hydration as `false` when absent, and MUST preserve the existing model ID `opengrid-stackable-box`, route, footprint, height semantics, normal/base-plate/thin-shell mode semantics, opening fields, bottom-hole fields, preview lifecycle, and STEP/STL export workflow. The parameter panel MUST expose the flag as `省料模式（六角鏤空）` without replacing the existing mutually exclusive box-mode choices. When enabled, the profile MUST be the Hex Mesh style: complete staggered hexagonal openings MUST be separated by a continuous printable rib network; the profile MUST NOT claim to implement the separate vertical-groove Ribbed style. For a valid honeycomb candidate within the supported geometry-engine budget, generation MUST complete without requiring unbounded in-flight geometry state; if the requested candidate cannot fit that budget, generation MUST fail diagnostically before committing a partial candidate.
+The existing `opengrid-stackable-box` model MUST expose a
+`honeycombMode` boolean profile flag. `honeycombMode` MUST default to
+`false`, MUST be accepted in legacy hydration as `false` when absent, and
+MUST preserve the existing model ID `opengrid-stackable-box`, route,
+footprint, height semantics, normal/base-plate/thin-shell mode semantics,
+opening fields, bottom-hole fields, preview lifecycle, and STEP/STL export
+workflow. The parameter panel MUST expose the flag as `省料模式（六角鏤空）`
+without replacing the existing mutually exclusive box-mode choices. When
+enabled, the profile MUST be the Hex Mesh style: complete staggered,
+point-up regular hexagonal openings MUST be separated by a continuous
+printable rib network. Every eligible side-wall and bottom-floor opening MUST
+use the same `3.0 mm` hexagon cell size, where the regular-hexagon edge length
+and circumradius are both `3.0 mm`, and neighboring openings MUST use a
+`2.5 mm` nominal rib thickness. The derived nominal horizontal center pitch
+MUST be `sqrt(3) * 3.0 + 2.5` mm (approximately `7.696 mm`) and the nominal
+staggered row pitch MUST be `sqrt(3) * 7.696` / 2 mm (approximately `6.665
+mm`). The profile MUST NOT use a separate smaller floor-cell lattice or claim
+to implement the separate vertical-groove Ribbed style. For a valid honeycomb
+candidate within the supported geometry-engine budget, generation MUST
+complete without requiring unbounded in-flight geometry state; if the
+requested candidate cannot fit that budget, generation MUST fail
+diagnostically before committing a partial candidate.
 
 #### Scenario: Legacy and default snapshots keep the solid profile
 
@@ -516,6 +537,7 @@ The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolea
 
 - **WHEN** a valid box has `honeycombMode=true` and an eligible side panel is large enough for a complete cell
 - **THEN** the continuous side-wall material in that panel MUST be replaced by connected hexagonal openings separated by continuous ribs
+- **AND** each side-wall cell MUST use the shared `3.0 mm` regular-hexagon size and neighboring cells MUST retain a `2.5 mm` nominal printable rib
 - **AND** neighboring openings MUST use the configured printable rib thickness rather than the legacy 14 mm cell-center spacing
 - **AND** the default 20 mm-height profile MUST show at least two staggered rows on each eligible side panel
 - **AND** the outer perimeter frame, rounded corners, top rim or rail, lower structural transition, and all active side-opening boundary bridges MUST remain solid
@@ -527,7 +549,8 @@ The existing `opengrid-stackable-box` model MUST expose a `honeycombMode` boolea
 
 - **WHEN** a valid box has `honeycombMode=true` and an eligible bottom-floor region is large enough for a complete cell
 - **THEN** the eligible bottom-floor material MUST contain connected hexagonal openings and ribs
-- **AND** bottom-floor hexagonal openings MUST use a smaller cell size than the side-wall openings
+- **AND** each bottom-floor cell MUST use the same shared `3.0 mm` regular-hexagon size as the side-wall cells
+- **AND** bottom-floor neighboring openings MUST retain the same `2.5 mm` nominal printable rib thickness as side-wall openings
 - **AND** eligible openings in normal, base-plate, and thin-shell profiles MUST pass through the active floor so the Hex Mesh is visible from both floor faces
 - **AND** the floor lattice MUST extend to the protected outer frame, with intersecting boundary cells clipped at the frame instead of discarded wholesale
 - **AND** the outer bottom frame, corner structural regions, bottom guide or base-plate support, grid-seam reliefs, and active floor transitions MUST remain solid

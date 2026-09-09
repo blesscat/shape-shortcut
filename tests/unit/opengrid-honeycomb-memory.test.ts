@@ -59,6 +59,20 @@ describe('OpenGrid box honeycomb memory budget', () => {
     )
   })
 
+  it('rejects the 10x10 h200 honeycomb candidate before building', () => {
+    const estimate = estimateOpenGridStackableBoxHoneycombMemory(
+      parameters({
+        x: 10,
+        y: 10,
+        height: 200,
+        thinShellMode: true,
+        cornerSeatMode: 'detachable-corner-seat',
+      }),
+    )
+
+    expect(estimate.withinBudget, JSON.stringify(estimate)).toBe(false)
+  })
+
   it('rejects a candidate above the measured geometry budget before building', () => {
     const estimate = estimateOpenGridStackableBoxHoneycombMemory(
       parameters({ height: 500 }),
