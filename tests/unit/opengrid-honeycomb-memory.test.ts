@@ -28,6 +28,22 @@ function parameters(
 }
 
 describe('OpenGrid box honeycomb memory budget', () => {
+  it('accepts a 10x10 h101 thin honeycomb box with locked seats', () => {
+    const estimate = estimateOpenGridStackableBoxHoneycombMemory(
+      parameters({
+        x: 10,
+        y: 10,
+        height: 101,
+        thinShellMode: true,
+        cornerSeatMode: 'detachable-corner-seat',
+      }),
+    )
+    expect(estimate.withinBudget).toBe(true)
+    expect(estimate.estimatedCells).toBeLessThanOrEqual(
+      OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET,
+    )
+  })
+
   it('accepts the supported 7x7 tall-box targets', () => {
     const height60 = estimateOpenGridStackableBoxHoneycombMemory(
       parameters({ height: 60 }),

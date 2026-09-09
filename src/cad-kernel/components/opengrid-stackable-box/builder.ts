@@ -468,7 +468,13 @@ function makeHoneycombPanelCutter(
     cutter = measureBooleanInScope(
       context.booleanOperations?.createScope(1),
       'cut',
-      () => activeSlot.cut(panel, { optimisation: 'commonFace' }),
+      // Bottom slots are clipped around protected seats and seams, so their
+      // faces no longer coincide with the panel. The common-face shortcut can
+      // return the entire slot, turning every retained floor rib into a cut.
+      () => {
+        if (providedSlot) return activeSlot.cut(panel)
+        return activeSlot.cut(panel, { optimisation: 'commonFace' })
+      },
     )
     return cutter
   } catch (error) {

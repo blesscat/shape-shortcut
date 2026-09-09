@@ -1821,8 +1821,11 @@ export function openGridStackableBoxSideHoneycombCellCountFor(
  * number of openings still predicts the topology that the fixed wasm32
  * geometry engine must hold. Keep this threshold centralized so the worker
  * can reject an input before starting native lattice construction.
+ * This is an admission ceiling, not a guarantee of completion within the
+ * model-generation timeout; the 10x10 h101 thin-shell target can exceed that
+ * timeout.
  */
-export const OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET = 4096
+export const OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET = 6000
 
 export type OpenGridStackableBoxHoneycombMemoryEstimate = Readonly<{
   estimatedCells: number
