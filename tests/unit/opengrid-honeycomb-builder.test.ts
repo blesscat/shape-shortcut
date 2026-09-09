@@ -18,7 +18,11 @@ import {
   openGridStackableCylinderDerivedGeometryFor,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+  OPENGRID_HONEYCOMB_BOTTOM_FEATURE_CLEARANCE,
+  OPENGRID_HONEYCOMB_CELL_RADIUS,
   OPENGRID_HONEYCOMB_CONFIGURATION,
+  OPENGRID_HONEYCOMB_LOWER_FRAME,
+  OPENGRID_HONEYCOMB_RIB_THICKNESS,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
 } from '../../src/cad-contract/units'
@@ -205,6 +209,18 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     const configuration = OPENGRID_HONEYCOMB_CONFIGURATION
     const nearestNeighborPitch =
       Math.sqrt(3) * configuration.cellRadius + configuration.ribThickness
+    expect(configuration.cellRadius).toBe(OPENGRID_HONEYCOMB_CELL_RADIUS)
+    expect(configuration.ribThickness).toBe(OPENGRID_HONEYCOMB_RIB_THICKNESS)
+    expect(configuration.bottomLattice.cellRadius).toBe(
+      OPENGRID_HONEYCOMB_CELL_RADIUS,
+    )
+    expect(configuration.bottomLattice.ribThickness).toBe(
+      OPENGRID_HONEYCOMB_RIB_THICKNESS,
+    )
+    expect(configuration.lowerFrame).toBe(OPENGRID_HONEYCOMB_LOWER_FRAME)
+    expect(configuration.bottomFeatureClearance).toBe(
+      OPENGRID_HONEYCOMB_BOTTOM_FEATURE_CLEARANCE,
+    )
     expect(configuration.anchorPitch).toBeCloseTo(nearestNeighborPitch, 8)
     expect(configuration.rowPitch).toBeCloseTo(
       (Math.sqrt(3) * nearestNeighborPitch) / 2,
@@ -272,7 +288,7 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     expect(sample!.spanZ).toBeGreaterThan(sample!.spanY)
   })
 
-  it('uses smaller complete hex openings on eligible floors than on side walls', () => {
+  it('uses the shared complete hex opening size on eligible floors and side walls', () => {
     const boxParameters = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       x: 3,
@@ -298,8 +314,8 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     )
 
     const sideOpening = completePositiveXSideCutterDescriptor(sideCutters)
-    const boxFloorOpening = boxFloorCutters[0]
-    const cylinderFloorOpening = cylinderFloorCutters[0]
+    const boxFloorOpening = completeBottomCutter(boxFloorCutters)
+    const cylinderFloorOpening = completeBottomCutter(cylinderFloorCutters)
     expect(sideOpening).toBeDefined()
     expect(boxFloorOpening).toBeDefined()
     expect(cylinderFloorOpening).toBeDefined()
@@ -308,14 +324,17 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       const bounds = boundsOf(floorOpening)
       const spanX = bounds[1]![0]! - bounds[0]![0]!
       const spanY = bounds[1]![1]! - bounds[0]![1]!
-      expect(spanX).toBeLessThan(sideOpening!.spanY)
-      expect(spanY).toBeLessThan(sideOpening!.spanZ)
+      expect(spanX).toBeCloseTo(sideOpening!.spanY, 3)
+      expect(spanY).toBeCloseTo(sideOpening!.spanZ, 3)
     }
   })
 
-  it('uses side and finer plate lattices across protected Open Shelf panels', () => {
+  it('uses the shared lattice across protected Open Shelf panels', () => {
     const parameters = {
       ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
+      height: 200,
+      cellX: 1,
+      cellZ: 1,
       honeycombMode: true,
     }
     const wallCutters = makeOpenGridOpenShelfWallHoneycombCutters(parameters)
@@ -330,10 +349,17 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       0,
     )
 
-    const wallOpening = positiveXSideCutterDescriptors(wallCutters).toSorted(
-      (first, second) =>
-        second.spanY * second.spanZ - first.spanY * first.spanZ,
-    )[0]
+    const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+    expect(honeycomb.bottomLattice.cellRadius).toBe(honeycomb.cellRadius)
+    expect(honeycomb.bottomLattice.ribThickness).toBe(honeycomb.ribThickness)
+
+    const wallOpening = wallCutters
+      .map(cutterBoundsDescriptor)
+      .filter((entry) => entry.spanY < entry.spanX)
+      .toSorted(
+        (first, second) =>
+          second.spanX * second.spanZ - first.spanX * first.spanZ,
+      )[0]
     const bottomOpeningBounds = plateCutters
       .map((cutter) => boundsOf(cutter))
       .filter((bounds) => bounds[0]![2]! < 0)
@@ -348,9 +374,13 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       bottomOpeningBounds[1]![0]! - bottomOpeningBounds[0]![0]!
     const bottomSpanY =
       bottomOpeningBounds[1]![1]! - bottomOpeningBounds[0]![1]!
+    const expectedPlateSpanX = Math.sqrt(3) * honeycomb.bottomLattice.cellRadius
+    const expectedPlateSpanY = honeycomb.bottomLattice.cellRadius * 2
     expect(wallOpening).toBeDefined()
-    expect(bottomSpanX).toBeLessThan(wallOpening!.spanY)
-    expect(bottomSpanY).toBeLessThan(wallOpening!.spanZ)
+    expect(wallOpening!.spanX).toBeCloseTo(expectedPlateSpanX, 3)
+    expect(wallOpening!.spanZ).toBeCloseTo(expectedPlateSpanY, 3)
+    expect(bottomSpanX).toBeCloseTo(expectedPlateSpanX, 3)
+    expect(bottomSpanY).toBeCloseTo(expectedPlateSpanY, 3)
   })
 
   it('clips Open Shelf openings at every panel family and exact peg keep-out', () => {
@@ -645,7 +675,7 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     expect(cylinderCellCount, 'default cylinder cell count').toBeGreaterThan(0)
   })
 
-  it('keeps fine floor mesh cells between the default functional holes', () => {
+  it('keeps floor mesh cells between the default functional holes', () => {
     const boxBottomCellCount = openGridStackableBoxBottomHoneycombCellCountFor({
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       honeycombMode: true,
@@ -678,6 +708,7 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     const boxParameters = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       cornerSeatMode: 'none' as const,
+      thinShellMode: true,
       honeycombMode: true,
     }
     const cylinderParameters = {
@@ -757,11 +788,10 @@ describe('OpenGrid honeycomb material-saving builders', () => {
         representativeCenters.set(quadrant, center)
       }
     }
-
-    expect(Math.min(...quadrantCounts)).toBeGreaterThanOrEqual(3)
+    expect(Math.min(...quadrantCounts)).toBeGreaterThanOrEqual(1)
     expect(
-      Math.max(...quadrantCounts) / Math.min(...quadrantCounts),
-    ).toBeLessThan(1.5)
+      Math.max(...quadrantCounts) - Math.min(...quadrantCounts),
+    ).toBeLessThanOrEqual(1)
     expect(representativeCenters.size).toBe(4)
 
     for (const center of representativeCenters.values()) {
@@ -847,6 +877,7 @@ describe('OpenGrid honeycomb material-saving builders', () => {
   it('materializes unobstructed cylinder side rows across the periodic seam', () => {
     const parameters = {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+      height: 30,
       bottomSeatMode: 'none' as const,
       honeycombMode: true,
     }

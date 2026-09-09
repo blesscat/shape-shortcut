@@ -152,7 +152,18 @@ existing preview, STEP, and STL lifecycle.
 
 ### Requirement: Open Shelf has a protected Hex Mesh material-saving mode
 
-When `honeycombMode=true`, Open Shelf MUST use the same point-up Hex Mesh derivation and protected-boundary clipping behavior as the stackable containers. Eligible outer side walls, internal X dividers, and backboard MUST use the side-cell lattice. Eligible bottom, inclined shelf, and top panels MUST use the smaller floor-cell lattice. Complete and clipped openings MUST retain continuous printable ribs, and the mode MUST NOT implement the separate vertical-groove Ribbed style.
+When `honeycombMode=true`, `opengrid-open-shelf` MUST use the same point-up
+Hex Mesh derivation and protected-boundary clipping behavior as the stackable
+containers. Every eligible outer side wall, internal X divider, backboard,
+bottom, inclined shelf, and top panel MUST use the same `3.0 mm` regular
+hexagon cell size, where the regular-hexagon edge length and circumradius are
+both `3.0 mm`, and neighboring openings MUST retain a `2.5 mm` nominal
+printable rib thickness. The derived nominal horizontal center pitch MUST be
+`sqrt(3) * 3.0 + 2.5` mm (approximately `7.696 mm`) and the nominal
+staggered row pitch MUST be `sqrt(3) * 7.696` / 2 mm (approximately `6.665
+mm`). Complete and clipped openings MUST retain continuous printable ribs,
+and the mode MUST NOT implement a separate smaller floor-cell lattice or the
+separate vertical-groove Ribbed style.
 
 #### Scenario: Disabled mode preserves the merged Open Shelf geometry
 
@@ -162,7 +173,7 @@ When `honeycombMode=true`, Open Shelf MUST use the same point-up Hex Mesh deriva
 #### Scenario: Vertical panels use protected side Hex Mesh
 
 - **WHEN** a valid Open Shelf has `honeycombMode=true`
-- **THEN** eligible outer side walls, internal X dividers, and backboard MUST contain complete and safely clipped staggered side-lattice openings
+- **THEN** eligible outer side walls, internal X dividers, and backboard MUST contain complete and safely clipped staggered openings using the shared `3.0 mm` cell and `2.5 mm` nominal-rib lattice
 - **AND** the rounded outer perimeter, front and rear rails, top and bottom rails, shelf-contact bridges, divider-contact bridges, and backboard contacts MUST remain solid
 - **AND** cells intersecting those protected boundaries MUST be clipped to the safe region instead of discarded wholesale
 - **AND** usable vertical-panel areas MUST NOT contain avoidable broad solid bands caused only by complete-cell rejection
@@ -170,14 +181,14 @@ When `honeycombMode=true`, Open Shelf MUST use the same point-up Hex Mesh deriva
 #### Scenario: Inclined shelves open the usable bottom-wedge sides
 
 - **WHEN** a valid Open Shelf has `honeycombMode=true`, `angle>0`, and safe opening area between the bottom rail and first inclined shelf bridge
-- **THEN** each eligible outer side wall and internal X divider MUST contain side-lattice openings in that bottom-wedge area
+- **THEN** each eligible outer side wall and internal X divider MUST contain the shared `3.0 mm` side-lattice openings in that bottom-wedge area
 - **AND** cells crossing the horizontal bottom boundary or inclined first-shelf boundary MUST be clipped while both structural bridges remain solid
 - **AND** the wedge MUST remain solid only where no valid protected opening area fits
 
 #### Scenario: Bottom and shelf panels use finer Hex Mesh
 
 - **WHEN** a valid Open Shelf has `honeycombMode=true`
-- **THEN** eligible bottom, inclined shelf, and top panels MUST contain complete and safely clipped staggered openings smaller than the side-wall openings
+- **THEN** eligible bottom, inclined shelf, and top panels MUST contain complete and safely clipped staggered openings using the same `3.0 mm` cell size and `2.5 mm` nominal rib thickness as the side-wall openings
 - **AND** eligible plate openings MUST pass through their panel so the Hex Mesh remains visible from either exposed face
 - **AND** side, front, rear, divider, and panel-intersection bridges MUST remain solid
 - **AND** no bottom opening may intersect a locating peg or its structural keep-out
