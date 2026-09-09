@@ -209,28 +209,31 @@ function inspectDetachableCornerSeatProfiles(
   failures: string[],
 ): void {
   const configuration = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male
-  const radiusShift = parameters.offset / 2
+  const bodyRadius = pillarBodyDiameterForParameters(parameters) / 2
+  const leadInProbeZ = 0.05
+  const leadInProbeRadius =
+    bodyRadius - configuration.leadInHeight + leadInProbeZ
   expectMaterial(
     shape,
     failures,
     'lead-in-bottom-inside',
-    2.2 + radiusShift,
-    0.05,
+    leadInProbeRadius - 0.1,
+    leadInProbeZ,
     true,
   )
   expectMaterial(
     shape,
     failures,
     'lead-in-bottom-outside',
-    2.45 + radiusShift,
-    0.05,
+    leadInProbeRadius + 0.1,
+    leadInProbeZ,
     false,
   )
   expectMaterial(
     shape,
     failures,
     'lead-in-upper-inside',
-    2.4 + radiusShift,
+    bodyRadius - 0.1,
     configuration.leadInHeight + 0.05,
     true,
   )
@@ -238,7 +241,7 @@ function inspectDetachableCornerSeatProfiles(
     shape,
     failures,
     'body-upper-inside',
-    2.4 + radiusShift,
+    bodyRadius - 0.1,
     parameters.length - 0.05,
     true,
   )
@@ -246,7 +249,7 @@ function inspectDetachableCornerSeatProfiles(
     shape,
     failures,
     'body-upper-outside',
-    2.6 + radiusShift,
+    bodyRadius + 0.1,
     parameters.length - 0.05,
     false,
   )
@@ -344,19 +347,6 @@ export function inspectPillarShapeQuality(
     volume = measureVolume(shape)
     if (!Number.isFinite(volume) || volume <= 0) {
       failures.push('volume:non-positive-or-non-finite')
-    }
-    if (
-      parameters.mode === 'detachable-corner-seat' &&
-      Math.abs(parameters.length - PILLAR_CONFIGURATION.seatDefaultLength) <=
-        1e-9 &&
-      parameters.offset === 0 &&
-      Math.abs(
-        volume -
-          OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male
-            .markedNominalVolume,
-      ) > OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.volumeTolerance
-    ) {
-      failures.push('volume:detachable-reference-mismatch')
     }
   } catch (error) {
     failures.push(

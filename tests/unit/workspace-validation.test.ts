@@ -606,14 +606,14 @@ describe('CAD workspace validation helpers', () => {
     const parameters: PillarParameters = {
       mode: 'positioning',
       length: 25,
-      offset: 0.05,
+      offset: 0.1,
     }
     const raw = rawFromParameters(parameters)
 
     expect(raw).toEqual({
       mode: 'positioning',
       length: '25',
-      offset: '0.05',
+      offset: '0.1',
     })
     expect(parseRawParameters(raw, 'opengrid-pillar')).toEqual({
       valid: true,
@@ -625,17 +625,17 @@ describe('CAD workspace validation helpers', () => {
     const parameters: PillarParameters = {
       mode: 'detachable-corner-seat',
       length: 4.2,
-      offset: 0.15,
+      offset: 0.1,
     }
 
     expect(rawFromParameters(parameters)).toEqual({
       mode: 'detachable-corner-seat',
       length: '4.2',
-      offset: '0.15',
+      offset: '0.1',
     })
     expect(
       parseRawParameters(
-        { mode: 'detachable-corner-seat', length: '4.2', offset: '0.15' },
+        { mode: 'detachable-corner-seat', length: '4.2', offset: '0.1' },
         'opengrid-pillar',
       ),
     ).toEqual({

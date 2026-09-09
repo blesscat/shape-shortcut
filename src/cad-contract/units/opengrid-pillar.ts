@@ -1,7 +1,6 @@
-import {
-  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
-  OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
-} from './opengrid-locating-assembly'
+import { OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION } from './opengrid-locating-assembly'
+
+const PILLAR_NOMINAL_BODY_DIAMETER = 4.9
 
 export type PillarMode = 'positioning' | 'detachable-corner-seat'
 export type PillarParameterKey = 'mode' | 'length' | 'offset'
@@ -45,11 +44,11 @@ export const PILLAR_CONFIGURATION = {
   seatMaxLength: 100,
   seatLengthStep: 0.1,
   seatLengthSliderMax: 30,
-  offsetMin: -0.5,
-  offsetMax: 0.5,
-  offsetStep: 0.05,
-  bodyDiameter: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.testShaftDiameter,
-  positioningBodyDiameter: 5,
+  offsetMin: -1,
+  offsetMax: 1,
+  offsetStep: 0.1,
+  bodyDiameter: PILLAR_NOMINAL_BODY_DIAMETER,
+  positioningBodyDiameter: PILLAR_NOMINAL_BODY_DIAMETER,
   positioningLowerChamfer: 0.2,
   positioningUpperChamfer: 0.2,
   defaultParameters: {
@@ -328,10 +327,7 @@ export function pillarBodyDiameterForParameters(
   parameters: PillarParameters,
 ): number {
   if (parameters.mode === 'detachable-corner-seat') {
-    return (
-      OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male.bodyDiameter +
-      parameters.offset
-    )
+    return PILLAR_CONFIGURATION.bodyDiameter + parameters.offset
   }
   return PILLAR_CONFIGURATION.positioningBodyDiameter + parameters.offset
 }

@@ -398,7 +398,7 @@ describe('Worker contract runtime validation', () => {
         parameters: {
           mode: 'detachable-corner-seat',
           length: 4.2,
-          offset: 0.15,
+          offset: 0.1,
         },
       }),
     ).toBe(true)
