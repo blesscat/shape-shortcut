@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
     model: 'opengrid',
     delete: vi.fn(),
   })),
-  buildOpenGridStackableBox: vi.fn(() => ({
+  buildOpenGridStackableBoxAsync: vi.fn(async () => ({
     model: 'opengrid-stackable-box',
     delete: vi.fn(),
   })),
@@ -67,7 +67,7 @@ vi.mock('../../src/cad-kernel/components/opengrid/builder', () => ({
 vi.mock(
   '../../src/cad-kernel/components/opengrid-stackable-box/builder',
   () => ({
-    buildOpenGridStackableBox: mocks.buildOpenGridStackableBox,
+    buildOpenGridStackableBoxAsync: mocks.buildOpenGridStackableBoxAsync,
   }),
 )
 vi.mock(
@@ -186,7 +186,7 @@ describe('HSW kernel model registration', () => {
 
     expect(shape).toMatchObject({ model: 'opengrid-stackable-box' })
     expect(unavailableSnapReferenceLoader).not.toHaveBeenCalled()
-    expect(mocks.buildOpenGridStackableBox).toHaveBeenCalledWith(
+    expect(mocks.buildOpenGridStackableBoxAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         x: 0.5,
         y: 1,
@@ -220,7 +220,7 @@ describe('HSW kernel model registration', () => {
       }),
     )
     expect(mocks.buildOpenGridBRep).not.toHaveBeenCalled()
-    expect(mocks.buildOpenGridStackableBox).not.toHaveBeenCalled()
+    expect(mocks.buildOpenGridStackableBoxAsync).not.toHaveBeenCalled()
   })
 
   it('rejects mismatched divider parameters before dispatch', async () => {
@@ -263,7 +263,7 @@ describe('HSW kernel model registration', () => {
         detachableCornerSeatHolderReference: expect.anything(),
       }),
     )
-    expect(mocks.buildOpenGridStackableBox).not.toHaveBeenCalled()
+    expect(mocks.buildOpenGridStackableBoxAsync).not.toHaveBeenCalled()
     expect(mocks.buildOpenGridBRep).not.toHaveBeenCalled()
   })
   it('routes hexagonal-column only to its own reference and builder', async () => {

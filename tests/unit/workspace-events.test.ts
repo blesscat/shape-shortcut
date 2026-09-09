@@ -42,7 +42,7 @@ function createContext(
     state: { current: state },
     workerEpoch: { current: 'epoch-test' },
     latestGeneration: { current: 2 },
-    initialModelSent: { current: true },
+    session: { current: { mode: 'bootstrap', ready: false, pending: null } },
     autoRecoveryAttempts: { current: 0 },
     operations: { current: operations },
     activeProgressOperationId: { current: null },

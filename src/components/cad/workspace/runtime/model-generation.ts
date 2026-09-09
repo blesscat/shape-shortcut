@@ -72,7 +72,11 @@ export function createModelGenerationHandlers(
   ) => {
     const client = context.refs.client.current
     const workerEpoch = context.refs.workerEpoch.current
-    if (!client || !workerEpoch) return
+    if (!client || !workerEpoch) {
+      context.refs.session.current.invalidGeneration = generation
+      return
+    }
+    context.refs.session.current.invalidGeneration = undefined
     client.send({
       kind: 'model.invalidate',
       operationId: newOperationId('invalidate'),
@@ -138,7 +142,7 @@ export function createModelGenerationHandlers(
     context.setOperationProgress(operationId, { stage: 'building' })
     context.setOperationTimeout(
       operationId,
-      PROTOTYPE_CONFIGURATION.operationTimeoutMs,
+      PROTOTYPE_CONFIGURATION.modelGenerationTimeoutMs,
       () => {
         context.recoverWorker(
           normalizeError(undefined, {
@@ -159,13 +163,35 @@ export function createModelGenerationHandlers(
     modelId: ModelId,
     parameters: ModelParameterValues,
     generation: number,
+    valid = true,
   ) => {
+    context.refs.exportRequest.current = null
+    for (const [operationId, operation] of context.refs.operations.current) {
+      if (operation.kind === 'init') continue
+      context.clearTimer(operationId)
+      context.clearOperationProgress(operationId)
+      context.refs.operations.current.delete(operationId)
+    }
     if (context.refs.debounce.current)
       clearTimeout(context.refs.debounce.current)
     context.refs.debounce.current = setTimeout(() => {
-      if (generation !== context.refs.latestGeneration.current) return
+      context.refs.debounce.current = null
+      if (
+        context.refs.disposed.current ||
+        generation !== context.refs.latestGeneration.current
+      )
+        return
+      if (!valid) {
+        context.refs.session.current.pending = null
+        sendInvalidate(generation, 'invalid-input')
+        return
+      }
       context.dispatch({ type: 'generation-start', generation })
-      sendGenerate(modelId, parameters, generation)
+      context.refs.startWorker.current(false, {
+        modelId,
+        parameters,
+        generation,
+      })
     }, PROTOTYPE_CONFIGURATION.inputDebounceMs)
   }
 
@@ -214,9 +240,12 @@ export function createModelGenerationHandlers(
         generation,
         error: errorForInput(issue),
       })
-      sendInvalidate(generation, 'invalid-input')
-      if (context.refs.debounce.current)
-        clearTimeout(context.refs.debounce.current)
+      queueModelGeneration(
+        modelId,
+        context.refs.state.current.input,
+        generation,
+        false,
+      )
       return
     }
 
@@ -228,7 +257,6 @@ export function createModelGenerationHandlers(
       input: parsed.value,
       generation,
     })
-    sendInvalidate(generation, 'superseded')
     queueModelGeneration(modelId, parsed.value, generation)
   }
 
@@ -253,11 +281,12 @@ export function createModelGenerationHandlers(
         generation,
         error: errorForInput(firstIssue),
       })
-      sendInvalidate(generation, 'invalid-input')
-      if (context.refs.debounce.current) {
-        clearTimeout(context.refs.debounce.current)
-        context.refs.debounce.current = null
-      }
+      queueModelGeneration(
+        modelId,
+        context.refs.state.current.input,
+        generation,
+        false,
+      )
       return
     }
 
@@ -272,7 +301,6 @@ export function createModelGenerationHandlers(
       input: nextParameters,
       generation,
     })
-    sendInvalidate(generation, 'superseded')
     queueModelGeneration(modelId, nextParameters, generation)
   }
 
@@ -304,11 +332,12 @@ export function createModelGenerationHandlers(
           },
         ),
       })
-      sendInvalidate(generation, 'invalid-input')
-      if (context.refs.debounce.current) {
-        clearTimeout(context.refs.debounce.current)
-        context.refs.debounce.current = null
-      }
+      queueModelGeneration(
+        modelId,
+        context.refs.state.current.input,
+        generation,
+        false,
+      )
       return
     }
 
@@ -333,11 +362,12 @@ export function createModelGenerationHandlers(
           generation,
         }),
       })
-      sendInvalidate(generation, 'invalid-input')
-      if (context.refs.debounce.current) {
-        clearTimeout(context.refs.debounce.current)
-        context.refs.debounce.current = null
-      }
+      queueModelGeneration(
+        modelId,
+        context.refs.state.current.input,
+        generation,
+        false,
+      )
       return
     }
 
@@ -349,7 +379,6 @@ export function createModelGenerationHandlers(
       input: validation.value,
       generation,
     })
-    sendInvalidate(generation, 'superseded')
     queueModelGeneration(modelId, validation.value, generation)
   }
 
@@ -371,7 +400,12 @@ export function createModelGenerationHandlers(
         messageId: 'validation.invalid',
       }),
     })
-    sendInvalidate(generation, 'invalid-input')
+    queueModelGeneration(
+      'opengrid',
+      context.refs.state.current.input,
+      generation,
+      false,
+    )
   }
 
   return {

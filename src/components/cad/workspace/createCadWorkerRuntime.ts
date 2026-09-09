@@ -29,6 +29,7 @@ import { createWorkerEventHandler } from './runtime/events'
 import { createModelGenerationHandlers } from './runtime/model-generation'
 import type {
   FieldErrors,
+  PendingGeneration,
   RuntimeContext,
   RuntimeRefs,
   StateSetter,
@@ -72,9 +73,9 @@ export function createCadWorkerRuntime(
   const stateRef = { current: options.initialState } as RuntimeRefs['state']
   const workerEpochRef = { current: null } as RuntimeRefs['workerEpoch']
   const latestGenerationRef = { current: 0 } as RuntimeRefs['latestGeneration']
-  const initialModelSentRef = {
-    current: false,
-  } as RuntimeRefs['initialModelSent']
+  const sessionRef: RuntimeRefs['session'] = {
+    current: { mode: 'bootstrap', ready: false, pending: null },
+  }
   const autoRecoveryAttemptsRef = {
     current: 0,
   } as RuntimeRefs['autoRecoveryAttempts']
@@ -104,7 +105,7 @@ export function createCadWorkerRuntime(
     state: stateRef,
     workerEpoch: workerEpochRef,
     latestGeneration: latestGenerationRef,
-    initialModelSent: initialModelSentRef,
+    session: sessionRef,
     autoRecoveryAttempts: autoRecoveryAttemptsRef,
     operations: operationsRef,
     activeProgressOperationId: activeProgressOperationIdRef,
@@ -147,9 +148,11 @@ export function createCadWorkerRuntime(
     callback: () => void,
   ) => {
     clearTimer(operationId)
+    const sourceClient = clientRef.current
     timersRef.current.set(
       operationId,
       setTimeout(() => {
+        if (disposedRef.current || sourceClient !== clientRef.current) return
         timersRef.current.delete(operationId)
         callback()
       }, timeoutMs),
@@ -195,8 +198,25 @@ export function createCadWorkerRuntime(
   })
 
   const recoverWorker = (error: CadError, client = clientRef.current) => {
+    if (disposedRef.current || !client || client !== clientRef.current) return
+    if (
+      error.generation !== undefined &&
+      error.generation !== latestGenerationRef.current
+    )
+      return
     clearProgress()
-    client?.terminate()
+    for (const timer of timersRef.current.values()) clearTimeout(timer)
+    timersRef.current.clear()
+    operationsRef.current.clear()
+    exportRef.current = null
+    client.terminate()
+    clientRef.current = null
+    workerEpochRef.current = null
+    if (
+      stateRef.current.status === 'invalid-input' ||
+      debounceRef.current !== null
+    )
+      return
     if (
       autoRecoveryAttemptsRef.current < PROTOTYPE_CONFIGURATION.recoveryRetries
     ) {
@@ -208,20 +228,32 @@ export function createCadWorkerRuntime(
     dispatch({ type: 'recoverable-error', error })
   }
 
-  const startWorker = (manual = false) => {
+  const startWorker = (manual = false, pending?: PendingGeneration) => {
     if (disposedRef.current) return
+    if (
+      manual &&
+      (stateRef.current.status === 'invalid-input' ||
+        debounceRef.current !== null)
+    )
+      return
     if (manual) autoRecoveryAttemptsRef.current = 0
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-      debounceRef.current = null
-    }
     for (const timer of timersRef.current.values()) clearTimeout(timer)
     timersRef.current.clear()
     clearProgress()
     clientRef.current?.terminate()
     workerEpochRef.current = null
-    latestGenerationRef.current = 0
-    initialModelSentRef.current = false
+    clientRef.current = null
+    const previousSession = sessionRef.current
+    let nextPending = pending ?? previousSession.pending
+    if (nextPending?.generation !== latestGenerationRef.current)
+      nextPending = null
+    sessionRef.current = {
+      mode: previousSession.mode,
+      ready: false,
+      pending: nextPending,
+    }
+    if (pending || previousSession.ready)
+      sessionRef.current.mode = 'replacement'
     operationsRef.current.clear()
     exportRef.current = null
     dispatch({ type: 'worker-restarted' })
@@ -244,9 +276,19 @@ export function createCadWorkerRuntime(
     }
 
     clientRef.current = client
-    client.onEvent(handleWorkerEvent)
+    const session = sessionRef.current
+    client.onEvent((event) => {
+      if (
+        disposedRef.current ||
+        client !== clientRef.current ||
+        session !== sessionRef.current
+      )
+        return
+      handleWorkerEvent(event)
+    })
     client.onError((clientError: WorkerClientError) => {
-      recoverWorker(errorForWorker(clientError))
+      if (session !== sessionRef.current) return
+      recoverWorker(errorForWorker(clientError), client)
     })
     const operationId = newOperationId('engine-init')
     const requestId = client.send({

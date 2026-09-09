@@ -1,8 +1,10 @@
 import {
+  CompoundSketch,
   makeBox,
   makeCompound,
   makeCylinder,
   Sketcher,
+  type Sketch,
   type Shape3D,
 } from 'replicad'
 import {
@@ -25,6 +27,7 @@ import {
   openGridStackableBoxSocketCentersFor,
   openGridStackableCylinderDerivedGeometryFor,
   openGridStackableCylinderHoleCentersFor,
+  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
   OPENGRID_HONEYCOMB_CONFIGURATION,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
@@ -109,6 +112,199 @@ function extrudePolygon(
   } finally {
     deleteShape(sketch)
     sketcher.delete()
+  }
+}
+
+function sketchPolygon(
+  plane: Plane,
+  origin: [number, number, number],
+  points: readonly Point2D[],
+): Sketch {
+  const sketcher = new Sketcher(plane, origin)
+  try {
+    const first = points[0]
+    if (!first) throw new Error('OPENGRID_HONEYCOMB_PROFILE_EMPTY')
+    sketcher.movePointerTo(first)
+    for (const point of points.slice(1)) sketcher.lineTo(point)
+    return sketcher.close()
+  } finally {
+    sketcher.delete()
+  }
+}
+
+function rectanglePoints(bounds: Rectangle2D): Point2D[] {
+  return [
+    [bounds.minimumU, bounds.minimumV],
+    [bounds.maximumU, bounds.minimumV],
+    [bounds.maximumU, bounds.maximumV],
+    [bounds.minimumU, bounds.maximumV],
+  ]
+}
+
+function boundsForPolygons(
+  polygons: readonly (readonly Point2D[])[],
+): Rectangle2D {
+  const points = polygons.flatMap((polygon) => polygon)
+  if (points.length === 0) {
+    throw new Error('OPENGRID_HONEYCOMB_PROFILE_EMPTY')
+  }
+  return {
+    minimumU: Math.min(...points.map((point) => point[0])),
+    maximumU: Math.max(...points.map((point) => point[0])),
+    minimumV: Math.min(...points.map((point) => point[1])),
+    maximumV: Math.max(...points.map((point) => point[1])),
+  }
+}
+
+function crossProduct(first: Point2D, second: Point2D, third: Point2D): number {
+  return (
+    (second[0] - first[0]) * (third[1] - first[1]) -
+    (second[1] - first[1]) * (third[0] - first[0])
+  )
+}
+
+function pointOnSegment(point: Point2D, start: Point2D, end: Point2D): boolean {
+  return (
+    Math.abs(crossProduct(start, end, point)) <= EPSILON &&
+    point[0] >= Math.min(start[0], end[0]) - EPSILON &&
+    point[0] <= Math.max(start[0], end[0]) + EPSILON &&
+    point[1] >= Math.min(start[1], end[1]) - EPSILON &&
+    point[1] <= Math.max(start[1], end[1]) + EPSILON
+  )
+}
+
+function segmentsIntersectOrTouch(
+  firstStart: Point2D,
+  firstEnd: Point2D,
+  secondStart: Point2D,
+  secondEnd: Point2D,
+): boolean {
+  const firstStartSide = crossProduct(firstStart, firstEnd, secondStart)
+  const firstEndSide = crossProduct(firstStart, firstEnd, secondEnd)
+  const secondStartSide = crossProduct(secondStart, secondEnd, firstStart)
+  const secondEndSide = crossProduct(secondStart, secondEnd, firstEnd)
+  const properIntersection =
+    ((firstStartSide > EPSILON && firstEndSide < -EPSILON) ||
+      (firstStartSide < -EPSILON && firstEndSide > EPSILON)) &&
+    ((secondStartSide > EPSILON && secondEndSide < -EPSILON) ||
+      (secondStartSide < -EPSILON && secondEndSide > EPSILON))
+  return (
+    properIntersection ||
+    pointOnSegment(secondStart, firstStart, firstEnd) ||
+    pointOnSegment(secondEnd, firstStart, firstEnd) ||
+    pointOnSegment(firstStart, secondStart, secondEnd) ||
+    pointOnSegment(firstEnd, secondStart, secondEnd)
+  )
+}
+
+function polygonsOverlapOrTouch(
+  first: readonly Point2D[],
+  second: readonly Point2D[],
+): boolean {
+  const firstBounds = polygonBounds(first)
+  const secondBounds = polygonBounds(second)
+  if (
+    firstBounds.maximumU < secondBounds.minimumU - EPSILON ||
+    secondBounds.maximumU < firstBounds.minimumU - EPSILON ||
+    firstBounds.maximumV < secondBounds.minimumV - EPSILON ||
+    secondBounds.maximumV < firstBounds.minimumV - EPSILON
+  ) {
+    return false
+  }
+  for (let firstIndex = 0; firstIndex < first.length; firstIndex += 1) {
+    const firstStart = first[firstIndex]!
+    const firstEnd = first[(firstIndex + 1) % first.length]!
+    for (let secondIndex = 0; secondIndex < second.length; secondIndex += 1) {
+      const secondStart = second[secondIndex]!
+      const secondEnd = second[(secondIndex + 1) % second.length]!
+      if (
+        segmentsIntersectOrTouch(firstStart, firstEnd, secondStart, secondEnd)
+      ) {
+        return true
+      }
+    }
+  }
+  return (
+    pointIsInsidePolygon(first[0]!, second) ||
+    pointIsInsidePolygon(second[0]!, first)
+  )
+}
+
+function assertPanelProfile(
+  outer: readonly Point2D[],
+  holes: readonly Point2D[][],
+): void {
+  if (outer.length < 3 || polygonArea(outer) <= EPSILON) {
+    throw new Error('OPENGRID_HONEYCOMB_PROFILE_INVALID_OUTER')
+  }
+  const outerBounds = polygonBounds(outer)
+  for (const hole of holes) {
+    if (
+      hole.length < 3 ||
+      polygonArea(hole) <= EPSILON ||
+      hole.some(
+        (point) =>
+          point[0] <= outerBounds.minimumU + EPSILON ||
+          point[0] >= outerBounds.maximumU - EPSILON ||
+          point[1] <= outerBounds.minimumV + EPSILON ||
+          point[1] >= outerBounds.maximumV - EPSILON ||
+          !pointIsInsidePolygon(point, outer),
+      )
+    ) {
+      throw new Error('OPENGRID_HONEYCOMB_PROFILE_INVALID_WIRE')
+    }
+  }
+  for (let firstIndex = 0; firstIndex < holes.length; firstIndex += 1) {
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < holes.length;
+      secondIndex += 1
+    ) {
+      if (polygonsOverlapOrTouch(holes[firstIndex]!, holes[secondIndex]!)) {
+        throw new Error('OPENGRID_HONEYCOMB_PROFILE_OVERLAPPING_WIRES')
+      }
+    }
+  }
+}
+
+function extrudePolygonWithHoles(
+  plane: Plane,
+  origin: [number, number, number],
+  outer: readonly Point2D[],
+  holes: readonly (readonly Point2D[])[],
+  distance: number,
+  direction: [number, number, number],
+): Shape3D {
+  const sketches: Sketch[] = []
+  let compound: CompoundSketch | null = null
+  try {
+    assertPanelProfile(
+      outer,
+      holes.map((hole) => [...hole]),
+    )
+    sketches.push(sketchPolygon(plane, origin, outer))
+    for (const hole of holes) {
+      sketches.push(sketchPolygon(plane, origin, hole))
+    }
+    if (sketches.length === 1) {
+      const sketch = sketches[0]
+      if (!sketch) throw new Error('OPENGRID_HONEYCOMB_PROFILE_EMPTY')
+      const result = sketch.extrude(distance, {
+        extrusionDirection: direction,
+      })
+      sketches.length = 0
+      return result
+    }
+    compound = new CompoundSketch(sketches)
+    const result = compound.extrude(distance, {
+      extrusionDirection: direction,
+    })
+    return result
+  } catch (error) {
+    if (compound === null) sketches.forEach(deleteShape)
+    throw error
+  } finally {
+    compound?.delete()
   }
 }
 
@@ -384,6 +580,19 @@ function rectangleIntersectsPolygon(
   )
 }
 
+function polygonIsInsideRectangle(
+  polygon: readonly Point2D[],
+  rectangle: Rectangle2D,
+): boolean {
+  return polygon.every(
+    ([u, v]) =>
+      u >= rectangle.minimumU - EPSILON &&
+      u <= rectangle.maximumU + EPSILON &&
+      v >= rectangle.minimumV - EPSILON &&
+      v <= rectangle.maximumV + EPSILON,
+  )
+}
+
 function nonEmptyPolygons(
   polygons: readonly (readonly Point2D[])[],
 ): Point2D[][] {
@@ -530,6 +739,7 @@ function boxSideOpeningKeepout(
 function boxSideCellPolygonGroups(
   parameters: OpenGridStackableBoxParameters,
   side: BoxSide,
+  applyOpeningKeepout = true,
 ): Point2D[][][] {
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
   const panel = boxSidePanelBounds(parameters, side)
@@ -551,7 +761,17 @@ function boxSideCellPolygonGroups(
     const clipped = clipPolygonToBounds(hexagonPoints(center, honeycomb), panel)
     let polygons = nonEmptyPolygons([clipped])
     if (openingKeepout) {
-      polygons = subtractRectanglesFromPolygons(polygons, [openingKeepout])
+      if (applyOpeningKeepout) {
+        polygons = subtractRectanglesFromPolygons(polygons, [openingKeepout])
+      } else if (
+        polygons.every((polygon) =>
+          polygonIsInsideRectangle(polygon, openingKeepout),
+        )
+      ) {
+        // The panel slot applies the opening mask as a single exact solid
+        // cut. Do not emit cells that are wholly inside that mask.
+        continue
+      }
     }
     if (polygons.length > 0) groups.push(polygons)
   }
@@ -580,6 +800,163 @@ function boxSideCutter(
   const y =
     side === '+Y' ? depth / 2 - wallThickness - margin : -depth / 2 - margin
   return extrudePolygonGroup('XZ', [0, y, 0], polygons, distance, [0, 1, 0])
+}
+
+export const OPENGRID_HONEYCOMB_PANEL_OVERLAP = 0.08
+export const OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE = 1024
+export const OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE = 2048
+
+function expandedPanelBounds(bounds: Rectangle2D): Rectangle2D {
+  const overlap = OPENGRID_HONEYCOMB_PANEL_OVERLAP
+  return {
+    minimumU: bounds.minimumU - overlap,
+    maximumU: bounds.maximumU + overlap,
+    minimumV: bounds.minimumV - overlap,
+    maximumV: bounds.maximumV + overlap,
+  }
+}
+
+export function makeOpenGridStackableBoxSideHoneycombPanel(
+  parameters: OpenGridStackableBoxParameters,
+  side: BoxSide,
+  context: OpenGridHoneycombBuildContext = {},
+  batchStart = 0,
+  batchSize = OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE,
+): Shape3D | null {
+  // Keep each clipped hexagon as one wire. A side opening is masked from the
+  // panel slot below; splitting a hexagon into several coplanar fragments can
+  // make adjacent wires touch at the opening boundary and invalidate the
+  // compound sketch.
+  const groups = boxSideCellPolygonGroups(parameters, side, false)
+  const batch = groups.slice(batchStart, batchStart + batchSize)
+  if (batch.length === 0) return null
+
+  const holes: Point2D[][] = []
+  for (const group of batch) {
+    assertHoneycombGenerationCurrent(context)
+    holes.push(...group)
+  }
+
+  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const wallThickness = parameters.thinShellMode
+    ? configuration.thinShellWallThickness
+    : configuration.wallThickness
+  let origin: [number, number, number]
+  let plane: Plane
+  let direction: [number, number, number]
+  if (side === '+X' || side === '-X') {
+    plane = 'YZ'
+    direction = [1, 0, 0]
+    origin = [
+      side === '+X'
+        ? width / 2 - wallThickness - OPENGRID_HONEYCOMB_PANEL_OVERLAP
+        : -width / 2,
+      0,
+      0,
+    ]
+  } else {
+    plane = 'XZ'
+    direction = [0, 1, 0]
+    origin = [
+      0,
+      side === '+Y'
+        ? depth / 2 - wallThickness - OPENGRID_HONEYCOMB_PANEL_OVERLAP
+        : -depth / 2,
+      0,
+    ]
+  }
+
+  const panel = expandedPanelBounds(boundsForPolygons(holes))
+  const distance = wallThickness + OPENGRID_HONEYCOMB_PANEL_OVERLAP
+  return extrudePolygonWithHoles(
+    plane,
+    origin,
+    rectanglePoints(panel),
+    holes,
+    distance,
+    direction,
+  )
+}
+
+export function makeOpenGridStackableBoxSideHoneycombPanelSlot(
+  parameters: OpenGridStackableBoxParameters,
+  side: BoxSide,
+  panel: Shape3D,
+  context: OpenGridHoneycombBuildContext = {},
+): Shape3D {
+  const panelBounds = panel.boundingBox
+  let minimumX = 0
+  let minimumY = 0
+  let minimumZ = 0
+  let maximumX = 0
+  let maximumY = 0
+  let maximumZ = 0
+  try {
+    const [[minX, minY, minZ], [maxX, maxY, maxZ]] =
+      panelBounds.bounds as number[][]
+    minimumX = minX!
+    minimumY = minY!
+    minimumZ = minZ!
+    maximumX = maxX!
+    maximumY = maxY!
+    maximumZ = maxZ!
+  } finally {
+    panelBounds.delete()
+  }
+
+  let slot: Shape3D | null = null
+  let protector: Shape3D | null = null
+  try {
+    slot = makeBox(
+      [minimumX, minimumY, minimumZ],
+      [maximumX, maximumY, maximumZ],
+    )
+    const openingKeepout = boxSideOpeningKeepout(
+      parameters,
+      side,
+      boxSidePanelBounds(parameters, side),
+    )
+    if (!openingKeepout) {
+      const result = slot
+      slot = null
+      return result
+    }
+
+    assertHoneycombGenerationCurrent(context)
+    const margin = OPENGRID_HONEYCOMB_CONFIGURATION.cutterMargin
+    const normalMinimum =
+      (side === '+X' || side === '-X' ? minimumX : minimumY) - margin
+    const normalMaximum =
+      (side === '+X' || side === '-X' ? maximumX : maximumY) + margin
+    const tangentMinimum = openingKeepout.minimumU
+    const tangentMaximum = openingKeepout.maximumU
+    const zMinimum = Math.min(minimumZ, openingKeepout.minimumV) - margin
+    const zMaximum = Math.max(maximumZ, openingKeepout.maximumV) + margin
+    const protectorMinimum: [number, number, number] =
+      side === '+X' || side === '-X'
+        ? [normalMinimum, tangentMinimum, zMinimum]
+        : [tangentMinimum, normalMinimum, zMinimum]
+    const protectorMaximum: [number, number, number] =
+      side === '+X' || side === '-X'
+        ? [normalMaximum, tangentMaximum, zMaximum]
+        : [tangentMaximum, normalMaximum, zMaximum]
+    protector = makeBox(protectorMinimum, protectorMaximum)
+    const current = slot
+    const masked = measureBooleanInScope(
+      context.booleanOperations?.createScope(1),
+      'cut',
+      () => current.cut(protector!),
+    )
+    deleteShape(current)
+    slot = null
+    return masked
+  } catch (error) {
+    deleteShape(slot)
+    throw error
+  } finally {
+    deleteShape(protector)
+  }
 }
 
 export function makeOpenGridStackableBoxSideHoneycombCutters(
@@ -619,15 +996,10 @@ type BoxBottomProtector =
 function boxBottomProtectedCircles(
   parameters: OpenGridStackableBoxParameters,
 ): ProtectedCircle[] {
+  const socketRadius =
+    openGridStackableBoxHoneycombSocketProtectionRadiusFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
-  const socketRadius =
-    Math.max(
-      configuration.baseHoleBottomOpeningDiameter,
-      configuration.baseHoleTopOpeningDiameter,
-    ) /
-      2 +
-    honeycomb.bottomHoleSafetyRing
   const ordinaryHoleRadius =
     configuration.bottomGridHoleDiameter / 2 + honeycomb.bottomHoleSafetyRing
   return [
@@ -639,6 +1011,22 @@ function boxBottomProtectedCircles(
       (center) => ({ center, radius: ordinaryHoleRadius }),
     ),
   ]
+}
+
+export function openGridStackableBoxHoneycombSocketProtectionRadiusFor(
+  parameters: OpenGridStackableBoxParameters,
+): number {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+  const socketOpeningRadius =
+    parameters.cornerSeatMode === 'detachable-corner-seat'
+      ? OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.outerDiameter / 2 -
+        OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.hostOverlap
+      : Math.max(
+          configuration.baseHoleBottomOpeningDiameter,
+          configuration.baseHoleTopOpeningDiameter,
+        ) / 2
+  return socketOpeningRadius + honeycomb.bottomHoleSafetyRing
 }
 
 function boxBottomProtectedBands(
@@ -851,6 +1239,80 @@ function makeBoxBottomHoneycombProtectors(
     }
     return protectors
   } catch (error) {
+    protectors.forEach(deleteShape)
+    throw error
+  }
+}
+
+export type OpenGridStackableBoxBottomHoneycombPanel = Readonly<{
+  panel: Shape3D | null
+  slot: Shape3D | null
+}>
+
+export function makeOpenGridStackableBoxBottomHoneycombPanel(
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridHoneycombBuildContext = {},
+  batchStart = 0,
+  batchSize = OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE,
+): OpenGridStackableBoxBottomHoneycombPanel {
+  const centers = boxBottomHoneycombCenters(parameters)
+  const batch = centers.slice(batchStart, batchStart + batchSize)
+  if (batch.length === 0) {
+    return { panel: null, slot: null }
+  }
+
+  const polygons: Point2D[][] = []
+  for (const center of batch) {
+    assertHoneycombGenerationCurrent(context)
+    polygons.push(boxBottomClippedHexagon(parameters, center))
+  }
+
+  const panelBounds = expandedPanelBounds(boundsForPolygons(polygons))
+  const floorTop = openGridStackableBoxActiveFloorTopZFor(parameters)
+  let panel: Shape3D | null = null
+  let slot: Shape3D | null = null
+  let protectors: Shape3D[] = []
+  try {
+    panel = extrudePolygonWithHoles(
+      'XY',
+      [0, 0, 0],
+      rectanglePoints(panelBounds),
+      polygons,
+      floorTop,
+      [0, 0, 1],
+    )
+    slot = makeBox(
+      [panelBounds.minimumU, panelBounds.minimumV, 0],
+      [panelBounds.maximumU, panelBounds.maximumV, floorTop],
+    )
+    const descriptors = boxBottomProtectors(parameters)
+    if (descriptors.length > 0) {
+      protectors = makeBoxBottomHoneycombProtectors(
+        parameters,
+        descriptors,
+        floorTop,
+        OPENGRID_HONEYCOMB_CONFIGURATION.cutterMargin,
+        context,
+      )
+      for (const protector of protectors) {
+        assertHoneycombGenerationCurrent(context)
+        if (!slot) throw new Error('OPENGRID_HONEYCOMB_CUTTER_EMPTY')
+        const current: Shape3D = slot
+        const masked: Shape3D = measureBooleanInScope(
+          context.booleanOperations?.createScope(1),
+          'cut',
+          () => current.cut(protector),
+        )
+        deleteShape(current)
+        slot = masked
+      }
+    }
+    protectors.forEach(deleteShape)
+    protectors = []
+    return { panel, slot }
+  } catch (error) {
+    deleteShape(panel)
+    deleteShape(slot)
     protectors.forEach(deleteShape)
     throw error
   }
@@ -1341,6 +1803,45 @@ export function openGridStackableBoxHoneycombCellCountFor(
 
   count += boxBottomHoneycombCenters(parameters).length
   return count
+}
+
+export function openGridStackableBoxSideHoneycombCellCountFor(
+  parameters: OpenGridStackableBoxParameters,
+): number {
+  return (['+X', '-X', '+Y', '-Y'] as const).reduce(
+    (count, side) => count + boxSideCellPolygonGroups(parameters, side).length,
+    0,
+  )
+}
+
+/**
+ * Practical cell budget for the stackable-box honeycomb builder.
+ *
+ * The panel builder does not allocate one native solid per cell, but the
+ * number of openings still predicts the topology that the fixed wasm32
+ * geometry engine must hold. Keep this threshold centralized so the worker
+ * can reject an input before starting native lattice construction.
+ * This is an admission ceiling, not a guarantee of completion within the
+ * model-generation timeout; the 10x10 h101 thin-shell target can exceed that
+ * timeout.
+ */
+export const OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET = 6000
+
+export type OpenGridStackableBoxHoneycombMemoryEstimate = Readonly<{
+  estimatedCells: number
+  withinBudget: boolean
+}>
+
+export function estimateOpenGridStackableBoxHoneycombMemory(
+  parameters: OpenGridStackableBoxParameters,
+): OpenGridStackableBoxHoneycombMemoryEstimate {
+  const estimatedCells = openGridStackableBoxHoneycombCellCountFor(parameters)
+  return {
+    estimatedCells,
+    withinBudget:
+      !parameters.honeycombMode ||
+      estimatedCells <= OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET,
+  }
 }
 
 export function openGridStackableCylinderHoneycombCellCountFor(

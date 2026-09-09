@@ -619,6 +619,7 @@ export const PROTOTYPE_CONFIGURATION = {
   inputDebounceMs: 500,
   boundsTolerance: 0.01,
   engineInitializationTimeoutMs: 60_000,
+  modelGenerationTimeoutMs: 600_000,
   operationTimeoutMs: 120_000,
   recoveryRetries: 1,
   pendingCandidateLimit: 2,

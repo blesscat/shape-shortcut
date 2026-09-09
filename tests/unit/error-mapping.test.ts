@@ -48,6 +48,11 @@ describe('CAD Worker error mapping', () => {
       'MODEL_ASSET_INVALID',
     ],
     [
+      'OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:4097',
+      'model.generate',
+      'OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT',
+    ],
+    [
       'OPENGRID_DIVIDER_QUALITY_INVALID:fillet:top-edge-rounding-missing',
       'model.generate',
       'OPENGRID_DIVIDER_QUALITY_INVALID',
@@ -99,6 +104,12 @@ describe('CAD Worker error mapping', () => {
     expect(cadErrorStageFor('engine.init')).toBe('initializing')
     expect(cadErrorStageFor('export.step')).toBe('exporting')
     expect(cadErrorStageFor('model.generate')).toBe('building')
+    expect(
+      cadErrorStageFor(
+        'model.generate',
+        'OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT:4097',
+      ),
+    ).toBe('building')
     expect(cadErrorStageFor('model.generate', 'MESH_INVALID')).toBe('meshing')
     expect(
       cadErrorStageFor(

@@ -8,6 +8,7 @@ import {
   measureBooleanInScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
+import { toGeometryError } from '../../geometry-errors'
 import {
   assertOpenGridDetachableCornerSeatReference,
   buildOpenGridDetachableCornerSeatSocketVoid,
@@ -109,9 +110,7 @@ export function cutOpenGridDetachableCornerSeatConsumers(
       throw error
     }
     deleteShape(shape)
-    throw new Error(
-      `${errorCode}:${error instanceof Error ? error.message : String(error)}`,
-    )
+    throw new Error(`${errorCode}:${toGeometryError(error).message}`)
   } finally {
     deleteShape(compound)
     cutters.forEach(deleteShape)
@@ -123,11 +122,12 @@ function volumeInBox(
   shape: Shape3D,
   minimum: [number, number, number],
   maximum: [number, number, number],
+  target: Shape3D = shape,
 ): number {
   const probe = makeBox(minimum, maximum)
   let intersection: Shape3D | null = null
   try {
-    intersection = shape.intersect(probe)
+    intersection = target.intersect(probe)
     return measureVolume(intersection)
   } finally {
     deleteShape(intersection)
@@ -144,10 +144,15 @@ function intersectionVolume(first: Shape3D, second: Shape3D): number {
   }
 }
 
+export type OpenGridDetachableCornerSeatTargetFor = (
+  center: OpenGridStackableBoxPoint2D,
+) => Shape3D | undefined
+
 export function inspectOpenGridDetachableCornerSeatConsumers(
   shape: Shape3D,
   centers: ReadonlyArray<OpenGridStackableBoxPoint2D>,
   context: OpenGridDetachableCornerSeatConsumerContext,
+  targetFor?: OpenGridDetachableCornerSeatTargetFor,
 ): OpenGridDetachableCornerSeatConsumerQualityRecord[] {
   if (centers.length === 0) return []
   const holderReference = context.detachableCornerSeatHolderReference
@@ -163,6 +168,7 @@ export function inspectOpenGridDetachableCornerSeatConsumers(
       openGridDetachableCornerSeatConsumerPlacementsFor(centers)
     return placements.map((placement) => {
       assertGenerationCurrent(context)
+      const target = targetFor?.(placement.center) ?? shape
       const placedVoid = placeOpenGridDetachableCornerSeatSocketShape(
         sourceVoid,
         placement,
@@ -181,8 +187,8 @@ export function inspectOpenGridDetachableCornerSeatConsumers(
           0.05
         return {
           center: placement.center,
-          socketVoidResidualVolume: intersectionVolume(shape, placedVoid),
-          maleCollisionVolume: intersectionVolume(shape, placedMale),
+          socketVoidResidualVolume: intersectionVolume(target, placedVoid),
+          maleCollisionVolume: intersectionVolume(target, placedMale),
           roofVolume: volumeInBox(
             shape,
             [
@@ -195,6 +201,7 @@ export function inspectOpenGridDetachableCornerSeatConsumers(
               placement.center[1] + halfProbe,
               roofMaxZ,
             ],
+            target,
           ),
         }
       } finally {
@@ -212,11 +219,13 @@ export function assertOpenGridDetachableCornerSeatConsumers(
   centers: ReadonlyArray<OpenGridStackableBoxPoint2D>,
   context: OpenGridDetachableCornerSeatConsumerContext,
   errorCode: string,
+  targetFor?: OpenGridDetachableCornerSeatTargetFor,
 ): void {
   const records = inspectOpenGridDetachableCornerSeatConsumers(
     shape,
     centers,
     context,
+    targetFor,
   )
   const tolerance =
     OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.intersectionVolumeTolerance

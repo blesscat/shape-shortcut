@@ -115,7 +115,7 @@ function createRuntimeContext(
     state: { current: state },
     workerEpoch: { current: 'epoch-test' },
     latestGeneration: { current: 0 },
-    initialModelSent: { current: false },
+    session: { current: { mode: 'bootstrap', ready: false, pending: null } },
     autoRecoveryAttempts: { current: 0 },
     operations: { current: new Map() },
     activeProgressOperationId: { current: null },
@@ -144,6 +144,14 @@ function createRuntimeContext(
     setOperationTimeout: ReturnType<typeof vi.fn>
   }
 
+  context.refs.startWorker.current = (_manual, pending) => {
+    if (!pending) return
+    createModelGenerationHandlers(context).sendGenerate(
+      pending.modelId,
+      pending.parameters,
+      pending.generation,
+    )
+  }
   return { client, send, context }
 }
 
@@ -162,9 +170,9 @@ describe('CAD model generation debounce', () => {
 
     handlers.handleInputChange('width', '25')
 
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
 
     vi.advanceTimersByTime(499)
     expect(
@@ -172,13 +180,9 @@ describe('CAD model generation debounce', () => {
     ).toHaveLength(0)
 
     vi.advanceTimersByTime(1)
-    expect(client.send).toHaveBeenCalledTimes(2)
+    expect(client.send).toHaveBeenCalledTimes(1)
     expect(client.send).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ kind: 'model.invalidate' }),
-    )
-    expect(client.send).toHaveBeenNthCalledWith(
-      2,
       expect.objectContaining({
         kind: 'model.generate',
         modelId: 'box',
@@ -312,12 +316,8 @@ describe('CAD model generation debounce', () => {
       input: parameters,
       generation: 1,
     })
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'model.invalidate',
-        generation: 1,
-        reason: 'superseded',
-      }),
+    expect(client.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'model.invalidate' }),
     )
   })
 
@@ -335,9 +335,9 @@ describe('CAD model generation debounce', () => {
         parameters: { mode: 'positioning', length: 10, offset: 0 },
       }),
     )
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
     expect(context.setPersistedParameters).toHaveBeenLastCalledWith(
       'opengrid-pillar',
       {
@@ -374,11 +374,8 @@ describe('CAD model generation debounce', () => {
         },
       }),
     )
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'model.invalidate',
-        reason: 'superseded',
-      }),
+    expect(client.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'model.invalidate' }),
     )
   })
 
@@ -457,6 +454,7 @@ describe('CAD model generation debounce', () => {
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'input-invalid' }),
     )
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -469,7 +467,7 @@ describe('CAD model generation debounce', () => {
     expect(context.setPersistedParameters).not.toHaveBeenCalled()
   })
 
-  it('invalidates each rapid snapshot but generates only the final legal value', () => {
+  it('sends nothing for rapid snapshots and generates only the final legal value', () => {
     const { client, send, context } = createRuntimeContext()
     const handlers = createModelGenerationHandlers(context)
 
@@ -477,12 +475,7 @@ describe('CAD model generation debounce', () => {
     handlers.handleInputChange('width', '22')
     handlers.handleInputChange('width', '23')
 
-    expect(client.send).toHaveBeenCalledTimes(3)
-    expect(send.mock.calls.map(([command]) => command.kind)).toEqual([
-      'model.invalidate',
-      'model.invalidate',
-      'model.invalidate',
-    ])
+    expect(client.send).not.toHaveBeenCalled()
 
     vi.advanceTimersByTime(500)
 
@@ -551,6 +544,7 @@ describe('CAD model generation debounce', () => {
         params: { max: 8 },
       },
     })
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -604,6 +598,7 @@ describe('CAD model generation debounce', () => {
     expect(
       send.mock.calls.filter(([command]) => command.kind === 'model.generate'),
     ).toHaveLength(0)
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -641,6 +636,7 @@ describe('CAD model generation debounce', () => {
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'input-invalid' }),
     )
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -659,6 +655,7 @@ describe('CAD model generation debounce', () => {
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'input-invalid' }),
     )
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -685,9 +682,9 @@ describe('CAD model generation debounce', () => {
     })
     handlers.handleOpenGridParametersChange(input)
 
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
     vi.advanceTimersByTime(500)
     expect(send).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -731,9 +728,9 @@ describe('CAD model generation debounce', () => {
         },
       }),
     )
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
 
     const generateCommand = send.mock.calls.find(
       ([command]) => command.kind === 'model.generate',
@@ -744,7 +741,9 @@ describe('CAD model generation debounce', () => {
       }
     ).mock.calls.at(-1)
     expect(timeoutCall?.[0]).toBe(generateCommand?.operationId)
-    expect(timeoutCall?.[1]).toBe(PROTOTYPE_CONFIGURATION.operationTimeoutMs)
+    expect(timeoutCall?.[1]).toBe(
+      PROTOTYPE_CONFIGURATION.modelGenerationTimeoutMs,
+    )
     const timeoutCallback = timeoutCall?.[2] as (() => void) | undefined
     expect(timeoutCallback).toBeDefined()
     timeoutCallback?.()
@@ -811,9 +810,9 @@ describe('CAD model generation debounce', () => {
         },
       }),
     )
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
   })
 
   it('debounces OpenGrid stackable-cylinder 1 mm input through its own model id', () => {
@@ -843,9 +842,9 @@ describe('CAD model generation debounce', () => {
         },
       }),
     )
-    expect(client.send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'model.invalidate', generation: 1 }),
-    )
+    expect(
+      send.mock.calls.some(([command]) => command.kind === 'model.invalidate'),
+    ).toBe(false)
   })
 
   it('registers divider generation timeout recovery for the current operation', () => {
@@ -871,7 +870,9 @@ describe('CAD model generation debounce', () => {
       }
     ).mock.calls.at(-1)
     expect(timeoutCall?.[0]).toBe(generateCommand?.operationId)
-    expect(timeoutCall?.[1]).toBe(PROTOTYPE_CONFIGURATION.operationTimeoutMs)
+    expect(timeoutCall?.[1]).toBe(
+      PROTOTYPE_CONFIGURATION.modelGenerationTimeoutMs,
+    )
     const timeoutCallback = timeoutCall?.[2] as (() => void) | undefined
     expect(timeoutCallback).toBeDefined()
     timeoutCallback?.()
@@ -942,6 +943,7 @@ describe('CAD model generation debounce', () => {
       }) as OpenGridParameters,
     )
 
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -979,6 +981,7 @@ describe('CAD model generation debounce', () => {
         generation: 1,
       }),
     )
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',
@@ -1069,6 +1072,7 @@ describe('CAD model generation debounce', () => {
     )
 
     handlers.handleInputChange('offset', '')
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
     expect(client.send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.invalidate',

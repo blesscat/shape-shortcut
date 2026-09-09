@@ -58,6 +58,19 @@ describe('CAD state machine', () => {
     expect(stale.stale).toBe(true)
     expect(stale.committed?.revision).toBe('rev-1')
     expect(stale.exportStatus).toBe('disabled')
+    const replacing = cadReducer(stale, { type: 'worker-restarted' })
+    expect(replacing.committed).toBe(ready.committed)
+    expect(replacing.committed?.mesh).toBe(model.mesh)
+    expect(replacing.committed?.parameters).toBe(model.parameters)
+    expect(replacing).toMatchObject({
+      status: 'loading-engine',
+      stale: true,
+      exportStatus: 'disabled',
+      generation: 2,
+    })
+    expect(cadReducer(replacing, { type: 'export-end' }).exportStatus).toBe(
+      'disabled',
+    )
   })
 
   it('enters invalid-input without deleting the previous preview', () => {
@@ -76,7 +89,7 @@ describe('CAD state machine', () => {
     expect(state.exportStatus).toBe('disabled')
   })
 
-  it('clears old revisions after a worker restart while retaining current input', () => {
+  it('keeps an empty preview and current generation on a restart before any commit', () => {
     const state = cadReducer(
       cadReducer(initialCadState(), {
         type: 'input-valid',

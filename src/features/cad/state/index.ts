@@ -162,9 +162,9 @@ export function cadReducer(state: CadState, action: CadAction): CadState {
     case 'engine-ready':
       return {
         ...state,
-        status: 'generating',
+        status:
+          state.status === 'invalid-input' ? 'invalid-input' : 'generating',
         workerEpoch: action.workerEpoch,
-        error: null,
       }
     case 'input-valid':
       return {
@@ -210,11 +210,19 @@ export function cadReducer(state: CadState, action: CadAction): CadState {
     case 'export-start':
       return { ...state, exportStatus: 'exporting' }
     case 'export-end':
-      return { ...state, exportStatus: 'idle' }
+      return {
+        ...state,
+        exportStatus:
+          state.status === 'ready' && !state.stale ? 'idle' : 'disabled',
+      }
     case 'worker-restarted':
       return {
-        ...initialCadState(state.modelId, state.input),
+        ...state,
         status: 'loading-engine',
+        workerEpoch: null,
+        exportStatus: 'disabled',
+        stale: Boolean(state.committed),
+        error: null,
       }
     case 'recoverable-error':
       return {

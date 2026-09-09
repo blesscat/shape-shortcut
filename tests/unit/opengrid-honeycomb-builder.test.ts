@@ -35,7 +35,10 @@ import {
   openGridStackableBoxHoneycombCellCountFor,
   openGridStackableCylinderHoneycombCellCountFor,
 } from '../../src/cad-kernel/lattice/opengrid-honeycomb'
-import { buildOpenGridStackableBox } from '../../src/cad-kernel/components/opengrid-stackable-box/builder'
+import {
+  buildOpenGridStackableBox,
+  buildOpenGridStackableBoxAsync,
+} from '../../src/cad-kernel/components/opengrid-stackable-box/builder'
 import { buildOpenGridStackableCylinder } from '../../src/cad-kernel/components/opengrid-stackable-cylinder/builder'
 import type { BooleanOperationReporter } from '../../src/cad-kernel/boolean-progress'
 
@@ -1045,6 +1048,35 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       ),
     ).toThrow('STALE_GENERATION')
   })
+
+  it('yields between honeycomb batches so cancellation can interrupt an in-flight build', async () => {
+    let current = true
+    let yields = 0
+
+    await expect(
+      buildOpenGridStackableBoxAsync(
+        {
+          ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+          x: 7,
+          y: 7,
+          height: 20,
+          cornerSeatMode: 'none',
+          fullBottomHoleGrid: false,
+          basePlateMode: false,
+          thinShellMode: false,
+          honeycombMode: true,
+        },
+        {
+          isGenerationCurrent: () => current,
+          yieldToEventLoop: async () => {
+            yields += 1
+            current = false
+          },
+        },
+      ),
+    ).rejects.toThrow('STALE_GENERATION')
+    expect(yields).toBeGreaterThan(0)
+  }, 120_000)
 
   it('deletes the side-cut cylinder when cancellation arrives before floor cutting', () => {
     let completedOperationCount = 0
