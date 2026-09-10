@@ -91,8 +91,8 @@ describe('OpenGrid system entry context', () => {
       x: 4,
       y: 2,
       height: 30,
-      basePlateMode: false,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     })
     expect(deskCylinder).toEqual({
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -123,8 +123,8 @@ describe('OpenGrid system entry context', () => {
       x: 2,
       y: 2,
       height: 20,
-      basePlateMode: false,
-      thinShellMode: false,
+      topRimMode: 'stacking-rail',
+      bottomMode: 'stacking',
     })
     expect(OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS).toMatchObject({
       innerDiameter: 56,

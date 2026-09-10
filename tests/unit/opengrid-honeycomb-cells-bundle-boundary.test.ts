@@ -38,7 +38,8 @@ describe('honeycomb stackable-box cell count bases', () => {
       x: 1,
       y: 1,
       height: 30,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
       honeycombMode: true,
     },
     {

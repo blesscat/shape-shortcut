@@ -41,8 +41,48 @@
     onInputChange('y', String(parameters.rows))
   }
 
-  type BoxMode = 'default' | 'thin-shell'
+  type BoxTopRimMode = 'stacking-rail' | 'flat-top'
+  type BoxBottomMode = 'stacking' | 'thin-shell' | 'none'
   type BoxSeatMode = 'none' | 'detachable-corner-seat' | 'integrated'
+
+  const topRimModeOptions: ReadonlyArray<{
+    value: BoxTopRimMode
+    labelKey: string
+    descriptionKey: string
+  }> = [
+    {
+      value: 'stacking-rail',
+      labelKey: 'panel.box.topRimStacking',
+      descriptionKey: 'panel.box.topRimStackingDescription',
+    },
+    {
+      value: 'flat-top',
+      labelKey: 'panel.box.topRimFlat',
+      descriptionKey: 'panel.box.topRimFlatDescription',
+    },
+  ]
+
+  const bottomModeOptions: ReadonlyArray<{
+    value: BoxBottomMode
+    labelKey: string
+    descriptionKey: string
+  }> = [
+    {
+      value: 'stacking',
+      labelKey: 'panel.box.bottomStacking',
+      descriptionKey: 'panel.box.bottomStackingDescription',
+    },
+    {
+      value: 'thin-shell',
+      labelKey: 'panel.box.bottomThinShell',
+      descriptionKey: 'panel.box.bottomThinShellDescription',
+    },
+    {
+      value: 'none',
+      labelKey: 'panel.box.bottomNone',
+      descriptionKey: 'panel.box.bottomNoneDescription',
+    },
+  ]
 
   const seatModeOptions: ReadonlyArray<{
     value: BoxSeatMode
@@ -72,23 +112,39 @@
     return 'detachable-corner-seat'
   }
 
+  function topRimModeForRawParameters(): BoxTopRimMode {
+    if (rawParameters.topRimMode === 'flat-top') return 'flat-top'
+    return 'stacking-rail'
+  }
+
+  function bottomModeForRawParameters(): BoxBottomMode {
+    const value = rawParameters.bottomMode
+    if (value === 'thin-shell' || value === 'none') return value
+    return 'stacking'
+  }
+
   function handleSeatModeChange(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     if (!event.currentTarget.checked) return
     onInputChange('cornerSeatMode', event.currentTarget.value)
   }
 
-  function handleModeChange(event: Event): void {
+  function handleTopRimModeChange(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
-    const mode = event.currentTarget.value as BoxMode
-    onInputChange('basePlateMode', 'false')
-    onInputChange('thinShellMode', String(mode === 'thin-shell'))
+    if (!event.currentTarget.checked) return
+    onInputChange('topRimMode', event.currentTarget.value)
+  }
+
+  function handleBottomModeChange(event: Event): void {
+    if (!(event.currentTarget instanceof HTMLInputElement)) return
+    if (!event.currentTarget.checked) return
+    onInputChange('bottomMode', event.currentTarget.value)
   }
 
   function modeErrorDescriptionId(): string | undefined {
     const ids: string[] = []
-    if (fieldErrors.basePlateMode) ids.push('basePlateMode-error')
-    if (fieldErrors.thinShellMode) ids.push('thinShellMode-error')
+    if (fieldErrors.topRimMode) ids.push('topRimMode-error')
+    if (fieldErrors.bottomMode) ids.push('bottomMode-error')
     return ids.length > 0 ? ids.join(' ') : undefined
   }
 
@@ -206,8 +262,8 @@
       height,
       cornerSeatMode: seatModeForRawParameters(),
       fullBottomHoleGrid: rawParameters.fullBottomHoleGrid === 'true',
-      basePlateMode: rawParameters.basePlateMode === 'true',
-      thinShellMode: rawParameters.thinShellMode === 'true',
+      topRimMode: topRimModeForRawParameters(),
+      bottomMode: bottomModeForRawParameters(),
       honeycombMode: rawParameters.honeycombMode === 'true',
       ...openingValues,
     }
@@ -366,56 +422,86 @@
       {/if}
     {/if}
   </div>
-  <div
+  <fieldset
+    class="grid gap-2 border-0 p-0"
     aria-describedby={modeErrorDescriptionId()}
-    aria-invalid={Boolean(
-      fieldErrors.basePlateMode || fieldErrors.thinShellMode,
-    )}
-    aria-label={translate(locale, 'panel.boxMode')}
-    class="grid gap-1"
+    aria-invalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
+    aria-label={translate(locale, 'panel.box.topRim')}
     role="radiogroup"
+    data-testid="opengrid-stackable-box-top-rim-mode"
   >
+    <legend class="font-[650]">{translate(locale, 'panel.box.topRim')}</legend>
     <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
-      <label class="flex min-w-0 items-start gap-2">
-        <input
-          aria-describedby={modeErrorDescriptionId()}
-          aria-label={translate(locale, 'panel.thinShell')}
-          class="mt-1 accent-primary"
-          data-testid="opengrid-stackable-box-thin-shell-mode"
-          name="opengrid-stackable-box-mode"
-          type="radio"
-          value="thin-shell"
-          checked={rawParameters.thinShellMode === 'true'}
-          onchange={handleModeChange}
-        />
-        <span class="font-[650]">{translate(locale, 'panel.thinShell')}</span>
-      </label>
-      <label class="flex min-w-0 items-start gap-2">
-        <input
-          aria-describedby={modeErrorDescriptionId()}
-          aria-label={translate(locale, 'panel.stackable')}
-          class="mt-1 accent-primary"
-          data-testid="opengrid-stackable-box-default-mode"
-          name="opengrid-stackable-box-mode"
-          type="radio"
-          value="default"
-          checked={rawParameters.basePlateMode !== 'true' &&
-            rawParameters.thinShellMode !== 'true'}
-          onchange={handleModeChange}
-        />
-        <span class="font-[650]">{translate(locale, 'panel.stackable')}</span>
-      </label>
+      {#each topRimModeOptions as option (option.value)}
+        <label class="flex min-w-0 items-start gap-2">
+          <input
+            aria-describedby={modeErrorDescriptionId()}
+            aria-label={translate(locale, option.labelKey)}
+            class="mt-1 accent-primary"
+            data-testid={`opengrid-stackable-box-top-rim-${option.value}`}
+            name="opengrid-stackable-box-top-rim-mode"
+            type="radio"
+            value={option.value}
+            checked={topRimModeForRawParameters() === option.value}
+            onchange={handleTopRimModeChange}
+          />
+          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
+        </label>
+      {/each}
     </div>
-    {#if rawParameters.thinShellMode === 'true'}
-      <span class="text-sm text-muted-foreground">
-        {translate(locale, 'panel.thinShellDescription')}
-      </span>
-    {:else}
-      <span class="text-sm text-muted-foreground">
-        {translate(locale, 'panel.stackableDescription')}
-      </span>
-    {/if}
-  </div>
+    <span class="text-sm text-muted-foreground">
+      {topRimModeOptions.find(
+        (option) => option.value === topRimModeForRawParameters(),
+      )?.descriptionKey
+        ? translate(
+            locale,
+            topRimModeOptions.find(
+              (option) => option.value === topRimModeForRawParameters(),
+            )!.descriptionKey,
+          )
+        : ''}
+    </span>
+  </fieldset>
+  <fieldset
+    class="grid gap-2 border-0 p-0"
+    aria-describedby={modeErrorDescriptionId()}
+    aria-invalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
+    aria-label={translate(locale, 'panel.box.bottom')}
+    role="radiogroup"
+    data-testid="opengrid-stackable-box-bottom-mode"
+  >
+    <legend class="font-[650]">{translate(locale, 'panel.box.bottom')}</legend>
+    <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
+      {#each bottomModeOptions as option (option.value)}
+        <label class="flex min-w-0 items-start gap-2">
+          <input
+            aria-describedby={modeErrorDescriptionId()}
+            aria-label={translate(locale, option.labelKey)}
+            class="mt-1 accent-primary"
+            data-testid={`opengrid-stackable-box-bottom-${option.value}`}
+            name="opengrid-stackable-box-bottom-mode"
+            type="radio"
+            value={option.value}
+            checked={bottomModeForRawParameters() === option.value}
+            onchange={handleBottomModeChange}
+          />
+          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
+        </label>
+      {/each}
+    </div>
+    <span class="text-sm text-muted-foreground">
+      {bottomModeOptions.find(
+        (option) => option.value === bottomModeForRawParameters(),
+      )?.descriptionKey
+        ? translate(
+            locale,
+            bottomModeOptions.find(
+              (option) => option.value === bottomModeForRawParameters(),
+            )!.descriptionKey,
+          )
+        : ''}
+    </span>
+  </fieldset>
   {#if fieldErrors.cornerSeatMode}
     <span class="text-sm text-error" id="cornerSeatMode-error" role="alert"
       >{formatValidationIssue(locale, fieldErrors.cornerSeatMode)}</span
@@ -426,14 +512,14 @@
       >{formatValidationIssue(locale, fieldErrors.fullBottomHoleGrid)}</span
     >
   {/if}
-  {#if fieldErrors.basePlateMode}
-    <span class="text-sm text-error" id="basePlateMode-error" role="alert"
-      >{formatValidationIssue(locale, fieldErrors.basePlateMode)}</span
+  {#if fieldErrors.topRimMode}
+    <span class="text-sm text-error" id="topRimMode-error" role="alert"
+      >{formatValidationIssue(locale, fieldErrors.topRimMode)}</span
     >
   {/if}
-  {#if fieldErrors.thinShellMode}
-    <span class="text-sm text-error" id="thinShellMode-error" role="alert"
-      >{formatValidationIssue(locale, fieldErrors.thinShellMode)}</span
+  {#if fieldErrors.bottomMode}
+    <span class="text-sm text-error" id="bottomMode-error" role="alert"
+      >{formatValidationIssue(locale, fieldErrors.bottomMode)}</span
     >
   {/if}
   {#each opengridStackableBoxDefinition.parameterSchema.slice(0, 3) as field (field.key)}

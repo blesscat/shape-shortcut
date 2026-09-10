@@ -386,7 +386,6 @@ describe('CAD workspace validation helpers', () => {
       height: 25,
       cornerSeatMode: 'detachable-corner-seat',
       fullBottomHoleGrid: true,
-      basePlateMode: false,
     }
     const raw = rawFromParameters(parameters)
 
@@ -396,9 +395,9 @@ describe('CAD workspace validation helpers', () => {
       height: '25',
       cornerSeatMode: 'detachable-corner-seat',
       fullBottomHoleGrid: 'true',
-      basePlateMode: 'false',
+      topRimMode: 'stacking-rail',
+      bottomMode: 'stacking',
       honeycombMode: 'false',
-      thinShellMode: 'false',
       openingPlusXDepth: '0',
       openingPlusXBottomLength: '1',
       openingPlusXAngle: '90',
@@ -430,7 +429,8 @@ describe('CAD workspace validation helpers', () => {
           height: '25',
           cornerSeatMode: 'hole',
           fullBottomHoleGrid: 'true',
-          basePlateMode: 'false',
+          topRimMode: 'stacking-rail',
+          bottomMode: 'stacking',
         },
         'opengrid-stackable-box',
       ),
@@ -446,7 +446,8 @@ describe('CAD workspace validation helpers', () => {
           height: '25',
           cornerSeatMode: 'hole',
           fullBottomHoleGrid: 'true',
-          basePlateMode: 'false',
+          topRimMode: 'stacking-rail',
+          bottomMode: 'stacking',
         },
         'opengrid-stackable-box',
       ),
@@ -483,28 +484,46 @@ describe('CAD workspace validation helpers', () => {
     ).toEqual({ valid: true, value: cylinder })
   })
 
-  it('round-trips the mutually exclusive thin-shell mode flag', () => {
+  it('maps legacy raw mode flags onto the new controls', () => {
     const parameters: OpenGridStackableBoxParameters = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
-      thinShellMode: true,
-      basePlateMode: false,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     }
-    const raw = rawFromParameters(parameters)
 
-    expect(raw.thinShellMode).toBe('true')
-    expect(parseRawParameters(raw, 'opengrid-stackable-box')).toEqual({
+    expect(
+      parseRawParameters(
+        {
+          x: '2',
+          y: '2',
+          height: '20',
+          cornerSeatMode: 'detachable-corner-seat',
+          fullBottomHoleGrid: 'false',
+          thinShellMode: 'true',
+        } as Parameters<typeof parseRawParameters>[0],
+        'opengrid-stackable-box',
+      ),
+    ).toEqual({
       valid: true,
       value: parameters,
     })
     expect(
       parseRawParameters(
-        { ...raw, basePlateMode: 'true' },
+        {
+          x: '2',
+          y: '2',
+          height: '20',
+          cornerSeatMode: 'detachable-corner-seat',
+          fullBottomHoleGrid: 'false',
+          topRimMode: 'flat-top',
+          bottomMode: 'bogus',
+        },
         'opengrid-stackable-box',
       ),
     ).toEqual({
       valid: false,
       messageId: 'validation.invalid',
-      field: 'thinShellMode',
+      field: 'bottomMode',
     })
   })
 

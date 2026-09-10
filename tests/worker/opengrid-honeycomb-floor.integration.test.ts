@@ -115,7 +115,8 @@ it.each(cases)(
       height: 20,
       cornerSeatMode,
       honeycombMode,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     }
     const context = {
       detachableCornerSeatReference,
@@ -155,7 +156,8 @@ it('preserves the floor mesh of a 7.5x7 h101 thin honeycomb box with locked seat
     y: 7,
     height: 101,
     cornerSeatMode: 'detachable-corner-seat',
-    thinShellMode: true,
+    topRimMode: 'flat-top',
+    bottomMode: 'thin-shell',
     honeycombMode: true,
   }
   const shape = await buildOpenGridStackableBoxAsync(parameters, {
@@ -179,7 +181,8 @@ it('rejects an over-budget 10x10 h200 honeycomb box before cutting', async () =>
     y: 10,
     height: 200,
     cornerSeatMode: 'detachable-corner-seat',
-    thinShellMode: true,
+    topRimMode: 'flat-top',
+    bottomMode: 'thin-shell',
     honeycombMode: true,
   }
   const estimate = estimateOpenGridStackableBoxHoneycombMemory(parameters)

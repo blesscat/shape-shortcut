@@ -705,7 +705,8 @@ describe('CAD model generation debounce', () => {
         height: 10,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       },
     )
     const handlers = createModelGenerationHandlers(context)
@@ -724,7 +725,8 @@ describe('CAD model generation debounce', () => {
           height: 10,
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
+          topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
         },
       }),
     )

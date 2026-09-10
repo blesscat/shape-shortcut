@@ -148,7 +148,8 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       y: 1.5,
       height: 30,
       cornerSeatMode: 'none' as const,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
     const cutters = makeOpenGridStackableBoxBottomHoneycombCutters(parameters)
@@ -178,7 +179,8 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       y: 2,
       height: 30,
       cornerSeatMode: 'none' as const,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
     const cutters = makeOpenGridStackableBoxBottomHoneycombCutters(parameters)
@@ -226,7 +228,8 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       x: 1,
       y: 1,
       height: 30,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
     let completedOperationCount = 0
@@ -291,7 +294,8 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       height: 30,
       fullBottomHoleGrid: true,
       cornerSeatMode: 'none' as const,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
     const baseline = remember(
@@ -353,7 +357,8 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       height: 30,
       fullBottomHoleGrid: true,
       cornerSeatMode: 'none' as const,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
 

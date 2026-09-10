@@ -1,5 +1,5 @@
 import {
-  externalOpenGridStackableBoxHeightFor,
+  openGridStackableBoxBottomDatumZFor,
   openGridStackableBoxUpperInnerRimZFor,
   nominalOpenGridStackableBoxFootprintFor,
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
@@ -9,67 +9,77 @@ import {
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
 import {
-  countRoundedProfileFacesWithRadius,
   edgeBandExpectedVolumes,
   edgeBandVolumes,
   volumeInBox,
-  readFaceQualityRecords,
 } from './quality-metrics'
-import {
-  countOrdinaryBottomHoleFaces,
-  inspectCaptiveSocketInterface,
-  measureMountingHoleProfiles,
-  measureMountingHoleStepVolumes,
-} from './quality-holes'
-import { closeEnough, readBounds } from './shared'
+import { countOrdinaryBottomHoleFaces } from './quality-holes'
+import { readBounds } from './shared'
 import { openGridStackableBoxBottomHoneycombCellCountFor } from '../../lattice/opengrid-honeycomb'
 import type { Shape3D } from 'replicad'
 
-export type OpenGridStackableBoxThinShellQualityReport = {
-  floorProbeVolumes: number[]
-  floorProbeThicknesses: number[]
+export type OpenGridStackableBoxBottomStructureQualityReport = {
+  bottomMode: 'stacking' | 'thin-shell' | 'none'
+  floorProbeVolume: number
+  floorProbeThickness: number
+  floorProbeCoveredByPad: boolean
+  padProbeVolumes: number[]
   sideWallProbeThicknesses: number[]
-  bottomChamferFaceCount: number
-  topChamferFaceCount: number
-  topRimHorizontalPlanarFaceCount: number
-  innerFloorFilletFaceCount: number
-  mountingHoleStepVolumes: number[]
-  mountingHoleProfiles: ReturnType<typeof measureMountingHoleProfiles>
-  captiveSocketRecords: ReturnType<typeof inspectCaptiveSocketInterface>[]
   ordinaryBottomHoleCount: number
   expectedOrdinaryBottomHoleCount: number
   measuredExternalHeight: number
 }
 
-function floorProbeCenterFor(
+function openBottomCornerPadProbeRadiusFor(
+  width: number,
+  depth: number,
+): number {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  return Math.min(
+    configuration.openBottomCornerPadRadius,
+    (width - 2 * configuration.wallThickness) / 2,
+    (depth - 2 * configuration.wallThickness) / 2,
+  )
+}
+
+function interiorFloorProbeCenterFor(
   width: number,
   depth: number,
   halfExtent: number,
   parameters: OpenGridStackableBoxParameters,
   hasFloorHoneycomb: boolean,
-): [number, number] {
+): { center: [number, number]; coveredByPad: boolean } {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const holes = [
     ...openGridStackableBoxSocketCentersFor(parameters),
     ...openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters),
   ]
   const holeRadius =
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleTopOpeningDiameter / 2
-  const xLimit =
-    width / 2 -
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellWallThickness -
-    halfExtent
-  const yLimit =
-    depth / 2 -
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellWallThickness -
-    halfExtent
+    configuration.baseHoleTopOpeningDiameter / 2
+  const xLimit = width / 2 - configuration.wallThickness - halfExtent
+  const yLimit = depth / 2 - configuration.wallThickness - halfExtent
+  const padHalf =
+    parameters.bottomMode === 'none'
+      ? openBottomCornerPadProbeRadiusFor(width, depth)
+      : 0
   const isSafeCandidate = ([x, y]: [number, number]): boolean => {
     if (Math.abs(x) > xLimit || Math.abs(y) > yLimit) return false
+    if (
+      !holes.every(
+        ([holeX, holeY]) =>
+          Math.hypot(x - holeX, y - holeY) > holeRadius + halfExtent + 0.1,
+      )
+    ) {
+      return false
+    }
     return holes.every(
       ([holeX, holeY]) =>
-        Math.hypot(x - holeX, y - holeY) > holeRadius + halfExtent + 0.1,
+        Math.abs(x - holeX) > padHalf + halfExtent ||
+        Math.abs(y - holeY) > padHalf + halfExtent,
     )
   }
 
+  const frameCandidates: Array<[number, number]> = []
   if (hasFloorHoneycomb) {
     const frameInset =
       OPENGRID_HONEYCOMB_CONFIGURATION.bottomFrame - halfExtent - 0.2
@@ -78,7 +88,6 @@ function floorProbeCenterFor(
     const frontY = -depth / 2 + frameInset
     const rearY = depth / 2 - frameInset
     const fractions = [0, -0.25, 0.25, -0.4, 0.4]
-    const frameCandidates: Array<[number, number]> = []
     for (const fraction of fractions) {
       frameCandidates.push(
         [leftX, depth * fraction],
@@ -88,7 +97,7 @@ function floorProbeCenterFor(
       )
     }
     const frameCandidate = frameCandidates.find(isSafeCandidate)
-    if (frameCandidate) return frameCandidate
+    if (frameCandidate) return { center: frameCandidate, coveredByPad: false }
   }
 
   const candidates: Array<[number, number]> = [
@@ -102,7 +111,9 @@ function floorProbeCenterFor(
     [-width / 4, depth / 4],
     [width / 4, depth / 4],
   ]
-  return candidates.find(isSafeCandidate) ?? [0, 0]
+  const candidate = candidates.find(isSafeCandidate)
+  if (!candidate) return { center: [0, 0], coveredByPad: padHalf > 0 }
+  return { center: candidate, coveredByPad: false }
 }
 
 function thicknessesFromVolumes(
@@ -117,83 +128,54 @@ function thicknessesFromVolumes(
   })
 }
 
-function countChamferFaces(
-  shape: Shape3D,
-  zMin: number,
-  zMax: number,
-  expectedSpan: number,
-): number {
-  const records = readFaceQualityRecords(shape)
-  return records.filter((record) => {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
-    const span = record.max[2] - record.min[2]
-    return (
-      span >= expectedSpan * 0.7 &&
-      span <= expectedSpan * 1.3 &&
-      record.min[2] >= zMin - 0.03 &&
-      record.max[2] <= zMax + 0.03 &&
-      closeEnough(Math.abs(record.normal[2]), Math.SQRT1_2, 0.12)
-    )
-  }).length
-}
-
-function countTopRimHorizontalPlanarFaces(
-  shape: Shape3D,
-  lowerRimZ: number,
-  outerHighRimZ: number,
-): number {
-  const records = readFaceQualityRecords(shape)
-  return records.filter((record) => {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
-    const zSpan = record.max[2] - record.min[2]
-    return (
-      zSpan <= 0.03 &&
-      record.min[2] >= lowerRimZ - 0.03 &&
-      record.max[2] <= outerHighRimZ + 0.03 &&
-      Math.abs(record.normal[2]) >= 0.95
-    )
-  }).length
-}
-
-export function inspectOpenGridStackableBoxThinShell(
+export function inspectOpenGridStackableBoxBottomStructure(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
-): OpenGridStackableBoxThinShellQualityReport {
+): OpenGridStackableBoxBottomStructureQualityReport {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
+  const bottomDatumZ = openGridStackableBoxBottomDatumZFor(parameters)
+  const isOpenBottom = parameters.bottomMode === 'none'
   const hasFloorHoneycomb =
+    !isOpenBottom &&
     parameters.honeycombMode &&
     openGridStackableBoxBottomHoneycombCellCountFor(parameters) > 0
   const halfExtent = hasFloorHoneycomb
     ? Math.min(0.2, width / 8, depth / 8)
     : Math.min(1, width / 8, depth / 8)
-  const [centerX, centerY] = floorProbeCenterFor(
+  const { center, coveredByPad } = interiorFloorProbeCenterFor(
     width,
     depth,
     halfExtent,
     parameters,
     hasFloorHoneycomb,
   )
-  const floorProbeVolumes = [
-    volumeInBox(
-      shape,
-      [centerX - halfExtent, centerY - halfExtent, -0.01],
-      [
-        centerX + halfExtent,
-        centerY + halfExtent,
-        configuration.thinShellFloorThickness + 0.01,
-      ],
-    ),
-  ]
-  const floorProbeArea = (2 * halfExtent) ** 2
-  const floorProbeThicknesses = floorProbeVolumes.map(
-    (volume) => volume / floorProbeArea,
+  const [centerX, centerY] = center
+  const floorProbeVolume = volumeInBox(
+    shape,
+    [centerX - halfExtent, centerY - halfExtent, -0.01],
+    [centerX + halfExtent, centerY + halfExtent, bottomDatumZ + 0.01],
   )
+  const floorProbeArea = (2 * halfExtent) ** 2
 
-  const sideWallProbeBottom =
-    configuration.thinShellFloorThickness +
-    configuration.thinShellInnerFloorFilletRadius +
-    0.2
+  const padProbeVolumes = isOpenBottom
+    ? openGridStackableBoxSocketCentersFor(parameters).map(([x, y]) => {
+        const padHalf = openBottomCornerPadProbeRadiusFor(width, depth)
+        const inset = Math.min(1.5, Math.max(0.5, padHalf / 4))
+        const probeMin = -Math.min(padHalf - inset, padHalf / 2)
+        return volumeInBox(
+          shape,
+          [x + probeMin, y + probeMin, -0.01],
+          [
+            x + probeMin + Math.min(1, padHalf / 2),
+            y + probeMin + Math.min(1, padHalf / 2),
+            bottomDatumZ + 0.01,
+          ],
+        )
+      })
+    : []
+
+  const sideWallProbeBottom = bottomDatumZ + 0.2
   const sideWallProbeTop = Math.min(
     openGridStackableBoxUpperInnerRimZFor(parameters) - 0.2,
     sideWallProbeBottom + 1,
@@ -202,7 +184,7 @@ export function inspectOpenGridStackableBoxThinShell(
     shape,
     width,
     depth,
-    configuration.thinShellWallThickness + 0.05,
+    configuration.wallThickness + 0.05,
     0.05,
     sideWallProbeBottom,
     sideWallProbeTop,
@@ -210,63 +192,24 @@ export function inspectOpenGridStackableBoxThinShell(
   const sideWallProbeExpectedVolumes = edgeBandExpectedVolumes(
     width,
     depth,
-    configuration.thinShellWallThickness + 0.05,
+    configuration.wallThickness + 0.05,
     0.05,
     sideWallProbeBottom,
     sideWallProbeTop,
   )
-  const sideWallProbeThicknesses = thicknessesFromVolumes(
-    sideWallProbeVolumes,
-    sideWallProbeExpectedVolumes,
-    configuration.thinShellWallThickness,
-  )
-  const socketCenters: [number, number][] = []
   const ordinaryCenters =
     openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
 
   return {
-    floorProbeVolumes,
-    floorProbeThicknesses,
-    sideWallProbeThicknesses,
-    bottomChamferFaceCount: countChamferFaces(
-      shape,
-      0,
-      configuration.thinShellOuterBottomChamfer,
-      configuration.thinShellOuterBottomChamfer,
-    ),
-    topChamferFaceCount: countChamferFaces(
-      shape,
-      openGridStackableBoxUpperInnerRimZFor(parameters),
-      externalOpenGridStackableBoxHeightFor(parameters),
-      configuration.thinShellTopChamfer,
-    ),
-    topRimHorizontalPlanarFaceCount: countTopRimHorizontalPlanarFaces(
-      shape,
-      openGridStackableBoxUpperInnerRimZFor(parameters),
-      externalOpenGridStackableBoxHeightFor(parameters),
-    ),
-    innerFloorFilletFaceCount: countRoundedProfileFacesWithRadius(
-      shape,
-      configuration.thinShellFloorThickness,
-      configuration.thinShellFloorThickness +
-        configuration.thinShellInnerFloorFilletRadius +
-        0.05,
-      configuration.thinShellInnerFloorFilletRadius,
-    ),
-    mountingHoleStepVolumes: measureMountingHoleStepVolumes(
-      shape,
-      socketCenters,
-      parameters,
-    ),
-    mountingHoleProfiles: measureMountingHoleProfiles(shape, socketCenters, {
-      lower: [-0.03, configuration.thinShellBottomHoleStepHeight],
-      upper: [
-        configuration.thinShellBottomHoleStepHeight,
-        configuration.thinShellFloorThickness,
-      ],
-    }),
-    captiveSocketRecords: socketCenters.map((center) =>
-      inspectCaptiveSocketInterface(shape, center, parameters),
+    bottomMode: parameters.bottomMode,
+    floorProbeVolume,
+    floorProbeThickness: floorProbeVolume / floorProbeArea,
+    floorProbeCoveredByPad: coveredByPad,
+    padProbeVolumes,
+    sideWallProbeThicknesses: thicknessesFromVolumes(
+      sideWallProbeVolumes,
+      sideWallProbeExpectedVolumes,
+      configuration.wallThickness,
     ),
     ordinaryBottomHoleCount: countOrdinaryBottomHoleFaces(
       shape,

@@ -592,7 +592,7 @@ export function boxSidePanelBounds(
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
-  const lowerFrame = parameters.thinShellMode ? 3.5 : honeycomb.lowerFrame
+  const lowerFrame = honeycomb.lowerFrame
   const tangentSpan = side === '+X' || side === '-X' ? depth : width
   return {
     minimumU: -tangentSpan / 2 + honeycomb.sideFrame,
@@ -727,7 +727,7 @@ export function openGridStackableBoxHoneycombSocketProtectionRadiusFor(
 function boxBottomProtectedBands(
   parameters: OpenGridStackableBoxParameters,
 ): ProtectedBand[] {
-  if (parameters.thinShellMode) return []
+  if (parameters.bottomMode !== 'stacking') return []
 
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
@@ -897,6 +897,7 @@ export function polygonIntersectsProtector(
 export function boxBottomHoneycombCenters(
   parameters: OpenGridStackableBoxParameters,
 ): Point2D[] {
+  if (parameters.bottomMode === 'none') return []
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
   const protectedCircles = boxBottomProtectedCircles(parameters)

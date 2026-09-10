@@ -4,8 +4,8 @@ export {
 } from './quality-gate'
 export type { OpenGridStackableBoxHoneycombQualityBaseline } from './quality-gate'
 export { inspectOpenGridStackableBoxInterface } from './quality-interface'
-export { inspectOpenGridStackableBoxThinShell } from './quality-thin'
-export type { OpenGridStackableBoxThinShellQualityReport } from './quality-thin'
+export { inspectOpenGridStackableBoxBottomStructure } from './quality-thin'
+export type { OpenGridStackableBoxBottomStructureQualityReport } from './quality-thin'
 export type {
   OpenGridStackableBoxCaptiveSocketRecord,
   OpenGridStackableBoxInterfaceQualityReport,

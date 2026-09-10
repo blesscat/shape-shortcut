@@ -12,8 +12,8 @@ export type OpenGridStackableBoxParameterKey =
   | 'height'
   | 'cornerSeatMode'
   | 'fullBottomHoleGrid'
-  | 'basePlateMode'
-  | 'thinShellMode'
+  | 'topRimMode'
+  | 'bottomMode'
   | 'honeycombMode'
   | 'openingPlusXDepth'
   | 'openingPlusXBottomLength'
@@ -66,18 +66,20 @@ export const OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS = [
   'openingMinusYAngle',
 ] as const satisfies readonly OpenGridStackableBoxOpeningParameterKey[]
 
+export type OpenGridStackableBoxTopRimMode = 'stacking-rail' | 'flat-top'
+
+export type OpenGridStackableBoxBottomMode = 'stacking' | 'thin-shell' | 'none'
+
 export type OpenGridStackableBoxParameters = {
   x: number
   y: number
   height: number
   cornerSeatMode: OpenGridLocatingSeatMode
   fullBottomHoleGrid: boolean
-  basePlateMode: boolean
-  thinShellMode: boolean
+  topRimMode: OpenGridStackableBoxTopRimMode
+  bottomMode: OpenGridStackableBoxBottomMode
   honeycombMode: boolean
 } & Record<OpenGridStackableBoxOpeningParameterKey, number>
-
-export type OpenGridStackableBoxProfile = 'normal' | 'base-plate' | 'thin-shell'
 
 export type OpenGridStackableBoxDerivedOpening = {
   direction: OpenGridStackableBoxOpeningDirection
@@ -131,8 +133,8 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   defaultHeight: 20,
   defaultCornerSeatMode: 'detachable-corner-seat' as OpenGridLocatingSeatMode,
   defaultFullBottomHoleGrid: false,
-  defaultBasePlateMode: false,
-  defaultThinShellMode: false,
+  defaultTopRimMode: 'stacking-rail' as OpenGridStackableBoxTopRimMode,
+  defaultBottomMode: 'stacking' as OpenGridStackableBoxBottomMode,
   defaultHoneycombMode: false,
   minX: 0.5,
   maxX: 10,
@@ -164,8 +166,6 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   bottomGridSeamOpeningWidth: 1.6,
   bottomGridSeamBedOpeningWidth: 5.6,
   bottomGridSeamSupportOpeningWidth: 4,
-  basePlateThickness: 3,
-  basePlateCutoffHeight: 2,
   baseHoleDiameter: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter,
   baseHoleClearance: 0.25,
   baseHoleOffset: 7,
@@ -174,14 +174,11 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   baseHoleTopOpeningDiameter:
     OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.retainingOpeningDiameter,
   baseHoleStepHeight: 3,
-  basePlateHoleBottomDepth: 2,
-  basePlateHoleTopDepth: 1,
   thinShellFloorThickness: 2,
-  thinShellWallThickness: 1.6,
-  thinShellInnerFloorFilletRadius: 2,
-  thinShellOuterBottomChamfer: 1.5,
-  thinShellTopChamfer: 1.6,
-  thinShellBottomAssemblyHeight: 2,
+  thinShellBottomChamfer: 1.5,
+  openBottomCornerPadRadius: 10.5,
+  // A 45-degree top chamfer consumes wall thickness in both axes.
+  flatTopRimChamfer: 1.2,
   thinShellBottomHoleStepHeight: 1,
   thinShellBottomHoleTopDepth: 1,
   bottomHoleGridPitch: OPENGRID_GRID_CONFIGURATION.halfPitch,
@@ -220,8 +217,8 @@ export const OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS = {
   cornerSeatMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultCornerSeatMode,
   fullBottomHoleGrid:
     OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultFullBottomHoleGrid,
-  basePlateMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultBasePlateMode,
-  thinShellMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultThinShellMode,
+  topRimMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimMode,
+  bottomMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultBottomMode,
   honeycombMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHoneycombMode,
   openingPlusXDepth: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultOpeningDepth,
   openingPlusXBottomLength:
@@ -281,6 +278,7 @@ const LEGACY_BASE_PARAMETER_KEYS = [
   'cornerBottomHoles',
   'fullBottomHoleGrid',
   'basePlateMode',
+  'thinShellMode',
 ] as const
 
 const CURRENT_BASE_PARAMETER_KEYS = [
@@ -289,8 +287,8 @@ const CURRENT_BASE_PARAMETER_KEYS = [
   'height',
   'cornerSeatMode',
   'fullBottomHoleGrid',
-  'basePlateMode',
-  'thinShellMode',
+  'topRimMode',
+  'bottomMode',
   'honeycombMode',
 ] as const
 
@@ -310,7 +308,10 @@ function hasRequiredBaseParameters(value: Record<string, unknown>): boolean {
     hasOwn(value, 'y') &&
     hasOwn(value, 'height') &&
     hasOwn(value, 'fullBottomHoleGrid') &&
-    hasOwn(value, 'basePlateMode')
+    (hasOwn(value, 'basePlateMode') ||
+      hasOwn(value, 'topRimMode') ||
+      hasOwn(value, 'bottomMode') ||
+      hasOwn(value, 'thinShellMode'))
   )
 }
 
@@ -441,25 +442,28 @@ function validateFullBottomHoleGrid(
   }
 }
 
-function validateBasePlateMode(
+function validateTopRimMode(
   value: unknown,
   issues: OpenGridStackableBoxValidationIssue[],
 ): void {
-  if (typeof value !== 'boolean') {
+  if (
+    value !== 'stacking-rail' &&
+    value !== 'flat-top'
+  ) {
     issues.push({
-      field: 'basePlateMode',
+      field: 'topRimMode',
       messageId: 'validation.invalid',
     })
   }
 }
 
-function validateThinShellMode(
+function validateBottomMode(
   value: unknown,
   issues: OpenGridStackableBoxValidationIssue[],
 ): void {
-  if (typeof value !== 'boolean') {
+  if (value !== 'stacking' && value !== 'thin-shell' && value !== 'none') {
     issues.push({
-      field: 'thinShellMode',
+      field: 'bottomMode',
       messageId: 'validation.invalid',
     })
   }
@@ -484,12 +488,31 @@ function legacyCornerSeatModeFor(
   return 'detachable-corner-seat'
 }
 
-export function openGridStackableBoxProfileFor(
+function legacyModesFor(value: Record<string, unknown>): {
+  topRimMode: OpenGridStackableBoxTopRimMode
+  bottomMode: OpenGridStackableBoxBottomMode
+} {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  if (value.thinShellMode === true) {
+    return { topRimMode: 'flat-top', bottomMode: 'thin-shell' }
+  }
+  if (value.basePlateMode === true) {
+    return { topRimMode: 'stacking-rail', bottomMode: 'none' }
+  }
+  return {
+    topRimMode: configuration.defaultTopRimMode,
+    bottomMode: configuration.defaultBottomMode,
+  }
+}
+
+export function openGridStackableBoxBottomDatumZFor(
   parameters: OpenGridStackableBoxParameters,
-): OpenGridStackableBoxProfile {
-  if (parameters.thinShellMode) return 'thin-shell'
-  if (parameters.basePlateMode) return 'base-plate'
-  return 'normal'
+): number {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  if (parameters.bottomMode === 'stacking') {
+    return configuration.bottomAssemblyHeight
+  }
+  return configuration.thinShellFloorThickness
 }
 
 export function nominalOpenGridStackableBoxFootprintFor(
@@ -506,47 +529,25 @@ export function nominalOpenGridStackableBoxFootprintFor(
 export function openGridStackableBoxUpperInnerRimZFor(
   parameters: OpenGridStackableBoxParameters,
 ): number {
-  if (parameters.thinShellMode) {
-    return (
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellBottomAssemblyHeight +
-      parameters.height
-    )
-  }
-  return (
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight +
-    parameters.height
-  )
+  return openGridStackableBoxBottomDatumZFor(parameters) + parameters.height
 }
 
 export function externalOpenGridStackableBoxHeightFor(
   parameters: OpenGridStackableBoxParameters,
 ): number {
-  if (parameters.thinShellMode) {
-    return (
-      openGridStackableBoxUpperInnerRimZFor(parameters) +
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellTopChamfer
-    )
-  }
-  const basePlateCutoff = parameters.basePlateMode
-    ? OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateCutoffHeight
-    : 0
+  const railHeight =
+    parameters.topRimMode === 'stacking-rail'
+      ? OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight
+      : 0
   return (
-    openGridStackableBoxUpperInnerRimZFor(parameters) +
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight -
-    basePlateCutoff
+    openGridStackableBoxUpperInnerRimZFor(parameters) + railHeight
   )
 }
 
 export function openGridStackableBoxActiveFloorTopZFor(
   parameters: OpenGridStackableBoxParameters,
 ): number {
-  if (parameters.thinShellMode) {
-    return OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellFloorThickness
-  }
-  if (parameters.basePlateMode) {
-    return OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateThickness
-  }
-  return OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight
+  return openGridStackableBoxBottomDatumZFor(parameters)
 }
 
 export function openGridStackableBoxActiveUpperInnerRimZFor(
@@ -568,12 +569,9 @@ function openingBridgeWidth(
   parameters: OpenGridStackableBoxParameters,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const wallThickness = parameters.thinShellMode
-    ? configuration.thinShellWallThickness
-    : configuration.wallThickness
   return Math.max(
     configuration.openingCornerBridge,
-    wallThickness + configuration.stackingClearance,
+    configuration.wallThickness + configuration.stackingClearance,
   )
 }
 
@@ -835,19 +833,12 @@ export function validateOpenGridStackableBoxParameters(
     })
   }
   validateFullBottomHoleGrid(value.fullBottomHoleGrid, issues)
-  validateBasePlateMode(value.basePlateMode, issues)
-  if (hasOwn(value, 'thinShellMode')) {
-    validateThinShellMode(value.thinShellMode, issues)
-  }
+  const hasCanonicalTopRimMode = hasOwn(value, 'topRimMode')
+  const hasCanonicalBottomMode = hasOwn(value, 'bottomMode')
+  if (hasCanonicalTopRimMode) validateTopRimMode(value.topRimMode, issues)
+  if (hasCanonicalBottomMode) validateBottomMode(value.bottomMode, issues)
   if (hasOwn(value, 'honeycombMode')) {
     validateHoneycombMode(value.honeycombMode, issues)
-  }
-
-  if (value.basePlateMode === true && value.thinShellMode === true) {
-    issues.push({
-      field: 'thinShellMode',
-      messageId: 'validation.invalid',
-    })
   }
 
   if (hasOpeningParameters) {
@@ -868,6 +859,7 @@ export function validateOpenGridStackableBoxParameters(
 
   if (issues.length > 0) return { valid: false, issues }
 
+  const legacyModes = legacyModesFor(value)
   const parameters = {
     x: value.x as number,
     y: value.y as number,
@@ -878,16 +870,23 @@ export function validateOpenGridStackableBoxParameters(
         ) as OpenGridLocatingSeatMode)
       : legacyCornerSeatModeFor(value),
     fullBottomHoleGrid: value.fullBottomHoleGrid as boolean,
-    basePlateMode: value.basePlateMode as boolean,
-    thinShellMode:
-      typeof value.thinShellMode === 'boolean'
-        ? (value.thinShellMode as boolean)
-        : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultThinShellMode,
+    topRimMode: hasCanonicalTopRimMode
+      ? (value.topRimMode as OpenGridStackableBoxTopRimMode)
+      : legacyModes.topRimMode,
+    bottomMode: hasCanonicalBottomMode
+      ? (value.bottomMode as OpenGridStackableBoxBottomMode)
+      : legacyModes.bottomMode,
     honeycombMode:
       typeof value.honeycombMode === 'boolean'
         ? (value.honeycombMode as boolean)
         : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHoneycombMode,
     ...openingValuesFor(value, hasOpeningParameters),
+  }
+  if (parameters.bottomMode === 'none' && parameters.fullBottomHoleGrid) {
+    issues.push({
+      field: 'fullBottomHoleGrid',
+      messageId: 'validation.invalid',
+    })
   }
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   if (width > OPENGRID_STACKABLE_BOX_CONFIGURATION.workspaceMaxDimension) {
@@ -1078,9 +1077,15 @@ function openingFileSuffixFor(
 }
 
 function modeSuffixFor(parameters: OpenGridStackableBoxParameters): string {
-  if (parameters.thinShellMode) return '-thin-shell'
-  if (parameters.basePlateMode) return '-base-plate'
-  return ''
+  const bottomSuffix =
+    parameters.bottomMode === 'thin-shell'
+      ? '-thin-shell'
+      : parameters.bottomMode === 'none'
+        ? '-open-bottom'
+        : ''
+  const topSuffix =
+    parameters.topRimMode === 'flat-top' ? '-flat-top' : ''
+  return `${bottomSuffix}${topSuffix}`
 }
 
 function seatSuffixFor(parameters: OpenGridStackableBoxParameters): string {

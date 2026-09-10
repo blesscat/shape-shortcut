@@ -176,7 +176,7 @@ describe('HSW kernel model registration', () => {
         height: 20,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        bottomMode: 'stacking',
       },
       {
         ...context,
@@ -193,7 +193,7 @@ describe('HSW kernel model registration', () => {
         height: 20,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        bottomMode: 'stacking',
       }),
       expect.objectContaining({
         isGenerationCurrent: undefined,

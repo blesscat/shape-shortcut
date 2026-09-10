@@ -26,20 +26,20 @@ function activeBottomThicknessFor(
   parameters?: OpenGridStackableBoxParameters,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  if (parameters?.thinShellMode) return configuration.thinShellFloorThickness
-  if (parameters?.basePlateMode) return configuration.basePlateThickness
-  return configuration.bottomAssemblyHeight
+  if (parameters?.bottomMode === 'stacking') {
+    return configuration.bottomAssemblyHeight
+  }
+  return configuration.thinShellFloorThickness
 }
 
 function mountingHoleStepHeightFor(
   parameters?: OpenGridStackableBoxParameters,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  if (parameters?.thinShellMode) {
-    return configuration.thinShellBottomHoleStepHeight
+  if (parameters?.bottomMode === 'stacking') {
+    return configuration.baseHoleStepHeight
   }
-  if (parameters?.basePlateMode) return configuration.basePlateHoleBottomDepth
-  return configuration.baseHoleStepHeight
+  return configuration.thinShellBottomHoleStepHeight
 }
 
 export function measureMountingHoleStepVolumes(

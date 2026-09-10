@@ -210,9 +210,7 @@ function boxSideCutter(
 ): Shape3D {
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const wallThickness = parameters.thinShellMode
-    ? configuration.thinShellWallThickness
-    : configuration.wallThickness
+  const wallThickness = configuration.wallThickness
   const margin = OPENGRID_HONEYCOMB_CONFIGURATION.cutterMargin
   const distance = wallThickness + margin * 2
   const normalIsX = side === '+X' || side === '-X'
@@ -255,9 +253,7 @@ export function makeOpenGridStackableBoxSideHoneycombPanel(
 
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const wallThickness = parameters.thinShellMode
-    ? configuration.thinShellWallThickness
-    : configuration.wallThickness
+  const wallThickness = configuration.wallThickness
   let origin: [number, number, number]
   let plane: Plane
   let direction: [number, number, number]

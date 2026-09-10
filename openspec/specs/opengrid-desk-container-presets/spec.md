@@ -6,16 +6,16 @@ This capability gives the Desk System OpenGrid container entries useful initial 
 
 ### Requirement: Desk stackable-box preset
 
-When a user opens the Desk System entry for `opengrid-stackable-box` without a valid saved Desk snapshot, the system MUST initialize the model with `x=4`, `y=2`, `height=30`, `thinShellMode=true`, and `basePlateMode=false`. The preset MUST retain the model's validated defaults for all other parameters, including opening controls and bottom-hole controls. The model id, route, footprint contract, clear-height semantics, and export contract MUST remain unchanged.
+When a user opens the Desk System entry for `opengrid-stackable-box` without a valid saved Desk snapshot, the system MUST initialize the model with `x=4`, `y=2`, `height=30`, `topRimMode='flat-top'`, and `bottomMode='thin-shell'`. The preset MUST retain the model's validated defaults for all other parameters, including opening controls and bottom-hole controls. The model id, route, footprint contract, clear-height semantics, and export contract MUST remain unchanged.
 
 #### Scenario: Desk box starts with the requested thin-shell dimensions
 
 - **WHEN** a user opens `/cad/opengrid-stackable-box?system=desk` with no valid saved Desk snapshot
 - **THEN** the first valid generation MUST use `x=4`, `y=2`, and `height=30`
-- **AND** the thin-shell mode control MUST be selected
-- **AND** the normalized `basePlateMode` MUST remain `false`
-- **AND** the panel MUST NOT show a selectable base-plate radio choice
+- **AND** the `盒底` control MUST select `薄殼` and the `上緣` control MUST select `平頂`
+- **AND** the panel MUST NOT show a selectable base-plate or legacy thin-shell mode choice
 - **AND** the committed model MUST retain `modelId=opengrid-stackable-box`
+
 
 ### Requirement: Desk stackable-cylinder preset
 

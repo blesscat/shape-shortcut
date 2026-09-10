@@ -725,7 +725,8 @@ describe('CAD component catalog', () => {
         height: 20,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       }),
     ).toEqual({
       valid: true,
@@ -738,7 +739,8 @@ describe('CAD component catalog', () => {
           height: 20,
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
+          topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
         },
       },
     })
@@ -750,7 +752,8 @@ describe('CAD component catalog', () => {
         height: 30,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       }),
     ).toBe('opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat.step')
     expect(
@@ -761,7 +764,8 @@ describe('CAD component catalog', () => {
         height: 30,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: false,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       }),
     ).toBe('opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat.stl')
   })

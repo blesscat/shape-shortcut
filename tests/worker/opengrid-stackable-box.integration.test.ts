@@ -18,7 +18,7 @@ import {
   assertOpenGridSnapHoldCompatibility,
   inspectOpenGridStackableBoxInterface,
   inspectOpenGridStackableBoxOpenings,
-  inspectOpenGridStackableBoxThinShell,
+  inspectOpenGridStackableBoxBottomStructure,
   inspectOpenGridSnapHoldCompatibility,
 } from '../../src/cad-kernel/components/opengrid-stackable-box/builder'
 import {
@@ -122,7 +122,6 @@ function parameters(
     height: overrides.height ?? 10,
     cornerSeatMode: overrides.cornerSeatMode ?? 'none',
     fullBottomHoleGrid: overrides.fullBottomHoleGrid ?? false,
-    basePlateMode: overrides.basePlateMode ?? false,
     ...overrides,
   }
 }
@@ -169,9 +168,7 @@ function openingWallPenetrationProbeFor(
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   const opening = derived.openings[direction]
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const wallThickness = parameters.thinShellMode
-    ? configuration.thinShellWallThickness
-    : configuration.wallThickness
+  const wallThickness = configuration.wallThickness
   const probeOverlap = 0.1
   const sideHalfExtent =
     direction === '+X' || direction === '-X' ? width / 2 : depth / 2
@@ -442,57 +439,248 @@ describe('OpenGrid stackable-box B-Rep', () => {
     }
   }, 120_000)
 
-  it('cuts the lower guide into a printable flat base-plate mode', () => {
+  it.each([
+    { name: 'stacking-rail + stacking', topRimMode: 'stacking-rail' as const, bottomMode: 'stacking' as const },
+    { name: 'stacking-rail + thin-shell', topRimMode: 'stacking-rail' as const, bottomMode: 'thin-shell' as const },
+    { name: 'stacking-rail + none', topRimMode: 'stacking-rail' as const, bottomMode: 'none' as const },
+    { name: 'flat-top + stacking', topRimMode: 'flat-top' as const, bottomMode: 'stacking' as const },
+    { name: 'flat-top + thin-shell', topRimMode: 'flat-top' as const, bottomMode: 'thin-shell' as const },
+    { name: 'flat-top + none', topRimMode: 'flat-top' as const, bottomMode: 'none' as const },
+  ])(
+    'builds and exports the $name combination within its expected bounds',
+    ({ topRimMode, bottomMode }) => {
+      const input = parameters({ topRimMode, bottomMode })
+      const expected = boundsForOpenGridStackableBox(input)
+      const shape = buildOpenGridStackableBox(input)
+      try {
+        const actual = boundsOf(shape)
+        expect(actual[0]?.[2]).toBeCloseTo(expected.min[2], 3)
+        expect(actual[1]?.[2]).toBeCloseTo(expected.max[2], 3)
+        expect(measureVolume(shape)).toBeGreaterThan(0)
+        if (topRimMode === 'flat-top') {
+          const [width] = nominalOpenGridStackableBoxFootprintFor(input)
+          const chamfer = OPENGRID_STACKABLE_BOX_CONFIGURATION
+            .flatTopRimChamfer
+          const externalTop = expected.max[2]
+          const innerBandStart = width / 2 - 1.15
+          const innerBandEnd = width / 2 - 0.8
+          const insideTopChamfer = makeBox(
+            [innerBandStart, -1, externalTop - 0.3],
+            [innerBandEnd, 1, externalTop - 0.05],
+          )
+          const belowTopChamfer = makeBox(
+            [innerBandStart, -1, externalTop - chamfer - 0.6],
+            [innerBandEnd, 1, externalTop - chamfer - 0.1],
+          )
+          try {
+            const chamfered = shape.intersect(insideTopChamfer)
+            expect(measureVolume(chamfered)).toBeCloseTo(0, 3)
+            chamfered.delete()
+            const wall = shape.intersect(belowTopChamfer)
+            expect(measureVolume(wall)).toBeGreaterThan(0.01)
+            wall.delete()
+          } finally {
+            insideTopChamfer.delete()
+            belowTopChamfer.delete()
+          }
+        }
+      } finally {
+        deleteShape(shape)
+      }
+    },
+    120_000,
+  )
+
+  it('hosts detachable corner seats on the open-bottom corner pads', () => {
     const input = parameters({
-      x: 1,
-      y: 1,
-      height: 20,
-      basePlateMode: true,
+      cornerSeatMode: 'detachable-corner-seat',
+      bottomMode: 'none',
     })
+    const expected = boundsForOpenGridStackableBox(input)
     const shape = buildOpenGridStackableBox(input)
-    const edgeProbe = makeBox([10, -1, 0.01], [11, -0.5, 0.11])
     try {
       const actual = boundsOf(shape)
-      const expected = boundsForOpenGridStackableBox(input)
       expect(actual[0]?.[2]).toBeCloseTo(expected.min[2], 3)
       expect(actual[1]?.[2]).toBeCloseTo(expected.max[2], 3)
-      expect(measureVolume(shape.intersect(edgeProbe))).toBeGreaterThan(0.01)
+      const centers = openGridStackableBoxSocketCentersFor(input)
+      expect(centers).toHaveLength(4)
+      const records = inspectOpenGridDetachableCornerSeatConsumers(
+        shape,
+        centers,
+        {
+          detachableCornerSeatReference,
+          detachableCornerSeatHolderReference,
+        },
+      )
+      expect(records).toHaveLength(4)
+      for (const record of records) {
+        expect(record).toMatchObject({
+          socketVoidResidualVolume: expect.closeTo(0, 6),
+          maleCollisionVolume: expect.closeTo(0, 6),
+        })
+      }
+      const openProbe = makeBox([-40, -40, 0.01], [40, 40, 1.9])
+      try {
+        const openVolume = measureVolume(shape.intersect(openProbe))
+        expect(openVolume).toBeGreaterThan(0)
+        expect(openVolume).toBeLessThan(
+          0.4 *
+            (nominalOpenGridStackableBoxFootprintFor(input)[0] *
+              nominalOpenGridStackableBoxFootprintFor(input)[1] *
+              1.9),
+        )
+      } finally {
+        openProbe.delete()
+      }
+      // A square pad (half 8) would keep material at 7.5 mm diagonally off
+      // the socket center; the round pad (radius = hole + 5 mm = 10.5) does
+      // not cover that point, so the probe must stay empty.
+      const squareCornerProbe = makeBox(
+        [
+          centers[0]![0]! + Math.sign(centers[0]![0]!) * 7.5 - 0.3,
+          centers[0]![1]! + Math.sign(centers[0]![1]!) * 7.5 - 0.3,
+          0.01,
+        ],
+        [
+          centers[0]![0]! + Math.sign(centers[0]![0]!) * 7.5 + 0.3,
+          centers[0]![1]! + Math.sign(centers[0]![1]!) * 7.5 + 0.3,
+          1.9,
+        ],
+      )
+      try {
+        expect(measureVolume(shape.intersect(squareCornerProbe))).toBeCloseTo(
+          0,
+          3,
+        )
+      } finally {
+        squareCornerProbe.delete()
+      }
     } finally {
-      edgeProbe.delete()
       deleteShape(shape)
     }
   }, 120_000)
+
+  it('fuses integrated seats below the open-bottom corner pads', () => {
+    const input = parameters({
+      cornerSeatMode: 'integrated',
+      bottomMode: 'none',
+    })
+    const expected = boundsForOpenGridStackableBox(input)
+    const shape = buildOpenGridStackableBox(input)
+    try {
+      const actual = boundsOf(shape)
+      expect(actual[0]?.[2]).toBeCloseTo(expected.min[2], 3)
+      expect(actual[1]?.[2]).toBeCloseTo(expected.max[2], 3)
+      const centers = openGridStackableBoxSocketCentersFor(input)
+      expect(centers).toHaveLength(4)
+      const records = readFaceQualityRecords(shape).filter(
+        (record) => record.surfaceType === 'CYLINDRE',
+      )
+      for (const [centerX, centerY] of centers) {
+        const record = records.find((candidate) => {
+          const candidateCenterX = (candidate.min[0] + candidate.max[0]) / 2
+          const candidateCenterY = (candidate.min[1] + candidate.max[1]) / 2
+          return (
+            Math.abs(candidateCenterX - centerX) <= 0.08 &&
+            Math.abs(candidateCenterY - centerY) <= 0.08
+          )
+        })
+        expect(record).toBeDefined()
+        expect(record!.min[2]).toBeCloseTo(
+          OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatMinZ +
+            OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatBottomChamfer,
+          1,
+        )
+        expect(record!.max[2]).toBeCloseTo(0, 1)
+      }
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it.each([{ x: 1, y: 1 }, { x: 0.5, y: 0.5 }])(
+    'opens the whole bottom of the $x×$y open-bottom box without corner seats',
+    ({ x, y }) => {
+      const input = parameters({
+        x,
+        y,
+        height: 20,
+        bottomMode: 'none',
+      })
+      const shape = buildOpenGridStackableBox(input)
+      const interiorHalf =
+        nominalOpenGridStackableBoxFootprintFor(input)[0] / 2 -
+        OPENGRID_STACKABLE_BOX_CONFIGURATION.wallThickness -
+        OPENGRID_STACKABLE_BOX_CONFIGURATION.outerCornerRadius -
+        0.2
+      const floorProbe = makeBox(
+        [-interiorHalf, -interiorHalf, 0.01],
+        [interiorHalf, interiorHalf, 1.9],
+      )
+      try {
+        const actual = boundsOf(shape)
+        const expected = boundsForOpenGridStackableBox(input)
+        expect(actual[0]?.[2]).toBeCloseTo(expected.min[2], 3)
+        expect(actual[1]?.[2]).toBeCloseTo(expected.max[2], 3)
+        expect(measureVolume(shape.intersect(floorProbe))).toBeCloseTo(0, 3)
+      } finally {
+        floorProbe.delete()
+        deleteShape(shape)
+      }
+    },
+    120_000,
+  )
 
   it.each([
     { x: 1, y: 1 },
     { x: 2, y: 2 },
     { x: 0.5, y: 0.5 },
   ])(
-    'builds the non-stackable thin-shell profile at $x×$y',
+    'builds the non-stackable thin-shell bottom at $x×$y',
     ({ x, y }) => {
       const input = parameters({
         x,
         y,
         height: 20,
-        thinShellMode: true,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
       })
       const shape = buildOpenGridStackableBox(input)
       try {
-        const report = inspectOpenGridStackableBoxThinShell(shape, input)
+        const report = inspectOpenGridStackableBoxBottomStructure(shape, input)
         const expected = boundsForOpenGridStackableBox(input)
         const actual = boundsOf(shape)
         expect(actual[0]?.[2]).toBeCloseTo(0, 3)
         expect(actual[1]?.[2]).toBeCloseTo(expected.max[2], 3)
-        expect(report.floorProbeThicknesses[0]).toBeCloseTo(2, 1)
+        expect(report.floorProbeThickness).toBeCloseTo(2, 1)
         expect(
           report.sideWallProbeThicknesses.every(
-            (thickness) => thickness >= 1.5 && thickness <= 1.7,
+            (thickness) => thickness >= 1.1 && thickness <= 1.3,
           ),
         ).toBe(true)
-        expect(report.bottomChamferFaceCount).toBeGreaterThanOrEqual(4)
-        expect(report.topChamferFaceCount).toBeGreaterThanOrEqual(4)
-        expect(report.innerFloorFilletFaceCount).toBeGreaterThanOrEqual(4)
-        expect(report.topRimHorizontalPlanarFaceCount).toBe(0)
+        const [width] = nominalOpenGridStackableBoxFootprintFor(input)
+        const chamfer = OPENGRID_STACKABLE_BOX_CONFIGURATION
+          .thinShellBottomChamfer
+        const outerSliver = width / 2 - 0.3
+        const insideChamferZone = makeBox(
+          [outerSliver, -1, 0.05],
+          [width / 2 + 1, 1, chamfer - 0.3],
+        )
+        const aboveChamferZone = makeBox(
+          [outerSliver, -1, chamfer + 0.2],
+          [width / 2 + 1, 1, 1.9],
+        )
+        try {
+          const chamfered = shape.intersect(insideChamferZone)
+          expect(measureVolume(chamfered)).toBeCloseTo(0, 3)
+          chamfered.delete()
+          const wall = shape.intersect(aboveChamferZone)
+          expect(measureVolume(wall)).toBeGreaterThan(0.01)
+          wall.delete()
+        } finally {
+          insideChamferZone.delete()
+          aboveChamferZone.delete()
+        }
       } finally {
         deleteShape(shape)
       }
@@ -506,14 +694,15 @@ describe('OpenGrid stackable-box B-Rep', () => {
       y: 1,
       height: 20,
       cornerSeatMode: 'detachable-corner-seat',
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
       fullBottomHoleGrid: true,
     })
     const shape = buildOpenGridStackableBox(input)
     const [center] = openGridStackableBoxSocketCentersFor(input)
     if (!center) throw new Error('MISSING_SOCKET_CENTER')
     try {
-      const report = inspectOpenGridStackableBoxThinShell(shape, input)
+      const report = inspectOpenGridStackableBoxBottomStructure(shape, input)
       const records = inspectOpenGridDetachableCornerSeatConsumers(
         shape,
         [center],
@@ -546,7 +735,8 @@ describe('OpenGrid stackable-box B-Rep', () => {
       x: 2,
       y: 2,
       height: 20,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
       openingPlusXDepth: 4,
       openingPlusXBottomLength: 8,
       openingPlusXAngle: 45,
@@ -584,14 +774,15 @@ describe('OpenGrid stackable-box B-Rep', () => {
     const input = parameters({
       x: 1,
       y: 1,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
       cornerSeatMode: 'none',
       fullBottomHoleGrid: true,
     })
     const shape = buildOpenGridStackableBox(input)
     try {
-      const report = inspectOpenGridStackableBoxThinShell(shape, input)
-      expect(report.captiveSocketRecords).toHaveLength(0)
+      const report = inspectOpenGridStackableBoxBottomStructure(shape, input)
+      expect(report.padProbeVolumes).toHaveLength(0)
       expect(report.ordinaryBottomHoleCount).toBe(
         openGridStackableBoxOrdinaryBottomHoleCentersFor(input).length,
       )
@@ -600,13 +791,14 @@ describe('OpenGrid stackable-box B-Rep', () => {
     }
   }, 120_000)
 
-  it('uses a 3 mm base plate with a 2 mm lower bore and 1 mm upper seat', () => {
+  it('keeps the detachable seat interface usable on the thin-shell bottom', () => {
     const input = parameters({
       x: 1,
       y: 1,
       height: 20,
       cornerSeatMode: 'detachable-corner-seat',
-      basePlateMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     })
     const shape = buildOpenGridStackableBox(input)
     const [center] = openGridStackableBoxSocketCentersFor(input)
@@ -629,14 +821,22 @@ describe('OpenGrid stackable-box B-Rep', () => {
     }
   }, 120_000)
 
-  it.each([{ basePlateMode: false }, { basePlateMode: true }])(
-    'builds a rounded +X opening in $basePlateMode mode',
-    ({ basePlateMode }) => {
+  it.each([
+    { profile: 'stacking', bottomMode: 'stacking' as const },
+    {
+      profile: 'thin-shell',
+      bottomMode: 'thin-shell' as const,
+      topRimMode: 'flat-top' as const,
+    },
+  ])(
+    'builds a rounded +X opening over the $profile bottom',
+    ({ profile: _profile, bottomMode, ...rest }) => {
       const input = parameters({
         x: 2,
         y: 2,
         height: 20,
-        basePlateMode,
+        bottomMode,
+        ...rest,
         openingPlusXDepth: 4,
         openingPlusXBottomLength: 8,
         openingPlusXAngle: 45,
@@ -795,18 +995,25 @@ describe('OpenGrid stackable-box B-Rep', () => {
   }, 120_000)
 
   it.each([
-    { profile: 'normal', basePlateMode: false, thinShellMode: false },
-    { profile: 'base-plate', basePlateMode: true, thinShellMode: false },
-    { profile: 'thin-shell', basePlateMode: false, thinShellMode: true },
+    {
+      profile: 'stacking-rail + stacking',
+      topRimMode: 'stacking-rail' as const,
+      bottomMode: 'stacking' as const,
+    },
+    {
+      profile: 'flat-top + thin-shell',
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
+    },
   ])(
     'cuts every $profile opening completely through its wall',
-    ({ basePlateMode, thinShellMode }) => {
+    ({ topRimMode, bottomMode }) => {
       const input = parameters({
         x: 2,
         y: 2,
         height: 20,
-        basePlateMode,
-        thinShellMode,
+        topRimMode,
+        bottomMode,
         openingPlusXDepth: 6,
         openingPlusXBottomLength: 8,
         openingPlusXAngle: 90,
@@ -1419,7 +1626,6 @@ describe('OpenGrid stackable-box B-Rep', () => {
             height: 10,
             cornerSeatMode: 'detachable-corner-seat',
             fullBottomHoleGrid: false,
-            basePlateMode: false,
           }),
         ).toThrow('OPENGRID_SNAP_HOLD_INSERTION_ENVELOPE_MISMATCH')
       } finally {

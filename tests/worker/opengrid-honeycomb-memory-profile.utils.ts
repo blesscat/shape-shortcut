@@ -37,7 +37,7 @@ export async function initialiseProfileHarness(): Promise<void> {
 }
 
 export function runHoneycombProfileStressCase(
-  profile: 'base-plate' | 'thin-shell',
+  profile: 'thin-shell' | 'open-bottom',
 ): void {
   it(`builds a 7x7 100 mm ${profile} honeycomb box`, async () => {
     const parameters: OpenGridStackableBoxParameters = {
@@ -46,8 +46,8 @@ export function runHoneycombProfileStressCase(
       y: 7,
       height: 100,
       cornerSeatMode: 'none',
-      basePlateMode: profile === 'base-plate',
-      thinShellMode: profile === 'thin-shell',
+      topRimMode: 'flat-top',
+      bottomMode: profile === 'thin-shell' ? 'thin-shell' : 'none',
       honeycombMode: true,
     }
     let shape: Shape3D | null = null

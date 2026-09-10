@@ -459,7 +459,6 @@ describe('component parameter store', () => {
       x: 3,
       y: 3,
       height: 20,
-      thinShellMode: false,
     }
     const { innerDiameter: _storedLegacyInnerDiameter, ...legacyCylinderBase } =
       OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS
@@ -485,8 +484,8 @@ describe('component parameter store', () => {
       x: 4,
       y: 2,
       height: 30,
-      basePlateMode: false,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     })
     expect(deskStore.get('opengrid-stackable-cylinder')).toEqual({
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -611,8 +610,9 @@ describe('component parameter store', () => {
           y: 1.5,
           height: 25,
           cornerSeatMode: 'detachable-corner-seat',
-          fullBottomHoleGrid: true,
-          basePlateMode: true,
+          fullBottomHoleGrid: false,
+          topRimMode: 'stacking-rail',
+          bottomMode: 'none',
         },
         'opengrid-stackable-cylinder': { innerDiameter: 76, height: 45 },
         'opengrid-snap': { variant: 'Lite', offset: 0.2 },
@@ -650,8 +650,9 @@ describe('component parameter store', () => {
       y: 1.5,
       height: 25,
       cornerSeatMode: 'detachable-corner-seat',
-      fullBottomHoleGrid: true,
-      basePlateMode: true,
+      fullBottomHoleGrid: false,
+      topRimMode: 'stacking-rail',
+      bottomMode: 'none',
     })
     expect(store.get('opengrid-divider')).toEqual({
       left: 1,
@@ -723,7 +724,8 @@ describe('component parameter store', () => {
       height: 25,
       cornerSeatMode: 'detachable-corner-seat',
       fullBottomHoleGrid: false,
-      basePlateMode: false,
+      topRimMode: 'stacking-rail',
+      bottomMode: 'stacking',
     })
     expect(
       store.set('opengrid-stackable-box', {
@@ -732,7 +734,8 @@ describe('component parameter store', () => {
         height: 25,
         cornerSeatMode: 'hole',
         fullBottomHoleGrid: true,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       }),
     ).toBe(true)
     expect(store.get('opengrid-stackable-box')).toMatchObject({
@@ -745,7 +748,8 @@ describe('component parameter store', () => {
         height: 25,
         cornerSeatMode: 'hole',
         fullBottomHoleGrid: 'true' as never,
-        basePlateMode: false,
+        topRimMode: 'stacking-rail',
+        bottomMode: 'stacking',
       }),
     ).toBe(false)
     expect(store.get('opengrid-stackable-box')).toMatchObject({
@@ -764,7 +768,6 @@ describe('component parameter store', () => {
           cornerBottomHoles: false,
           cornerSeatMode: 'integrated',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
         },
         'opengrid-stackable-cylinder': {
           diameter: 60,

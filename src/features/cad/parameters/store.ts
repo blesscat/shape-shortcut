@@ -90,6 +90,24 @@ function canonicalBoxSeatModeFor(
   return 'detachable-corner-seat'
 }
 
+function canonicalBoxTopRimModeFor(value: Record<string, unknown>): string {
+  if (Object.prototype.hasOwnProperty.call(value, 'topRimMode')) {
+    return value.topRimMode === 'flat-top' ? 'flat-top' : 'stacking-rail'
+  }
+  return value.thinShellMode === true ? 'flat-top' : 'stacking-rail'
+}
+
+function canonicalBoxBottomModeFor(value: Record<string, unknown>): string {
+  if (Object.prototype.hasOwnProperty.call(value, 'bottomMode')) {
+    return value.bottomMode === 'thin-shell' || value.bottomMode === 'none'
+      ? value.bottomMode
+      : 'stacking'
+  }
+  if (value.thinShellMode === true) return 'thin-shell'
+  if (value.basePlateMode === true) return 'none'
+  return 'stacking'
+}
+
 function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
   if (modelId === 'opengrid-pillar') {
     return normalizePillarParameters(value)
@@ -159,17 +177,11 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
 
   const withoutLegacy = { ...value }
   delete withoutLegacy.cornerBottomHoles
+  delete withoutLegacy.basePlateMode
+  delete withoutLegacy.thinShellMode
   const hasFullBottomHoleGrid = Object.prototype.hasOwnProperty.call(
     value,
     'fullBottomHoleGrid',
-  )
-  const hasBasePlateMode = Object.prototype.hasOwnProperty.call(
-    value,
-    'basePlateMode',
-  )
-  const hasThinShellMode = Object.prototype.hasOwnProperty.call(
-    value,
-    'thinShellMode',
   )
   const hasHoneycombMode = Object.prototype.hasOwnProperty.call(
     value,
@@ -181,8 +193,8 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
     fullBottomHoleGrid: hasFullBottomHoleGrid
       ? value.fullBottomHoleGrid
       : false,
-    basePlateMode: hasBasePlateMode ? value.basePlateMode : false,
-    thinShellMode: hasThinShellMode ? value.thinShellMode : false,
+    topRimMode: canonicalBoxTopRimModeFor(value),
+    bottomMode: canonicalBoxBottomModeFor(value),
     honeycombMode: hasHoneycombMode ? value.honeycombMode : false,
   }
   for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {

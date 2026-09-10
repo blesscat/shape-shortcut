@@ -53,8 +53,8 @@ export const OPENGRID_STACKABLE_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'height',
   'cornerSeatMode',
   'fullBottomHoleGrid',
-  'basePlateMode',
-  'thinShellMode',
+  'topRimMode',
+  'bottomMode',
   'honeycombMode',
   ...OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
 ]
@@ -203,8 +203,11 @@ function legacyParameterDefault(
   if (modelId === 'opengrid-stackable-box' && key === 'cornerSeatMode') {
     return 'detachable-corner-seat'
   }
-  if (modelId === 'opengrid-stackable-box' && key === 'thinShellMode') {
-    return 'false'
+  if (modelId === 'opengrid-stackable-box' && key === 'topRimMode') {
+    return 'stacking-rail'
+  }
+  if (modelId === 'opengrid-stackable-box' && key === 'bottomMode') {
+    return 'stacking'
   }
   if (
     (modelId === 'opengrid-stackable-box' ||
@@ -766,8 +769,7 @@ export function rawFromParameters(
     'y' in parameters &&
     'height' in parameters &&
     'cornerSeatMode' in parameters &&
-    'fullBottomHoleGrid' in parameters &&
-    'basePlateMode' in parameters
+    'fullBottomHoleGrid' in parameters
   ) {
     const stackableParameters = parameters as Partial<{
       x: number
@@ -775,8 +777,8 @@ export function rawFromParameters(
       height: number
       cornerSeatMode: (typeof OPENGRID_LOCATING_SEAT_MODES)[number]
       fullBottomHoleGrid: boolean
-      basePlateMode: boolean
-      thinShellMode: boolean
+      topRimMode: 'stacking-rail' | 'flat-top'
+      bottomMode: 'stacking' | 'thin-shell' | 'none'
       honeycombMode: boolean
     }> &
       Partial<
@@ -794,8 +796,12 @@ export function rawFromParameters(
       height: String(stackableParameters.height),
       cornerSeatMode: String(cornerSeatMode),
       fullBottomHoleGrid: String(stackableParameters.fullBottomHoleGrid),
-      basePlateMode: String(stackableParameters.basePlateMode),
-      thinShellMode: String(stackableParameters.thinShellMode ?? false),
+      topRimMode:
+        stackableParameters.topRimMode ??
+        OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimMode,
+      bottomMode:
+        stackableParameters.bottomMode ??
+        OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.bottomMode,
       honeycombMode: String(stackableParameters.honeycombMode ?? false),
     }
     for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
@@ -874,6 +880,28 @@ export function rawFromParameters(
   throw new Error('MODEL_PARAMETERS_EMPTY_OR_UNSUPPORTED')
 }
 
+function withStackableBoxLegacyModeRawParameters(
+  raw: RawParameters,
+): RawParameters {
+  const legacy = raw as Record<string, string | undefined>
+  if (raw.topRimMode !== undefined && raw.bottomMode !== undefined) {
+    return raw
+  }
+  const {
+    basePlateMode: _basePlate,
+    thinShellMode: _thinShell,
+    ...rest
+  } = raw as Record<string, string | undefined>
+  const thinShell = legacy.thinShellMode === 'true'
+  const basePlate = legacy.basePlateMode === 'true'
+  return {
+    ...rest,
+    topRimMode: raw.topRimMode ?? (thinShell ? 'flat-top' : 'stacking-rail'),
+    bottomMode: raw.bottomMode ??
+      (thinShell ? 'thin-shell' : basePlate ? 'none' : 'stacking'),
+  }
+}
+
 export function parseRawParameters(
   raw: RawParameters,
   modelId: ModelId = 'box',
@@ -885,6 +913,9 @@ export function parseRawParameters(
       field?: ModelParameterKey
       params?: DiagnosticParams
     } {
+  if (modelId === 'opengrid-stackable-box') {
+    raw = withStackableBoxLegacyModeRawParameters(raw)
+  }
   if (
     modelId === 'opengrid-snap-remover' ||
     modelId === 'opengrid-wall-cover'
@@ -1112,11 +1143,25 @@ export function parseRawParameters(
       parsed[key] = seatMode.value
       continue
     }
+    if (key === 'topRimMode' || key === 'bottomMode') {
+      const allowed: readonly string[] =
+        key === 'topRimMode'
+          ? ['stacking-rail', 'flat-top']
+          : ['stacking', 'thin-shell', 'none']
+      const rawValue = raw[key] ?? legacyParameterDefault(modelId, key) ?? ''
+      if (modelId !== 'opengrid-stackable-box' || !allowed.includes(rawValue)) {
+        return {
+          valid: false,
+          messageId: 'validation.invalid',
+          field: key,
+        }
+      }
+      parsed[key] = rawValue
+      continue
+    }
     if (
       key === 'fullBottomHoleGrid' ||
       key === 'bottomPlateMode' ||
-      key === 'basePlateMode' ||
-      key === 'thinShellMode' ||
       key === 'honeycombMode'
     ) {
       const rawValue = raw[key] ?? legacyParameterDefault(modelId, key)

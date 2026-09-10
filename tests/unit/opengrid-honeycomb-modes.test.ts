@@ -45,18 +45,26 @@ afterEach(() => {
 
 describe('OpenGrid honeycomb material-saving profile modes', () => {
   it.each([
-    { name: 'box base-plate', model: 'box-base-plate' as const },
-    { name: 'box thin-shell', model: 'box-thin-shell' as const },
+    {
+      name: 'box thin-shell bottom',
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
+    },
+    {
+      name: 'box open bottom',
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'none' as const,
+    },
   ])(
     'keeps $name honeycomb geometry valid',
-    ({ model }) => {
+    ({ topRimMode, bottomMode }) => {
       const shape = remember(
         buildOpenGridStackableBox({
           ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
           height: 30,
           cornerSeatMode: 'none',
-          basePlateMode: model === 'box-base-plate',
-          thinShellMode: model === 'box-thin-shell',
+          topRimMode,
+          bottomMode,
           honeycombMode: true,
         }),
       )

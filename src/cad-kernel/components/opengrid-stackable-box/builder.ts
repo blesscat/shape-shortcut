@@ -5,7 +5,6 @@ import {
 } from '../../../cad-contract/units'
 import {
   addMountingSockets,
-  applyBasePlateMode,
   applyStackingProfile,
   addSideOpenings,
   makeBoxShell,
@@ -45,8 +44,8 @@ export {
   assertOpenGridStackableBoxOpenings,
   inspectOpenGridStackableBoxOpenings,
 } from './quality-openings'
-export { inspectOpenGridStackableBoxThinShell } from './quality-thin'
-export type { OpenGridStackableBoxThinShellQualityReport } from './quality-thin'
+export { inspectOpenGridStackableBoxBottomStructure } from './quality-thin'
+export type { OpenGridStackableBoxBottomStructureQualityReport } from './quality-thin'
 export type { OpenGridStackableBoxOpeningQuality } from './quality-openings'
 export type {
   OpenGridStackableBoxCaptiveSocketRecord,
@@ -92,11 +91,6 @@ export function buildOpenGridStackableBox(
       normalizedParameters.cornerSeatMode === 'detachable-corner-seat'
     if (normalizedParameters.honeycombMode) {
       shape = applyStackingProfile(shape, normalizedParameters, context)
-      shape = applyBasePlateMode(
-        shape,
-        normalizedParameters,
-        context.booleanOperations,
-      )
       // Build every host interface before applying the lattice. The exact
       // bottom masks protect these features, and the solid host can therefore
       // receive the complete, bounded interface quality inspection before its
@@ -115,28 +109,9 @@ export function buildOpenGridStackableBox(
       shape = applyHoneycombMode(shape, normalizedParameters, context)
     } else {
       shape = applyStackingProfile(shape, normalizedParameters, context)
-      if (
-        normalizedParameters.basePlateMode &&
-        normalizedParameters.cornerSeatMode !== 'detachable-corner-seat'
-      ) {
-        shape = applyBasePlateMode(
-          shape,
-          normalizedParameters,
-          context.booleanOperations,
-        )
+      if (!deferDetachableCornerSeats) {
         shape = addMountingSockets(shape, normalizedParameters, context)
-      } else {
-        if (!deferDetachableCornerSeats) {
-          shape = addMountingSockets(shape, normalizedParameters, context)
-        }
-        shape = applyBasePlateMode(
-          shape,
-          normalizedParameters,
-          context.booleanOperations,
-        )
       }
-    }
-    if (!normalizedParameters.honeycombMode) {
       shape = addSideOpenings(shape, normalizedParameters, context)
       if (deferDetachableCornerSeats) {
         shape = addMountingSockets(shape, normalizedParameters, context)
@@ -175,11 +150,6 @@ export async function buildOpenGridStackableBoxAsync(
       normalizedParameters.cornerSeatMode === 'detachable-corner-seat'
     if (normalizedParameters.honeycombMode) {
       shape = applyStackingProfile(shape, normalizedParameters, context)
-      shape = applyBasePlateMode(
-        shape,
-        normalizedParameters,
-        context.booleanOperations,
-      )
       shape = addMountingSockets(shape, normalizedParameters, context)
       shape = addSideOpenings(shape, normalizedParameters, context)
       honeycombBaseline = captureOpenGridStackableBoxHoneycombQualityBaseline(
@@ -198,28 +168,9 @@ export async function buildOpenGridStackableBoxAsync(
       )
     } else {
       shape = applyStackingProfile(shape, normalizedParameters, context)
-      if (
-        normalizedParameters.basePlateMode &&
-        normalizedParameters.cornerSeatMode !== 'detachable-corner-seat'
-      ) {
-        shape = applyBasePlateMode(
-          shape,
-          normalizedParameters,
-          context.booleanOperations,
-        )
+      if (!deferDetachableCornerSeats) {
         shape = addMountingSockets(shape, normalizedParameters, context)
-      } else {
-        if (!deferDetachableCornerSeats) {
-          shape = addMountingSockets(shape, normalizedParameters, context)
-        }
-        shape = applyBasePlateMode(
-          shape,
-          normalizedParameters,
-          context.booleanOperations,
-        )
       }
-    }
-    if (!normalizedParameters.honeycombMode) {
       shape = addSideOpenings(shape, normalizedParameters, context)
       if (deferDetachableCornerSeats) {
         shape = addMountingSockets(shape, normalizedParameters, context)
