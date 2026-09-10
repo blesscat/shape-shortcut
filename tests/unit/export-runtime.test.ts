@@ -197,7 +197,7 @@ describe('CAD export runtime', () => {
       expect.objectContaining({
         kind: 'export.step',
         file: {
-          name: 'pillar-5.3-detachable-corner-seat.step',
+          name: 'pillar-5.2-detachable-corner-seat.step',
           mime: 'model/step',
         },
       }),

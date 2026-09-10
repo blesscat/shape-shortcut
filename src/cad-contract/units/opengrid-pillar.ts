@@ -313,7 +313,7 @@ export function pillarLengthForMode(mode: PillarMode): number {
 
 function seatHeadHeight(): number {
   const male = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male
-  return male.totalHeight - male.bodyHeight
+  return male.effectiveTotalHeight - male.bodyHeight
 }
 
 export function pillarLengthForParameters(

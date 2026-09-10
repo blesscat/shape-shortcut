@@ -887,7 +887,7 @@ describe('CAD component catalog', () => {
       }),
     ).toEqual({
       min: [-3.321716, -2.45, 0],
-      max: [3.321716, 2.45, 5.3],
+      max: [3.321716, 2.45, 5.2],
     })
     expect(
       definition?.boundsForParameters({
@@ -897,7 +897,7 @@ describe('CAD component catalog', () => {
       }),
     ).toEqual({
       min: [-3.321716, -2.6, 0],
-      max: [3.321716, 2.6, 6.5],
+      max: [3.321716, 2.6, 6.4],
     })
     expect(
       definition?.exportFileName({
@@ -919,14 +919,14 @@ describe('CAD component catalog', () => {
         length: 3.8,
         offset: 0,
       }),
-    ).toBe('pillar-5.3-detachable-corner-seat.step')
+    ).toBe('pillar-5.2-detachable-corner-seat.step')
     expect(
       definition?.stlFileName({
         mode: 'detachable-corner-seat',
         length: 5,
         offset: 0.1,
       }),
-    ).toBe('pillar-6.5-detachable-corner-seat-z5-xy0.1.stl')
+    ).toBe('pillar-6.4-detachable-corner-seat-z5-xy0.1.stl')
     expect(cadPathForModel('opengrid-pillar')).toBe('/cad/opengrid-pillar')
     expect(modelIdForCadPath('/cad/opengrid-pillar/')).toBe('opengrid-pillar')
   })

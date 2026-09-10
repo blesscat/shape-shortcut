@@ -134,24 +134,25 @@ extents of ±3.321716 mm from the shared leaf head and Y envelope extents of
 ±`(2.45 + offset / 2)` mm, because the locating body — not the narrower
 1.96 mm key — always defines the seat's Y envelope. The positioning mode MUST
 have Z bounds `[0, length]`, and the detachable-corner-seat mode MUST have Z
-bounds `[0, length + 1.5]`.
+bounds `[0, length + 1.4]`.
 
 The deterministic zero-offset positioning export stem MUST be
 `pillar-{length}-positioning`; a non-zero shared offset export MUST append a
 deterministic `-xy{offset}` value. The detachable-corner-seat export stem MUST
-be `pillar-{length + 1.5}-detachable-corner-seat` and MUST append `-z{length}`
+be `pillar-{length + 1.4}-detachable-corner-seat` and MUST append `-z{length}`
 when `length` differs from 3.8 and `-xy{offset}` when `offset` is non-zero, in
 that order; the default-parameter stem MUST remain exactly
-`pillar-5.3-detachable-corner-seat`. Distinct typed geometry MUST NOT share
+`pillar-5.2-detachable-corner-seat`. Distinct typed geometry MUST NOT share
 export metadata. `.step` and `.stl` extensions MUST remain supplied by the
 existing export contracts.
 
 At the default detachable parameters (`length=3.8`, `offset=0`) the pillar
 volume MUST be consistent with a Ø4.9 mm parametric locating section fused to
-the unchanged shared male retaining head; it MUST NOT be required to match the
-larger fixed male reference volume. At any other detachable parameter
-combination the pillar MUST remain one valid connected solid whose volume is
-consistent with its parametric locating section fused to the shared head.
+the shared male retaining head with its 0.1 mm top clearance trim applied; it
+MUST NOT be required to match the larger fixed male reference volume. At any
+other detachable parameter combination the pillar MUST remain one valid
+connected solid whose volume is consistent with its parametric locating
+section fused to the trimmed shared head.
 
 #### Scenario: Standard quality gate
 
@@ -192,10 +193,11 @@ consistent with its parametric locating section fused to the shared head.
 - **THEN** it MUST contain exactly one valid connected solid
 - **AND** its mesh MUST be finite and non-empty
 - **AND** its bounds MUST be `[-3.321716, -(2.45 + offset / 2), 0]` through
-  `[3.321716, (2.45 + offset / 2), length + 1.5]` within the workspace
+  `[3.321716, (2.45 + offset / 2), length + 1.4]` within the workspace
   tolerance
 - **AND** its volume MUST remain consistent with the parameterized locating
-  section fused to the unchanged shared male retaining head
+  section fused to the shared male retaining head with the shared 0.1 mm top
+  clearance trim applied
 
 #### Scenario: Mode-specific export identity
 
@@ -206,15 +208,15 @@ consistent with its parametric locating section fused to the shared head.
   is exported
 - **THEN** its export stem MUST be `pillar-25-positioning-xy0.2`
 - **WHEN** a committed locking corner seat with default parameters is exported
-- **THEN** its export stem MUST be `pillar-5.3-detachable-corner-seat`
+- **THEN** its export stem MUST be `pillar-5.2-detachable-corner-seat`
 - **WHEN** a committed locking corner seat with `length=5` and `offset=0.1`
   is exported
 - **THEN** its export stem MUST be
-  `pillar-6.5-detachable-corner-seat-z5-xy0.1`
+  `pillar-6.4-detachable-corner-seat-z5-xy0.1`
 - **WHEN** a committed locking corner seat with `length=3.8` and
   `offset=-0.2` is exported
 - **THEN** its export stem MUST be
-  `pillar-5.3-detachable-corner-seat-xy-0.2`
+  `pillar-5.2-detachable-corner-seat-xy-0.2`
 - **AND** every export MUST use the committed pillar B-Rep rather than a
   viewport mesh reconstruction
 
@@ -228,16 +230,17 @@ diameter plus `offset`. The complete solid MUST remain centered on the
 local/world XY origin.
 
 The `detachable-corner-seat` mode MUST combine a parametric locating section
-with the unmodified shared male retaining head. Its locating section MUST span
-`Z=0` through `Z=length` with maximum Ø`(4.9 + offset)` mm, beginning with a
-0.2 mm-high lead-in chamfer from Ø`(4.5 + offset)` mm at Z=0 to
-Ø`(4.9 + offset)` mm at Z=0.2. The keyed leaf retaining head MUST be derived
-from the shared fixed male reference geometry rather than re-modeled, and MUST
-be seated with its base at `Z=length`: it MUST keep the shared 1.96 mm nominal
-key width at its taper datum, flare from a nominal 4.24 mm length at its base
-to the maximum 6.64 mm length 1.35 mm above its base, and finish with a
-0.15 mm-high flat wear surface 1.5 mm above its base. The head MUST remain
-within the Ø7 mm envelope at every height, and no retaining-head dimension MUST
+with the shared male retaining head carrying the shared 0.1 mm top clearance
+trim. Its locating section MUST span `Z=0` through `Z=length` with maximum
+Ø`(4.9 + offset)` mm, beginning with a 0.2 mm-high lead-in chamfer from
+Ø`(4.5 + offset)` mm at Z=0 to Ø`(4.9 + offset)` mm at Z=0.2. The keyed leaf
+retaining head MUST be derived from the shared fixed male reference geometry
+rather than re-modeled, and MUST be seated with its base at `Z=length`: it
+MUST keep the shared 1.96 mm nominal key width at its taper datum, flare from
+a nominal 4.24 mm length at its base to the maximum 6.64 mm length 1.35 mm
+above its base, and finish with a 0.05 mm-high flat wear surface 1.4 mm above
+its base. The head MUST remain within the Ø7 mm envelope at every height, and
+no retaining-head dimension — including the 0.1 mm top clearance trim — MUST
 respond to `length` or `offset`.
 
 #### Scenario: Standard pillar geometry
@@ -275,21 +278,23 @@ respond to `length` or `offset`.
 
 - **WHEN** the generator builds
   `{ mode: 'detachable-corner-seat', length: 3.8, offset: 0 }`
-- **THEN** the model MUST span `Z=0` through `Z=5.3`
+- **THEN** the model MUST span `Z=0` through `Z=5.2`
 - **AND** the locating section MUST be Ø4.9 mm with its 0.2 mm lead-in
-- **AND** the keyed leaf retaining head and 0.15 mm wear surface MUST match
-  the fixed shared reference geometry
+- **AND** the keyed leaf retaining head and 0.05 mm wear surface MUST match
+  the fixed shared reference geometry with the shared 0.1 mm top clearance
+  trim applied
 - **AND** the head MUST remain within the Ø7 mm envelope at every height
 
 #### Scenario: Detachable corner-seat geometry with parameters
 
 - **WHEN** the generator builds
   `{ mode: 'detachable-corner-seat', length: 5, offset: 0.3 }`
-- **THEN** the model MUST span `Z=0` through `Z=6.5`
+- **THEN** the model MUST span `Z=0` through `Z=6.4`
 - **AND** the locating section MUST be a Ø5.2 mm cylinder of height 5 mm with
   the 0.2 mm lead-in from Ø4.8 mm at Z=0
 - **AND** the retaining head MUST be the shared reference head seated at
-  Z=5 through Z=6.5 with its profile unchanged from the shared geometry
+  Z=5 through Z=6.4 with its profile unchanged from the shared geometry apart
+  from the shared 0.1 mm top clearance trim
 
 #### Scenario: Fixed dimensions are not user parameters
 
@@ -415,12 +420,12 @@ nominal Ø4.9 mm body and MUST NOT receive this indicator.
 - **THEN** it MUST remain one valid connected solid with finite non-empty mesh
   data
 - **AND** its keyed leaf retaining head MUST remain unchanged from the shared
-  reference geometry
+  reference geometry apart from the shared 0.1 mm top clearance trim
 - **AND** at default parameters its bounds MUST remain
-  `[-3.321716, -2.45, 0]` through `[3.321716, 2.45, 5.3]` within geometry
+  `[-3.321716, -2.45, 0]` through `[3.321716, 2.45, 5.2]` within geometry
   tolerance
 - **AND** its default export stem MUST remain
-  `pillar-5.3-detachable-corner-seat`
+  `pillar-5.2-detachable-corner-seat`
 
 #### Scenario: Other pillar modes remain unmarked
 
