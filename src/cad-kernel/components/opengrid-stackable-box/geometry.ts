@@ -12,6 +12,7 @@ import {
   nominalOpenGridStackableBoxFootprintFor,
   openGridStackableBoxDerivedGeometryFor,
   externalOpenGridStackableBoxHeightFor,
+  openGridStackableBoxBottomDatumZFor,
   openGridStackableBoxUpperInnerRimZFor,
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
   OPENGRID_STACKABLE_BOX_OPENING_DIRECTIONS,
@@ -86,15 +87,44 @@ function innerCavitySections(
 ): RoundedRectangleSection[] {
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const upperInnerRimZ = configuration.bottomAssemblyHeight + parameters.height
+  const upperInnerRimZ = openGridStackableBoxUpperInnerRimZFor(parameters)
+  const externalHeight = externalOpenGridStackableBoxHeightFor(parameters)
+  const cavityStartZ =
+    parameters.bottomMode === 'none'
+      ? 0
+      : openGridStackableBoxBottomDatumZFor(parameters)
+  const baseSection = insetSection(
+    width,
+    depth,
+    configuration.outerCornerRadius,
+    configuration.wallThickness,
+    cavityStartZ,
+  )
+  if (parameters.topRimMode === 'flat-top') {
+    const chamfer = configuration.flatTopRimChamfer
+    return [
+      baseSection,
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        configuration.wallThickness,
+        externalHeight - chamfer,
+      ),
+      // Flare the cavity past the outer face over the chamfer height so the
+      // remaining wall top is one continuous 45° chamfer with its outer
+      // edge at the external height, without a horizontal rim plane.
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        -0.02,
+        externalHeight + 0.02,
+      ),
+    ]
+  }
   return [
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      configuration.wallThickness,
-      configuration.bottomAssemblyHeight,
-    ),
+    baseSection,
     ...topRailInnerSections(width, depth, upperInnerRimZ),
   ]
 }
@@ -176,49 +206,50 @@ function topRailInnerSections(
   ]
 }
 
-function thinShellInnerCavitySections(
-  parameters: OpenGridStackableBoxParameters,
-): RoundedRectangleSection[] {
-  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
-  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const floorZ = configuration.thinShellFloorThickness
-  const lowerInnerRimZ = openGridStackableBoxUpperInnerRimZFor(parameters)
-  const outerHighRimZ = externalOpenGridStackableBoxHeightFor(parameters)
-
-  return [
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      configuration.thinShellWallThickness,
-      floorZ,
-    ),
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      configuration.thinShellWallThickness,
-      lowerInnerRimZ,
-    ),
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      -0.02,
-      outerHighRimZ + 0.02,
-    ),
-  ]
-}
-
 function outerEnvelopeSections(
   parameters: OpenGridStackableBoxParameters,
 ): RoundedRectangleSection[] {
   const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const externalHeight =
-    configuration.bottomAssemblyHeight +
-    parameters.height +
-    configuration.topRailHeight
+  const externalHeight = externalOpenGridStackableBoxHeightFor(parameters)
+  if (parameters.bottomMode === 'thin-shell') {
+    const chamfer = configuration.thinShellBottomChamfer
+    return [
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        chamfer,
+        0,
+      ),
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        0,
+        chamfer,
+      ),
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        0,
+        externalHeight,
+      ),
+    ]
+  }
+  if (parameters.bottomMode !== 'stacking') {
+    return [
+      insetSection(width, depth, configuration.outerCornerRadius, 0, 0),
+      insetSection(
+        width,
+        depth,
+        configuration.outerCornerRadius,
+        0,
+        externalHeight,
+      ),
+    ]
+  }
   const supportInset = bottomGuideSupportInset()
   const footInset = supportInset + configuration.bottomFootChamferHeight
   const supportTop = bottomStackingSupportTopZ()
@@ -264,96 +295,42 @@ function outerEnvelopeSections(
   ]
 }
 
-function thinShellOuterEnvelopeSections(
+function makeOpenBottomCornerPads(
   parameters: OpenGridStackableBoxParameters,
-): RoundedRectangleSection[] {
-  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
+  outer: Shape3D,
+): Shape3D | null {
+  const centers = openGridStackableBoxSocketCentersFor(parameters)
+  if (centers.length === 0) return null
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const outerHighRimZ = externalOpenGridStackableBoxHeightFor(parameters)
-
-  return [
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      configuration.thinShellOuterBottomChamfer,
-      0,
-    ),
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      0,
-      configuration.thinShellOuterBottomChamfer,
-    ),
-    insetSection(
-      width,
-      depth,
-      configuration.outerCornerRadius,
-      0,
-      outerHighRimZ,
-    ),
-  ]
-}
-
-function edgeIsNearZ(
-  edge: {
-    startPoint: { z?: number; delete: () => void }
-    endPoint: { z?: number; delete: () => void }
-  },
-  z: number,
-  tolerance = 0.02,
-): boolean {
-  const start = edge.startPoint
-  const end = edge.endPoint
+  const padRadius = configuration.openBottomCornerPadRadius
+  const padTopZ = openGridStackableBoxBottomDatumZFor(parameters)
+  const pads: Shape3D[] = []
+  let compound: Shape3D | null = null
+  let clipped: Shape3D | null = null
   try {
-    return (
-      start.z !== undefined &&
-      end.z !== undefined &&
-      Math.abs(start.z - z) <= tolerance &&
-      Math.abs(end.z - z) <= tolerance
-    )
-  } finally {
-    start.delete()
-    end.delete()
-  }
-}
-
-function makeThinShell(parameters: OpenGridStackableBoxParameters): Shape3D {
-  const outer = loftRoundedSections(thinShellOuterEnvelopeSections(parameters))
-  let cavity: Shape3D | null = null
-  let shell: Shape3D | null = null
-  try {
-    cavity = loftRoundedSections(thinShellInnerCavitySections(parameters))
-    shell = outer.cut(cavity)
-    deleteShape(outer)
-    deleteShape(cavity)
-    cavity = null
-
-    const filleted = shell.fillet(
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellInnerFloorFilletRadius,
-      (finder) =>
-        finder.when(({ element }) =>
-          edgeIsNearZ(
-            element,
-            OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellFloorThickness,
-          ),
+    for (const [centerX, centerY] of centers) {
+      pads.push(
+        makeCylinder(
+          padRadius,
+          padTopZ + 0.02,
+          [centerX, centerY, -0.02],
         ),
-    )
-    deleteShape(shell)
-    shell = null
-    const simplified = filleted.simplify()
-    if (simplified !== filleted) deleteShape(filleted)
-    return filletEdgesAtZ(
-      simplified,
-      0,
-      OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius,
-    )
+      )
+    }
+    // Clip the pad blocks to the outer envelope so they can never protrude
+    // past the footprint, then rely on the wall overlap for a single-solid
+    // fuse even when a deduplicated center leaves one full-width pad.
+    const padCompound = makeCompound(pads).asShape3D()
+    compound = padCompound
+    const activePads = padCompound
+    clipped = activePads.intersect(outer)
+    return clipped
   } catch (error) {
-    deleteShape(outer)
-    deleteShape(cavity)
-    deleteShape(shell)
+    deleteShape(clipped)
     throw error
+  } finally {
+    deleteShape(compound)
+    pads.forEach(deleteShape)
   }
 }
 
@@ -361,12 +338,15 @@ export function makeBoxShell(
   parameters: OpenGridStackableBoxParameters,
   reporter: BooleanOperationReporter | undefined = undefined,
 ): Shape3D {
-  if (parameters.thinShellMode) return makeThinShell(parameters)
   const outer = loftRoundedSections(outerEnvelopeSections(parameters))
   let cavity: Shape3D | null = null
   let shell: Shape3D | null = null
+  let pads: Shape3D | null = null
   try {
     cavity = loftRoundedSections(innerCavitySections(parameters))
+    if (parameters.bottomMode === 'none') {
+      pads = makeOpenBottomCornerPads(parameters, outer)
+    }
     const activeCavity = cavity
     const cutScope = reporter?.createScope(1)
     shell = measureBooleanInScope(cutScope, 'cut', () =>
@@ -375,22 +355,36 @@ export function makeBoxShell(
     deleteShape(outer)
     deleteShape(cavity)
     cavity = null
-    if (parameters.basePlateMode) {
-      const result = shell
-      shell = null
-      return result
+    if (pads) {
+      const activePads = pads
+      const fusedScope = reporter?.createScope(1)
+      const fused = measureBooleanInScope(fusedScope, 'fuse', () =>
+        shell!.fuse(activePads),
+      )
+      deleteShape(shell)
+      deleteShape(pads)
+      shell = fused
     }
-    const rounded = filletEdgesAtZ(
-      shell,
-      0,
-      OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius,
-    )
+    // OCC bounding boxes overshoot for the R0.5 bottom fillet on a full
+    // outer-radius perimeter, so the flat-bottom variants keep a sharp bottom
+    // edge instead of relying on the filleted envelope.
+    if (parameters.bottomMode === 'stacking') {
+      const rounded = filletEdgesAtZ(
+        shell,
+        0,
+        OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius,
+      )
+      shell = null
+      return rounded
+    }
+    const result = shell
     shell = null
-    return rounded
+    return result
   } catch (error) {
     deleteShape(outer)
     deleteShape(cavity)
     deleteShape(shell)
+    deleteShape(pads)
     throw error
   }
 }
@@ -446,53 +440,6 @@ export function makeOpenGridStackingTopRail(
     throw error
   } finally {
     deleteShape(inner)
-  }
-}
-
-function originalExternalHeight(
-  parameters: OpenGridStackableBoxParameters,
-): number {
-  return (
-    openGridStackableBoxUpperInnerRimZFor(parameters) +
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight
-  )
-}
-
-export function applyBasePlateMode(
-  shape: Shape3D,
-  parameters: OpenGridStackableBoxParameters,
-  reporter: BooleanOperationReporter | undefined = undefined,
-): Shape3D {
-  if (!parameters.basePlateMode) return shape
-
-  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
-  const cutoffHeight = configuration.basePlateCutoffHeight
-  const clippingBox = makeBox(
-    [-width / 2 - 1, -depth / 2 - 1, cutoffHeight],
-    [width / 2 + 1, depth / 2 + 1, originalExternalHeight(parameters) + 1],
-  )
-  let clipped: Shape3D | null = null
-  try {
-    const intersectScope = reporter?.createScope(1)
-    clipped = measureBooleanInScope(intersectScope, 'intersect', () =>
-      shape.intersect(clippingBox),
-    )
-    deleteShape(shape)
-    const result = clipped.translateZ(-cutoffHeight)
-    clipped = null
-    return filletEdgesAtZ(
-      result,
-      0,
-      OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius,
-      0.02,
-      configuration.baseHoleTopOpeningDiameter + 0.2,
-    )
-  } catch (error) {
-    deleteShape(clipped)
-    throw error
-  } finally {
-    deleteShape(clippingBox)
   }
 }
 
@@ -726,13 +673,11 @@ function makeSideOpeningCutter(
   const derived = openGridStackableBoxDerivedGeometryFor(parameters)
   const opening = derived.openings[direction]
   const margin = 0.04
-  if (parameters.thinShellMode) {
-    const wallStart =
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellWallThickness + margin
-    const wallDistance =
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellWallThickness + 2 * margin
-    const topZ = derived.activeUpperOuterEdgeZ
+  const wallStart = configuration.wallThickness + margin
+  const wallDistance = configuration.wallThickness + 2 * margin
+  const topZ = derived.activeUpperOuterEdgeZ
 
+  if (parameters.topRimMode === 'flat-top') {
     if (direction === '+X') {
       return extrudeSideOpeningProfile(
         'YZ',
@@ -774,10 +719,7 @@ function makeSideOpeningCutter(
   }
   const upperRailInnerInset =
     configuration.wallThickness + configuration.topRailInnerChamfer
-  const wallStart = configuration.wallThickness + margin
-  const topZ = derived.activeUpperOuterEdgeZ
   const railStartZ = derived.activeUpperInnerRimZ - margin
-  const wallDistance = configuration.wallThickness + 2 * margin
   const railDistance = upperRailInnerInset + 2 * margin
   const railNormalInset = upperRailInnerInset + margin
 
@@ -1043,9 +985,10 @@ function activeBottomThicknessFor(
   parameters: OpenGridStackableBoxParameters,
 ): number {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  if (parameters.thinShellMode) return configuration.thinShellFloorThickness
-  if (parameters.basePlateMode) return configuration.basePlateThickness
-  return configuration.bottomAssemblyHeight
+  if (parameters.bottomMode === 'stacking') {
+    return configuration.bottomAssemblyHeight
+  }
+  return configuration.thinShellFloorThickness
 }
 
 function makeOrdinaryBottomHoleCutter(
@@ -1136,6 +1079,6 @@ export function applyStackingProfile(
   parameters: OpenGridStackableBoxParameters,
   context: OpenGridStackableBoxBuildContext,
 ): Shape3D {
-  if (parameters.thinShellMode) return shape
+  if (parameters.bottomMode !== 'stacking') return shape
   return addIntegratedStackingProfile(shape, parameters, context)
 }

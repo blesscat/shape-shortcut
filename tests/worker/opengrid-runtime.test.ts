@@ -117,7 +117,7 @@ function stackableBoxGenerateCommand(
       height: 20,
       cornerSeatMode: 'detachable-corner-seat',
       fullBottomHoleGrid: false,
-      basePlateMode: false,
+      bottomMode: 'stacking',
     },
     previewConfig: { tolerance: 0.01, angularTolerance: 0.1 },
     ...overrides,
@@ -570,7 +570,7 @@ describe('OpenGrid Worker runtime', () => {
           height: 20,
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: true,
-          basePlateMode: false,
+          bottomMode: 'stacking',
         },
       }),
     )
@@ -584,7 +584,7 @@ describe('OpenGrid Worker runtime', () => {
         height: 20,
         cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: true,
-        basePlateMode: false,
+        bottomMode: 'stacking',
       },
       expect.any(Object),
     )
@@ -624,7 +624,7 @@ describe('OpenGrid Worker runtime', () => {
       height: 20,
       cornerSeatMode: 'detachable-corner-seat',
       fullBottomHoleGrid: true,
-      basePlateMode: false,
+      bottomMode: 'stacking',
     })
 
     await runtime.handle({
@@ -775,7 +775,6 @@ describe('OpenGrid Worker runtime', () => {
       height: 20,
       cornerSeatMode: 'none',
       fullBottomHoleGrid: false,
-      basePlateMode: false,
       honeycombMode: false,
     }
     const overBudgetParameters: OpenGridStackableBoxParameters = {
@@ -1098,7 +1097,7 @@ describe('OpenGrid Worker runtime', () => {
           height: 20,
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
+          bottomMode: 'stacking',
         },
       }),
     )
@@ -1151,7 +1150,7 @@ describe('OpenGrid Worker runtime', () => {
           height: 20,
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
+          bottomMode: 'stacking',
         },
       }),
     )

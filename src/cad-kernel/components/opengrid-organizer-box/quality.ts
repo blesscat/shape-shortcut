@@ -343,8 +343,8 @@ function assertInterfaceComposition(
     y: layout.gridCountY,
     cornerSeatMode: 'integrated' as const,
     fullBottomHoleGrid: false,
-    basePlateMode: false,
-    thinShellMode: false,
+    topRimMode: 'stacking-rail' as const,
+    bottomMode: 'stacking' as const,
     honeycombMode: false,
   }
   const socketCenters =

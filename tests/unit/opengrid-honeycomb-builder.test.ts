@@ -181,21 +181,13 @@ function expectThroughFloorOpening(
   baseline: Shape3D,
   honeycomb: Shape3D,
   cutter: Shape3D | undefined,
-  floorTop: number,
 ) {
   expect(cutter).toBeDefined()
   if (!cutter) return
 
-  const bounds = boundsOf(cutter)
-  const centerX = (bounds[0]![0]! + bounds[1]![0]!) / 2
-  const centerY = (bounds[0]![1]! + bounds[1]![1]!) / 2
-  const probe = makeBox(
-    [centerX - 0.2, centerY - 0.2, 0.1],
-    [centerX + 0.2, centerY + 0.2, floorTop - 0.1],
-  )
-  const baselineIntersection = baseline.intersect(probe)
-  const honeycombIntersection = honeycomb.intersect(probe)
-  createdShapes.push(probe, baselineIntersection, honeycombIntersection)
+  const baselineIntersection = baseline.intersect(cutter)
+  const honeycombIntersection = honeycomb.intersect(cutter)
+  createdShapes.push(baselineIntersection, honeycombIntersection)
   expect(measureVolume(baselineIntersection)).toBeGreaterThan(0)
   expect(measureVolume(honeycombIntersection)).toBeCloseTo(0, 4)
 }
@@ -708,7 +700,8 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     const boxParameters = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       cornerSeatMode: 'none' as const,
-      thinShellMode: true,
+      topRimMode: 'flat-top' as const,
+      bottomMode: 'thin-shell' as const,
       honeycombMode: true,
     }
     const cylinderParameters = {
@@ -737,22 +730,19 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       createdShapes.push(cutter),
     )
 
-    for (const [baseline, shape, cutter, floorTop] of [
+    for (const [baseline, shape, cutter] of [
       [
         boxBaseline,
         box,
         completeBottomCutter(boxCutters),
-        openGridStackableBoxActiveFloorTopZFor(boxParameters),
       ],
       [
         cylinderBaseline,
         cylinder,
         completeBottomCutter(cylinderCutters),
-        openGridStackableCylinderDerivedGeometryFor(cylinderParameters)
-          .floorThickness,
       ],
     ] as const) {
-      expectThroughFloorOpening(baseline, shape, cutter, floorTop)
+      expectThroughFloorOpening(baseline, shape, cutter)
     }
   }, 120000)
 
@@ -1021,7 +1011,6 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       x: 0.5,
       y: 0.5,
       height: 10,
-      thinShellMode: true,
     }
     const smallCylinder = {
       ...cylinder,
@@ -1035,7 +1024,12 @@ describe('OpenGrid honeycomb material-saving builders', () => {
       openGridStackableCylinderHoneycombCellCountFor(cylinder)
     expect(boxCellCount).toBeGreaterThan(0)
     expect(openGridStackableBoxHoneycombCellCountFor(box)).toBe(boxCellCount)
-    expect(openGridStackableBoxHoneycombCellCountFor(smallBox)).toBe(0)
+    expect(openGridStackableBoxHoneycombCellCountFor(smallBox)).toBeGreaterThan(
+      0,
+    )
+    expect(
+      openGridStackableBoxBottomHoneycombCellCountFor(smallBox),
+    ).toBe(0)
     expect(cylinderCellCount).toBeGreaterThan(0)
     expect(openGridStackableCylinderHoneycombCellCountFor(smallCylinder)).toBe(
       0,
@@ -1093,8 +1087,6 @@ describe('OpenGrid honeycomb material-saving builders', () => {
           height: 20,
           cornerSeatMode: 'none',
           fullBottomHoleGrid: false,
-          basePlateMode: false,
-          thinShellMode: false,
           honeycombMode: true,
         },
         {

@@ -22,8 +22,17 @@ test('Desk System starts the stackable-box with its thin-shell preset', async ({
   await expect(
     page.getByRole('textbox', { name: '盒內淨高（Z）' }),
   ).toHaveValue('30')
-  await expect(page.getByRole('radio', { name: '薄殼模式' })).toBeChecked()
-  await expect(page.getByRole('radio', { name: '堆疊模式' })).not.toBeChecked()
+  const topRimGroup = page.getByRole('radiogroup', { name: '上緣' })
+  await expect(
+    topRimGroup.getByRole('radio', { name: '平頂' }),
+  ).toBeChecked()
+  await expect(
+    topRimGroup.getByRole('radio', { name: '堆疊' }),
+  ).not.toBeChecked()
+  const bottomGroup = page.getByRole('radiogroup', { name: '盒底' })
+  await expect(
+    bottomGroup.getByRole('radio', { name: '薄殼' }),
+  ).toBeChecked()
   await expect(page.getByRole('radio', { name: '底版模式' })).toHaveCount(0)
 })
 
@@ -48,14 +57,22 @@ test('OpenGrid stackable-box is listed and exposes the half-cell controls', asyn
   await expect(
     page.getByText(/盒內淨高文字輸入為 10–500 mm、slider 為 10–200 mm/),
   ).toHaveCount(0)
-  const modeGroup = page.getByRole('radiogroup', { name: '盒體模式' })
-  await expect(modeGroup.getByRole('radio')).toHaveCount(2)
-  const modeLabels = await modeGroup
+  const topRimGroup = page.getByRole('radiogroup', { name: '上緣' })
+  await expect(topRimGroup.getByRole('radio')).toHaveCount(2)
+  const topRimLabels = await topRimGroup
     .getByRole('radio')
     .evaluateAll((radios) =>
       radios.map((radio) => radio.getAttribute('aria-label')),
     )
-  expect(modeLabels).toEqual(['薄殼模式', '堆疊模式'])
+  expect(topRimLabels).toEqual(['堆疊', '平頂'])
+  const bottomGroup = page.getByRole('radiogroup', { name: '盒底' })
+  await expect(bottomGroup.getByRole('radio')).toHaveCount(3)
+  const bottomLabels = await bottomGroup
+    .getByRole('radio')
+    .evaluateAll((radios) =>
+      radios.map((radio) => radio.getAttribute('aria-label')),
+    )
+  expect(bottomLabels).toEqual(['堆疊', '薄殼', '無'])
   const x = page.getByRole('slider', { name: 'X' })
   const y = page.getByRole('slider', { name: 'Y' })
   const height = page.getByRole('textbox', { name: '盒內淨高（Z）' })
@@ -87,23 +104,38 @@ test('OpenGrid stackable-box is listed and exposes the half-cell controls', asyn
   const fullGrid = page.getByRole('checkbox', { name: '底部全孔模式' })
   await expect(fullGrid).toBeVisible()
   await expect(fullGrid).not.toBeChecked()
-  const defaultMode = page.getByRole('radio', { name: '堆疊模式' })
-  await expect(defaultMode).toBeVisible()
-  await expect(defaultMode).toBeChecked()
-  const thinShell = page.getByRole('radio', { name: '薄殼模式' })
+  const persistenceBottomGroup = page.getByRole('radiogroup', {
+    name: '盒底',
+  })
+  const bottomStacking = persistenceBottomGroup.getByRole('radio', {
+    name: '堆疊',
+  })
+  await expect(bottomStacking).toBeVisible()
+  await expect(bottomStacking).toBeChecked()
+  const thinShell = persistenceBottomGroup.getByRole('radio', {
+    name: '薄殼',
+  })
   await expect(thinShell).toBeVisible()
   await expect(thinShell).not.toBeChecked()
-  await expect(page.getByText(/預設模式：可堆疊滑動/)).toBeVisible()
+  await expect(
+    page.getByText(/底部建立滑入結構，可疊於下方方盒上。/),
+  ).toBeVisible()
   await thinShell.check()
   await expect(thinShell).toBeChecked()
-  await expect(defaultMode).not.toBeChecked()
-  await expect(page.getByText(/薄殼模式：不可堆疊/)).toBeVisible()
+  await expect(bottomStacking).not.toBeChecked()
+  await expect(
+    page.getByText(/標準壁厚搭配 2 mm 薄底，無法疊於下方方盒上。/),
+  ).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('radio', { name: '薄殼模式' })).toBeChecked()
-  await defaultMode.check()
-  await expect(defaultMode).toBeChecked()
-  await expect(page.getByText(/預設模式：可堆疊滑動/)).toBeVisible()
-  await expect(page.getByText(/薄殼模式：不可堆疊/)).toHaveCount(0)
+  await expect(thinShell).toBeChecked()
+  await bottomStacking.check()
+  await expect(bottomStacking).toBeChecked()
+  await expect(
+    page.getByText(/底部建立滑入結構，可疊於下方方盒上。/),
+  ).toBeVisible()
+  await expect(
+    page.getByText(/標準壁厚搭配 2 mm 薄底，無法疊於下方方盒上。/),
+  ).toHaveCount(0)
   await seatMode.getByRole('radio', { name: '無角座' }).check()
   await expect(seatMode.getByRole('radio', { name: '無角座' })).toBeChecked()
   await fullGrid.check()
@@ -204,7 +236,10 @@ test('OpenGrid stackable-box keeps half-cell dimensions in export metadata', asy
     'opengrid-stackable-box-1.5x1.5-h20-seats-detachable-corner-seat.step',
   )
 
-  await page.getByRole('radio', { name: '薄殼模式' }).check()
+  await page
+    .getByRole('radiogroup', { name: '盒底' })
+    .getByRole('radio', { name: '薄殼' })
+    .check()
   await waitForCadReady(page)
   const thinDownloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '下載 STEP' }).click()
@@ -255,7 +290,11 @@ test('OpenGrid stackable-box persists the honeycomb saving switch and filename',
   await expect(honeycombBetaBadge).toBeVisible()
   await expect(honeycomb).not.toBeChecked()
   await expect(honeycombWarning).toHaveCount(0)
-  await expect(page.getByRole('radio', { name: '堆疊模式' })).toBeChecked()
+  await expect(
+    page
+      .getByRole('radiogroup', { name: '盒底' })
+      .getByRole('radio', { name: '堆疊' }),
+  ).toBeChecked()
   await honeycomb.check()
   await waitForCadReady(page, 90_000)
   await expect(honeycomb).toBeChecked()
@@ -269,7 +308,11 @@ test('OpenGrid stackable-box persists the honeycomb saving switch and filename',
       exact: true,
     }),
   ).toBeChecked()
-  await expect(page.getByRole('radio', { name: '堆疊模式' })).toBeChecked()
+  await expect(
+    page
+      .getByRole('radiogroup', { name: '盒底' })
+      .getByRole('radio', { name: '堆疊' }),
+  ).toBeChecked()
   await expect(honeycombWarning).toHaveText(HONEYCOMB_RENDER_WARNING)
 
   const downloadPromise = page.waitForEvent('download')

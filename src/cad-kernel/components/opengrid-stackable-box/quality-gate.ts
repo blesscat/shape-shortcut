@@ -1,7 +1,6 @@
 import { measureVolume, type Shape3D } from 'replicad'
 import {
   boundsForOpenGridStackableBox,
-  externalOpenGridStackableBoxHeightFor,
   openGridStackableBoxActiveFloorTopZFor,
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
   nominalOpenGridStackableBoxFootprintFor,
@@ -27,8 +26,8 @@ import {
 import { assertBottomGridSpacing } from './quality-seams'
 import { assertOpenGridStackableBoxOpenings } from './quality-openings'
 import {
-  inspectOpenGridStackableBoxThinShell,
-  type OpenGridStackableBoxThinShellQualityReport,
+  inspectOpenGridStackableBoxBottomStructure,
+  type OpenGridStackableBoxBottomStructureQualityReport,
 } from './quality-thin'
 import type { OpenGridStackableBoxInterfaceQualityReport } from './quality-types'
 import {
@@ -184,21 +183,6 @@ function assertInterfaceConstants(): void {
       configuration.bottomGridSeamOpeningWidth ||
     configuration.bottomGridSeamBedOpeningWidth <=
       configuration.bottomGridSeamSupportOpeningWidth ||
-    configuration.basePlateThickness <= 0 ||
-    configuration.basePlateCutoffHeight <= 0 ||
-    !closeEnough(
-      configuration.basePlateThickness + configuration.basePlateCutoffHeight,
-      configuration.bottomAssemblyHeight,
-      0.001,
-    ) ||
-    configuration.basePlateHoleBottomDepth <= 0 ||
-    configuration.basePlateHoleTopDepth <= 0 ||
-    !closeEnough(
-      configuration.basePlateHoleBottomDepth +
-        configuration.basePlateHoleTopDepth,
-      configuration.basePlateThickness,
-      0.001,
-    ) ||
     configuration.wallThickness - configuration.stackingClearance <= 0 ||
     configuration.stackingBearingLand <= 0 ||
     configuration.stackingBearingLand >= configuration.topRailWidth
@@ -329,18 +313,10 @@ function assertIntegratedSeats(
   }
 }
 
-type HoneycombThinShellFaceBaseline = Readonly<{
-  bottomChamferFaceCount: number
-  topChamferFaceCount: number
-  topRimHorizontalPlanarFaceCount: number
-  innerFloorFilletFaceCount: number
-}>
-
 export type OpenGridStackableBoxHoneycombQualityBaseline = Readonly<{
   topRailFaceCount: number
   bottomGuideFaceCount: number
   activeFloorFaceCount: number
-  thinShell?: HoneycombThinShellFaceBaseline
 }>
 
 function faceOverlapsZBand(
@@ -361,56 +337,6 @@ function faceCountInZBand(
   ).length
 }
 
-function chamferFaceCountInZBand(
-  records: readonly FaceQualityRecord[],
-  minimumZ: number,
-  maximumZ: number,
-  expectedSpan: number,
-): number {
-  return records.filter((record) => {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
-    const span = record.max[2] - record.min[2]
-    return (
-      span >= expectedSpan * 0.7 &&
-      span <= expectedSpan * 1.3 &&
-      record.min[2] >= minimumZ - 0.03 &&
-      record.max[2] <= maximumZ + 0.03 &&
-      closeEnough(Math.abs(record.normal[2]), Math.SQRT1_2, 0.12)
-    )
-  }).length
-}
-
-function horizontalFaceCountInZBand(
-  records: readonly FaceQualityRecord[],
-  minimumZ: number,
-  maximumZ: number,
-): number {
-  return records.filter((record) => {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) return false
-    const zSpan = record.max[2] - record.min[2]
-    return (
-      zSpan <= 0.03 &&
-      record.min[2] >= minimumZ - 0.03 &&
-      record.max[2] <= maximumZ + 0.03 &&
-      Math.abs(record.normal[2]) >= 0.95
-    )
-  }).length
-}
-
-function roundedFaceCountInZBand(
-  records: readonly FaceQualityRecord[],
-  minimumZ: number,
-  maximumZ: number,
-): number {
-  return records.filter(
-    (record) =>
-      (record.surfaceType === 'CONE' || record.surfaceType === 'CYLINDRE') &&
-      faceOverlapsZBand(record, minimumZ, maximumZ) &&
-      record.max[0] - record.min[0] > 0.2 &&
-      record.max[1] - record.min[1] > 0.2,
-  ).length
-}
-
 /**
  * Capture the protected interface's face-only invariants while the host is
  * still a small solid. High-cell candidates cannot afford to rerun the
@@ -425,34 +351,6 @@ export function captureOpenGridStackableBoxHoneycombQualityBaseline(
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const upperInnerRimZ = openGridStackableBoxUpperInnerRimZFor(parameters)
   const activeFloorTopZ = openGridStackableBoxActiveFloorTopZFor(parameters)
-  const thinShell = parameters.thinShellMode
-    ? {
-        bottomChamferFaceCount: chamferFaceCountInZBand(
-          records,
-          0,
-          configuration.thinShellOuterBottomChamfer,
-          configuration.thinShellOuterBottomChamfer,
-        ),
-        topChamferFaceCount: chamferFaceCountInZBand(
-          records,
-          upperInnerRimZ,
-          externalOpenGridStackableBoxHeightFor(parameters),
-          configuration.thinShellTopChamfer,
-        ),
-        topRimHorizontalPlanarFaceCount: horizontalFaceCountInZBand(
-          records,
-          upperInnerRimZ,
-          externalOpenGridStackableBoxHeightFor(parameters),
-        ),
-        innerFloorFilletFaceCount: roundedFaceCountInZBand(
-          records,
-          configuration.thinShellFloorThickness,
-          configuration.thinShellFloorThickness +
-            configuration.thinShellInnerFloorFilletRadius +
-            0.05,
-        ),
-      }
-    : undefined
   return {
     topRailFaceCount: faceCountInZBand(
       records,
@@ -469,7 +367,6 @@ export function captureOpenGridStackableBoxHoneycombQualityBaseline(
       -0.03,
       activeFloorTopZ + 0.03,
     ),
-    ...(thinShell ? { thinShell } : {}),
   }
 }
 
@@ -489,27 +386,10 @@ function assertHoneycombProtectedInterfaceQuality(
     throw new Error('OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID')
   }
   if (
-    !parameters.thinShellMode &&
-    !parameters.basePlateMode &&
+    parameters.bottomMode === 'stacking' &&
     current.bottomGuideFaceCount < baseline.bottomGuideFaceCount
   ) {
     throw new Error('OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID')
-  }
-
-  if (parameters.thinShellMode) {
-    const expected = baseline.thinShell
-    const actual = current.thinShell
-    if (
-      !expected ||
-      !actual ||
-      actual.bottomChamferFaceCount < expected.bottomChamferFaceCount ||
-      actual.topChamferFaceCount < expected.topChamferFaceCount ||
-      actual.topRimHorizontalPlanarFaceCount !==
-        expected.topRimHorizontalPlanarFaceCount ||
-      actual.innerFloorFilletFaceCount < expected.innerFloorFilletFaceCount
-    ) {
-      throw new Error('OPENGRID_STACKABLE_BOX_THIN_SHELL_PROFILE_INVALID')
-    }
   }
 }
 
@@ -532,9 +412,6 @@ function assertHoneycombStructuralQuality(
   }
   if (parameters.cornerSeatMode === 'integrated') {
     assertIntegratedSeats(shape, parameters)
-  }
-  if (parameters.basePlateMode) {
-    assertBasePlateMountingInterface(shape, parameters)
   }
   if (baseline) {
     assertHoneycombProtectedInterfaceQuality(shape, parameters, baseline)
@@ -566,68 +443,36 @@ function assertHoneycombStructuralQuality(
   }
 }
 
-function assertThinShellQuality(
-  quality: OpenGridStackableBoxThinShellQualityReport,
+function assertBottomStructureQuality(
+  quality: OpenGridStackableBoxBottomStructureQualityReport,
 ): void {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const floorValid =
+    quality.bottomMode === 'none'
+      ? quality.floorProbeCoveredByPad || quality.floorProbeVolume <= 0.01
+      : quality.floorProbeVolume > 0.01 &&
+        closeEnough(
+          quality.floorProbeThickness,
+          configuration.thinShellFloorThickness,
+          0.1,
+        )
   if (
-    quality.floorProbeVolumes.some((volume) => volume <= 0.01) ||
-    quality.floorProbeThicknesses.some(
-      (thickness) =>
-        !closeEnough(thickness, configuration.thinShellFloorThickness, 0.1),
-    ) ||
+    !floorValid ||
+    quality.padProbeVolumes.some((volume) => volume <= 0.01) ||
     quality.sideWallProbeThicknesses.some(
       (thickness) =>
-        !closeEnough(thickness, configuration.thinShellWallThickness, 0.1),
-    ) ||
-    quality.bottomChamferFaceCount < 4 ||
-    quality.topChamferFaceCount < 4 ||
-    quality.topRimHorizontalPlanarFaceCount !== 0 ||
-    quality.innerFloorFilletFaceCount < 4
+        !closeEnough(thickness, configuration.wallThickness, 0.1),
+    )
   ) {
-    throw new Error('OPENGRID_STACKABLE_BOX_THIN_SHELL_PROFILE_INVALID')
+    throw new Error(
+      quality.bottomMode === 'none'
+        ? 'OPENGRID_STACKABLE_BOX_OPEN_BOTTOM_INVALID'
+        : 'OPENGRID_STACKABLE_BOX_THIN_SHELL_PROFILE_INVALID',
+    )
   }
 
   if (
     quality.ordinaryBottomHoleCount !== quality.expectedOrdinaryBottomHoleCount
-  ) {
-    throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
-  }
-}
-
-function assertBasePlateMountingInterface(
-  shape: Shape3D,
-  parameters: OpenGridStackableBoxParameters,
-): void {
-  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  if (parameters.cornerSeatMode === 'integrated') {
-    assertIntegratedSeats(shape, parameters)
-    const ordinaryCenters =
-      openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
-    if (
-      countOrdinaryBottomHoleFaces(shape, ordinaryCenters, parameters) !==
-      ordinaryCenters.length
-    ) {
-      throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
-    }
-    return
-  }
-  if (parameters.cornerSeatMode === 'none') {
-    const ordinaryCenters =
-      openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
-    if (
-      countOrdinaryBottomHoleFaces(shape, ordinaryCenters, parameters) !==
-      ordinaryCenters.length
-    ) {
-      throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
-    }
-    return
-  }
-  const ordinaryCenters =
-    openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters)
-  if (
-    countOrdinaryBottomHoleFaces(shape, ordinaryCenters, parameters) !==
-    ordinaryCenters.length
   ) {
     throw new Error('OPENGRID_STACKABLE_BOX_BOTTOM_GRID_HOLES_INVALID')
   }
@@ -695,10 +540,10 @@ function inspectWithRegions(
     assertDetachableCornerSeatQuality(shape, parameters, context, regions)
   }
 
-  if (parameters.thinShellMode) {
+  if (parameters.bottomMode !== 'stacking') {
     try {
-      assertThinShellQuality(
-        inspectOpenGridStackableBoxThinShell(shape, parameters),
+      assertBottomStructureQuality(
+        inspectOpenGridStackableBoxBottomStructure(shape, parameters),
       )
     } catch (error) {
       const normalized = toGeometryError(error)
@@ -709,19 +554,6 @@ function inspectWithRegions(
     }
     if (parameters.cornerSeatMode === 'integrated') {
       assertIntegratedSeats(shape, parameters)
-    }
-    return
-  }
-
-  if (parameters.basePlateMode) {
-    try {
-      assertBasePlateMountingInterface(shape, parameters)
-    } catch (error) {
-      const normalized = toGeometryError(error)
-      if (normalized.message.startsWith('OPENGRID_')) {
-        throw normalized
-      }
-      throw new Error('OPENGRID_STACKABLE_BOX_INTERFACE_GEOMETRY_INVALID')
     }
     return
   }
@@ -740,7 +572,9 @@ function inspectWithRegions(
   }
 
   assertThickShell(quality)
-  assertGuideInterface(quality, parameters)
+  if (parameters.topRimMode === 'stacking-rail') {
+    assertGuideInterface(quality, parameters)
+  }
   assertBottomSupport(quality, parameters)
   if (parameters.cornerSeatMode === 'integrated') {
     if (

@@ -186,8 +186,8 @@ function stackableAdapterFor(
     ),
     cornerSeatMode: parameters.cornerSeatMode,
     fullBottomHoleGrid: false,
-    basePlateMode: false,
-    thinShellMode: false,
+    topRimMode: 'stacking-rail',
+    bottomMode: 'stacking',
     honeycombMode: false,
   }
 }

@@ -36,8 +36,8 @@ function parameters(
     height: 10,
     cornerSeatMode: 'detachable-corner-seat',
     fullBottomHoleGrid: false,
-    basePlateMode: false,
-    thinShellMode: false,
+    topRimMode: 'stacking-rail',
+    bottomMode: 'stacking',
     honeycombMode: false,
     openingPlusXDepth: 0,
     openingPlusXBottomLength: 1,
@@ -205,42 +205,56 @@ describe('OpenGrid stackable-box contract', () => {
       OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleTopOpeningDiameter,
     ).toBe(OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.retainingOpeningDiameter)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleStepHeight).toBe(3)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateThickness).toBe(3)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateCutoffHeight).toBe(2)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateHoleTopDepth).toBe(1)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.basePlateHoleBottomDepth).toBe(
-      2,
-    )
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultBasePlateMode).toBe(
-      false,
-    )
   })
 
-  it('declares the fixed thin-shell profile without changing the thick baseline', () => {
+  it('declares the fixed top-rim and bottom defaults', () => {
     const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
 
-    expect(configuration.defaultThinShellMode).toBe(false)
+    expect(configuration.defaultTopRimMode).toBe('stacking-rail')
+    expect(configuration.defaultBottomMode).toBe('stacking')
     expect(configuration.thinShellFloorThickness).toBe(2)
-    expect(configuration.thinShellWallThickness).toBe(1.6)
-    expect(configuration.thinShellInnerFloorFilletRadius).toBe(2)
-    expect(configuration.thinShellOuterBottomChamfer).toBe(1.5)
-    expect(configuration.thinShellTopChamfer).toBe(1.6)
+    expect(configuration.openBottomCornerPadRadius).toBe(10.5)
     expect(configuration.thinShellBottomHoleStepHeight).toBe(1)
-    expect(configuration.thinShellBottomAssemblyHeight).toBe(2)
   })
 
-  it('shortens the exported envelope when the base-plate mode is enabled', () => {
-    const normal = parameters({ height: 20 })
-    const basePlate = parameters({ height: 20, basePlateMode: true })
+  it('derives the external envelope from the top rim and bottom structure', () => {
+    const railStacking = parameters({ height: 20 })
+    const flatStacking = parameters({
+      height: 20,
+      topRimMode: 'flat-top',
+    })
+    const railThinShell = parameters({
+      height: 20,
+      bottomMode: 'thin-shell',
+    })
+    const flatThinShell = parameters({
+      height: 20,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
+    })
+    const flatOpen = parameters({
+      height: 20,
+      cornerSeatMode: 'none',
+      topRimMode: 'flat-top',
+      bottomMode: 'none',
+    })
 
-    expect(externalOpenGridStackableBoxHeightFor(normal)).toBeCloseTo(32.55, 3)
-    expect(externalOpenGridStackableBoxHeightFor(basePlate)).toBeCloseTo(
-      30.55,
+    expect(externalOpenGridStackableBoxHeightFor(railStacking)).toBeCloseTo(
+      32.55,
       3,
     )
-    expect(boundsForOpenGridStackableBox(basePlate)).toMatchObject({
+    expect(externalOpenGridStackableBoxHeightFor(flatStacking)).toBe(25)
+    expect(externalOpenGridStackableBoxHeightFor(railThinShell)).toBeCloseTo(
+      29.55,
+      3,
+    )
+    expect(externalOpenGridStackableBoxHeightFor(flatThinShell)).toBe(22)
+    expect(externalOpenGridStackableBoxHeightFor(flatOpen)).toBe(22)
+    expect(openGridStackableBoxActiveFloorTopZFor(railThinShell)).toBe(2)
+    expect(openGridStackableBoxActiveFloorTopZFor(flatOpen)).toBe(2)
+    expect(boundsForOpenGridStackableBox(flatOpen)).toMatchObject({
       min: [-13.925, -13.925, 0],
-      max: [13.925, 13.925, expect.closeTo(30.55, 5)],
+      max: [13.925, 13.925, 22],
     })
   })
 
@@ -305,7 +319,8 @@ describe('OpenGrid stackable-box contract', () => {
     expect(validation.value.openingPlusXDepth).toBe(0)
     expect(validation.value.openingMinusYBottomLength).toBe(1)
     expect(validation.value.openingPlusYAngle).toBe(90)
-    expect(validation.value.thinShellMode).toBe(false)
+    expect(validation.value.topRimMode).toBe('stacking-rail')
+    expect(validation.value.bottomMode).toBe('stacking')
     expect(validation.value.honeycombMode).toBe(false)
   })
 
@@ -325,26 +340,67 @@ describe('OpenGrid stackable-box contract', () => {
       height: 20,
       cornerBottomHoles: true,
       fullBottomHoleGrid: false,
-      basePlateMode: false,
+      thinShellMode: true,
       honeycombMode: true,
     })
 
     expect(validation.valid).toBe(true)
     if (!validation.valid) return
     expect(validation.value.honeycombMode).toBe(true)
-    expect(validation.value.thinShellMode).toBe(false)
+    expect(validation.value.topRimMode).toBe('flat-top')
+    expect(validation.value.bottomMode).toBe('thin-shell')
   })
 
-  it('normalizes a pre-thin current snapshot without changing its openings', () => {
-    const current = { ...parameters({ openingPlusXDepth: 4 }) }
-    delete (current as Partial<typeof current>).thinShellMode
+  it('normalizes legacy mode booleans into the new controls', () => {
+    const { topRimMode: _topRim, bottomMode: _bottom, ...legacyShape } =
+      parameters({ openingPlusXDepth: 6 })
 
-    const validation = validateOpenGridStackableBoxParameters(current)
-
-    expect(validation).toEqual({
-      valid: true,
-      value: parameters({ openingPlusXDepth: 4 }),
+    const legacyThinShell = validateOpenGridStackableBoxParameters({
+      ...legacyShape,
+      thinShellMode: true,
     })
+    expect(legacyThinShell.valid).toBe(true)
+    if (legacyThinShell.valid) {
+      expect(legacyThinShell.value.topRimMode).toBe('flat-top')
+      expect(legacyThinShell.value.bottomMode).toBe('thin-shell')
+    }
+
+    const legacyBasePlate = validateOpenGridStackableBoxParameters({
+      ...legacyShape,
+      openingPlusXDepth: 0,
+      basePlateMode: true,
+    })
+    expect(legacyBasePlate.valid).toBe(true)
+    if (legacyBasePlate.valid) {
+      expect(legacyBasePlate.value.topRimMode).toBe('stacking-rail')
+      expect(legacyBasePlate.value.bottomMode).toBe('none')
+    }
+
+    const canonicalWins = validateOpenGridStackableBoxParameters({
+      ...parameters(),
+      thinShellMode: true,
+      bottomMode: 'stacking',
+    })
+    expect(canonicalWins.valid).toBe(true)
+    if (canonicalWins.valid) {
+      expect(canonicalWins.value.topRimMode).toBe('stacking-rail')
+      expect(canonicalWins.value.bottomMode).toBe('stacking')
+    }
+  })
+
+  it('rejects combining the open bottom with the full bottom-hole grid', () => {
+    const validation = validateOpenGridStackableBoxParameters(
+      parameters({ bottomMode: 'none', fullBottomHoleGrid: true }),
+    )
+
+    expect(validation.valid).toBe(false)
+    if (!validation.valid)
+      expect(validation.issues[0]?.field).toBe('fullBottomHoleGrid')
+
+    const withoutGrid = validateOpenGridStackableBoxParameters(
+      parameters({ bottomMode: 'none' }),
+    )
+    expect(withoutGrid.valid).toBe(true)
   })
 
   it('keeps four opening triples independent and validates their ranges', () => {
@@ -380,8 +436,12 @@ describe('OpenGrid stackable-box contract', () => {
 
   it('derives final floor/rim datums and rectangular wall axes per direction', () => {
     const normal = parameters({ height: 20 })
-    const basePlate = parameters({ height: 20, basePlateMode: true })
-    const thin = parameters({ height: 20, thinShellMode: true })
+    const basePlate = parameters({ height: 20, bottomMode: 'thin-shell' })
+    const thin = parameters({
+      height: 20,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
+    })
     const sloped = parameters({
       y: 2,
       height: 20,
@@ -391,13 +451,13 @@ describe('OpenGrid stackable-box contract', () => {
     })
 
     expect(openGridStackableBoxActiveFloorTopZFor(normal)).toBe(5)
-    expect(openGridStackableBoxActiveFloorTopZFor(basePlate)).toBe(3)
+    expect(openGridStackableBoxActiveFloorTopZFor(basePlate)).toBe(2)
     expect(openGridStackableBoxActiveUpperInnerRimZFor(normal)).toBe(25)
-    expect(openGridStackableBoxActiveUpperInnerRimZFor(basePlate)).toBe(23)
+    expect(openGridStackableBoxActiveUpperInnerRimZFor(basePlate)).toBe(22)
     expect(openGridStackableBoxActiveFloorTopZFor(thin)).toBe(2)
     expect(openGridStackableBoxUpperInnerRimZFor(thin)).toBe(22)
     expect(openGridStackableBoxActiveUpperInnerRimZFor(thin)).toBe(22)
-    expect(externalOpenGridStackableBoxHeightFor(thin)).toBe(23.6)
+    expect(externalOpenGridStackableBoxHeightFor(thin)).toBe(22)
 
     const opening =
       openGridStackableBoxDerivedGeometryFor(sloped).openings['+X']
@@ -489,7 +549,8 @@ describe('OpenGrid stackable-box contract', () => {
       modelId: 'opengrid-stackable-box' as const,
       parameters: parameters({
         honeycombMode: true,
-        thinShellMode: true,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
         openingPlusXDepth: 8,
         openingPlusXBottomLength: 12,
         openingPlusXAngle: 70,
@@ -497,10 +558,10 @@ describe('OpenGrid stackable-box contract', () => {
     }
 
     expect(modelFileName(model)).toBe(
-      'opengrid-stackable-box-1x1-h10-seats-detachable-corner-seat-honeycomb-open-8-12-70-0-1-90-0-1-90-0-1-90-thin-shell.step',
+      'opengrid-stackable-box-1x1-h10-seats-detachable-corner-seat-honeycomb-open-8-12-70-0-1-90-0-1-90-0-1-90-thin-shell-flat-top.step',
     )
     expect(modelStlFileName(model)).toBe(
-      'opengrid-stackable-box-1x1-h10-seats-detachable-corner-seat-honeycomb-open-8-12-70-0-1-90-0-1-90-0-1-90-thin-shell.stl',
+      'opengrid-stackable-box-1x1-h10-seats-detachable-corner-seat-honeycomb-open-8-12-70-0-1-90-0-1-90-0-1-90-thin-shell-flat-top.stl',
     )
   })
 
@@ -512,8 +573,8 @@ describe('OpenGrid stackable-box contract', () => {
     [parameters({ height: 501 }), 'height'],
     [parameters({ cornerSeatMode: 'invalid' as never }), 'cornerSeatMode'],
     [parameters({ fullBottomHoleGrid: 'true' as never }), 'fullBottomHoleGrid'],
-    [parameters({ basePlateMode: 'true' as never }), 'basePlateMode'],
-    [parameters({ thinShellMode: 'true' as never }), 'thinShellMode'],
+    [parameters({ topRimMode: 'bogus' as never }), 'topRimMode'],
+    [parameters({ bottomMode: 'bogus' as never }), 'bottomMode'],
     [parameters({ honeycombMode: 'true' as never }), 'honeycombMode'],
   ])(
     'rejects invalid %s values with a field-specific issue',
@@ -547,16 +608,6 @@ describe('OpenGrid stackable-box contract', () => {
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.gridPitch).toBe(
       OPENGRID_GRID_CONFIGURATION.fullPitch,
     )
-  })
-
-  it('rejects selecting thin-shell and base-plate modes together', () => {
-    const validation = validateOpenGridStackableBoxParameters(
-      parameters({ thinShellMode: true, basePlateMode: true }),
-    )
-
-    expect(validation.valid).toBe(false)
-    if (!validation.valid)
-      expect(validation.issues[0]?.field).toBe('thinShellMode')
   })
 
   it('keeps socket de-duplication tied to the seat envelope, not the flange envelope', () => {
@@ -638,20 +689,20 @@ describe('OpenGrid stackable-box contract', () => {
       'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat.stl',
     )
 
-    const basePlateModel = {
+    const openBottomModel = {
       modelId: 'opengrid-stackable-box' as const,
       parameters: parameters({
         x: 1.5,
         y: 2,
         height: 30,
-        basePlateMode: true,
+        bottomMode: 'none',
       }),
     }
-    expect(modelFileName(basePlateModel)).toBe(
-      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-base-plate.step',
+    expect(modelFileName(openBottomModel)).toBe(
+      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-open-bottom.step',
     )
-    expect(modelStlFileName(basePlateModel)).toBe(
-      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-base-plate.stl',
+    expect(modelStlFileName(openBottomModel)).toBe(
+      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-open-bottom.stl',
     )
 
     const thinShellModel = {
@@ -660,14 +711,34 @@ describe('OpenGrid stackable-box contract', () => {
         x: 1.5,
         y: 2,
         height: 30,
-        thinShellMode: true,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
       }),
     }
     expect(modelFileName(thinShellModel)).toBe(
-      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-thin-shell.step',
+      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-thin-shell-flat-top.step',
     )
     expect(modelStlFileName(thinShellModel)).toBe(
-      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-thin-shell.stl',
+      'opengrid-stackable-box-1.5x2-h30-seats-detachable-corner-seat-thin-shell-flat-top.stl',
     )
+
+    const identities = new Set(
+      (
+        [
+          ['stacking-rail', 'stacking'],
+          ['stacking-rail', 'thin-shell'],
+          ['stacking-rail', 'none'],
+          ['flat-top', 'stacking'],
+          ['flat-top', 'thin-shell'],
+          ['flat-top', 'none'],
+        ] as const
+      ).map(([topRimMode, bottomMode]) =>
+        modelFileName({
+          modelId: 'opengrid-stackable-box' as const,
+          parameters: parameters({ topRimMode, bottomMode }),
+        }),
+      ),
+    )
+    expect(identities.size).toBe(6)
   })
 })

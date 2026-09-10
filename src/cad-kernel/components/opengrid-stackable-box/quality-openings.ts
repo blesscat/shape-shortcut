@@ -83,9 +83,6 @@ function sideProbeBounds(
 }
 
 function wallThicknessFor(parameters: OpenGridStackableBoxParameters): number {
-  if (parameters.thinShellMode) {
-    return OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellWallThickness
-  }
   return OPENGRID_STACKABLE_BOX_CONFIGURATION.wallThickness
 }
 
@@ -164,8 +161,8 @@ function openingQualityFor(
     : 0
   const upperRailInnerInset =
     wallThickness +
-    (parameters.thinShellMode
-      ? OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellTopChamfer
+    (parameters.topRimMode === 'flat-top'
+      ? 0
       : OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerChamfer)
   const topRailProbeVolume = volumeProbes
     ? volumeInBox(

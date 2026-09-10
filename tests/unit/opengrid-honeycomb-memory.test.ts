@@ -34,7 +34,8 @@ describe('OpenGrid box honeycomb memory budget', () => {
         x: 10,
         y: 10,
         height: 101,
-        thinShellMode: true,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
         cornerSeatMode: 'detachable-corner-seat',
       }),
     )
@@ -65,7 +66,8 @@ describe('OpenGrid box honeycomb memory budget', () => {
         x: 10,
         y: 10,
         height: 200,
-        thinShellMode: true,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
         cornerSeatMode: 'detachable-corner-seat',
       }),
     )

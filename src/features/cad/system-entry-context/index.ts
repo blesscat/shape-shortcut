@@ -141,8 +141,8 @@ export function getSystemPreset(
       x: 4,
       y: 2,
       height: 30,
-      basePlateMode: false,
-      thinShellMode: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'thin-shell',
     })
   }
   if (context === 'desk' && modelId === 'opengrid-organizer-box') {

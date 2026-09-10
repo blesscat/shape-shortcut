@@ -67,12 +67,19 @@ function deleteShape(shape: Shape3D | null | undefined): void {
 
 describe('OpenGrid stackable-box integrated seat profiles', () => {
   it.each([
-    { name: 'base-plate', basePlateMode: true, thinShellMode: false },
-    { name: 'thin-shell', basePlateMode: false, thinShellMode: true },
+    { name: 'stacking bottom', bottomMode: 'stacking' as const },
+    {
+      name: 'thin-shell bottom',
+      bottomMode: 'thin-shell' as const,
+      topRimMode: 'flat-top' as const,
+    },
   ])(
     'fuses exact chamfered seats and preserves ordinary holes in the $name profile',
-    ({ basePlateMode, thinShellMode }) => {
-      const input = parameters({ basePlateMode, thinShellMode })
+    ({ bottomMode, topRimMode }) => {
+      const input = parameters({
+        bottomMode,
+        ...(topRimMode === undefined ? {} : { topRimMode }),
+      })
       const shape = buildOpenGridStackableBox(input)
       try {
         const expectedSeatCount =

@@ -124,8 +124,8 @@ magnet controls MUST remain available in both contexts; context selection MUST
 NOT hide or enable them independently. For `opengrid-pillar`, the Desk preset
 MUST be exactly `{ mode: 'detachable-corner-seat' }`. For
 `opengrid-stackable-box`, the Desk
-preset MUST be `x=4`, `y=2`, `height=30`, `thinShellMode=true`, and
-`basePlateMode=false`. For `opengrid-stackable-cylinder`, the Desk preset MUST
+preset MUST be `x=4`, `y=2`, `height=30`, `topRimMode='flat-top'`, and
+`bottomMode='thin-shell'`. For `opengrid-stackable-cylinder`, the Desk preset MUST
 be `innerDiameter=57`, `height=30`, and `bottomPlateMode=false`. Any other
 visible OpenGrid entry MUST use its validated model definition defaults in
 the Desk context and MUST NOT appear in the Wall context.
@@ -187,6 +187,7 @@ the Desk context and MUST NOT appear in the Wall context.
 - **WHEN** a direct CAD route has no `system` query or has an unsupported `system` value
 - **THEN** the route MUST use legacy model-id-scoped persistence and model definition defaults
 - **AND** it MUST NOT silently select the Desk or Wall preset
+
 
 ### Requirement: Context-aware OpenGrid board restore behavior
 
