@@ -13,6 +13,7 @@ import {
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_PREVIEW_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+  OPENGRID_DIVIDER_CONFIGURATION,
   PROTOTYPE_CONFIGURATION,
 } from '../../src/cad-contract/units'
 import type { CadWorkerClient } from '../../src/features/cad/worker-client'
@@ -70,6 +71,7 @@ function defaultInputForModel(modelId: ModelId): ModelParameterValues {
   if (modelId === 'opengrid-wall-cover') return { text: 'A' }
   if (modelId === 'opengrid-divider') {
     return {
+      ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
       left: 1,
       right: 1,
       up: 0,
@@ -784,6 +786,7 @@ describe('CAD model generation debounce', () => {
 
   it('debounces divider arm counts with 0.5-grid input support', () => {
     const { client, send, context } = createRuntimeContext('opengrid-divider', {
+      ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
       left: 1,
       right: 1,
       up: 0,
@@ -801,6 +804,7 @@ describe('CAD model generation debounce', () => {
         kind: 'model.generate',
         modelId: 'opengrid-divider',
         parameters: {
+          ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
           left: 1,
           right: 1,
           up: 1.5,
@@ -849,6 +853,7 @@ describe('CAD model generation debounce', () => {
 
   it('registers divider generation timeout recovery for the current operation', () => {
     const { client, send, context } = createRuntimeContext('opengrid-divider', {
+      ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
       left: 1,
       right: 1,
       up: 0,

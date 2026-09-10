@@ -49,7 +49,11 @@
   let webglSupported = $state(true)
   let observedViewportTheme = $state<CadViewportTheme>(readCadViewportTheme())
   let viewportTheme = $derived(
-    viewportThemeForPresentation(presentation, observedViewportTheme, appearance),
+    viewportThemeForPresentation(
+      presentation,
+      observedViewportTheme,
+      appearance,
+    ),
   )
 
   function reportPreparationTiming(timing: ViewportGeometryTiming): void {
@@ -110,7 +114,9 @@
         />
       </Canvas>
     {:else}
-      <div class="flex h-full items-center justify-center text-muted-foreground">
+      <div
+        class="flex h-full items-center justify-center text-muted-foreground"
+      >
         {translate(locale, 'cad.viewport.empty')}
       </div>
     {/if}

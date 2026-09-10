@@ -782,6 +782,10 @@ describe('CAD component catalog', () => {
       'down',
       'height',
       'wallThickness',
+      'targetBoxGridsX',
+      'targetBoxGridsY',
+      'endClearance',
+      'pegDiameterIncrement',
     ])
     expect(definition?.parameterSchema.slice(0, 4)).toEqual(
       expect.arrayContaining([
@@ -791,7 +795,11 @@ describe('CAD component catalog', () => {
         expect.objectContaining({ key: 'down', min: 0, max: 10, step: 0.5 }),
       ]),
     )
-    expect(definition?.parameterSchema.at(-1)).toMatchObject({
+    expect(
+      definition?.parameterSchema.find(
+        (field) => field.key === 'wallThickness',
+      ),
+    ).toMatchObject({
       key: 'wallThickness',
       control: 'range-text',
       min: OPENGRID_DIVIDER_CONFIGURATION.minWallThickness,
@@ -819,12 +827,20 @@ describe('CAD component catalog', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      alignmentMode: 'free',
+      targetBoxGridsX: 4.5,
+      targetBoxGridsY: 4.5,
+      endClearance: 0.15,
+      pegLengthMode: 'snap',
+      pegDiameterIncrement: 0,
     })
     expect(definition?.exportFileName(definition.defaultParameters)).toBe(
-      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20.step',
+      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' +
+        'free-g4.5x4.5-c0.15-psnap-i0.step',
     )
     expect(definition?.stlFileName(definition.defaultParameters)).toBe(
-      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20.stl',
+      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' +
+        'free-g4.5x4.5-c0.15-psnap-i0.stl',
     )
     expect(cadPathForModel('opengrid-divider')).toBe('/cad/opengrid-divider')
     expect(modelIdForCadPath('/cad/opengrid-divider/')).toBe('opengrid-divider')

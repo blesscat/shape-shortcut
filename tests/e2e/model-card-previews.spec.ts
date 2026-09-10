@@ -162,13 +162,7 @@ async function resizeScreenshot(
 ): Promise<Buffer> {
   const encoded = screenshot.toString('base64')
   const resized = await page.evaluate(
-    async ({
-      encodedScreenshot,
-      width,
-      height,
-      backgroundColor,
-      quality,
-    }) => {
+    async ({ encodedScreenshot, width, height, backgroundColor, quality }) => {
       const response = await fetch(`data:image/png;base64,${encodedScreenshot}`)
       const bitmap = await createImageBitmap(await response.blob())
       const output = document.createElement('canvas')
@@ -272,12 +266,7 @@ test('visible model previews are captured from ready generators', async ({
 
       const filePath = previewAssetPath(definition, appearance.key)
       if (CAPTURE_MODEL_PREVIEWS) {
-        await capturePreview(
-          page,
-          canvas,
-          filePath,
-          appearance.backgroundColor,
-        )
+        await capturePreview(page, canvas, filePath, appearance.backgroundColor)
       }
       assertPreviewAsset(definition, appearance.key)
     }
@@ -303,7 +292,10 @@ test('model cards expose static previews and preserve selection on image failure
     const darkImage = card.locator('img').nth(1)
     await expect(lightImage).toHaveAttribute('src', preview.src)
     await expect(darkImage).toHaveAttribute('src', preview.darkSrc)
-    await expect(lightImage).toHaveAttribute('alt', translate(locale, preview.alt))
+    await expect(lightImage).toHaveAttribute(
+      'alt',
+      translate(locale, preview.alt),
+    )
     await expect(darkImage).toHaveAttribute('alt', '')
     await expect(
       card.getByRole('link', {

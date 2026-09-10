@@ -49,6 +49,7 @@ import {
   openGridStlFileName,
   openGridDividerFileName,
   openGridDividerStlFileName,
+  normalizeOpenGridDividerParameters,
   openGridStackableCylinderFileName,
   openGridStackableCylinderStlFileName,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -871,14 +872,14 @@ describe('OpenGrid Worker runtime', () => {
     await runtime.handle(initCommand())
     await runtime.handle(dividerGenerateCommand())
 
-    const parameters = {
+    const parameters = normalizeOpenGridDividerParameters({
       left: 1,
       right: 1,
       up: 2,
       down: 0,
       height: 20,
       wallThickness: 2,
-    }
+    })
     expect(mocks.buildModelBRep).toHaveBeenCalledWith(
       'opengrid-divider',
       parameters,
@@ -921,7 +922,9 @@ describe('OpenGrid Worker runtime', () => {
       modelRevision: ready.modelRevision,
       workerEpoch: ready.workerEpoch,
       file: {
-        name: openGridDividerFileName(parameters),
+        name: openGridDividerFileName(
+          normalizeOpenGridDividerParameters(parameters),
+        ),
         mime: 'model/step' as const,
       },
     })
@@ -933,7 +936,9 @@ describe('OpenGrid Worker runtime', () => {
       modelRevision: ready.modelRevision,
       workerEpoch: ready.workerEpoch,
       file: {
-        name: openGridDividerStlFileName(parameters),
+        name: openGridDividerStlFileName(
+          normalizeOpenGridDividerParameters(parameters),
+        ),
         mime: 'model/stl' as const,
       },
     })

@@ -187,7 +187,7 @@ export const zhHantMessages = {
   'models.model.opengrid-divider.name': 'divider (分隔牆)',
   'models.model.opengrid-divider.selection': 'divider (分隔牆)',
   'models.model.opengrid-divider.description':
-    '可調整方向臂、牆高與牆厚的 OpenGrid 分隔牆；底部定位柱為 Ø5 mm × 3.8 mm，底部採 0.2 mm 導角。',
+    '可調整方向臂、牆高與牆厚的 OpenGrid 分隔牆；底部定位柱預設 Ø4.9 mm、底部採 0.2 mm 導角，並支援盒內對位模式。',
   'models.model.opengrid-divider.alt': 'OpenGrid divider 預覽',
   'models.model.opengrid-organizer-box.name':
     'OpenGrid Organizer Box (收納方盒)',
@@ -422,6 +422,11 @@ export const zhHantMessages = {
   'parameter.count': '支數',
   'parameter.gap': '柱間隙',
   'parameter.leftArm': '左臂',
+  'parameter.alignmentMode': '對位模式',
+  'parameter.targetBoxGridsX': '目標盒格數（X）',
+  'parameter.targetBoxGridsY': '目標盒格數（Y）',
+  'parameter.endClearance': '端部間隙',
+  'parameter.pegLengthMode': '定位柱向下長度',
   'parameter.rightArm': '右臂',
   'parameter.upperArm': '上臂',
   'parameter.lowerArm': '下臂',
@@ -438,6 +443,7 @@ export const zhHantMessages = {
   'parameter.totalLength': '總長度',
   'parameter.seatLocatingLength': '角座定位段長度',
   'parameter.xyDiameterIncrement': 'XY 直徑增量',
+  'parameter.pegDiameterIncrement': '角柱直徑增量',
   'parameter.frameIncrement': '外框總增量',
   'parameter.magnetHoleLength': '長度',
   'parameter.magnetHoleWidth': '寬度',
@@ -524,6 +530,9 @@ export const zhHantMessages = {
   'diagnostic.meshInvalid': '預覽模型資料無效，Worker 將重新啟動。',
   'diagnostic.staleGeneration': '這次建模已被較新的輸入取代。',
   'validation.invalid': '{field} 輸入無效，請檢查參數後重試。',
+  'validation.axisSumExceedsTarget':
+    '{field} 不足：方向格數總和超過目標盒格數。',
+  'validation.boxFitRequiresStraightArm': '盒內對位僅支援單臂與一字型分隔牆。',
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
   'validation.parameter': '參數',
@@ -680,6 +689,26 @@ export const zhHantMessages = {
   'panel.snap.magnetRound': '圓形',
   'panel.snap.magnetHoleInvalid': 'Half／Quarter 固定格型不接受挖孔',
   'panel.pillar.fixedVersionAria': '支柱版本',
+  'panel.divider.alignment': '對位模式',
+  'panel.divider.alignmentAria': '分隔牆對位模式',
+  'panel.divider.free': '自由',
+  'panel.divider.freeDescription':
+    '以分隔牆中心接點為定位柱錨點，不保證與特定盒子孔位對齊。',
+  'panel.divider.boxFit': '盒內對位',
+  'panel.divider.boxFitDescription':
+    '對齊目標盒子的底部孔格；置中放入後定位柱會落在孔位上。',
+  'panel.divider.pegLength': '定位柱向下長度',
+  'panel.divider.pegLengthAria': '定位柱向下長度',
+  'panel.divider.pegSnap': '直接插入 Snap（3.8 mm）',
+  'panel.divider.pegThinShell': '薄殼盒底（2 mm）',
+  'panel.divider.pegStackable': '堆疊盒底（5 mm）',
+  'panel.divider.badgeTitle': '對位資訊',
+  'panel.divider.badgeAnchorCenter': '錨點：中心孔列',
+  'panel.divider.badgeAnchorPlusMinus7': '錨點：±7 孔列',
+  'panel.divider.badgeCenterPegPresent': '中心柱：有',
+  'panel.divider.badgeCenterPegAbsent': '中心柱：無（此格數盒子中心無孔）',
+  'panel.divider.badgeTransverse':
+    '牆中心線需對齊 {axis} 軸 ±7 孔列，而非盒子正中央',
   'panel.wallCover.summary': '自訂 Wall Cover 文字',
   'panel.wallCover.details':
     '每個字會產生一個獨立的雙色平放 cover；空白會忽略，最多輸入 8 個字。可選擇是否保留移除孔。',
@@ -986,7 +1015,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'models.model.opengrid-divider.name': 'OpenGrid Divider',
   'models.model.opengrid-divider.selection': 'Divider',
   'models.model.opengrid-divider.description':
-    'An OpenGrid divider with adjustable arms, wall height, and wall thickness; its locating pegs are Ø5 mm × 3.8 mm with a 0.2 mm bottom chamfer.',
+    'An OpenGrid divider with adjustable arms, wall height, and wall thickness; its locating pegs default to Ø4.9 mm with a 0.2 mm bottom chamfer and support a box-fit alignment mode.',
   'models.model.opengrid-divider.alt': 'OpenGrid divider preview',
   'models.model.opengrid-organizer-box.name': 'OpenGrid Organizer Box',
   'models.model.opengrid-organizer-box.selection': 'Organizer Box',
@@ -1225,6 +1254,11 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.count': 'Count',
   'parameter.gap': 'Post gap',
   'parameter.leftArm': 'Left arm',
+  'parameter.alignmentMode': 'Alignment mode',
+  'parameter.targetBoxGridsX': 'Target box grids (X)',
+  'parameter.targetBoxGridsY': 'Target box grids (Y)',
+  'parameter.endClearance': 'End clearance',
+  'parameter.pegLengthMode': 'Peg downward length',
   'parameter.rightArm': 'Right arm',
   'parameter.upperArm': 'Upper arm',
   'parameter.lowerArm': 'Lower arm',
@@ -1241,6 +1275,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.totalLength': 'Total length',
   'parameter.seatLocatingLength': 'Seat locating-section length',
   'parameter.xyDiameterIncrement': 'XY diameter increment',
+  'parameter.pegDiameterIncrement': 'Corner post diameter increment',
   'parameter.frameIncrement': 'Frame increment',
   'parameter.magnetHoleLength': 'Length',
   'parameter.magnetHoleWidth': 'Width',
@@ -1336,6 +1371,10 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'diagnostic.staleGeneration': 'This build was superseded by newer input.',
   'validation.invalid':
     '{field} is invalid. Check the parameter and try again.',
+  'validation.axisSumExceedsTarget':
+    '{field} is too small: the directional grid sum exceeds the target box grid count.',
+  'validation.boxFitRequiresStraightArm':
+    'Box-fit alignment supports single-arm and straight dividers only.',
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
   'validation.wallCoverTextTooLong': '{field} cannot exceed {max} characters.',
   'validation.parameter': 'Parameter',
@@ -1499,6 +1538,27 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.snap.magnetHoleInvalid':
     'Fixed Half/Quarter footprints do not accept holes',
   'panel.pillar.fixedVersionAria': 'Post version',
+  'panel.divider.alignment': 'Alignment mode',
+  'panel.divider.alignmentAria': 'Divider alignment mode',
+  'panel.divider.free': 'Free',
+  'panel.divider.freeDescription':
+    'Anchors locating pegs to the divider junction; peg-to-hole alignment with a specific box is not guaranteed.',
+  'panel.divider.boxFit': 'Box fit',
+  'panel.divider.boxFitDescription':
+    'Aligns with the target box bottom hole grid; centering the divider in the box lands every peg on a hole.',
+  'panel.divider.pegLength': 'Peg downward length',
+  'panel.divider.pegLengthAria': 'Peg downward length',
+  'panel.divider.pegSnap': 'Direct Snap insertion (3.8 mm)',
+  'panel.divider.pegThinShell': 'Thin-shell floor (2 mm)',
+  'panel.divider.pegStackable': 'Stackable floor (5 mm)',
+  'panel.divider.badgeTitle': 'Alignment info',
+  'panel.divider.badgeAnchorCenter': 'Anchor: center hole column',
+  'panel.divider.badgeAnchorPlusMinus7': 'Anchor: ±7 hole columns',
+  'panel.divider.badgeCenterPegPresent': 'Center peg: yes',
+  'panel.divider.badgeCenterPegAbsent':
+    'Center peg: none (this grid count has no center hole)',
+  'panel.divider.badgeTransverse':
+    'The wall centerline must sit on a ±7 hole column of the {axis} axis instead of the box center row',
   'panel.wallCover.summary': 'Custom Wall Cover text',
   'panel.wallCover.details':
     'Each character creates one independent, flat two-color cover. Whitespace is ignored; enter up to 8 characters. Choose whether to keep the remover hole.',

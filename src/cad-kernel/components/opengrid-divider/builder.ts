@@ -3,10 +3,10 @@ import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import {
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
-  classifyOpenGridDividerShape,
-  openGridDividerArmEndpointsFor,
+  openGridDividerArmStationsFor,
+  openGridDividerBaseWidthFor,
   openGridDividerPlanBoundsFor,
-  openGridDividerPegCentersFor,
+  openGridDividerPegPlanFor,
   openGridDividerTransitionHeightFor,
   validateOpenGridDividerParameters,
   type OpenGridDividerParameters,
@@ -239,8 +239,7 @@ function makeProfiledArm(
   distance: number,
   direction: [number, number, number],
 ): Shape3D {
-  const { wallWidth } = OPENGRID_DIVIDER_CONFIGURATION
-  const halfBaseWidth = wallWidth / 2
+  const halfBaseWidth = openGridDividerBaseWidthFor(parameters) / 2
   const halfWallThickness = parameters.wallThickness / 2
   const transitionHeight = openGridDividerTransitionHeightFor(parameters)
   const baseSupportHeight = transitionSupportHeightFor(parameters)
@@ -279,38 +278,24 @@ function makeProfiledArm(
   }
 }
 
-function singleArmCenterExtensionFor(
-  parameters: OpenGridDividerParameters,
-): number {
-  return classifyOpenGridDividerShape(parameters) === 'single'
-    ? OPENGRID_DIVIDER_CONFIGURATION.wallWidth / 2
-    : 0
-}
-
 function makeHorizontalWall(parameters: OpenGridDividerParameters): Shape3D {
-  const endpoints = openGridDividerArmEndpointsFor(parameters)
-  const centerExtension = singleArmCenterExtensionFor(parameters)
-  const start = parameters.left > 0 ? endpoints.left : -centerExtension
-  const end = parameters.right > 0 ? endpoints.right : centerExtension
+  const stations = openGridDividerArmStationsFor(parameters, 'x')
   return makeProfiledArm(
     parameters,
     'YZ',
-    [start, 0, 0],
-    end - start,
+    [stations.start, 0, 0],
+    stations.end - stations.start,
     [1, 0, 0],
   )
 }
 
 function makeVerticalWall(parameters: OpenGridDividerParameters): Shape3D {
-  const endpoints = openGridDividerArmEndpointsFor(parameters)
-  const centerExtension = singleArmCenterExtensionFor(parameters)
-  const start = parameters.down > 0 ? endpoints.down : -centerExtension
-  const end = parameters.up > 0 ? endpoints.up : centerExtension
+  const stations = openGridDividerArmStationsFor(parameters, 'y')
   const wall = makeProfiledArm(
     parameters,
     'YZ',
-    [start, 0, 0],
-    end - start,
+    [stations.start, 0, 0],
+    stations.end - stations.start,
     [1, 0, 0],
   )
   try {
@@ -323,34 +308,15 @@ function makeVerticalWall(parameters: OpenGridDividerParameters): Shape3D {
   }
 }
 
-function armSpanFor(
-  parameters: OpenGridDividerParameters,
-  armAxis: 'x' | 'y',
-): { start: number; end: number } {
-  const endpoints = openGridDividerArmEndpointsFor(parameters)
-  const centerExtension = singleArmCenterExtensionFor(parameters)
-  if (armAxis === 'x') {
-    return {
-      start: parameters.left > 0 ? endpoints.left : -centerExtension,
-      end: parameters.right > 0 ? endpoints.right : centerExtension,
-    }
-  }
-  return {
-    start: parameters.down > 0 ? endpoints.down : -centerExtension,
-    end: parameters.up > 0 ? endpoints.up : centerExtension,
-  }
-}
-
 function makeBottomCornerCutter(
   parameters: OpenGridDividerParameters,
   armAxis: 'x' | 'y',
   side: -1 | 1,
 ): Shape3D {
-  const { wallWidth } = OPENGRID_DIVIDER_CONFIGURATION
   const radius = OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius
-  const halfBaseWidth = wallWidth / 2
+  const halfBaseWidth = openGridDividerBaseWidthFor(parameters) / 2
   const diagonal = radius / Math.sqrt(2)
-  const span = armSpanFor(parameters, armAxis)
+  const span = openGridDividerArmStationsFor(parameters, armAxis)
   const extension = 0.02
   const origin: [number, number, number] = [span.start - extension, 0, 0]
   const distance = span.end - span.start + extension * 2
@@ -526,10 +492,11 @@ function armAxisForPeg(
 
 async function makeContinuousWall(
   parameters: OpenGridDividerParameters,
-  pegCenters: [number, number][],
+  pegPlan: ReturnType<typeof openGridDividerPegPlanFor>,
   context: OpenGridDividerBuildContext,
   callbacks: ContinuousWallBuildCallbacks,
 ): Promise<Shape3D> {
+  const pegCenters = pegPlan.centers
   const horizontalActive = parameters.left > 0 || parameters.right > 0
   const verticalActive = parameters.up > 0 || parameters.down > 0
   const fuseTotal =
@@ -556,7 +523,7 @@ async function makeContinuousWall(
     callbacks.onWallReady()
     for (const center of pegCenters) {
       assertGenerationCurrent(context)
-      const peg = makePeg(center)
+      const peg = makePeg(center, pegPlan)
       try {
         if (armAxisForPeg(center, horizontalActive) === 'x') {
           if (!horizontal) throw new Error('OPENGRID_DIVIDER_WALL_EMPTY')
@@ -597,9 +564,15 @@ function translateToCenteredEnvelope(
   return translated
 }
 
-function makePeg(center: [number, number]): Shape3D {
+function makePeg(
+  center: [number, number],
+  pegPlan: ReturnType<typeof openGridDividerPegPlanFor>,
+): Shape3D {
   const overlapIntoWall = 0.02
-  return makeOpenGridIntegratedSeat(center, overlapIntoWall)
+  return makeOpenGridIntegratedSeat(center, overlapIntoWall, {
+    diameter: pegPlan.diameter,
+    length: pegPlan.length,
+  })
 }
 
 export async function buildOpenGridDivider(
@@ -609,14 +582,14 @@ export async function buildOpenGridDivider(
   const validation = validateOpenGridDividerParameters(parameters)
   if (!validation.valid) throw new Error('OPENGRID_DIVIDER_PARAMETERS_INVALID')
 
-  const pegCenters = openGridDividerPegCentersFor(parameters)
-  const totalSteps = pegCenters.length + 3
+  const pegPlan = openGridDividerPegPlanFor(parameters)
+  const totalSteps = pegPlan.centers.length + 3
   let completedSteps = 0
   let current: Shape3D | null = null
 
   try {
     assertGenerationCurrent(context)
-    current = await makeContinuousWall(parameters, pegCenters, context, {
+    current = await makeContinuousWall(parameters, pegPlan, context, {
       onWallReady: () => {
         completedSteps += 1
         reportProgress(context, completedSteps, totalSteps)

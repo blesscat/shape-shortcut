@@ -773,7 +773,10 @@
     })}
   </p>
   {#if parameters.variant === 'Hybrid'}
-    <p class="m-0 text-sm text-muted-foreground" data-testid="opengrid-hybrid-description">
+    <p
+      class="m-0 text-sm text-muted-foreground"
+      data-testid="opengrid-hybrid-description"
+    >
       {translate(locale, 'panel.opengrid.hybridDescription')}
     </p>
   {/if}
