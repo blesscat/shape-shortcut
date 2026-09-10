@@ -467,7 +467,6 @@ describe('component parameter store', () => {
       ...legacyCylinderBase,
       diameter: 80,
       height: 45,
-      thinBottomMode: false,
     } as Record<string, unknown>
     const storage = createMemoryStorage(
       createPayload({
@@ -493,15 +492,13 @@ describe('component parameter store', () => {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       innerDiameter: 57,
       height: 30,
-      thinBottomMode: true,
       bottomPlateMode: false,
     })
     expect(legacyStore.get('opengrid-stackable-box')).toEqual(legacyBox)
     expect(legacyStore.get('opengrid-stackable-cylinder')).toEqual({
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-      innerDiameter: 76,
+      innerDiameter: 77,
       height: 45,
-      thinBottomMode: false,
     })
 
     const savedDeskBox = {
@@ -843,13 +840,48 @@ describe('component parameter store', () => {
 
     expect(store.get('opengrid-stackable-cylinder')).toEqual({
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-      innerDiameter: 116,
+      innerDiameter: 117,
       height: 30,
     })
     expect(
       Object.prototype.hasOwnProperty.call(
         store.get('opengrid-stackable-cylinder'),
         'diameter',
+      ),
+    ).toBe(false)
+
+    store.dispose()
+  })
+
+  it('ignores a persisted thinBottomMode flag during cylinder hydration', () => {
+    const storage = createMemoryStorage(
+      createPayload({
+        'opengrid-stackable-cylinder': {
+          ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+          innerDiameter: 68,
+          thinBottomMode: true,
+        },
+      }),
+    )
+    const store = createComponentParameterStore({ storage })
+
+    const hydrated = store.get('opengrid-stackable-cylinder')
+    expect(hydrated).toEqual({
+      ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+      innerDiameter: 68,
+    })
+    expect(
+      Object.prototype.hasOwnProperty.call(hydrated, 'thinBottomMode'),
+    ).toBe(false)
+
+    store.set('opengrid-stackable-cylinder', hydrated)
+    const persisted = JSON.parse(
+      storage.data.get(COMPONENT_PARAMETER_STORAGE_KEY) ?? '{}',
+    ) as { values?: { legacy?: Record<string, unknown> } }
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        persisted.values?.legacy?.['opengrid-stackable-cylinder'],
+        'thinBottomMode',
       ),
     ).toBe(false)
 
@@ -863,7 +895,6 @@ describe('component parameter store', () => {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       innerDiameter: 76,
       height: 45,
-      thinBottomMode: false,
       bottomPlateMode: true,
       bottomSeatMode: 'detachable-corner-seat',
     }

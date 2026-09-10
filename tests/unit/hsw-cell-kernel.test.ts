@@ -241,7 +241,6 @@ describe('HSW kernel model registration', () => {
       {
         innerDiameter: 56,
         height: 30,
-        thinBottomMode: false,
         bottomPlateMode: false,
         bottomSeatMode: 'detachable-corner-seat',
       },
@@ -253,7 +252,6 @@ describe('HSW kernel model registration', () => {
       expect.objectContaining({
         innerDiameter: 56,
         height: 30,
-        thinBottomMode: false,
         bottomPlateMode: false,
         bottomSeatMode: 'detachable-corner-seat',
       }),

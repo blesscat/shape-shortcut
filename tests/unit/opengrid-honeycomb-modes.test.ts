@@ -67,21 +67,19 @@ describe('OpenGrid honeycomb material-saving profile modes', () => {
   )
 
   it.each([
-    { name: 'cylinder thin', thinBottomMode: true, bottomPlateMode: false },
+    { name: 'cylinder thin', bottomPlateMode: false },
     {
       name: 'cylinder bottom-plate',
-      thinBottomMode: false,
       bottomPlateMode: true,
     },
   ])(
     'keeps $name honeycomb geometry valid',
-    ({ thinBottomMode, bottomPlateMode }) => {
+    ({ bottomPlateMode }) => {
       const shape = remember(
         buildOpenGridStackableCylinder({
           ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
           height: 30,
           bottomSeatMode: 'none',
-          thinBottomMode,
           bottomPlateMode,
           honeycombMode: true,
         }),
@@ -94,31 +92,22 @@ describe('OpenGrid honeycomb material-saving profile modes', () => {
 
   it.each([
     {
-      name: 'cylinder default',
-      innerDiameter: 44,
-      thinBottomMode: false,
-      bottomPlateMode: false,
-    },
-    {
       name: 'cylinder thin',
       innerDiameter: 44,
-      thinBottomMode: true,
       bottomPlateMode: false,
     },
     {
       name: 'cylinder bottom-plate',
       innerDiameter: 44,
-      thinBottomMode: false,
       bottomPlateMode: true,
     },
   ])(
     'keeps the $name lower stacking boundary while adding eligible bottom honeycomb cells',
-    ({ innerDiameter, thinBottomMode, bottomPlateMode }) => {
+    ({ innerDiameter, bottomPlateMode }) => {
       const input = {
         ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
         innerDiameter,
         height: 20,
-        thinBottomMode,
         bottomPlateMode,
         bottomSeatMode: 'none' as const,
         honeycombMode: true,

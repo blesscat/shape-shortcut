@@ -88,7 +88,6 @@ export type OpenGridStackableCylinderInterfaceQualityReport = {
   honeycombMode: boolean
   honeycombCellCount: number
   profile: OpenGridStackableCylinderProfile
-  thinBottomMode: boolean
   bottomPlateMode: boolean
   bottomSeatMode: OpenGridLocatingSeatMode
   floorThickness: number
@@ -1112,8 +1111,7 @@ function expectedLowerConicalFaceCount(
   profile: OpenGridStackableCylinderProfile,
 ): number {
   if (profile === 'thin') return 3
-  if (profile === 'bottom-plate') return 1
-  return 2
+  return 1
 }
 
 export function inspectOpenGridStackableCylinderInterface(
@@ -1566,7 +1564,6 @@ export function inspectOpenGridStackableCylinderInterface(
     honeycombCellCount:
       openGridStackableCylinderHoneycombCellCountFor(parameters),
     profile: derived.profile,
-    thinBottomMode: parameters.thinBottomMode,
     bottomPlateMode: parameters.bottomPlateMode,
     bottomSeatMode: parameters.bottomSeatMode,
     floorThickness: derived.floorThickness,

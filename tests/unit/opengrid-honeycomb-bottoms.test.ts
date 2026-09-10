@@ -370,7 +370,6 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       innerDiameter: 56,
       height: 30,
       bottomSeatMode: 'integrated' as const,
-      thinBottomMode: true,
       honeycombMode: true,
     }
     const cutters =
@@ -465,7 +464,6 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       innerDiameter: 56,
       height: 30,
-      thinBottomMode: true,
       honeycombMode: true,
     }
     let completedOperationCount = 0

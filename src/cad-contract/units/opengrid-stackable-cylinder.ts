@@ -9,7 +9,6 @@ import {
 export type OpenGridStackableCylinderParameterKey =
   | 'innerDiameter'
   | 'height'
-  | 'thinBottomMode'
   | 'bottomPlateMode'
   | 'bottomSeatMode'
   | 'honeycombMode'
@@ -29,13 +28,11 @@ export type OpenGridStackableCylinderParameterKey =
 export type OpenGridStackableCylinderOpeningDirection =
   '+X' | '-X' | '+Y' | '-Y'
 
-export type OpenGridStackableCylinderProfile =
-  'default' | 'thin' | 'bottom-plate'
+export type OpenGridStackableCylinderProfile = 'thin' | 'bottom-plate'
 
 export type OpenGridStackableCylinderParameters = {
   innerDiameter: number
   height: number
-  thinBottomMode: boolean
   bottomPlateMode: boolean
   bottomSeatMode: OpenGridLocatingSeatMode
   honeycombMode: boolean
@@ -108,7 +105,6 @@ export const OPENGRID_STACKABLE_CYLINDER_CONFIGURATION = {
   heightSliderMax: 200,
   inputStep: 1,
   wallThickness: 2,
-  defaultFloorThickness: 5,
   thinWallThickness: 1.6,
   thinFloorThickness: 2,
   floorThickness: 3,
@@ -116,7 +112,6 @@ export const OPENGRID_STACKABLE_CYLINDER_CONFIGURATION = {
     OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.shaftOpeningDiameter,
   innerHoleDiameter:
     OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.retainingOpeningDiameter,
-  defaultBottomHoleSectionDepth: 4,
   thinBottomHoleSectionDepth: 1,
   bottomHoleSectionDepth: 2,
   innerHoleSectionDepth: 1,
@@ -151,7 +146,6 @@ export const OPENGRID_STACKABLE_CYLINDER_CONFIGURATION = {
 export const OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS = {
   innerDiameter: OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultInnerDiameter,
   height: OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultHeight,
-  thinBottomMode: false,
   bottomPlateMode: false,
   bottomSeatMode:
     OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultBottomSeatMode,
@@ -283,7 +277,7 @@ function validateIntegerField(
 
 function validateBooleanField(
   value: unknown,
-  field: 'thinBottomMode' | 'bottomPlateMode' | 'honeycombMode',
+  field: 'bottomPlateMode' | 'honeycombMode',
   issues: OpenGridStackableCylinderValidationIssue[],
 ): void {
   if (typeof value !== 'boolean') {
@@ -406,12 +400,7 @@ export function legacyInnerDiameterFor(
     return undefined
   }
   const configuration = OPENGRID_STACKABLE_CYLINDER_CONFIGURATION
-  const thinBottomMode = value.thinBottomMode
-  const wallThickness =
-    thinBottomMode === true || thinBottomMode === 'true'
-      ? configuration.thinWallThickness
-      : configuration.wallThickness
-  return Math.round(outerDiameter - wallThickness * 2)
+  return Math.round(outerDiameter - configuration.thinWallThickness * 2)
 }
 
 export function validateOpenGridStackableCylinderParameters(
@@ -443,10 +432,7 @@ export function validateOpenGridStackableCylinderParameters(
   const hasCurrentShape = hasSupportedShape && hasCurrentSeatMode
   const hasLegacyShape = hasSupportedShape && !hasCurrentSeatMode
   const hasProfileParameters =
-    hasOwn(value, 'thinBottomMode') ||
-    hasOwn(value, 'bottomPlateMode') ||
-    hasCurrentSeatMode ||
-    hasLegacySeatMode
+    hasOwn(value, 'bottomPlateMode') || hasCurrentSeatMode || hasLegacySeatMode
   const hasOpeningParameters =
     hasSupportedShape &&
     OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS.some((key) =>
@@ -486,9 +472,6 @@ export function validateOpenGridStackableCylinderParameters(
     issues,
   )
 
-  if (hasProfileParameters && hasOwn(value, 'thinBottomMode')) {
-    validateBooleanField(value.thinBottomMode, 'thinBottomMode', issues)
-  }
   if (hasProfileParameters && hasOwn(value, 'bottomPlateMode')) {
     validateBooleanField(value.bottomPlateMode, 'bottomPlateMode', issues)
   }
@@ -529,17 +512,6 @@ export function validateOpenGridStackableCylinderParameters(
       )
     }
   }
-  if (
-    hasProfileParameters &&
-    value.thinBottomMode === true &&
-    value.bottomPlateMode === true
-  ) {
-    issues.push({
-      field: 'parameters',
-      messageId: 'validation.invalid',
-    })
-  }
-
   const openingValues = openingValuesFor(value, hasOpeningParameters)
   const normalizedValue = {
     innerDiameter:
@@ -547,10 +519,6 @@ export function validateOpenGridStackableCylinderParameters(
         ? (value.innerDiameter as number)
         : (legacyInnerDiameter as number),
     height: value.height as number,
-    thinBottomMode:
-      typeof value.thinBottomMode === 'boolean'
-        ? (value.thinBottomMode as boolean)
-        : false,
     bottomPlateMode:
       typeof value.bottomPlateMode === 'boolean'
         ? (value.bottomPlateMode as boolean)
@@ -692,8 +660,7 @@ function profileForParameters(
   parameters: OpenGridStackableCylinderParameters,
 ): OpenGridStackableCylinderProfile {
   if (parameters.bottomPlateMode === true) return 'bottom-plate'
-  if (parameters.thinBottomMode === true) return 'thin'
-  return 'default'
+  return 'thin'
 }
 
 function wallThicknessForProfile(
@@ -717,9 +684,6 @@ function topInnerChamferForProfile(
 function floorThicknessForProfile(
   profile: OpenGridStackableCylinderProfile,
 ): number {
-  if (profile === 'default') {
-    return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultFloorThickness
-  }
   if (profile === 'thin') {
     return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinFloorThickness
   }
@@ -729,9 +693,6 @@ function floorThicknessForProfile(
 function bottomHoleSectionDepthForProfile(
   profile: OpenGridStackableCylinderProfile,
 ): number {
-  if (profile === 'default') {
-    return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultBottomHoleSectionDepth
-  }
   if (profile === 'thin') {
     return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinBottomHoleSectionDepth
   }
@@ -996,8 +957,7 @@ function modeSuffixFor(
   parameters: OpenGridStackableCylinderParameters,
 ): string {
   if (parameters.bottomPlateMode === true) return '-bottom-plate'
-  if (parameters.thinBottomMode === true) return '-thin'
-  return ''
+  return '-thin'
 }
 
 function seatSuffixFor(

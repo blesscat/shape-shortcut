@@ -98,7 +98,6 @@ describe('OpenGrid system entry context', () => {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       innerDiameter: 57,
       height: 30,
-      thinBottomMode: true,
       bottomPlateMode: false,
     })
     expect(deskOrganizer).toEqual({
@@ -130,7 +129,6 @@ describe('OpenGrid system entry context', () => {
     expect(OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS).toMatchObject({
       innerDiameter: 56,
       height: 20,
-      thinBottomMode: false,
       bottomPlateMode: false,
     })
   })
