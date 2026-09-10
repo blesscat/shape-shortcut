@@ -100,7 +100,7 @@ test('OpenGrid pillar exports deterministic files for both pillar modes', async 
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const detachableStep = await detachableStepPromise
   expect(detachableStep.suggestedFilename()).toBe(
-    'pillar-5.3-detachable-corner-seat.step',
+    'pillar-5.2-detachable-corner-seat.step',
   )
   expect((await detachableStep.createReadStream())?.readable).toBeTruthy()
 
@@ -135,7 +135,7 @@ test('OpenGrid pillar exports deterministic files for both pillar modes', async 
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const detachableStepAgain = await detachableStepAgainPromise
   expect(detachableStepAgain.suggestedFilename()).toBe(
-    'pillar-5.3-detachable-corner-seat.step',
+    'pillar-5.2-detachable-corner-seat.step',
   )
 
   await page.getByRole('textbox', { name: /角座定位段長度/ }).fill('5')
@@ -145,7 +145,7 @@ test('OpenGrid pillar exports deterministic files for both pillar modes', async 
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const parameterizedStep = await parameterizedStepPromise
   expect(parameterizedStep.suggestedFilename()).toBe(
-    'pillar-6.5-detachable-corner-seat-z5-xy0.1.step',
+    'pillar-6.4-detachable-corner-seat-z5-xy0.1.step',
   )
 
   await positioning.check()

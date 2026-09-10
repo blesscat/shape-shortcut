@@ -260,7 +260,9 @@ function inspectDetachableCornerSeatProfiles(
   const headMidZ =
     headBaseZ + (configuration.taperTopZ - configuration.bodyHeight) / 2
   const headTopZ =
-    headBaseZ + (configuration.taperTopZ - configuration.bodyHeight) + 0.05
+    headBaseZ +
+    (configuration.taperTopZ - configuration.bodyHeight) +
+    (configuration.effectiveTotalHeight - configuration.taperTopZ) / 2
   expectMaterial(
     shape,
     failures,
@@ -301,7 +303,7 @@ function inspectDetachableCornerSeatProfiles(
   const wearCapMinZ =
     headBaseZ + (configuration.taperTopZ - configuration.bodyHeight)
   const wearCapMaxZ =
-    headBaseZ + (configuration.totalHeight - configuration.bodyHeight)
+    headBaseZ + (configuration.effectiveTotalHeight - configuration.bodyHeight)
   if (!hasFaceSpanningZ(shape, wearCapMinZ, wearCapMaxZ)) {
     failures.push('profile:wear-cap')
   }

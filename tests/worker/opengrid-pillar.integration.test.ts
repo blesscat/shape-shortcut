@@ -96,8 +96,11 @@ describe('OpenGrid pillar CAD kernel integration', () => {
       expect(actual[0]?.[2]).toBeCloseTo(configuration.male.bounds.min[2], 5)
       expect(actual[1]?.[0]).toBeCloseTo(configuration.male.bounds.max[0], 5)
       expect(actual[1]?.[1]).toBeCloseTo(2.45, 5)
-      expect(actual[1]?.[2]).toBeCloseTo(configuration.male.bounds.max[2], 5)
-      expect(actual[1]?.[2]).toBeCloseTo(5.3, 5)
+      expect(actual[1]?.[2]).toBeCloseTo(
+        configuration.male.effectiveTotalHeight,
+        5,
+      )
+      expect(actual[1]?.[2]).toBeCloseTo(5.2, 5)
       expect(probeVolumeAt(shape, 2.4, 3.75)).toBeGreaterThan(0)
       expect(probeVolumeAt(shape, 2.5, 3.75)).toBeLessThan(1e-8)
       expect(
@@ -153,7 +156,7 @@ describe('OpenGrid pillar CAD kernel integration', () => {
       expect(actual[0]?.[2]).toBeCloseTo(0, 2)
       expect(actual[1]?.[0]).toBeCloseTo(expected.max[0], 2)
       expect(actual[1]?.[1]).toBeCloseTo(expected.max[1], 2)
-      expect(actual[1]?.[2]).toBeCloseTo(6.5, 2)
+      expect(actual[1]?.[2]).toBeCloseTo(6.4, 2)
       // Ø5.2 locating body spans Z=0..5 with the shared lead-in and slot.
       expect(probeVolumeAt(shape, 2.55, 4.95)).toBeGreaterThan(0)
       expect(probeVolumeAt(shape, 2.75, 4.95)).toBeLessThan(1e-8)
@@ -161,7 +164,7 @@ describe('OpenGrid pillar CAD kernel integration', () => {
         OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.intersectionVolumeTolerance,
       )
       expect(probeVolumeAt(shape, 0, 0.42)).toBeGreaterThan(0)
-      // The unmodified leaf head rides on top at Z=5..6.5.
+      // The trimmed leaf head rides on top at Z=5..6.4, taper unchanged.
       expect(probeVolumeAt(shape, 2.55, 5.675)).toBeGreaterThan(0)
       expect(probeVolumeAt(shape, 2.95, 5.675)).toBeLessThan(1e-8)
       expect(probeVolumeAt(shape, 2.4, 5.675, 0.05, 0.85)).toBeGreaterThan(0)
@@ -200,7 +203,7 @@ describe('OpenGrid pillar CAD kernel integration', () => {
       expect(actual[0]?.[1]).toBeCloseTo(expected.min[1], 2)
       expect(actual[1]?.[1]).toBeCloseTo(expected.max[1], 2)
       expect(actual[0]?.[1]).toBeCloseTo(-1.95, 2)
-      expect(actual[1]?.[2]).toBeCloseTo(5.3, 2)
+      expect(actual[1]?.[2]).toBeCloseTo(5.2, 2)
       expect(probeVolumeAt(shape, 1.9, 2)).toBeGreaterThan(0)
       expect(probeVolumeAt(shape, 2.05, 2)).toBeLessThan(1e-8)
       const mesh = meshBRep(shape, {

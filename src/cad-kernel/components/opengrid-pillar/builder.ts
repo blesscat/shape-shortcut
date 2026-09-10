@@ -1,6 +1,7 @@
 import {
   getOC,
   isShape3D,
+  makeBox,
   makeCylinder,
   measureVolume,
   Sketcher,
@@ -246,16 +247,31 @@ function cutSeatHeadFromReference(reference: Shape3D): Shape3D {
   try {
     cutter = makeCylinder(cutterRadius, male.bodyHeight, [0, 0, 0])
     cut = reference.clone().cut(cutter)
+    deleteShape(cutter)
+    cutter = null
+    // The shared contract trims headTopTrim off the head top so the seated
+    // male keeps 0.1 mm of clearance below the untouched 1.5 mm pocket roof.
+    cutter = makeBox(
+      [-cutterRadius, -cutterRadius, male.effectiveTotalHeight],
+      [cutterRadius, cutterRadius, male.totalHeight + 1],
+    )
+    const trimmed = cut.cut(cutter)
+    deleteShape(cut)
+    cut = trimmed
     const boundingBox = cut.boundingBox
     let headMinZ: number
+    let headMaxZ: number
     try {
       headMinZ = boundingBox.bounds[0]?.[2] ?? Number.NaN
+      headMaxZ = boundingBox.bounds[1]?.[2] ?? Number.NaN
     } finally {
       boundingBox.delete()
     }
     if (
       !Number.isFinite(headMinZ) ||
-      Math.abs(headMinZ - male.bodyHeight) > GEOMETRY_TOLERANCE
+      !Number.isFinite(headMaxZ) ||
+      Math.abs(headMinZ - male.bodyHeight) > GEOMETRY_TOLERANCE ||
+      Math.abs(headMaxZ - male.effectiveTotalHeight) > GEOMETRY_TOLERANCE
     ) {
       throw new Error('PILLAR_SEAT_HEAD_CUT_INVALID')
     }

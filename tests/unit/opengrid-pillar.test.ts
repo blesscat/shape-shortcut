@@ -212,7 +212,7 @@ describe('pillar contract', () => {
       }),
     ).toEqual({
       min: [-3.321716, -2.45, 0],
-      max: [3.321716, 2.45, 5.3],
+      max: [3.321716, 2.45, 5.2],
     })
     expect(
       boundsForPillar({
@@ -222,7 +222,7 @@ describe('pillar contract', () => {
       }),
     ).toEqual({
       min: [-3.321716, -2.6, 0],
-      max: [3.321716, 2.6, 6.5],
+      max: [3.321716, 2.6, 6.4],
     })
     const negativeOffsetBounds = boundsForPillar({
       mode: 'detachable-corner-seat',
@@ -234,7 +234,7 @@ describe('pillar contract', () => {
     expect(negativeOffsetBounds.min[2]).toBe(0)
     expect(negativeOffsetBounds.max[0]).toBeCloseTo(3.321716, 10)
     expect(negativeOffsetBounds.max[1]).toBeCloseTo(1.95, 10)
-    expect(negativeOffsetBounds.max[2]).toBe(4.5)
+    expect(negativeOffsetBounds.max[2]).toBe(4.4)
   })
 
   it('migrates legacy snapshots to the remaining modes', () => {
@@ -287,34 +287,34 @@ describe('pillar contract', () => {
         length: 3.8,
         offset: 0,
       }),
-    ).toBe('pillar-5.3-detachable-corner-seat.step')
+    ).toBe('pillar-5.2-detachable-corner-seat.step')
     expect(
       pillarStlFileName({
         mode: 'detachable-corner-seat',
         length: 3.8,
         offset: 0,
       }),
-    ).toBe('pillar-5.3-detachable-corner-seat.stl')
+    ).toBe('pillar-5.2-detachable-corner-seat.stl')
     expect(
       pillarFileName({
         mode: 'detachable-corner-seat',
         length: 5,
         offset: 0.1,
       }),
-    ).toBe('pillar-6.5-detachable-corner-seat-z5-xy0.1.step')
+    ).toBe('pillar-6.4-detachable-corner-seat-z5-xy0.1.step')
     expect(
       pillarStlFileName({
         mode: 'detachable-corner-seat',
         length: 3.8,
         offset: -0.2,
       }),
-    ).toBe('pillar-5.3-detachable-corner-seat-xy-0.2.stl')
+    ).toBe('pillar-5.2-detachable-corner-seat-xy-0.2.stl')
     expect(
       pillarFileName({
         mode: 'detachable-corner-seat',
         length: 4.2,
         offset: 0,
       }),
-    ).toBe('pillar-5.7-detachable-corner-seat-z4.2.step')
+    ).toBe('pillar-5.6-detachable-corner-seat-z4.2.step')
   })
 })

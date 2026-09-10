@@ -115,6 +115,8 @@ describe('OpenGrid locating and assembly interface contract', () => {
       taperTopZ: 5.15,
       wearHeight: 0.15,
       totalHeight: 5.3,
+      headTopTrim: 0.1,
+      effectiveTotalHeight: 5.2,
       nominalVolume: 89.3026235581,
       bounds: {
         min: [-3.321716, -2.5, 0],
@@ -127,6 +129,10 @@ describe('OpenGrid locating and assembly interface contract', () => {
     )
     expect(configuration.male.taperTopZ).toBeCloseTo(
       configuration.male.totalHeight - configuration.male.wearHeight,
+      8,
+    )
+    expect(configuration.male.effectiveTotalHeight).toBeCloseTo(
+      configuration.male.totalHeight - configuration.male.headTopTrim,
       8,
     )
     expect(configuration.female).toMatchObject({

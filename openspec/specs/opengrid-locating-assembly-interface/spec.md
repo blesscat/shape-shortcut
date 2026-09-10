@@ -86,7 +86,8 @@ separate pillar contract and is nominally Ø4.9 mm before its user offset.
   rather than a legacy Ø5-to-Ø7.05 stepped hole
 - **AND** the container MUST remain compatible with the separately generated
   `opengrid-pillar` detachable male seat, including its parameterized Ø4.9 mm
-  locating section and unchanged shared retaining head
+  locating section and the shared retaining head with its shared 0.1 mm top
+  clearance trim
 
 #### Scenario: Shaft and retaining openings use the shared fixture interface
 
@@ -214,10 +215,15 @@ the insertion and locked poses.
 
 The fixed reference geometry MUST remain unchanged during the Organizer Box
 prototype phase and MUST remain the source of the detachable pillar's keyed
-retaining head. The independent pillar builder MAY apply its pillar-specific
-XY offset only to its generated locating section; it MUST NOT redefine or
-reshape the shared male/female head and socket fit or expose those fixed fit
-dimensions as user parameters.
+retaining head. The contract MUST publish a shared head top clearance trim of
+0.1 mm, and every builder that produces a physical male head MUST apply this
+trim to the head top after the reference passes validation, so the built male
+head is 1.4 mm tall with a 0.05 mm-high flat wear surface at an effective
+total height of 5.2 mm. Except for this shared trim, the independent pillar
+builder MAY apply its pillar-specific XY offset only to its generated locating
+section; it MUST NOT redefine or reshape the shared male/female head and
+socket fit or expose those fixed fit dimensions — including the trim value —
+as user parameters.
 
 #### Scenario: Shared detachable dimensions are published once
 
@@ -227,6 +233,8 @@ dimensions as user parameters.
   height 3.8 mm, lead-in height 0.2 mm, lead-in tip diameter 4.6 mm, key width
   1.96 mm, leaf head maximum length 6.64 mm, taper top Z 5.15 mm, wear height
   0.15 mm, and total height 5.3 mm
+- **AND** the contract MUST publish the head top clearance trim of 0.1 mm and
+  the effective built-male total height of 5.2 mm
 - **AND** the independent pillar locating section MUST use its separate nominal
   Ø4.9 mm body contract plus the requested pillar offset
 - **AND** it MUST receive female outer diameter 11 mm, depth 1.5 mm, source Z
@@ -252,13 +260,15 @@ dimensions as user parameters.
 
 #### Scenario: Raised wear surface preserves the seating datum
 
-- **WHEN** the fixed male seat is seated in the matching female socket
+- **WHEN** the built male seat is seated in the matching female socket
 - **THEN** its locating section MUST still extend exactly 3.8 mm below the box
   bottom datum
-- **AND** the raised wear surface MUST occupy Z=5.15 mm through Z=5.3 mm in
+- **AND** the trimmed wear surface MUST occupy Z=5.15 mm through Z=5.2 mm in
   the shared assembly coordinate system
-- **AND** the added wear height MUST NOT increase the box-to-support spacing
-
+- **AND** the head top MUST keep a 0.1 mm clearance below the female top datum
+  at Z=5.3 mm
+- **AND** the clearance trim MUST NOT increase the box-to-support spacing and
+  MUST NOT alter the locking taper between Z=3.8 mm and Z=5.15 mm
 ### Requirement: Detachable corner-seat reference compatibility
 
 The supplied v13 canonical male reference MUST be a valid non-empty single
