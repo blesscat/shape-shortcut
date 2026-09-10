@@ -151,14 +151,21 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
     }
   }
   if (modelId === 'opengrid-divider' && isRecord(value)) {
-    if (Object.prototype.hasOwnProperty.call(value, 'wallThickness')) {
-      return value
+    const merged = { ...value }
+    for (const key of [
+      'wallThickness',
+      'alignmentMode',
+      'targetBoxGridsX',
+      'targetBoxGridsY',
+      'endClearance',
+      'pegLengthMode',
+      'pegDiameterIncrement',
+    ] as const) {
+      if (!Object.prototype.hasOwnProperty.call(merged, key)) {
+        merged[key] = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters[key]
+      }
     }
-    return {
-      ...value,
-      wallThickness:
-        OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
-    }
+    return merged
   }
   if (modelId === 'opengrid-openconnect-shelf' && isRecord(value)) {
     if (Object.prototype.hasOwnProperty.call(value, 'connectorRows')) {

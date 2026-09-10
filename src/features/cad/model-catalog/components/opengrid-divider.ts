@@ -81,6 +81,55 @@ const OPENGRID_DIVIDER_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
     sliderMin: OPENGRID_DIVIDER_CONFIGURATION.minWallThickness,
     sliderMax: OPENGRID_DIVIDER_CONFIGURATION.maxWallThickness,
   },
+  {
+    key: 'targetBoxGridsX',
+    label: 'parameter.targetBoxGridsX',
+    axis: 'X',
+    unit: 'grid',
+    control: 'range-text',
+    defaultValue:
+      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsX,
+    min: OPENGRID_DIVIDER_CONFIGURATION.minTargetBoxGrids,
+    max: OPENGRID_DIVIDER_CONFIGURATION.maxTargetBoxGrids,
+    step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
+  },
+  {
+    key: 'targetBoxGridsY',
+    label: 'parameter.targetBoxGridsY',
+    axis: 'Y',
+    unit: 'grid',
+    control: 'range-text',
+    defaultValue:
+      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsY,
+    min: OPENGRID_DIVIDER_CONFIGURATION.minTargetBoxGrids,
+    max: OPENGRID_DIVIDER_CONFIGURATION.maxTargetBoxGrids,
+    step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
+  },
+  {
+    key: 'endClearance',
+    label: 'parameter.endClearance',
+    axis: 'Z',
+    unit: 'mm',
+    control: 'range-text',
+    defaultValue: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.endClearance,
+    min: OPENGRID_DIVIDER_CONFIGURATION.minEndClearance,
+    max: OPENGRID_DIVIDER_CONFIGURATION.maxEndClearance,
+    step: OPENGRID_DIVIDER_CONFIGURATION.endClearanceStep,
+  },
+  {
+    key: 'pegDiameterIncrement',
+    label: 'parameter.xyDiameterIncrement',
+    axis: 'XY',
+    unit: 'mm',
+    control: 'range-text',
+    defaultValue:
+      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.pegDiameterIncrement,
+    min: OPENGRID_DIVIDER_CONFIGURATION.pegDiameterIncrementMin,
+    max: OPENGRID_DIVIDER_CONFIGURATION.pegDiameterIncrementMax,
+    step: OPENGRID_DIVIDER_CONFIGURATION.pegDiameterIncrementStep,
+    sliderMin: OPENGRID_DIVIDER_CONFIGURATION.pegDiameterIncrementMin,
+    sliderMax: OPENGRID_DIVIDER_CONFIGURATION.pegDiameterIncrementMax,
+  },
 ]
 
 function validateDefinitionParameters(value: unknown) {

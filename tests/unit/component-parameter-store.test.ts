@@ -661,6 +661,12 @@ describe('component parameter store', () => {
       down: 0,
       height: 25,
       wallThickness: 3,
+      alignmentMode: 'free',
+      targetBoxGridsX: 4.5,
+      targetBoxGridsY: 4.5,
+      endClearance: 0.15,
+      pegLengthMode: 'snap',
+      pegDiameterIncrement: 0,
     })
     expect(store.get('opengrid-pillar')).toEqual({
       mode: 'detachable-corner-seat',
@@ -941,6 +947,12 @@ describe('component parameter store', () => {
       height: 20,
       wallThickness:
         OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
+      alignmentMode: 'free',
+      targetBoxGridsX: 4.5,
+      targetBoxGridsY: 4.5,
+      endClearance: 0.15,
+      pegLengthMode: 'snap',
+      pegDiameterIncrement: 0,
     })
     store.dispose()
 

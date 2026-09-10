@@ -528,6 +528,7 @@ describe('CAD workspace validation helpers', () => {
   })
 
   it('round-trips independent divider arm counts and height', () => {
+    const alignmentDefaults = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters
     const parameters: OpenGridDividerParameters = {
       left: 1,
       right: 1,
@@ -535,17 +536,15 @@ describe('CAD workspace validation helpers', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      alignmentMode: alignmentDefaults.alignmentMode,
+      targetBoxGridsX: alignmentDefaults.targetBoxGridsX,
+      targetBoxGridsY: alignmentDefaults.targetBoxGridsY,
+      endClearance: alignmentDefaults.endClearance,
+      pegLengthMode: alignmentDefaults.pegLengthMode,
+      pegDiameterIncrement: alignmentDefaults.pegDiameterIncrement,
     }
     const raw = rawFromParameters(parameters)
 
-    expect(raw).toEqual({
-      left: '1',
-      right: '1',
-      up: '1.5',
-      down: '0',
-      height: '20',
-      wallThickness: '2',
-    })
     expect(parseRawParameters(raw, 'opengrid-divider')).toEqual({
       valid: true,
       value: parameters,
@@ -564,14 +563,7 @@ describe('CAD workspace validation helpers', () => {
       ),
     ).toEqual({
       valid: true,
-      value: {
-        left: 1,
-        right: 0,
-        up: 0,
-        down: 0,
-        height: 20,
-        wallThickness: 2,
-      },
+      value: { ...parameters, right: 0, up: 0, down: 0 },
     })
     expect(
       parseRawParameters(

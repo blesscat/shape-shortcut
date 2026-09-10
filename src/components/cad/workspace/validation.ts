@@ -16,6 +16,7 @@ import {
   parseDimensionInput,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
+  OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   OPENGRID_WALL_COVER_CONFIGURATION,
   normalizeOpenGridWallCoverText,
@@ -29,6 +30,7 @@ import {
   type ModelId,
   type ModelParameterKey,
   type ModelParameterValues,
+  type OpenGridDividerParameters,
   type OpenGridSnapParameters,
   type OpenGridOrganizerBoxParameters,
   type OpenGridOpenConnectOrganizerParameters,
@@ -73,6 +75,12 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'down',
   'height',
   'wallThickness',
+  'alignmentMode',
+  'targetBoxGridsX',
+  'targetBoxGridsY',
+  'endClearance',
+  'pegLengthMode',
+  'pegDiameterIncrement',
 ]
 export const HEXAGONAL_COLUMN_PARAMETER_KEYS: ScalarModelParameterKey[] = [
   'height',
@@ -321,6 +329,83 @@ function parsePillarDecimalInput(raw: string): number | null {
   if (!/^-?(?:\d+\.?\d*|\.\d+)$/.test(trimmed)) return null
   const parsed = Number(trimmed)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function parseOpenGridDividerRawParameters(raw: RawParameters):
+  | { valid: true; value: ModelParameterValues }
+  | {
+      valid: false
+      messageId: string
+      field?: ModelParameterKey
+      params?: DiagnosticParams
+    } {
+  const defaults = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters
+  const invalid = (field: ModelParameterKey) => ({
+    valid: false as const,
+    messageId: 'validation.invalid',
+    field,
+  })
+
+  const parsed: Record<string, unknown> = {}
+  for (const key of ['left', 'right', 'up', 'down'] as const) {
+    const value = parseHalfStepInput(raw[key] ?? String(defaults[key]))
+    if (value === null) return invalid(key)
+    parsed[key] = value
+  }
+  const height = parseDimensionInput(raw.height ?? String(defaults.height))
+  if (height === null) return invalid('height')
+  parsed.height = height
+  const wallThickness = parseDimensionInput(
+    raw.wallThickness ?? String(defaults.wallThickness),
+  )
+  if (wallThickness === null) return invalid('wallThickness')
+  parsed.wallThickness = wallThickness
+
+  const alignmentMode = raw.alignmentMode ?? String(defaults.alignmentMode)
+  if (alignmentMode !== 'free' && alignmentMode !== 'box-fit') {
+    return invalid('alignmentMode')
+  }
+  parsed.alignmentMode = alignmentMode
+  for (const key of ['targetBoxGridsX', 'targetBoxGridsY'] as const) {
+    const value = parseHalfStepInput(raw[key] ?? String(defaults[key]))
+    if (value === null) return invalid(key)
+    parsed[key] = value
+  }
+  const endClearance = parseFiniteDecimalInput(
+    raw.endClearance ?? String(defaults.endClearance),
+  )
+  if (endClearance === null) return invalid('endClearance')
+  parsed.endClearance = endClearance
+  const pegLengthMode = raw.pegLengthMode ?? String(defaults.pegLengthMode)
+  if (
+    pegLengthMode !== 'snap' &&
+    pegLengthMode !== 'thin-shell' &&
+    pegLengthMode !== 'stackable'
+  ) {
+    return invalid('pegLengthMode')
+  }
+  parsed.pegLengthMode = pegLengthMode
+  const pegDiameterIncrement = parseFiniteDecimalInput(
+    raw.pegDiameterIncrement ?? String(defaults.pegDiameterIncrement),
+  )
+  if (pegDiameterIncrement === null) return invalid('pegDiameterIncrement')
+  parsed.pegDiameterIncrement = pegDiameterIncrement
+
+  const validation = validateModelParameters(
+    'opengrid-divider',
+    parsed as OpenGridDividerParameters,
+  )
+  if (!validation.valid) {
+    const issue = validation.issues[0]
+    const field = issue?.field
+    return {
+      valid: false,
+      messageId: issue?.messageId ?? 'validation.invalid',
+      field: modelParameterFieldFromDiagnostic(field),
+      ...(issue?.params ? { params: issue.params } : {}),
+    }
+  }
+  return { valid: true, value: validation.value.parameters }
 }
 
 function parsePillarRawParameters(raw: RawParameters):
@@ -859,22 +944,16 @@ export function rawFromParameters(
   }
 
   if ('left' in parameters) {
-    const dividerParameters = parameters as {
-      left: number
-      right: number
-      up: number
-      down: number
-      height: number
-      wallThickness: number
-    }
-    return {
-      left: String(dividerParameters.left),
-      right: String(dividerParameters.right),
-      up: String(dividerParameters.up),
-      down: String(dividerParameters.down),
-      height: String(dividerParameters.height),
-      wallThickness: String(dividerParameters.wallThickness),
-    }
+    const dividerParameters = parameters as unknown as Record<
+      (typeof OPENGRID_DIVIDER_PARAMETER_KEYS)[number],
+      number | string
+    >
+    return Object.fromEntries(
+      OPENGRID_DIVIDER_PARAMETER_KEYS.map((key) => [
+        key,
+        String(dividerParameters[key]),
+      ]),
+    ) as RawParameters
   }
 
   throw new Error('MODEL_PARAMETERS_EMPTY_OR_UNSUPPORTED')
@@ -1119,6 +1198,10 @@ export function parseRawParameters(
 
   if (modelId === 'opengrid-openconnect-organizer') {
     return parseOpenGridOpenConnectOrganizerRawParameters(raw)
+  }
+
+  if (modelId === 'opengrid-divider') {
+    return parseOpenGridDividerRawParameters(raw)
   }
 
   const parsed: Partial<

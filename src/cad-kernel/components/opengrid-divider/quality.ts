@@ -10,8 +10,9 @@ import {
   boundsForOpenGridDivider,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  openGridDividerBaseWidthFor,
   openGridDividerPlanBoundsFor,
-  openGridDividerPegCentersFor,
+  openGridDividerPegPlanFor,
   openGridDividerTransitionHeightFor,
   type ModelBounds,
   type OpenGridDividerParameters,
@@ -216,19 +217,14 @@ function locatedPegCountFor(
   parameters: OpenGridDividerParameters,
 ): number {
   const [centerX, centerY] = rawPlanCenter(parameters)
+  const pegPlan = openGridDividerPegPlanFor(parameters)
   let located = 0
-  for (const [rawX, rawY] of openGridDividerPegCentersFor(parameters)) {
-    const probe = makeCylinder(
-      OPENGRID_DIVIDER_CONFIGURATION.pegDiameter / 2 - 0.1,
-      0.2,
-      [
-        rawX - centerX,
-        rawY - centerY,
-        -OPENGRID_DIVIDER_CONFIGURATION.pegLength +
-          OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer +
-          0.01,
-      ],
-    )
+  for (const [rawX, rawY] of pegPlan.centers) {
+    const probe = makeCylinder(pegPlan.diameter / 2 - 0.1, 0.2, [
+      rawX - centerX,
+      rawY - centerY,
+      -pegPlan.length + pegPlan.bottomChamfer + 0.01,
+    ])
     let intersection: Shape3D | null = null
     try {
       intersection = shape.intersect(probe)
@@ -245,10 +241,10 @@ function integratedPegChamferCountFor(
   shape: Shape3D,
   parameters: OpenGridDividerParameters,
 ): number {
-  const configuration = OPENGRID_DIVIDER_CONFIGURATION
   const [centerX, centerY] = rawPlanCenter(parameters)
+  const pegPlan = openGridDividerPegPlanFor(parameters)
   let count = 0
-  for (const [rawX, rawY] of openGridDividerPegCentersFor(parameters)) {
+  for (const [rawX, rawY] of pegPlan.centers) {
     const targetX = rawX - centerX
     const targetY = rawY - centerY
     let matched = false
@@ -262,11 +258,10 @@ function integratedPegChamferCountFor(
         matched =
           Math.abs((minX + maxX) / 2 - targetX) <= 0.08 &&
           Math.abs((minY + maxY) / 2 - targetY) <= 0.08 &&
-          Math.abs(planSpan - configuration.pegDiameter) <= 0.2 &&
-          maxZ - minZ >= configuration.pegBottomChamfer * 0.7 &&
-          minZ <= -configuration.pegLength + 0.03 &&
-          maxZ <=
-            -configuration.pegLength + configuration.pegBottomChamfer + 0.05
+          Math.abs(planSpan - pegPlan.diameter) <= 0.2 &&
+          maxZ - minZ >= pegPlan.bottomChamfer * 0.7 &&
+          minZ <= -pegPlan.length + 0.03 &&
+          maxZ <= -pegPlan.length + pegPlan.bottomChamfer + 0.05
       } finally {
         boundingBox.delete()
         face.delete()
@@ -353,20 +348,18 @@ export function inspectOpenGridDividerShapeQuality(
     )
   }
 
+  const pegPlan = openGridDividerPegPlanFor(parameters)
   const bottomPegFaceCount = faceCountInZBand(
     shape,
     (surfaceType, minZ, maxZ) =>
       (surfaceType === 'CYLINDRE' || surfaceType === 'CONE') &&
-      minZ <=
-        -OPENGRID_DIVIDER_CONFIGURATION.pegLength +
-          OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer +
-          0.05 &&
+      minZ <= -pegPlan.length + pegPlan.bottomChamfer + 0.05 &&
       maxZ <= 0.1,
   )
   // OpenCascade may split a single peg's cylindrical face at wall intersections;
   // the integration fixture probes every expected center instead of treating
   // this diagnostic face count as an exact peg count.
-  const expectedPegCount = openGridDividerPegCentersFor(parameters).length
+  const expectedPegCount = pegPlan.centers.length
   let bottomPegChamferCount = 0
   try {
     bottomPegChamferCount = integratedPegChamferCountFor(shape, parameters)
@@ -455,9 +448,7 @@ export function inspectOpenGridDividerShapeQuality(
       parameters,
       transitionEndHeight + upperStraightHeight / 2,
     )
-    if (
-      !isCloseTo(baseProfileWidth, OPENGRID_DIVIDER_CONFIGURATION.wallWidth)
-    ) {
+    if (!isCloseTo(baseProfileWidth, openGridDividerBaseWidthFor(parameters))) {
       failures.push('profile:base-width-mismatch')
     }
     if (!isCloseTo(upperProfileWidth, parameters.wallThickness)) {
@@ -473,8 +464,7 @@ export function inspectOpenGridDividerShapeQuality(
       if (
         !isCloseTo(
           transitionProfileWidth,
-          (OPENGRID_DIVIDER_CONFIGURATION.wallWidth +
-            parameters.wallThickness) /
+          (openGridDividerBaseWidthFor(parameters) + parameters.wallThickness) /
             2,
         )
       ) {

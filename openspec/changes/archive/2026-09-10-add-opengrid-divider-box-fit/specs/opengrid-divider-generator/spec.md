@@ -1,8 +1,53 @@
-## Purpose
+## ADDED Requirements
 
-提供沿用官方 28 mm 整格／14 mm 半格 OpenGrid 間距的獨立分隔牆產生器，讓使用者以四方向 0.5 格步進建立可調高度、具底部定位柱與頂部圓角的可匯出 CAD 零件。
+### Requirement: 盒內對位模式
 
-## Requirements
+When `alignmentMode=box-fit`, the generator MUST derive peg placement and wall stationing from `targetBoxGridsX` and `targetBoxGridsY` instead of the central-junction anchor. Box-fit alignment MUST support only single-arm and straight dividers; L, T, and cross snapshots MUST be rejected with a field diagnostic in box-fit mode while remaining valid in free mode. Each axis MUST derive a 28 mm peg lattice anchored at the nominal box bottom hole column nearest that axis's box center: for a half-integer grid count the anchor MUST be the center column so stations are multiples of 28 mm, and for an integer grid count the anchor MUST be the ±7 columns so stations satisfy |station| ≡ 7 (mod 28). Horizontal-arm pegs MUST sit at X lattice stations strictly inside the horizontal wall span with Y equal to the arm centerline; vertical-arm pegs MUST sit at Y lattice stations strictly inside the vertical wall span with X equal to the arm centerline; shared coordinates MUST be emitted once; and a junction peg MUST be emitted only when the junction point lies on a lattice station of every axis it depends on. Each axis wall span MUST be the directional sum in grids minus (1.275 mm plus `endClearance`) at both nominal grid stations, centered on that axis's box center; for straight dividers the junction offset is (L−R)×14 mm in X and (U−D)×14 mm in Y, and for single-arm dividers the junction sits at the retracted inactive end. The snapshot MUST be invalid when an axis directional sum exceeds its target grid count. For these supported shapes, centering the exported envelope in the target box along the wall axis and placing the transverse centerline on a transverse hole column MUST place every emitted peg on a nominal bottom hole column and leave the selected `endClearance` between each wall end and the box inner wall.
+
+#### Scenario: 半整數格盒中心錨
+
+- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=4.5`, `targetBoxGridsY=4.5`, `left=2`, and `right=2.5`
+- **THEN** the emitted peg stations MUST land on 0, ±28, and ±56 relative to the envelope center so every peg sits on a nominal bottom hole column
+- **AND** the junction MUST sit 7 mm off the box center, so no peg is emitted at the junction itself while the alignment info reports the center lattice anchor and center hole
+- **AND** the badge MUST state the center anchor and that a center hole column exists
+
+#### Scenario: 整數格盒 ±7 錨
+
+- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=5`, `targetBoxGridsY=5`, `left=2.5`, and `right=2.5`
+- **THEN** the horizontal peg X stations MUST be −63, −35, −7, +7, +35, and +63 relative to the envelope center
+- **AND** no peg MUST be emitted at station 0 because the integer grid box has no center column
+
+#### Scenario: 橫向整數格的中心線指引
+
+- **WHEN** `targetBoxGridsX=4.5` and `targetBoxGridsY=5` for a horizontal straight divider
+- **THEN** the wall centerline at Y=0 MUST NOT coincide with a Y hole column because the Y axis is integer-grid
+- **AND** the workspace badge MUST state that the divider centerline must be placed on a Y-axis ±7 hole column instead of the box center row
+
+#### Scenario: 盒內對位單臂無接點柱
+
+- **WHEN** a valid divider in `box-fit` mode uses `right=4.5` with matching `targetBoxGridsX`
+- **THEN** the junction MUST sit at the retracted inactive wall end
+- **AND** no junction peg MUST be emitted while mid-wall lattice pegs remain
+
+#### Scenario: 盒內對位僅支援單臂與一字型
+
+- **WHEN** `alignmentMode=box-fit` and the active directions form an L, T, or cross shape
+- **THEN** validation MUST reject the snapshot with the straight-arm diagnostic
+- **AND** the same directional counts MUST remain accepted when `alignmentMode=free`
+
+#### Scenario: 超過目標格數必須拒絕
+
+- **WHEN** `alignmentMode=box-fit`, `targetBoxGridsX=4.5`, and `left=3` with `right=2`
+- **THEN** validation MUST reject the snapshot with a directional-sum diagnostic
+- **AND** no CAD generation or export MAY be dispatched for the snapshot
+
+#### Scenario: 對位保證
+
+- **WHEN** a valid box-fit single-arm or straight divider is exported, centered along its wall axis in the box, and placed with its transverse centerline on a transverse hole column
+- **THEN** every emitted peg MUST land on a nominal bottom hole column of the box
+- **AND** each wall end MUST keep the selected `endClearance` to the box inner wall
+
+## MODIFIED Requirements
 
 ### Requirement: 獨立的分隔牆參數契約
 
@@ -53,35 +98,6 @@ The system MUST expose a runtime-validated component with stable `modelId=opengr
 - **WHEN** `targetBoxGridsX` or `targetBoxGridsY` is absent, zero, not a 0.5-grid multiple, or greater than 17.5 grids, or `endClearance` is outside 0.1–2.0 mm or not a 0.05 mm step
 - **THEN** validation MUST reject the snapshot with field-specific diagnostics regardless of `alignmentMode`
 - **AND** legacy snapshots without these keys MUST still be accepted with the definition defaults filled in
-### Requirement: 依四方向格數判定形狀
-
-The system MUST derive the displayed shape from the non-zero direction counts and MUST NOT require a separate shape selector. Exactly one non-zero direction MUST be classified as a single-arm shape, exactly two opposite non-zero directions MUST be classified as a straight line, exactly two adjacent non-zero directions MUST be classified as an L shape, exactly three non-zero directions MUST be classified as a T shape, and all four non-zero directions MUST be classified as a cross shape.
-
-#### Scenario: 單臂型
-
-- **WHEN** `left=0`, `right=1`, `up=0`, and `down=0`
-- **THEN** the UI and normalized geometry metadata MUST identify the result as a single horizontal arm
-- **AND** its centerline span MUST be 28 mm
-
-#### Scenario: 一字型
-
-- **WHEN** `left=1`, `right=1`, `up=0`, and `down=0`
-- **THEN** the UI and normalized geometry metadata MUST identify the result as a horizontal straight line
-- **AND** its centerline span MUST be 56 mm
-
-#### Scenario: T 型
-
-- **WHEN** `left=1`, `right=1`, `up=2`, and `down=0`
-- **THEN** the UI and normalized geometry metadata MUST identify the result as a T shape
-- **AND** its horizontal centerline span MUST be 56 mm
-- **AND** its upward centerline arm length MUST be 56 mm
-
-#### Scenario: L 型與十字型
-
-- **WHEN** exactly two adjacent directions are non-zero
-- **THEN** the result MUST be classified as an L shape
-- **WHEN** all four directions are non-zero
-- **THEN** the result MUST be classified as a cross shape
 
 ### Requirement: 連續 5 mm 分隔牆幾何
 
@@ -118,6 +134,7 @@ The generated body MUST be a continuous connected divider whose base support has
 - **WHEN** the four arm counts are not symmetric
 - **THEN** the relative lengths and directions around the central junction MUST match the input counts after applying the same active-end retraction
 - **AND** the generator MUST NOT silently recenter the junction independently of the generated shape
+
 ### Requirement: 單臂中心定位柱上方延續牆體
 
 In `free` alignment mode the generated divider MUST, when exactly one of `left`, `right`, `up`, or `down` is non-zero, extend its complete profiled wall from the central arm axis 2.5 mm toward the inactive side. This extension MUST include the 5 mm base support, any 45-degree transition, and the selected upper wall, so the central 5 mm locating peg has wall directly above its center rather than only on the active side. The active arm endpoint MUST remain at the existing retracted station, and the result MUST remain one connected solid. In `box-fit` alignment mode the single-arm wall MUST instead span between the retracted stations of both nominal grid ends without the 2.5 mm inactive-side extension, placing the central junction at the retracted inactive end where no junction peg is emitted.
@@ -141,52 +158,6 @@ In `free` alignment mode the generated divider MUST, when exactly one of `left`,
 - **WHEN** two or more directional counts are non-zero
 - **THEN** the central junction MUST use the existing multi-arm wall geometry
 - **AND** no single-arm-only 2.5 mm extension MAY be added to an inactive side
-### Requirement: 盒內對位模式
-
-When `alignmentMode=box-fit`, the generator MUST derive peg placement and wall stationing from `targetBoxGridsX` and `targetBoxGridsY` instead of the central-junction anchor. Box-fit alignment MUST support only single-arm and straight dividers; L, T, and cross snapshots MUST be rejected with a field diagnostic in box-fit mode while remaining valid in free mode. Each axis MUST derive a 28 mm peg lattice anchored at the nominal box bottom hole column nearest that axis's box center: for a half-integer grid count the anchor MUST be the center column so stations are multiples of 28 mm, and for an integer grid count the anchor MUST be the ±7 columns so stations satisfy |station| ≡ 7 (mod 28). Horizontal-arm pegs MUST sit at X lattice stations strictly inside the horizontal wall span with Y equal to the arm centerline; vertical-arm pegs MUST sit at Y lattice stations strictly inside the vertical wall span with X equal to the arm centerline; shared coordinates MUST be emitted once; and a junction peg MUST be emitted only when the junction point lies on a lattice station of every axis it depends on. Each axis wall span MUST be the directional sum in grids minus (1.275 mm plus `endClearance`) at both nominal grid stations, centered on that axis's box center; for straight dividers the junction offset is (L−R)×14 mm in X and (U−D)×14 mm in Y, and for single-arm dividers the junction sits at the retracted inactive end. The snapshot MUST be invalid when an axis directional sum exceeds its target grid count. For these supported shapes, centering the exported envelope in the target box along the wall axis and placing the transverse centerline on a transverse hole column MUST place every emitted peg on a nominal bottom hole column and leave the selected `endClearance` between each wall end and the box inner wall.
-
-#### Scenario: 半整數格盒中心錨
-
-- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=4.5`, `targetBoxGridsY=4.5`, `left=2`, and `right=2.5`
-- **THEN** the emitted peg stations MUST land on 0, ±28, and ±56 relative to the envelope center so every peg sits on a nominal bottom hole column
-- **AND** the junction MUST sit 7 mm off the box center, so no peg is emitted at the junction itself while the alignment info reports the center lattice anchor and center hole
-- **AND** the badge MUST state the center anchor and that a center hole column exists
-
-#### Scenario: 整數格盒 ±7 錨
-
-- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=5`, `targetBoxGridsY=5`, `left=2.5`, and `right=2.5`
-- **THEN** the horizontal peg X stations MUST be −63, −35, −7, +7, +35, and +63 relative to the envelope center
-- **AND** no peg MUST be emitted at station 0 because the integer grid box has no center column
-
-#### Scenario: 橫向整數格的中心線指引
-
-- **WHEN** `targetBoxGridsX=4.5` and `targetBoxGridsY=5` for a horizontal straight divider
-- **THEN** the wall centerline at Y=0 MUST NOT coincide with a Y hole column because the Y axis is integer-grid
-- **AND** the workspace badge MUST state that the divider centerline must be placed on a Y-axis ±7 hole column instead of the box center row
-
-#### Scenario: 盒內對位單臂無接點柱
-
-- **WHEN** a valid divider in `box-fit` mode uses `right=4.5` with matching `targetBoxGridsX`
-- **THEN** the junction MUST sit at the retracted inactive wall end
-- **AND** no junction peg MUST be emitted while mid-wall lattice pegs remain
-
-#### Scenario: 盒內對位僅支援單臂與一字型
-
-- **WHEN** `alignmentMode=box-fit` and the active directions form an L, T, or cross shape
-- **THEN** validation MUST reject the snapshot with the straight-arm diagnostic
-- **AND** the same directional counts MUST remain accepted when `alignmentMode=free`
-
-#### Scenario: 超過目標格數必須拒絕
-
-- **WHEN** `alignmentMode=box-fit`, `targetBoxGridsX=4.5`, and `left=3` with `right=2`
-- **THEN** validation MUST reject the snapshot with a directional-sum diagnostic
-- **AND** no CAD generation or export MAY be dispatched for the snapshot
-
-#### Scenario: 對位保證
-
-- **WHEN** a valid box-fit single-arm or straight divider is exported, centered along its wall axis in the box, and placed with its transverse centerline on a transverse hole column
-- **THEN** every emitted peg MUST land on a nominal bottom hole column of the box
-- **AND** each wall end MUST keep the selected `endClearance` to the box inner wall
 
 ### Requirement: 依長度自動配置底部定位柱
 
@@ -228,60 +199,6 @@ The generator MUST automatically add shared OpenGrid locating pegs with the fixe
 - **WHEN** `pegDiameterIncrement` is non-zero
 - **THEN** every peg MUST grow or shrink around its computed lattice center without moving that center
 - **AND** the alignment lattice itself MUST remain anchored by the alignment mode rules
-### Requirement: 頂部圓角
-
-The generator MUST round the upper wall perimeter with a nominal 1 mm fillet. The fillet MUST apply to the wall top edges only; the bottom wall edge MUST remain sharp while each locating peg MUST use the shared 0.2 mm bottom perimeter chamfer. Inputs that cannot accommodate the required fillet or peg chamfer MUST fail validation or generation with a diagnosable error rather than producing a partial shape.
-
-#### Scenario: 頂部圓角存在
-
-- **WHEN** a valid divider is generated
-- **THEN** the upper wall perimeter MUST contain the requested 1 mm rounding
-- **AND** the exported B-Rep and preview MUST include the rounded geometry
-
-#### Scenario: 圓角幾何無法成立
-
-- **WHEN** the requested height or wall profile cannot support the 1 mm top fillet
-- **THEN** the generator MUST return a diagnosable geometry error
-- **AND** it MUST NOT commit or export a partial result
-
-### Requirement: 側邊圓角
-
-The generator MUST round the vertical side edges of the divider with the existing nominal 2.5 mm profile where the local 5 mm base supports it. On thinner upper walls, the side-rounding radius MUST be limited to a geometrically stable value no greater than half of the local wall thickness. The side rounding MUST coexist with the separate 1 mm upper-perimeter fillet, the 45-degree base chamfer, and the shared locating-peg chamfers. The bottom wall edge MUST remain sharp.
-
-#### Scenario: 薄牆側邊圓角穩定
-
-- **WHEN** a valid divider with `wallThickness` from 1 through 5 mm is generated
-- **THEN** the upper wall side profile MUST remain valid and connected
-- **AND** its side-rounding radius MUST NOT exceed the local upper wall half-width
-- **AND** the 5 mm base support MUST retain the largest stable side rounding allowed by its profile
-
-#### Scenario: 圓角與頂部輪廓共存
-
-- **WHEN** a valid divider with an active arm is generated
-- **THEN** the side rounding MUST coexist with the separate 1 mm upper-perimeter rounding and the base chamfer
-- **AND** the bottom wall edge MUST remain sharp while each locating peg retains its 0.2 mm bottom perimeter chamfer
-
-### Requirement: 45 度過渡斜邊端部圓角
-
-When the selected upper wall is thinner than the 5 mm base support, the generator MUST also round the short profile edges at both ends of each active arm where the 45-degree transition meets the arm end face. The nominal transition-edge radius MUST be 0.4 mm and MUST be capped at the smaller of half the selected upper wall thickness and half the actual transition rise. The transition-edge rounding MUST use the same cleaned-up local fillet operation as the other profile rounds, MUST remain a valid part of the single solid, and MUST be omitted when `wallThickness=5` because no transition edge exists.
-
-#### Scenario: 2 mm 過渡斜邊一起圓角
-
-- **WHEN** a valid divider is generated with `wallThickness=2`
-- **THEN** both short 45-degree transition edges at each active arm end MUST produce cylindrical rounding faces
-- **AND** the horizontal and vertical arm orientations MUST receive the same edge treatment
-- **AND** the transition rounding MUST coexist with the planar 45-degree chamfer, upper-perimeter rounding, and locating pegs in one valid solid
-
-#### Scenario: 薄牆與最小高度的過渡圓角限制
-
-- **WHEN** a valid divider uses `wallThickness` from 1 through 4 mm or the minimum supported height
-- **THEN** the transition-edge radius MUST be reduced when needed to fit the local transition geometry
-- **AND** generation MUST remain a valid single solid with finite mesh output
-
-#### Scenario: 5 mm 上牆沒有過渡圓角
-
-- **WHEN** a valid divider is generated with `wallThickness=5`
-- **THEN** no transition-edge fillet MUST be requested or reported because the profile remains continuously 5 mm wide
 
 ### Requirement: 預覽、bounds 與匯出
 
@@ -299,28 +216,6 @@ The committed divider MUST expose finite bounds, a non-empty mesh, and a single 
 - **THEN** STEP and STL requests MUST use the committed model revision
 - **AND** both downloads MUST contain non-empty geometry for the same normalized parameters, including wall thickness, alignment fields, and peg fields
 - **AND** exports whose normalized snapshots produce different geometry MUST have distinct deterministic filenames
-### Requirement: 底部 45 度斜角過渡
-
-When the selected upper wall is thinner than the 5 mm base support, the generated profile MUST retain the configured geometry-safety ledge at `Z=0` and then use a symmetric planar 45-degree chamfer rather than a rounded shoulder or an abrupt sharp step. The chamfer MUST use equal horizontal and vertical runs whenever the requested height permits; if the minimum height leaves insufficient room, its vertical rise MAY be capped at `height - 2 * geometrySafetyMargin` while preserving the selected upper wall at the top. When the selected upper wall is 5 mm, the chamfer and the extra ledge MUST be omitted.
-
-#### Scenario: 2 mm 上牆的 45 度斜角過渡
-
-- **WHEN** a valid divider is generated with `wallThickness=2`
-- **THEN** the 5 mm base support MUST blend into the 2 mm upper wall through a symmetric 45-degree planar chamfer
-- **AND** the main transition surface MUST remain planar rather than becoming a rounded shoulder; only its short end edges receive the separate bounded fillet
-- **AND** the generated result MUST remain one valid solid
-
-#### Scenario: 極薄牆的穩定斜角
-
-- **WHEN** a valid divider is generated with `wallThickness=1`
-- **THEN** the transition MUST use a stable 45-degree profile whenever the requested height permits, without self-intersection or a zero-thickness region, after the geometry-safety ledge
-- **AND** the generator MUST return a diagnostic geometry error rather than a partial result if no valid chamfered profile can be constructed
-
-#### Scenario: 5 mm 上牆不產生多餘斜角
-
-- **WHEN** a valid divider is generated with `wallThickness=5`
-- **THEN** the base and upper wall MUST remain a continuous 5 mm profile
-- **AND** no separate chamfer feature MUST be added
 
 ### Requirement: 不與官方 OpenGrid 相容性混淆
 
@@ -335,6 +230,7 @@ The divider component MUST be documented and identified as an OpenGrid accessory
 
 - **WHEN** the divider is generated in `free` alignment mode
 - **THEN** documentation and UI MUST NOT claim peg-to-hole interchangeability with a specific box base
+
 ### Requirement: OpenGrid 分隔器 CAD workspace
 
 The system MUST register `opengrid-divider` as an independent model definition and MUST route `/cad/opengrid-divider` to that definition. The route MUST expose the divider's `left`, `right`, `up`, `down`, `height`, and `wallThickness` controls plus the alignment and peg controls: an alignment-mode selector with `free` and `box-fit`, target box grid inputs for X and Y shown in `box-fit` mode, an end clearance input shown in `box-fit` mode, a peg length selector with the three `pegLengthMode` options labelled with their millimetre depths, and a peg diameter increment input. Each directional control MUST accept values from 0 through 10 grids in 0.5-grid steps. The height text input MUST accept 2–500 mm and its slider MUST range from 2–200 mm. In `box-fit` mode the workspace MUST display a read-only alignment badge derived from the target grid counts stating each axis anchor column (center for half-integer grids, ±7 for integer grids), whether a center peg exists, and the required transverse centerline placement when an axis is integer-grid; it MUST warn when an axis grid count is integer so no center hole exists, MUST reject an axis directional sum exceeding its target grid count with a field-specific diagnostic, and MUST reject L, T, and cross shapes in box-fit mode with the straight-arm diagnostic while keeping them available in free mode. It MUST NOT show the repeated technical paragraph describing the official grid, height, slider, or footprint limits. It MUST NOT show the official OpenGrid Full/Lite/Heavy, connector, or screw controls.
@@ -366,20 +262,3 @@ The system MUST register `opengrid-divider` as an independent model definition a
 - **THEN** the workspace MUST show a field-specific validation error and MUST send `model.invalidate` instead of `model.generate`
 - **WHEN** the user raises an arm in box-fit mode so the shape becomes an L
 - **THEN** the workspace MUST show the straight-arm diagnostic and MUST NOT send the snapshot for generation
-### Requirement: 分隔器輸入生命週期
-
-The divider workspace MUST use the existing typed generation, debounce, latest-wins, invalidation, candidate, commit, stale-preview, and export gates for its component-specific parameters, including `wallThickness`.
-
-#### Scenario: 合法輸入建模
-
-- **WHEN** a complete divider snapshot passes validation and input debounce settles
-- **THEN** the workspace MUST send a `model.generate` request with `modelId=opengrid-divider`
-- **AND** only the latest valid candidate MUST be eligible for commit
-- **AND** exports MUST become available only after a matching committed revision exists
-
-#### Scenario: 非法輸入失效化
-
-- **WHEN** any directional count, height, or `wallThickness` is empty, fractional where integer input is required, non-finite, negative, or outside its supported range
-- **THEN** the workspace MUST show a field-specific validation error
-- **AND** it MUST send `model.invalidate` instead of `model.generate`
-- **AND** export MUST remain disabled for the invalid or stale generation
