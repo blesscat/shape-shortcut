@@ -1,6 +1,5 @@
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 import {
-  OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   normalizeOpenGridLocatingSeatMode,
   openGridDetachableCornerSeatSocketRotationFor,
@@ -40,6 +39,7 @@ export type OpenGridOrganizerBoxParameterKey =
   | 'holeDiameter'
   | 'holeDepth'
   | 'bottomThickness'
+  | 'wallThickness'
   | 'cornerSeatMode'
   | 'boxMode'
   | 'stackingClearanceHeight'
@@ -54,6 +54,7 @@ export type OpenGridOrganizerBoxParameters = {
   holeDiameter: number
   holeDepth: number
   bottomThickness: number
+  wallThickness: number
   cornerSeatMode: OpenGridLocatingSeatMode
   boxMode: OpenGridOrganizerBoxBoxMode
   stackingClearanceHeight: number
@@ -125,9 +126,8 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   gridStepPitch: OPENGRID_GRID_CONFIGURATION.fullPitch * 0.5,
   workspaceMaxDimension: 500,
   clearanceTotal: 0.15,
-  boundaryClearance: 7,
-  minimumTopRailCavitySeparation: 4.05,
-  interfaceFloorDatum: 5,
+  interfaceFloorDatumNormal: 2,
+  interfaceFloorDatumStackable: 5,
   defaultHoleCountX: 2,
   defaultHoleCountY: 2,
   defaultHoleSpacingMode: 'linked' as OpenGridOrganizerBoxSpacingMode,
@@ -136,6 +136,7 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   defaultHoleDiameter: 20,
   defaultHoleDepth: 20,
   defaultBottomThickness: 1,
+  defaultWallThickness: 2,
   defaultCornerSeatMode: 'detachable-corner-seat' as OpenGridLocatingSeatMode,
   defaultBoxMode: 'normal' as OpenGridOrganizerBoxBoxMode,
   defaultStackingClearanceHeight: 3.5,
@@ -151,25 +152,22 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   maxHoleDiameter: 300,
   minHoleDepth: 1,
   maxHoleDepth: 500,
-  minBottomThickness: 1,
+  minBottomThickness: 0,
   maxBottomThickness: 100,
+  minWallThicknessNormal: 2,
+  minWallThicknessStackable: 2.95,
+  maxWallThickness: 100,
   minStackingClearanceHeight: 3.5,
   maxStackingClearanceHeight: 500,
 } as const
 
 function interfaceFloorDatumFor(
-  parameters: Pick<
-    OpenGridOrganizerBoxParameters,
-    'boxMode' | 'cornerSeatMode'
-  >,
+  parameters: Pick<OpenGridOrganizerBoxParameters, 'boxMode'>,
 ): number {
-  if (
-    parameters.boxMode === 'normal' &&
-    parameters.cornerSeatMode === 'detachable-corner-seat'
-  ) {
-    return OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.depth
-  }
-  return OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatum
+  const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
+  return parameters.boxMode === 'stackable'
+    ? configuration.interfaceFloorDatumStackable
+    : configuration.interfaceFloorDatumNormal
 }
 
 export const OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS: OpenGridOrganizerBoxParameters =
@@ -185,6 +183,7 @@ export const OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS: OpenGridOrganizerBoxPara
     holeDepth: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleDepth,
     bottomThickness:
       OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultBottomThickness,
+    wallThickness: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultWallThickness,
     cornerSeatMode: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultCornerSeatMode,
     boxMode: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultBoxMode,
     stackingClearanceHeight:
@@ -202,13 +201,6 @@ const POLYGON_SIDES_BY_SHAPE: Record<
 }
 
 const VALIDATION_TOLERANCE = 1e-9
-const INTERFACE_COLLISION_TOLERANCE = 0.02
-
-type InterfaceFeatureBounds = {
-  kind: 'integrated-seat' | 'detachable-socket' | 'stacking-seam'
-  min: [number, number, number]
-  max: [number, number, number]
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -310,49 +302,32 @@ export function openGridOrganizerBoxPolygonPointsFor(
   })
 }
 
-function interfaceBoundaryClearanceFor(
-  parameters: Pick<
-    OpenGridOrganizerBoxParameters,
-    'boxMode' | 'cornerSeatMode'
-  >,
-): number {
+function minimumWallThicknessFor(boxMode: OpenGridOrganizerBoxBoxMode): number {
   const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
-  const activeClearances: number[] = [configuration.boundaryClearance]
-  if (parameters.boxMode === 'stackable') {
-    activeClearances.push(
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamBedOpeningWidth / 2 +
-        configuration.clearanceTotal,
-    )
-  }
-  if (parameters.cornerSeatMode === 'integrated') {
-    activeClearances.push(
-      OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatDiameter / 2 +
-        configuration.clearanceTotal,
-    )
-  }
-  if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    activeClearances.push(
-      OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.outerDiameter / 2 +
-        configuration.clearanceTotal,
-    )
-  }
-  return Math.max(...activeClearances)
+  return boxMode === 'stackable'
+    ? configuration.minWallThicknessStackable
+    : configuration.minWallThicknessNormal
 }
 
-function gridCountForSpan(
-  span: number,
-  parameters: Pick<
-    OpenGridOrganizerBoxParameters,
-    'boxMode' | 'cornerSeatMode'
-  >,
+function hydratableWallThicknessFor(
+  boxMode: OpenGridOrganizerBoxBoxMode,
 ): number {
   const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
-  const minimumSpan = span + 2 * interfaceBoundaryClearanceFor(parameters)
+  const minimum = minimumWallThicknessFor(boxMode)
+  return (
+    Math.ceil(minimum / configuration.gridStep - VALIDATION_TOLERANCE) *
+    configuration.gridStep
+  )
+}
+
+function gridCountForSpan(span: number, wallThickness: number): number {
+  const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
+  const minimumSpan = span + 2 * wallThickness + configuration.clearanceTotal
   const gridCount =
     Math.ceil(
       (minimumSpan - VALIDATION_TOLERANCE) / configuration.gridStepPitch,
     ) * configuration.gridStep
-  return Math.max(configuration.gridStep, gridCount)
+  return Math.max(1, gridCount)
 }
 
 function footprintForGridCount(gridCount: number): number {
@@ -379,16 +354,6 @@ function stackableInterfaceParametersFor(
     thinShellMode: false,
     honeycombMode: false,
   }
-}
-
-function stackableInterfaceTopZFor(): number {
-  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  return (
-    configuration.bottomFootChamferHeight +
-    configuration.bottomSupportBandHeight +
-    configuration.bottomStackingLeadIn +
-    configuration.bottomGridSeamOpeningWidth / 2
-  )
 }
 
 function detachableSocketPosesForGridCounts(
@@ -452,240 +417,6 @@ function stackingLayoutFor(
   }
 }
 
-function interfaceFeatureBoundsFor(
-  parameters: Pick<
-    OpenGridOrganizerBoxParameters,
-    'boxMode' | 'cornerSeatMode'
-  >,
-  gridCountX: number,
-  gridCountY: number,
-): InterfaceFeatureBounds[] {
-  const organizerConfiguration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
-  const stackableConfiguration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const footprintWidth = footprintForGridCount(gridCountX)
-  const footprintDepth = footprintForGridCount(gridCountY)
-
-  const features: InterfaceFeatureBounds[] = []
-  if (parameters.cornerSeatMode === 'integrated') {
-    const interfaceParameters = stackableInterfaceParametersFor(
-      gridCountX,
-      gridCountY,
-    )
-    const radius =
-      OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatDiameter / 2 +
-      organizerConfiguration.clearanceTotal
-    features.push(
-      ...openGridStackableBoxSocketCentersFor(interfaceParameters).map(
-        ([x, y]) =>
-          ({
-            kind: 'integrated-seat',
-            min: [
-              x - radius,
-              y - radius,
-              OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatMinZ -
-                INTERFACE_COLLISION_TOLERANCE,
-            ],
-            max: [x + radius, y + radius, INTERFACE_COLLISION_TOLERANCE],
-          }) satisfies InterfaceFeatureBounds,
-      ),
-    )
-  }
-
-  if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    const interfaceParameters = stackableInterfaceParametersFor(
-      gridCountX,
-      gridCountY,
-    )
-    const radius =
-      OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.outerDiameter / 2 +
-      organizerConfiguration.clearanceTotal
-    features.push(
-      ...openGridStackableBoxSocketCentersFor(interfaceParameters).map(
-        ([x, y]) =>
-          ({
-            kind: 'detachable-socket',
-            min: [x - radius, y - radius, -INTERFACE_COLLISION_TOLERANCE],
-            max: [
-              x + radius,
-              y + radius,
-              OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.depth +
-                INTERFACE_COLLISION_TOLERANCE,
-            ],
-          }) satisfies InterfaceFeatureBounds,
-      ),
-    )
-  }
-
-  if (parameters.boxMode !== 'stackable') return features
-
-  const halfOpening =
-    stackableConfiguration.bottomGridSeamBedOpeningWidth / 2 +
-    organizerConfiguration.clearanceTotal
-  const seamTop = stackableInterfaceTopZFor()
-  for (let index = 1; index < Math.ceil(gridCountX); index += 1) {
-    const position =
-      -footprintWidth / 2 + index * stackableConfiguration.gridPitch
-    features.push({
-      kind: 'stacking-seam',
-      min: [position - halfOpening, -footprintDepth / 2, -0.02],
-      max: [position + halfOpening, footprintDepth / 2, seamTop],
-    })
-  }
-  for (let index = 1; index < Math.ceil(gridCountY); index += 1) {
-    const position =
-      -footprintDepth / 2 + index * stackableConfiguration.gridPitch
-    features.push({
-      kind: 'stacking-seam',
-      min: [-footprintWidth / 2, position - halfOpening, -0.02],
-      max: [footprintWidth / 2, position + halfOpening, seamTop],
-    })
-  }
-  return features
-}
-
-function interfaceFeaturesIntersect(
-  first: InterfaceFeatureBounds,
-  second: InterfaceFeatureBounds,
-): boolean {
-  return (
-    intervalsOverlap(
-      first.min[0],
-      first.max[0],
-      second.min[0],
-      second.max[0],
-    ) &&
-    intervalsOverlap(
-      first.min[1],
-      first.max[1],
-      second.min[1],
-      second.max[1],
-    ) &&
-    intervalsOverlap(first.min[2], first.max[2], second.min[2], second.max[2])
-  )
-}
-
-function seatAndStackingFeaturesIntersect(
-  features: readonly InterfaceFeatureBounds[],
-): boolean {
-  const stackingFeatures = features.filter(
-    (feature) => feature.kind === 'stacking-seam',
-  )
-  const seatFeatures = features.filter(
-    (feature) => feature.kind !== 'stacking-seam',
-  )
-  return seatFeatures.some((seatFeature) =>
-    stackingFeatures.some((stackingFeature) =>
-      interfaceFeaturesIntersect(seatFeature, stackingFeature),
-    ),
-  )
-}
-
-function intervalsOverlap(
-  firstMin: number,
-  firstMax: number,
-  secondMin: number,
-  secondMax: number,
-): boolean {
-  return (
-    firstMin < secondMax - INTERFACE_COLLISION_TOLERANCE &&
-    secondMin < firstMax - INTERFACE_COLLISION_TOLERANCE
-  )
-}
-
-function cavityIntersectsInterfaceFeature(
-  center: OpenGridOrganizerBoxPoint2D,
-  envelope: OpenGridOrganizerBoxCavityEnvelope,
-  cavityMinZ: number,
-  cavityMaxZ: number,
-  feature: InterfaceFeatureBounds,
-): boolean {
-  return (
-    intervalsOverlap(
-      center[0] - envelope.x / 2,
-      center[0] + envelope.x / 2,
-      feature.min[0],
-      feature.max[0],
-    ) &&
-    intervalsOverlap(
-      center[1] - envelope.y / 2,
-      center[1] + envelope.y / 2,
-      feature.min[1],
-      feature.max[1],
-    ) &&
-    intervalsOverlap(cavityMinZ, cavityMaxZ, feature.min[2], feature.max[2])
-  )
-}
-
-function layoutHasUnsafeBottomInterfaceFor(
-  parameters: OpenGridOrganizerBoxParameters,
-  gridCountX: number,
-  gridCountY: number,
-  envelope: OpenGridOrganizerBoxCavityEnvelope,
-  centers: readonly OpenGridOrganizerBoxPoint2D[],
-): boolean {
-  const interfaceFeatures = interfaceFeatureBoundsFor(
-    parameters,
-    gridCountX,
-    gridCountY,
-  )
-  const cavityMinZ =
-    interfaceFloorDatumFor(parameters) +
-    parameters.bottomThickness -
-    INTERFACE_COLLISION_TOLERANCE
-  const cavityMaxZ =
-    cavityMinZ + parameters.holeDepth + 2 * INTERFACE_COLLISION_TOLERANCE
-  const cavityIntersectsFeature = centers.some((center) =>
-    interfaceFeatures.some((feature) =>
-      cavityIntersectsInterfaceFeature(
-        center,
-        envelope,
-        cavityMinZ,
-        cavityMaxZ,
-        feature,
-      ),
-    ),
-  )
-  return (
-    cavityIntersectsFeature ||
-    seatAndStackingFeaturesIntersect(interfaceFeatures)
-  )
-}
-
-function gridCountsForLayout(
-  parameters: OpenGridOrganizerBoxParameters,
-  envelope: OpenGridOrganizerBoxCavityEnvelope,
-  centers: readonly OpenGridOrganizerBoxPoint2D[],
-  requiredSpan: { x: number; y: number },
-): { x: number; y: number } {
-  const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
-  const minimumX = gridCountForSpan(requiredSpan.x, parameters)
-  const minimumY = gridCountForSpan(requiredSpan.y, parameters)
-  const maximum =
-    Math.ceil(
-      (configuration.workspaceMaxDimension + configuration.clearanceTotal) /
-        configuration.gridPitch /
-        configuration.gridStep,
-    ) * configuration.gridStep
-
-  for (let gridCountX = minimumX; gridCountX <= maximum; gridCountX += 0.5) {
-    for (let gridCountY = minimumY; gridCountY <= maximum; gridCountY += 0.5) {
-      if (
-        !layoutHasUnsafeBottomInterfaceFor(
-          parameters,
-          gridCountX,
-          gridCountY,
-          envelope,
-          centers,
-        )
-      ) {
-        return { x: gridCountX, y: gridCountY }
-      }
-    }
-  }
-
-  return { x: minimumX, y: minimumY }
-}
-
 export function openGridOrganizerBoxLayoutFor(
   parameters: OpenGridOrganizerBoxParameters,
 ): OpenGridOrganizerBoxLayout {
@@ -724,14 +455,8 @@ function openGridOrganizerBoxLayoutForUnchecked(
     x: envelope.x + (parameters.holeCountX - 1) * pitchX,
     y: envelope.y + (parameters.holeCountY - 1) * pitchY,
   }
-  const gridCounts = gridCountsForLayout(
-    parameters,
-    envelope,
-    cavityCenters,
-    requiredSpan,
-  )
-  const gridCountX = gridCounts.x
-  const gridCountY = gridCounts.y
+  const gridCountX = gridCountForSpan(requiredSpan.x, parameters.wallThickness)
+  const gridCountY = gridCountForSpan(requiredSpan.y, parameters.wallThickness)
   const interfaceFloorDatum = interfaceFloorDatumFor(parameters)
   const bodyHeight =
     interfaceFloorDatum + parameters.bottomThickness + parameters.holeDepth
@@ -742,8 +467,8 @@ function openGridOrganizerBoxLayoutForUnchecked(
     cavityCenters,
     requiredSpan,
     minimumFootprintSpan: {
-      x: requiredSpan.x + 2 * interfaceBoundaryClearanceFor(parameters),
-      y: requiredSpan.y + 2 * interfaceBoundaryClearanceFor(parameters),
+      x: requiredSpan.x + 2 * parameters.wallThickness,
+      y: requiredSpan.y + 2 * parameters.wallThickness,
     },
     gridCountX,
     gridCountY,
@@ -790,6 +515,7 @@ const CANONICAL_PARAMETER_KEYS: readonly OpenGridOrganizerBoxParameterKey[] = [
   'holeDiameter',
   'holeDepth',
   'bottomThickness',
+  'wallThickness',
   'cornerSeatMode',
   'boxMode',
   'stackingClearanceHeight',
@@ -838,11 +564,13 @@ export function normalizeOpenGridOrganizerBoxParameters(
   if (!isLegacyBottomInterfaceMode(value.bottomInterfaceMode)) return value
 
   const { bottomInterfaceMode, ...withoutLegacyMode } = value
+  const modes = modesForLegacyBottomInterface(bottomInterfaceMode)
   return {
     ...withoutLegacyMode,
-    ...modesForLegacyBottomInterface(bottomInterfaceMode),
+    ...modes,
     stackingClearanceHeight:
       OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultStackingClearanceHeight,
+    wallThickness: hydratableWallThicknessFor(modes.boxMode),
   }
 }
 
@@ -912,6 +640,11 @@ export function validateOpenGridOrganizerBoxParameters(
       configuration.maxBottomThickness,
     ],
     [
+      'wallThickness',
+      configuration.minWallThicknessNormal,
+      configuration.maxWallThickness,
+    ],
+    [
       'stackingClearanceHeight',
       configuration.minStackingClearanceHeight,
       configuration.maxStackingClearanceHeight,
@@ -944,37 +677,14 @@ export function validateOpenGridOrganizerBoxParameters(
   if (issues.length > 0) return { valid: false, issues }
 
   const parameters = value as unknown as OpenGridOrganizerBoxParameters
-  const layout = openGridOrganizerBoxLayoutForUnchecked(parameters)
-  if (parameters.cornerSeatMode === 'detachable-corner-seat') {
-    const cavityFloor = layout.bodyHeight - parameters.holeDepth
-    const socketTop = OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.depth
-    const socketRoof = cavityFloor - socketTop
-    if (
-      socketRoof <
-      OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.minimumSocketRoof
-    ) {
-      issues.push(issue('bottomThickness'))
-    }
-  }
-  const interfaceCollision = layoutHasUnsafeBottomInterfaceFor(
-    parameters,
-    layout.gridCountX,
-    layout.gridCountY,
-    layout.cavityEnvelope,
-    layout.cavityCenters,
-  )
-  const topRailInwardReach =
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.wallThickness +
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerChamfer
-  const topRailCavitySeparation =
-    OPENGRID_ORGANIZER_BOX_CONFIGURATION.boundaryClearance - topRailInwardReach
-  const topRailBoundaryInvalid =
-    parameters.boxMode === 'stackable' &&
-    topRailCavitySeparation + VALIDATION_TOLERANCE <
-      OPENGRID_ORGANIZER_BOX_CONFIGURATION.minimumTopRailCavitySeparation
   if (
-    interfaceCollision ||
-    topRailBoundaryInvalid ||
+    parameters.boxMode === 'stackable' &&
+    parameters.wallThickness + VALIDATION_TOLERANCE <
+      minimumWallThicknessFor('stackable')
+  ) {
+    issues.push(issue('wallThickness'))
+  }
+  if (
     parameters.holeSpacingX <= 0 ||
     parameters.holeSpacingY <= 0 ||
     layoutExceedsWorkspace(parameters)
@@ -1028,6 +738,7 @@ function organizerBoxFileStem(
     `sx${numberToken(parameters.holeSpacingX)}`,
     `sy${numberToken(parameters.holeSpacingY)}`,
     `h${numberToken(parameters.holeDepth)}`,
+    `wt${numberToken(parameters.wallThickness)}`,
     `b${numberToken(parameters.bottomThickness)}`,
     `seats-${parameters.cornerSeatMode}`,
     `body-${parameters.boxMode}`,

@@ -455,7 +455,8 @@ export const zhHantMessages = {
   'parameter.organizerHoleSpacing': '孔外圍間距',
   'parameter.organizerHoleDiameter': '孔直徑（多邊形為內切圓直徑）',
   'parameter.organizerHoleDepth': '孔深度',
-  'parameter.organizerBottomThickness': '底部加厚',
+  'parameter.organizerBottomThickness': '腔體底部厚度',
+  'parameter.organizerWallThickness': '壁厚',
   'parameter.organizerEdgeThickness': '孔洞至外緣厚度',
   'parameter.organizerThicknessHelp':
     '底厚設為 0 mm 時孔洞會貫穿底部；邊緣厚度同時控制局部 X/Y 孔洞外緣到本體外緣的最小距離。',
@@ -1258,7 +1259,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.organizerHoleSpacing': 'Outer-to-outer hole gap',
   'parameter.organizerHoleDiameter': 'Hole diameter (inscribed for polygons)',
   'parameter.organizerHoleDepth': 'Hole depth',
-  'parameter.organizerBottomThickness': 'Bottom thickness',
+  'parameter.organizerBottomThickness': 'Cavity bottom thickness',
+  'parameter.organizerWallThickness': 'Wall thickness',
   'parameter.organizerEdgeThickness': 'Cavity-to-edge thickness',
   'parameter.organizerThicknessHelp':
     'Set bottom thickness to 0 mm for through-open cavities. Edge thickness controls the minimum local X/Y distance from the cavity envelope to the body edge.',

@@ -81,6 +81,7 @@ describe('component parameter store', () => {
       holeSpacingX: 3,
       holeSpacingY: 4,
       holeShape: 'hexagon' as const,
+      wallThickness: 3,
       cornerSeatMode: 'detachable-corner-seat' as const,
       boxMode: 'stackable' as const,
       stackingClearanceHeight: 4,
@@ -115,17 +116,32 @@ describe('component parameter store', () => {
     malformedStore.dispose()
   })
 
+  it('falls back to defaults when a persisted organizer-box snapshot misses wallThickness', () => {
+    const { wallThickness: _wallThickness, ...withoutWallThickness } =
+      OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
+    const storage = createMemoryStorage(
+      createPayload({ 'opengrid-organizer-box': withoutWallThickness }),
+    )
+    const store = createComponentParameterStore({ storage })
+
+    expect(store.get('opengrid-organizer-box')).toEqual(
+      OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+    )
+    store.dispose()
+  })
+
   it.each([
-    ['corner-seat', 'integrated', 'normal'],
-    ['detachable-corner-seat', 'detachable-corner-seat', 'normal'],
-    ['stackable', 'none', 'stackable'],
+    ['corner-seat', 'integrated', 'normal', 2],
+    ['detachable-corner-seat', 'detachable-corner-seat', 'normal', 2],
+    ['stackable', 'none', 'stackable', 3],
   ] as const)(
     'hydrates legacy organizer mode %s as seat %s and body %s',
-    (bottomInterfaceMode, cornerSeatMode, boxMode) => {
+    (bottomInterfaceMode, cornerSeatMode, boxMode, wallThickness) => {
       const {
         cornerSeatMode: _cornerSeatMode,
         boxMode: _boxMode,
         stackingClearanceHeight: _stackingClearanceHeight,
+        wallThickness: _wallThickness,
         ...legacyDefaults
       } = OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
       const storage = createMemoryStorage(
@@ -143,6 +159,7 @@ describe('component parameter store', () => {
         cornerSeatMode,
         boxMode,
         stackingClearanceHeight: 3.5,
+        wallThickness,
       })
 
       expect(

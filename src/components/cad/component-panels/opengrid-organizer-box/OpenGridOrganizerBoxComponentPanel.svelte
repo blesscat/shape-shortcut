@@ -36,6 +36,7 @@
     'holeDiameter',
     'holeDepth',
     'bottomThickness',
+    'wallThickness',
     'stackingClearanceHeight',
   ] as const
 
@@ -152,6 +153,17 @@
       : ['holeSpacingX', 'holeSpacingY']
   }
 
+  function wallFieldFor(): ParameterFieldDefinition {
+    const field = fieldFor('wallThickness')
+    if (bodyModeForRawParameters() !== 'stackable') return field
+    const stackableUiFloor = 3
+    if (field.min >= stackableUiFloor) return field
+    return { ...field, min: stackableUiFloor, sliderMin: stackableUiFloor }
+  }
+
+  const wallField = $derived(wallFieldFor())
+  const wallValue = $derived(valueFor(wallField))
+
   function layoutForRawParameters() {
     const numberFor = (key: string, fallback: number): number =>
       Number(rawParameters[key] ?? String(fallback))
@@ -190,6 +202,10 @@
       bottomThickness: numberFor(
         'bottomThickness',
         OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.bottomThickness,
+      ),
+      wallThickness: numberFor(
+        'wallThickness',
+        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.wallThickness,
       ),
       cornerSeatMode: seatModeForRawParameters(),
       boxMode: bodyModeForRawParameters(),
@@ -239,7 +255,15 @@
   function handleBodyModeChange(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     if (!event.currentTarget.checked) return
-    onInputChange('boxMode', event.currentTarget.value)
+    const value = event.currentTarget.value as OpenGridOrganizerBoxBoxMode
+    onInputChange('boxMode', value)
+    if (value === 'stackable') {
+      const current = Number(
+        rawParameters.wallThickness ??
+          String(OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.wallThickness),
+      )
+      if (current < 3) onInputChange('wallThickness', '3')
+    }
   }
 </script>
 
@@ -505,4 +529,26 @@
       />
     </ParameterField>
   {/each}
+
+  <ParameterField
+    {locale}
+    label={displayParameterLabel(wallField, locale)}
+    unit={unitLabelFor(locale, wallField.unit)}
+    changed={wallValue !== String(wallField.defaultValue)}
+    error={fieldErrors.wallThickness}
+    errorId="wallThickness-error"
+    onRestore={() =>
+      onInputChange(
+        'wallThickness',
+        String(Math.max(wallField.defaultValue, wallField.min)),
+      )}
+  >
+    <ParameterControl
+      {locale}
+      field={wallField}
+      value={wallValue}
+      error={fieldErrors.wallThickness}
+      onChange={(nextValue) => onInputChange('wallThickness', nextValue)}
+    />
+  </ParameterField>
 </fieldset>
