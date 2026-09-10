@@ -1,6 +1,7 @@
 import type {
   BooleanOperationKind,
   BooleanOperationProgress,
+  ProgressUnit,
 } from '../cad-contract/messages'
 
 export type BooleanOperationProgressSink = (
@@ -12,12 +13,24 @@ export type BooleanOperationTimingSink = (
   durationMs: number,
 ) => void
 
+export type BooleanOperationScopeOptions = {
+  unit?: ProgressUnit
+}
+
 export type BooleanOperationScope = {
   measure: <T>(kind: BooleanOperationKind, operation: () => T) => T
+  measureCount: <T>(
+    kind: BooleanOperationKind,
+    count: number,
+    operation: () => T,
+  ) => T
 }
 
 export type BooleanOperationReporter = {
-  createScope: (total?: number) => BooleanOperationScope
+  createScope: (
+    total?: number,
+    options?: BooleanOperationScopeOptions,
+  ) => BooleanOperationScope
 }
 
 type Clock = () => number
@@ -32,12 +45,17 @@ function validTotal(total: number | undefined): number | undefined {
   return total
 }
 
+function validAdvance(count: number): number {
+  return Number.isSafeInteger(count) && count > 0 ? count : 1
+}
+
 function createProgress(
   kind: BooleanOperationKind,
   state: BooleanOperationProgress['state'],
   elapsedMs: number,
   completed: number | undefined,
   total: number | undefined,
+  unit: ProgressUnit | undefined,
 ): BooleanOperationProgress {
   const progress: BooleanOperationProgress = {
     kind,
@@ -48,6 +66,7 @@ function createProgress(
     progress.completed = completed
     progress.total = total
   }
+  if (unit !== undefined) progress.unit = unit
   return progress
 }
 
@@ -69,49 +88,69 @@ export function measureBooleanInScope<T>(
   return scope.measure(kind, operation)
 }
 
+export function measureBooleanCountInScope<T>(
+  scope: BooleanOperationScope | undefined,
+  kind: BooleanOperationKind,
+  count: number,
+  operation: () => T,
+): T {
+  if (!scope) return operation()
+  return scope.measureCount(kind, count, operation)
+}
+
 export function createBooleanOperationReporter(
   reportProgress?: BooleanOperationProgressSink,
   reportTiming?: BooleanOperationTimingSink,
   now: Clock = defaultClock,
 ): BooleanOperationReporter {
   return {
-    createScope(total) {
+    createScope(total, options) {
       const normalizedTotal = validTotal(total)
+      const unit = options?.unit
       let completed = 0
 
-      return {
-        measure(kind, operation) {
-          const startedAt = now()
+      const measureCount = <T>(
+        kind: BooleanOperationKind,
+        count: number,
+        operation: () => T,
+      ): T => {
+        const startedAt = now()
+        reportProgress?.(
+          createProgress(
+            kind,
+            'running',
+            0,
+            normalizedTotal === undefined ? undefined : completed,
+            normalizedTotal,
+            unit,
+          ),
+        )
+
+        try {
+          const result = operation()
+          const durationMs = Math.max(0, now() - startedAt)
+          completed += validAdvance(count)
           reportProgress?.(
             createProgress(
               kind,
-              'running',
-              0,
+              'completed',
+              durationMs,
               normalizedTotal === undefined ? undefined : completed,
               normalizedTotal,
+              unit,
             ),
           )
+          reportTiming?.(kind, durationMs)
+          return result
+        } catch (error) {
+          reportTiming?.(kind, Math.max(0, now() - startedAt))
+          throw error
+        }
+      }
 
-          try {
-            const result = operation()
-            const durationMs = Math.max(0, now() - startedAt)
-            completed += 1
-            reportProgress?.(
-              createProgress(
-                kind,
-                'completed',
-                durationMs,
-                normalizedTotal === undefined ? undefined : completed,
-                normalizedTotal,
-              ),
-            )
-            reportTiming?.(kind, durationMs)
-            return result
-          } catch (error) {
-            reportTiming?.(kind, Math.max(0, now() - startedAt))
-            throw error
-          }
-        },
+      return {
+        measure: (kind, operation) => measureCount(kind, 1, operation),
+        measureCount,
       }
     },
   }

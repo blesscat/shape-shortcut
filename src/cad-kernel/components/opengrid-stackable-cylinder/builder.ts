@@ -27,6 +27,7 @@ import {
 } from '../../../cad-contract/units'
 import {
   measureBoolean,
+  measureBooleanCountInScope,
   measureBooleanInScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
@@ -481,8 +482,9 @@ function applyHoneycombMode(
   assertGenerationCurrent(context)
 
   const cutPanel = (current: Shape3D, cutters: Shape3D[]): Shape3D => {
-    const batchCount = Math.ceil(cutters.length / HONEYCOMB_CUT_BATCH_SIZE)
-    const scope = context.booleanOperations?.createScope(batchCount)
+    const scope = context.booleanOperations?.createScope(cutters.length, {
+      unit: 'cells',
+    })
     let result = current
     try {
       while (cutters.length > 0) {
@@ -497,8 +499,11 @@ function applyHoneycombMode(
           }
           if (!cutter) throw new Error('OPENGRID_HONEYCOMB_CUTTER_EMPTY')
           const activeCutter = cutter
-          const cut = measureBooleanInScope(scope, 'cut', () =>
-            result.cut(activeCutter),
+          const cut = measureBooleanCountInScope(
+            scope,
+            'cut',
+            batch.length,
+            () => result.cut(activeCutter),
           )
           deleteShape(result)
           result = cut

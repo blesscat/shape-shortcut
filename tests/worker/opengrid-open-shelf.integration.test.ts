@@ -213,6 +213,10 @@ describe('OpenGrid open-shelf CAD kernel integration', () => {
                   cuts += 1
                   throw thrown
                 },
+                measureCount: () => {
+                  cuts += 1
+                  throw thrown
+                },
               }),
             },
           },

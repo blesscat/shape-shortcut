@@ -119,11 +119,15 @@ export function booleanProgressLabel(
   if (!operation) return null
 
   const label = translate(locale, BOOLEAN_OPERATION_KEYS[operation.kind])
+  const unitSuffix =
+    operation.unit === undefined
+      ? ''
+      : ` ${translate(locale, PROGRESS_UNIT_KEYS[operation.unit])}`
   if (operation.completed !== undefined && operation.total !== undefined) {
     const remaining = booleanProgressRemaining(progress)
     if (remaining === null)
-      return `${label} ${operation.completed} / ${operation.total}`
-    return `${label} ${operation.completed} / ${operation.total} · ${translate(locale, 'cad.progress.remaining', { remaining })}`
+      return `${label} ${operation.completed} / ${operation.total}${unitSuffix}`
+    return `${label} ${operation.completed} / ${operation.total}${unitSuffix} · ${translate(locale, 'cad.progress.remaining', { remaining })}`
   }
   return `${label}${translate(locale, 'cad.progress.running')}`
 }

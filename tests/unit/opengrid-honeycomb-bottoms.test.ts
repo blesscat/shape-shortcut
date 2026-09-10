@@ -252,6 +252,13 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
             }
             return result
           },
+          measureCount<T>(
+            _kind: 'cut' | 'fuse' | 'intersect',
+            _count: number,
+            operation: () => T,
+          ) {
+            return this.measure(_kind, operation)
+          },
         }
       },
     }
@@ -483,6 +490,13 @@ describe('OpenGrid honeycomb visible bottom floors', () => {
               }
             }
             return result
+          },
+          measureCount<T>(
+            _kind: 'cut' | 'fuse' | 'intersect',
+            _count: number,
+            operation: () => T,
+          ) {
+            return this.measure(_kind, operation)
           },
         }
       },

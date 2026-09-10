@@ -387,3 +387,36 @@ test('OpenGrid stackable-cylinder persists the honeycomb saving switch and filen
   await honeycomb.uncheck()
   await expect(honeycombWarning).toHaveCount(0)
 })
+
+test('OpenGrid stackable-cylinder estimates the honeycomb cut cell count', async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(180_000)
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/zh-Hant/cad/opengrid-stackable-cylinder')
+  await waitForCadReady(page)
+
+  const honeycomb = page.getByRole('checkbox', {
+    name: '省料模式（六角鏤空）',
+    exact: true,
+  })
+  const estimate = page.getByTestId('honeycomb-cell-count-estimate')
+  const diameterInput = page.getByRole('textbox', { name: '內徑（D）' })
+
+  await expect(estimate).toHaveCount(0)
+  await honeycomb.check()
+  await expect(estimate).toBeVisible()
+  await expect(estimate).toContainText(/預計切除 \d+ 格/)
+
+  // Out-of-range dimensions cannot produce an honest estimate.
+  await diameterInput.fill('999')
+  await expect(estimate).toHaveCount(0)
+
+  await diameterInput.fill('56')
+  await expect(estimate).toBeVisible()
+  await expect(estimate).toContainText(/預計切除 \d+ 格/)
+
+  await honeycomb.uncheck()
+  await expect(estimate).toHaveCount(0)
+})

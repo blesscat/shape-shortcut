@@ -78,16 +78,20 @@ describe('OpenGrid honeycomb memory ceiling', () => {
     const panels: Shape3D[] = []
     try {
       const sidePanel = makeOpenGridStackableBoxSideHoneycombPanel(input, '+X')
-      expect(sidePanel).not.toBeNull()
-      if (sidePanel) {
-        panels.push(sidePanel)
-        expect(measureVolume(sidePanel)).toBeLessThan(boundsVolume(sidePanel))
+      expect(sidePanel.panel).not.toBeNull()
+      expect(sidePanel.cellCount).toBeGreaterThan(0)
+      if (sidePanel.panel) {
+        panels.push(sidePanel.panel)
+        expect(measureVolume(sidePanel.panel)).toBeLessThan(
+          boundsVolume(sidePanel.panel),
+        )
       }
       for (const side of ['-X', '+Y', '-Y'] as const) {
         const panel = makeOpenGridStackableBoxSideHoneycombPanel(input, side)
-        if (panel) panels.push(panel)
+        if (panel.panel) panels.push(panel.panel)
       }
       const bottom = makeOpenGridStackableBoxBottomHoneycombPanel(input)
+      expect(bottom.cellCount).toBeGreaterThan(0)
       if (bottom.panel) panels.push(bottom.panel)
       if (bottom.slot) panels.push(bottom.slot)
       expect(performance.now() - startedAt).toBeLessThan(10_000)

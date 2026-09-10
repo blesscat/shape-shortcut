@@ -147,6 +147,7 @@ export type BooleanOperationProgress = {
   state: BooleanOperationState
   completed?: number
   total?: number
+  unit?: ProgressUnit
   elapsedMs: number
 }
 
@@ -346,10 +347,16 @@ function isBooleanOperationProgress(
     return false
   }
   if (!hasCounts) return true
+  if (
+    !isNonNegativeInteger(value.completed) ||
+    !isPositiveInteger(value.total) ||
+    value.completed > value.total
+  ) {
+    return false
+  }
   return (
-    isNonNegativeInteger(value.completed) &&
-    isPositiveInteger(value.total) &&
-    value.completed <= value.total
+    value.unit === undefined ||
+    PROGRESS_UNITS.includes(value.unit as ProgressUnit)
   )
 }
 

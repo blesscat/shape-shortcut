@@ -26,9 +26,14 @@ import {
   makeOpenGridStackableBoxBottomHoneycombPanel,
   makeOpenGridStackableBoxSideHoneycombPanel,
   makeOpenGridStackableBoxSideHoneycombPanelSlot,
+  openGridStackableBoxHoneycombPanelCellCountFor,
   OPENGRID_HONEYCOMB_PANEL_BATCH_SIZE,
 } from '../../lattice/opengrid-honeycomb'
-import { measureBooleanInScope } from '../../boolean-progress'
+import {
+  measureBooleanCountInScope,
+  measureBooleanInScope,
+  type BooleanOperationScope,
+} from '../../boolean-progress'
 
 export type { OpenGridStackableBoxBuildContext } from './shared'
 export type { OpenGridStackableBoxBottomGridSeam } from './geometry'
@@ -253,7 +258,12 @@ function applyHoneycombMode(
   let current = shape
   const panelCutters: Shape3D[] = []
   let operation = 'bottom'
+  const cellScope = context.booleanOperations?.createScope(
+    openGridStackableBoxHoneycombPanelCellCountFor(parameters),
+    { unit: 'cells' },
+  )
   try {
+    let batchCellCount = 0
     for (
       let batchStart = 0;
       ;
@@ -275,12 +285,20 @@ function applyHoneycombMode(
       panelCutters.push(
         makeHoneycombPanelCutter(bottom.panel, context, bottom.slot),
       )
+      batchCellCount += bottom.cellCount
     }
     operation = 'bottom'
-    current = cutHoneycombPanelGroup(current, panelCutters, context)
+    current = cutHoneycombPanelGroup(
+      current,
+      panelCutters,
+      batchCellCount,
+      cellScope,
+      context,
+    )
 
     for (const side of ['+X', '-X', '+Y', '-Y'] as const) {
       panelCutters.length = 0
+      batchCellCount = 0
       for (
         let batchStart = 0;
         ;
@@ -294,20 +312,28 @@ function applyHoneycombMode(
           context,
           batchStart,
         )
-        if (!panel) break
+        const panelShape = panel.panel
+        if (!panelShape) break
         panelCutters.push(
-          makeHoneycombPanelCutter(panel, context, undefined, () =>
+          makeHoneycombPanelCutter(panelShape, context, undefined, () =>
             makeOpenGridStackableBoxSideHoneycombPanelSlot(
               parameters,
               side,
-              panel,
+              panelShape,
               context,
             ),
           ),
         )
+        batchCellCount += panel.cellCount
       }
       operation = `side:${side}`
-      current = cutHoneycombPanelGroup(current, panelCutters, context)
+      current = cutHoneycombPanelGroup(
+        current,
+        panelCutters,
+        batchCellCount,
+        cellScope,
+        context,
+      )
     }
     return current
   } catch (error) {
@@ -352,8 +378,13 @@ async function applyHoneycombModeAsync(
   let current = shape
   const panelCutters: Shape3D[] = []
   let operation = 'bottom'
+  const cellScope = context.booleanOperations?.createScope(
+    openGridStackableBoxHoneycombPanelCellCountFor(parameters),
+    { unit: 'cells' },
+  )
   try {
     await yieldAtHoneycombBatchBoundary(context)
+    let batchCellCount = 0
     for (
       let batchStart = 0;
       ;
@@ -374,13 +405,21 @@ async function applyHoneycombModeAsync(
       panelCutters.push(
         makeHoneycombPanelCutter(bottom.panel, context, bottom.slot),
       )
+      batchCellCount += bottom.cellCount
       await yieldAtHoneycombBatchBoundary(context)
     }
     operation = 'bottom'
-    current = cutHoneycombPanelGroup(current, panelCutters, context)
+    current = cutHoneycombPanelGroup(
+      current,
+      panelCutters,
+      batchCellCount,
+      cellScope,
+      context,
+    )
 
     for (const side of ['+X', '-X', '+Y', '-Y'] as const) {
       panelCutters.length = 0
+      batchCellCount = 0
       for (
         let batchStart = 0;
         ;
@@ -393,21 +432,29 @@ async function applyHoneycombModeAsync(
           context,
           batchStart,
         )
-        if (!panel) break
+        const panelShape = panel.panel
+        if (!panelShape) break
         panelCutters.push(
-          makeHoneycombPanelCutter(panel, context, undefined, () =>
+          makeHoneycombPanelCutter(panelShape, context, undefined, () =>
             makeOpenGridStackableBoxSideHoneycombPanelSlot(
               parameters,
               side,
-              panel,
+              panelShape,
               context,
             ),
           ),
         )
+        batchCellCount += panel.cellCount
         await yieldAtHoneycombBatchBoundary(context)
       }
       operation = `side:${side}`
-      current = cutHoneycombPanelGroup(current, panelCutters, context)
+      current = cutHoneycombPanelGroup(
+        current,
+        panelCutters,
+        batchCellCount,
+        cellScope,
+        context,
+      )
       await yieldAtHoneycombBatchBoundary(context)
     }
     return current
@@ -430,6 +477,8 @@ async function applyHoneycombModeAsync(
 function cutHoneycombPanelGroup(
   current: Shape3D,
   panelCutters: Shape3D[],
+  cellCount: number,
+  cellScope: BooleanOperationScope | undefined,
   context: OpenGridStackableBoxBuildContext,
 ): Shape3D {
   if (panelCutters.length === 0) return current
@@ -440,10 +489,8 @@ function cutHoneycombPanelGroup(
       panelCutters.length === 1
         ? panelCutters[0]!
         : (compound = makeCompound(panelCutters).asShape3D())
-    const result = measureBooleanInScope(
-      context.booleanOperations?.createScope(1),
-      'cut',
-      () => current.cut(cutter),
+    const result = measureBooleanCountInScope(cellScope, 'cut', cellCount, () =>
+      current.cut(cutter),
     )
     deleteShape(current)
     return result
