@@ -991,12 +991,11 @@ describe('CAD component catalog', () => {
         OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       ),
     ).toBe(
-      'opengrid-stackable-cylinder-d56-h20-seats-detachable-corner-seat.step',
+      'opengrid-stackable-cylinder-d56-h20-seats-detachable-corner-seat-thin.step',
     )
     expect(
       definition?.stlFileName({
         ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-        thinBottomMode: true,
         bottomSeatMode: 'none',
       }),
     ).toBe('opengrid-stackable-cylinder-d56-h20-seats-none-thin.stl')

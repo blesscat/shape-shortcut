@@ -11,33 +11,34 @@ The system MUST expose the independently validated
 `modelId=opengrid-stackable-cylinder`, `buildKey=opengrid-stackable-cylinder`,
 and route `/cad/opengrid-stackable-cylinder`. Its display name MUST remain
 `Round Box (圓盒)`. The normalized snapshot MUST contain integer
-`innerDiameter` and `height`, boolean `thinBottomMode` and `bottomPlateMode`,
-enum `bottomSeatMode`, and the existing twelve typed opening fields.
+`innerDiameter` and `height`, boolean `bottomPlateMode` and `honeycombMode`,
+enum `bottomSeatMode`, and the existing twelve typed opening fields; the
+removed `thinBottomMode` flag MUST NOT appear in a canonical snapshot.
 `innerDiameter` MUST be an integer between 20 and 300 and MUST carry
 inner-cavity semantics: the derived outer diameter MUST equal
 `innerDiameter + 2 × wallThickness` for the selected profile, where the
-profile wall thickness is 2.0 mm in default and bottom-plate modes and
-1.6 mm in thin-bottom mode. `bottomSeatMode` MUST be exactly `none`,
+profile wall thickness is 1.6 mm in the thin profile and 2.0 mm in
+bottom-plate mode. `bottomSeatMode` MUST be exactly `none`,
 `detachable-corner-seat`, or `integrated`, with visible labels `無角座`,
 `鎖定角座`, and `內建角座` respectively. The height and opening numeric
-ranges, opening semantics, profile flags, 1 mm controls, and the mutual
-exclusion of `thinBottomMode` and `bottomPlateMode` MUST remain unchanged.
+ranges, opening semantics, 1 mm controls, and the hidden non-panel status of
+`bottomPlateMode` MUST remain unchanged.
 
 The default snapshot MUST be `innerDiameter=56`, `height=20`,
-`thinBottomMode=false`, `bottomPlateMode=false`, and
-`bottomSeatMode='detachable-corner-seat'`, so the shipped default box keeps
-its previous 60 mm outer diameter, with zero-depth openings, bottom length 1,
-and angle 90. A legacy `bottomHolesEnabled=false/true` value MUST migrate to
-`bottomSeatMode='none'/'detachable-corner-seat'`; a missing legacy value MUST
-migrate to `'detachable-corner-seat'`. A legacy outer-semantics `diameter`
-value without `innerDiameter` MUST migrate to
-`innerDiameter = round(diameter − 2 × wallThicknessOf(selected profile))`,
-where the subtracted thickness is 4.0 mm in default and bottom-plate modes
-and 3.2 mm in thin-bottom mode. A canonical `innerDiameter` MUST take
-precedence over a stale legacy `diameter`, and a canonical enum value MUST
-take precedence over a stale boolean. Unsupported enum values MUST be
-rejected. Existing model identity, route, profile, opening, and height
-contracts MUST remain unchanged.
+`bottomPlateMode=false`, and
+`bottomSeatMode='detachable-corner-seat'`, so the shipped default box uses
+the thin profile with a 59.2 mm outer diameter, with zero-depth openings,
+bottom length 1, and angle 90. A legacy `bottomHolesEnabled=false/true` value
+MUST migrate to `bottomSeatMode='none'/'detachable-corner-seat'`; a missing
+legacy value MUST migrate to `'detachable-corner-seat'`. A persisted
+`thinBottomMode` value MUST be ignored during hydration and MUST NOT be
+persisted again. A legacy outer-semantics `diameter` value without
+`innerDiameter` MUST migrate to `innerDiameter = round(diameter − 3.2)`,
+shifting the derived outer envelope by exactly +0.2 mm relative to the
+persisted outer value. A canonical `innerDiameter` MUST take precedence over
+a stale legacy `diameter`, and a canonical enum value MUST take precedence
+over a stale boolean. Unsupported enum values MUST be rejected. Existing
+model identity, route, opening, and height contracts MUST remain unchanged.
 
 #### Scenario: Valid cylinder defaults
 
@@ -45,8 +46,8 @@ contracts MUST remain unchanged.
 - **THEN** the panel MUST select `鎖定角座`
 - **AND** the normalized snapshot MUST use
   `bottomSeatMode='detachable-corner-seat'`
-- **AND** the existing default shell and opening geometry MUST remain
-  unchanged with `innerDiameter=56`
+- **AND** the generated shell MUST use the thin profile with
+  `innerDiameter=56`
 
 #### Scenario: Cylinder seat radio group
 
@@ -73,16 +74,20 @@ contracts MUST remain unchanged.
 - **AND** a generated cylinder MUST use the locking socket geometry rather
   than the retired stepped-hole geometry
 
+#### Scenario: Legacy profile flag is ignored
+
+- **WHEN** persistence contains a `thinBottomMode` value of `true` or `false`
+- **THEN** hydration MUST ignore the flag and MUST NOT persist it again
+- **AND** a former thin-shell box MUST keep identical geometry
+- **AND** a former default-profile box MUST generate with the thin profile,
+  shrinking its derived outer envelope by 0.8 mm at the same inner diameter
+
 #### Scenario: Legacy outer-diameter migration
 
 - **WHEN** persistence contains an old outer-semantics `diameter` value and
   no `innerDiameter`
-- **THEN** hydration MUST produce `innerDiameter = diameter − 4` in default
-  and bottom-plate modes and `innerDiameter = round(diameter − 3.2)` in
-  thin-bottom mode
-- **AND** default and bottom-plate geometry MUST be preserved exactly through
-  the migration
-- **AND** thin-bottom geometry MUST shift the derived outer envelope by
+- **THEN** hydration MUST produce `innerDiameter = round(diameter − 3.2)`
+- **AND** thin-profile geometry MUST shift the derived outer envelope by
   exactly +0.2 mm relative to the persisted outer value
 - **AND** a migrated value outside the 20–300 range MUST be rejected with a
   field-specific validation error instead of being clamped
@@ -101,49 +106,45 @@ contracts MUST remain unchanged.
 The generated `opengrid-stackable-cylinder` MUST remain an open-top circular
 container whose straight inner wall radius equals the requested inner radius
 `r = innerDiameter / 2`, with the requested overall height and a
-mode-specific straight-wall thickness: 2 mm in default and bottom-plate
-modes, and 1.6 mm in thin-bottom mode. The derived nominal outer radius MUST
-be `R = r + wallThickness` for the selected mode. When both mode flags are
-false, its original-style central floor MUST be 5 mm above the outside bottom
-surface and the inner floor-to-wall transition MUST use the original 0.6 mm
-fillet. When `thinBottomMode=true`, its central flat floor MUST be 2 mm above
-the outside bottom surface and MUST connect to the original sharp internal
-45-degree conical ramp; the ramp MUST preserve a 1.6 mm normal wall offset.
-When `bottomPlateMode=true`, it MUST retain a 3 mm central floor and the
-default-style vertical inner wall with the original 0.6 mm floor fillet,
-without an internal 45-degree ramp; it MUST retain the 2+1 mm hole-bearing
-floor while replacing the lower foot with a flat bottom at the
-clearance-reduced protrusion radius. Its outer profile MUST run directly from
-that flat bottom into a 45-degree transition to the nominal outer radius `R`.
-In default and bottom-plate modes the straight inner wall MUST remain at
-radius `R − 2`; in thin-bottom mode it MUST remain at radius `R − 1.6`; in
-every mode this straight inner wall radius MUST equal the requested inner
-radius `r`. No mode may add a lower filler layer or a thickened stacking
-ring.
+profile-specific straight-wall thickness: 1.6 mm in the thin profile and
+2 mm in bottom-plate mode. The derived nominal outer radius MUST be
+`R = r + wallThickness` for the selected profile. When `bottomPlateMode=false`,
+the cylinder MUST use the thin profile: its central flat floor MUST be 2 mm
+above the outside bottom surface and MUST connect to the sharp internal
+45-degree conical ramp; the ramp MUST preserve a 1.6 mm normal wall offset;
+and no internal fillet or bottom filler may be present. When
+`bottomPlateMode=true`, it MUST retain a 3 mm central floor and a vertical
+inner wall with the original 0.6 mm floor fillet, without an internal
+45-degree ramp; it MUST retain the 2+1 mm hole-bearing floor while replacing
+the lower foot with a flat bottom at the clearance-reduced protrusion radius.
+Its outer profile MUST run directly from that flat bottom into a 45-degree
+transition to the nominal outer radius `R`. In bottom-plate mode the straight
+inner wall MUST remain at radius `R − 2`; in the thin profile it MUST remain
+at radius `R − 1.6`; in every profile this straight inner wall radius MUST
+equal the requested inner radius `r`. No profile may add a lower filler layer
+or a thickened stacking ring.
 
-The default and thin modes MUST retain the common printable lower foot bevel
-and vertical landing through Z=2.6, followed by a direct 45-degree external
-transition whose radial and vertical span is derived from the selected mode's
-mating radius and nominal outer radius. The bottom-plate mode MUST remove the
-geometry below the former Z=2.6 cut line and begin at Z=0 with a flat
-clearance-reduced mating face, followed directly by its 45-degree external
-transition. The preview MUST remain centered on X/Y and based at Z=0.
+The thin profile MUST retain the printable lower foot bevel and vertical
+landing through Z=2.6, followed by a direct 45-degree external transition
+whose radial and vertical span is derived from the mating radius and nominal
+outer radius. The bottom-plate profile MUST remove the geometry below the
+former Z=2.6 cut line and begin at Z=0 with a flat clearance-reduced mating
+face, followed directly by its 45-degree external transition. The preview
+MUST remain centered on X/Y and based at Z=0.
 
 #### Scenario: Default original-style shell
 
-- **WHEN** a valid cylinder is generated with `thinBottomMode=false` and
+- **WHEN** a valid cylinder is generated from the default snapshot with
   `bottomPlateMode=false`
-- **THEN** the result MUST retain the 2 mm straight wall and 5 mm central
-  floor contract
+- **THEN** the result MUST retain the 1.6 mm straight wall and 2 mm central
+  flat floor contract of the thin profile
 - **AND** the inner wall radius MUST equal `innerDiameter / 2`
-- **AND** the inner floor corner MUST expose the original 0.6 mm fillet
-- **AND** the open cavity MUST begin above the 5 mm floor without
+- **AND** the open cavity MUST begin above the 2 mm floor without
   penetrating the floor outside the requested mounting holes
 
 #### Scenario: Thin-bottom shell
 
-- **WHEN** a valid cylinder is generated with `thinBottomMode=true` and
-  `bottomPlateMode=false`
+- **WHEN** a valid cylinder is generated with `bottomPlateMode=false`
 - **THEN** the result MUST retain a 1.6 mm straight wall and 2 mm central
   flat floor contract
 - **AND** the sharp 45-degree inner ramp MUST connect the flat floor to the
@@ -155,7 +156,7 @@ transition. The preview MUST remain centered on X/Y and based at Z=0.
 #### Scenario: Minimum valid shell in all three profiles
 
 - **WHEN** a cylinder with inner diameter 20 mm and a valid height is
-  generated in any of the three profiles
+  generated in either retained profile
 - **THEN** the selected floor, wall, and lower-profile contract MUST remain
   valid
 - **AND** the open cavity MUST be present without unintended penetration
@@ -164,10 +165,10 @@ transition. The preview MUST remain centered on X/Y and based at Z=0.
 #### Scenario: Maximum valid shell in all three profiles
 
 - **WHEN** a cylinder with inner diameter 300 mm and a valid height is
-  generated in any of the three profiles
+  generated in either retained profile
 - **THEN** the result MUST retain the derived outer envelope of 304 mm in
-  default and bottom-plate modes and 303.2 mm in thin-bottom mode, together
-  with the requested height
+  bottom-plate mode and 303.2 mm in the thin profile, together with the
+  requested height
 - **AND** the builder MUST NOT silently scale, clamp, or change the inner
   diameter
 
@@ -216,6 +217,7 @@ that position.
 - **AND** the lowest 0.2 mm of the seat MUST be its bottom perimeter chamfer
 - **AND** the center MUST not contain the hole-mode stepped cut
 - **AND** the result MUST remain one valid solid
+
 ### Requirement: Four outer cardinal holes from the 14 mm grid
 
 When `bottomSeatMode='detachable-corner-seat'`, the builder MUST retain the
@@ -306,27 +308,26 @@ calculation and MUST not create a false failure for the solid bottom.
 
 Every valid `opengrid-stackable-cylinder` MUST include a central bottom
 mating feature that enters the matching open cavity of a cylinder with the
-same inner diameter and the same bottom mode, in all three modes. The top
-cavity radius MUST equal the requested inner radius `r` in every mode. The
-default and bottom-plate bottom protrusion or mating-face radii MUST remain
-`r − 0.2 mm`, and the thin-bottom bottom protrusion radius MUST remain
-`r − 0.2 mm`; every selected mode MUST therefore provide a fixed 0.2 mm
-radial printing clearance while preserving its nominal wall thickness. Two
-cylinders with the same inner diameter, the same bottom mode, and compatible
-height placement MUST seat through this interface and remain laterally
-guided without permanent posts or a thickened stacking ring. Compatibility
-between different inner diameters, or between cylinders using different
-bottom modes, is explicitly outside this requirement.
+same inner diameter and the same bottom mode, in both retained profiles. The
+top cavity radius MUST equal the requested inner radius `r` in every profile.
+The bottom-plate mating-face radius and the thin bottom protrusion radius
+MUST remain `r − 0.2 mm`; every retained profile MUST therefore provide a
+fixed 0.2 mm radial printing clearance while preserving its nominal wall
+thickness. Two cylinders with the same inner diameter, the same bottom mode,
+and compatible height placement MUST seat through this interface and remain
+laterally guided without permanent posts or a thickened stacking ring.
+Compatibility between different inner diameters, or between cylinders using
+different bottom modes, is explicitly outside this requirement.
 
 The top outer rim MUST remain square at the derived nominal outer radius `R`
-with no added stacking ring. The top inner rim MUST expose a 2 mm, 45-degree
-guide chamfer in default and bottom-plate modes, and a 1.6 mm, 45-degree
-guide chamfer in thin-bottom mode, to guide the corresponding mating
-feature. Default and thin modes MUST retain the 0.8 mm lower foot bevel and
-vertical landing through Z=2.6, followed by their selected-mode direct lower
-45-degree transition. Bottom-plate mode MUST retain the same 0.2 mm radial
-mating clearance while omitting the lower foot bevel and vertical landing.
-The selected floor profile MUST NOT reduce the common protrusion/cavity fit.
+with no added stacking ring. The top inner rim MUST expose a 1.6 mm,
+45-degree guide chamfer in the thin profile and a 2 mm, 45-degree guide
+chamfer in bottom-plate mode, to guide the corresponding mating feature. The
+thin profile MUST retain the 0.8 mm lower foot bevel and vertical landing
+through Z=2.6, followed by its direct lower 45-degree transition.
+Bottom-plate mode MUST retain the same 0.2 mm radial mating clearance while
+omitting the lower foot bevel and vertical landing. The selected floor
+profile MUST NOT reduce the common protrusion/cavity fit.
 
 #### Scenario: Same-diameter cylinders stack in all three profiles
 
@@ -341,11 +342,10 @@ The selected floor profile MUST NOT reduce the common protrusion/cavity fit.
 
 #### Scenario: Top remains a normal wall in all three profiles
 
-- **WHEN** a valid cylinder completes generation in any of the three profiles
+- **WHEN** a valid cylinder completes generation in either retained profile
 - **THEN** the top outer rim MUST remain square at 90 degrees
-- **AND** the top inner rim MUST expose a 2 mm, 45-degree guide chamfer in
-  default and bottom-plate modes, or a 1.6 mm, 45-degree guide chamfer in
-  thin-bottom mode
+- **AND** the top inner rim MUST expose a 1.6 mm, 45-degree guide chamfer in
+  the thin profile or a 2 mm, 45-degree guide chamfer in bottom-plate mode
 - **AND** no thickened stacking ring may be added
 
 #### Scenario: Different diameters are not promised
@@ -354,8 +354,8 @@ The selected floor profile MUST NOT reduce the common protrusion/cavity fit.
   bottom modes
 - **THEN** the system MUST NOT claim that their stacking interface is
   compatible
-- **AND** generation of either individual cylinder in any of the three
-  profiles MUST remain valid
+- **AND** generation of either individual cylinder in either retained
+  profile MUST remain valid
 
 ### Requirement: Cylinder geometry quality and exports
 
@@ -404,9 +404,10 @@ suffix: `-seats-none`, `-seats-detachable-corner-seat`, or
 `-seats-integrated`, in addition to the existing inner diameter, height,
 profile, and opening fingerprint identity. The size token MUST be the inner
 diameter (`d<innerDiameter>`) and MUST NOT embed the derived outer diameter.
-The suffix MUST be present even for the default mode. Filenames MUST NOT
-depend on raw input formatting and MUST distinguish all three bottom
-geometries and all opening settings.
+Every filename MUST identify the retained profile with exactly one profile
+suffix: `-thin` for the thin profile or `-bottom-plate` for bottom-plate
+mode. Filenames MUST NOT depend on raw input formatting and MUST distinguish
+both retained bottom geometries and all opening settings.
 
 #### Scenario: Cylinder filenames distinguish seat modes
 
@@ -432,24 +433,40 @@ geometries and all opening settings.
 
 ### Requirement: Bottom-plate profile
 
-When `bottomPlateMode=true`, the builder MUST use a 3 mm floor with the default-style vertical inner wall and original 0.6 mm floor fillet, without an internal ramp; it MUST retain the selected bottom-seat layout, default-style safe outer-seat positions, top guide, and same-diameter mating clearance. The bottom-plate profile MUST remove the lower foot geometry below the former Z=2.6 cut line: its outside bottom MUST be a flat circular mating face at radius `R-2.2` on Z=0, and its outer boundary MUST transition directly at 45 degrees to radius `R` before continuing as the straight wall. The bottom-plate mode MUST NOT generate the thin-mode foot bevel or vertical landing, MUST remain one valid B-Rep solid, and MUST remain stackable with another bottom-plate cylinder of the same outer diameter. `thinBottomMode` and `bottomPlateMode` MUST remain mutually exclusive.
+When `bottomPlateMode=true`, the builder MUST use a 3 mm floor with a vertical
+inner wall and the original 0.6 mm floor fillet, without an internal ramp; it
+MUST retain the selected bottom-seat layout, its existing safe outer-seat
+positions, top guide, and same-diameter mating clearance. The bottom-plate
+profile MUST remove the lower foot geometry below the former Z=2.6 cut line:
+its outside bottom MUST be a flat circular mating face at radius `R-2.2` on
+Z=0, and its outer boundary MUST transition directly at 45 degrees to radius
+`R` before continuing as the straight wall. The bottom-plate mode MUST NOT
+generate the thin-profile foot bevel or vertical landing, MUST remain one
+valid B-Rep solid, and MUST remain stackable with another bottom-plate
+cylinder of the same outer diameter. The thin profile MUST remain the default
+geometry whenever `bottomPlateMode=false`, and `bottomPlateMode` MUST remain
+hidden from the visible panel.
 
 #### Scenario: Bottom-plate removes the lower foot
 
 - **WHEN** a valid cylinder is generated with `bottomPlateMode=true`
-- **THEN** its bottom bounds MUST begin at Z=0 on a flat face at the clearance-reduced mating radius
-- **AND** the lower outer boundary MUST expose a direct 45-degree transition from that flat face to the nominal outer radius
+- **THEN** its bottom bounds MUST begin at Z=0 on a flat face at the
+  clearance-reduced mating radius
+- **AND** the lower outer boundary MUST expose a direct 45-degree transition
+  from that flat face to the nominal outer radius
 - **AND** no 0.8 mm lower foot bevel or Z=2.6 vertical landing may be present
-- **AND** the 3 mm floor, 2+1 mm hole profile, top guide, and same-diameter mating clearance MUST remain valid
+- **AND** the 3 mm floor, 2+1 mm hole profile, top guide, and same-diameter
+  mating clearance MUST remain valid
 
 #### Scenario: Bottom-plate retains the default-style internal floor
 
 - **WHEN** a valid cylinder is generated with `bottomPlateMode=true`
-- **THEN** its internal central floor MUST be exactly 3 mm above the outside bottom surface
-- **AND** its internal wall MUST remain vertical with the original 0.6 mm floor fillet and no internal 45-degree ramp
+- **THEN** its internal central floor MUST be exactly 3 mm above the outside
+  bottom surface
+- **AND** its internal wall MUST remain vertical with the original 0.6 mm
+  floor fillet and no internal 45-degree ramp
 - **AND** its selected bottom-seat geometry and safe outer-seat count MUST
-  match the default mode at the same diameter
-- **AND** selecting bottom-plate mode MUST NOT change the existing thin-bottom profile when `thinBottomMode=true` is selected separately
+  match the established bottom-plate layout at the same diameter
 
 ### Requirement: Four independently configurable top-open side openings
 
@@ -500,26 +517,42 @@ Each enabled opening MUST be generated from a symmetric local U/V-shaped notch p
 
 ### Requirement: Side-opening safety and existing cylinder preservation
 
-Every enabled opening MUST remain compatible with the active default, thin, or bottom-plate floor profile. Its lowest boundary MUST NOT remove the center floor, bottom-seat bearing floor, bottom protrusion, or lower printable transition. The derived opening width MUST leave valid material between neighboring cardinal openings and MUST preserve the nominal 2 mm wall outside the cut boundaries. The opening feature MUST NOT change the existing 14 mm safe-seat calculation, canonical seat mode, or same-diameter-only stacking promise.
+Every enabled opening MUST remain compatible with the active thin or
+bottom-plate floor profile. Its lowest boundary MUST NOT remove the center
+floor, bottom-seat bearing floor, bottom protrusion, or lower printable
+transition. The derived opening width MUST leave valid material between
+neighboring cardinal openings and MUST preserve the profile's nominal wall
+outside the cut boundaries. The opening feature MUST NOT change the existing
+14 mm safe-seat calculation, canonical seat mode, or same-diameter-only
+stacking promise.
 
 #### Scenario: Opening depth respects the active floor mode
 
-- **WHEN** a valid opening is generated in default, thin, or bottom-plate mode
-- **THEN** the opening bottom MUST remain at or above the active floor boundary required by that mode
-- **AND** the active floor thickness and internal floor fillet or bottom-plate corner MUST remain valid
-- **AND** the opening MUST NOT cut into the bottom protrusion or lower external bevel
+- **WHEN** a valid opening is generated in thin or bottom-plate mode
+- **THEN** the opening bottom MUST remain at or above the active floor
+  boundary required by that profile
+- **AND** the active floor thickness and internal ramp or bottom-plate corner
+  MUST remain valid
+- **AND** the opening MUST NOT cut into the bottom protrusion or lower
+  external bevel
 
 #### Scenario: Neighboring openings do not merge
 
-- **WHEN** four independent opening profiles are generated around the same cylinder
-- **THEN** the builder MUST reject any parameter set whose derived openings overlap or leave an invalid zero-width structural bridge
-- **AND** a valid parameter set MUST preserve a continuous solid between adjacent opening directions
+- **WHEN** four independent opening profiles are generated around the same
+  cylinder
+- **THEN** the builder MUST reject any parameter set whose derived openings
+  overlap or leave an invalid zero-width structural bridge
+- **AND** a valid parameter set MUST preserve a continuous solid between
+  adjacent opening directions
 
 #### Scenario: Existing holes and stacking remain unchanged
 
-- **WHEN** valid side openings are added to a cylinder with bottom holes enabled or disabled
-- **THEN** the center and permitted outer hole locations and stepped profiles MUST remain unchanged
-- **AND** same-diameter cylinders MUST retain the existing protrusion/cavity mating behavior
+- **WHEN** valid side openings are added to a cylinder with bottom holes
+  enabled or disabled
+- **THEN** the center and permitted outer hole locations and stepped profiles
+  MUST remain unchanged
+- **AND** same-diameter cylinders MUST retain the existing protrusion/cavity
+  mating behavior
 - **AND** different diameters MUST remain outside the compatibility promise
 
 ### Requirement: Honeycomb material-saving cylinder mode
@@ -528,91 +561,144 @@ The existing `opengrid-stackable-cylinder` model MUST expose a
 `honeycombMode` boolean profile flag. `honeycombMode` MUST default to
 `false`, MUST be accepted in legacy hydration as `false` when absent, and
 MUST preserve the existing model ID `opengrid-stackable-cylinder`, route,
-inner-diameter and height semantics, thin-bottom/bottom-plate profile
-semantics, bottom-hole switch, four-direction opening fields, preview
-lifecycle, and STEP/STL export workflow. The parameter panel MUST expose the
-flag as `省料模式（六角鏤空）` without replacing the existing mutually
-exclusive bottom-profile choices. When enabled, the profile MUST be the Hex
-Mesh style: complete staggered, point-up regular hexagonal openings MUST be
-separated by a continuous printable rib network. Every eligible curved wall
-and circular-floor opening MUST use the same `3.0 mm` hexagon cell size,
-where the regular-hexagon edge length and circumradius are both `3.0 mm`,
-and neighboring openings MUST use a `2.5 mm` nominal rib thickness. The
-derived nominal horizontal center pitch MUST be `sqrt(3) * 3.0 + 2.5` mm
+inner-diameter and height semantics, bottom-plate profile semantics,
+bottom-hole switch, four-direction opening fields, preview lifecycle, and
+STEP/STL export workflow. The parameter panel MUST expose the flag as
+`省料模式（六角鏤空）`. When enabled, the profile MUST be the Hex Mesh style:
+complete staggered, point-up regular hexagonal openings MUST be separated by
+a continuous printable rib network. Every eligible curved wall and
+circular-floor opening MUST use the same `3.0 mm` hexagon cell size, where
+the regular-hexagon edge length and circumradius are both `3.0 mm`, and
+neighboring openings MUST use a `2.5 mm` nominal rib thickness. The derived
+nominal horizontal center pitch MUST be `sqrt(3) * 3.0 + 2.5` mm
 (approximately `7.696 mm`) and the nominal staggered row pitch MUST be
 `sqrt(3) * 7.696` / 2 mm (approximately `6.665 mm`). On a curved wall, the
-unwrapped circumferential center pitch MAY be adjusted only to fit an
-integer number of cells around the existing circumference; the cell size and
-nominal rib contract MUST remain unchanged. The profile MUST NOT use a
-separate smaller floor-cell lattice or claim to implement the separate
+unwrapped circumferential center pitch MAY be adjusted only to fit an integer
+number of cells around the existing circumference; the cell size and nominal
+rib contract MUST remain unchanged. The profile MUST NOT use a separate
+smaller floor-cell lattice or claim to implement the separate
 vertical-groove Ribbed style.
 
 #### Scenario: Legacy and default cylinder snapshots keep the solid profile
 
-- **WHEN** a persisted or imported stackable-cylinder snapshot does not contain `honeycombMode`
+- **WHEN** a persisted or imported stackable-cylinder snapshot does not
+  contain `honeycombMode`
 - **THEN** hydration and validation MUST normalize `honeycombMode=false`
-- **AND** the generated geometry and existing export identity MUST remain the same as the corresponding default, thin-bottom, or bottom-plate profile
+- **AND** the generated geometry and existing export identity MUST remain the
+  same as the corresponding thin or bottom-plate profile
 
 #### Scenario: The user enables cylinder Hex Mesh mode
 
 - **WHEN** a valid stackable-cylinder snapshot has `honeycombMode=true`
-- **THEN** the panel MUST retain the existing inner-diameter, height, bottom-hole, bottom-profile, and four-direction opening controls
-- **AND** the normalized Worker snapshot MUST contain the typed boolean `honeycombMode=true`
-- **AND** the model MUST retain its existing `opengrid-stackable-cylinder` identity and route
-- **AND** the generated eligible panels MUST use a staggered, point-up Hex Mesh rather than isolated, widely separated hex cutouts
+- **THEN** the panel MUST retain the existing inner-diameter, height,
+  bottom-hole, and four-direction opening controls
+- **AND** the normalized Worker snapshot MUST contain the typed boolean
+  `honeycombMode=true`
+- **AND** the model MUST retain its existing `opengrid-stackable-cylinder`
+  identity and route
+- **AND** the generated eligible panels MUST use a staggered, point-up Hex
+  Mesh rather than isolated, widely separated hex cutouts
 
 #### Scenario: Cylinder side faces use a continuous curved Hex Mesh
 
-- **WHEN** a valid cylinder has `honeycombMode=true` and an eligible circumferential wall band is large enough for a complete cell
-- **THEN** the curved side-wall material MUST be replaced by connected hexagonal openings separated by continuous ribs using the cylinder's existing outer envelope
-- **AND** each side-wall cell MUST use the shared `3.0 mm` regular-hexagon size and neighboring cells MUST retain a `2.5 mm` nominal printable rib
-- **AND** neighboring openings MUST use the configured printable rib thickness rather than the legacy 14 mm cell-center spacing
-- **AND** the default 20 mm-height profile MUST show at least two staggered rows around the eligible wall band
-- **AND** an unobstructed wall row MUST wrap continuously around the circumference without an artificial solid seam at the tangent-layout boundary
-- **AND** the top rim, inner guide chamfer, lower foot or bottom-plate transition, outer edge frame, and all active side-opening boundary bridges MUST remain solid
-- **AND** the wall lattice MUST extend to each protected vertical-band and side-opening boundary, with intersecting cells clipped at those boundaries instead of discarded wholesale
-- **AND** the usable curved wall outside those protected regions MUST NOT contain avoidable broad solid bands caused only by whole-cell rejection
-- **AND** every complete or clipped side opening MUST cut cleanly through the curved inner and outer wall faces across its full tangent width without leaving an uncut crescent
-- **AND** the lattice MUST NOT change the requested inner diameter (or its derived outer envelope), height, circular bounds, or active floor datum
+- **WHEN** a valid cylinder has `honeycombMode=true` and an eligible
+  circumferential wall band is large enough for a complete cell
+- **THEN** the curved side-wall material MUST be replaced by connected
+  hexagonal openings separated by continuous ribs using the cylinder's
+  existing outer envelope
+- **AND** each side-wall cell MUST use the shared `3.0 mm` regular-hexagon
+  size and neighboring cells MUST retain a `2.5 mm` nominal printable rib
+- **AND** neighboring openings MUST use the configured printable rib
+  thickness rather than the legacy 14 mm cell-center spacing
+- **AND** the default 20 mm-height profile MUST show at least two staggered
+  rows around the eligible wall band
+- **AND** an unobstructed wall row MUST wrap continuously around the
+  circumference without an artificial solid seam at the tangent-layout
+  boundary
+- **AND** the top rim, inner guide chamfer, lower foot or bottom-plate
+  transition, outer edge frame, and all active side-opening boundary bridges
+  MUST remain solid
+- **AND** the wall lattice MUST extend to each protected vertical-band and
+  side-opening boundary, with intersecting cells clipped at those boundaries
+  instead of discarded wholesale
+- **AND** the usable curved wall outside those protected regions MUST NOT
+  contain avoidable broad solid bands caused only by whole-cell rejection
+- **AND** every complete or clipped side opening MUST cut cleanly through the
+  curved inner and outer wall faces across its full tangent width without
+  leaving an uncut crescent
+- **AND** the lattice MUST NOT change the requested inner diameter (or its
+  derived outer envelope), height, circular bounds, or active floor datum
 
 #### Scenario: Cylinder bottom faces use protected Hex Mesh openings
 
-- **WHEN** a valid cylinder has `honeycombMode=true` and an eligible circular-floor region is large enough for a complete cell
-- **THEN** the eligible bottom-floor material MUST contain connected hexagonal openings and ribs
-- **AND** each bottom-floor cell MUST use the same shared `3.0 mm` regular-hexagon size as the side-wall cells
-- **AND** bottom-floor neighboring openings MUST retain the same `2.5 mm` nominal printable rib thickness as side-wall openings
-- **AND** eligible default, bottom-plate, and thin-bottom floor openings MUST pass through the floor so the Hex Mesh is visible from both floor faces
-- **AND** the floor lattice MUST extend to the protected circular frame, with intersecting boundary cells clipped at the frame instead of discarded wholesale
-- **AND** the outer circular frame, central mating feature, floor/ramp or fillet transition, and peripheral lower stacking boundary MUST remain solid
-- **AND** the center hole and every permitted cardinal outer hole MUST retain its existing center, diameter, stepped section depths, and enabled/disabled state
-- **AND** every existing bottom hole MUST retain a continuous circular safety ring extending 2 mm beyond its maximum opening radius
-- **AND** hexagonal cells intersecting a hole safety ring MUST be clipped to the ring instead of being discarded wholesale, and no opening may cut the ring
-- **AND** the usable circular floor outside protected frames, transitions, and hole rings MUST NOT contain avoidable broad solid bands caused only by whole-cell rejection
+- **WHEN** a valid cylinder has `honeycombMode=true` and an eligible
+  circular-floor region is large enough for a complete cell
+- **THEN** the eligible bottom-floor material MUST contain connected
+  hexagonal openings and ribs
+- **AND** each bottom-floor cell MUST use the same shared `3.0 mm`
+  regular-hexagon size as the side-wall cells
+- **AND** bottom-floor neighboring openings MUST retain the same `2.5 mm`
+  nominal printable rib thickness as side-wall openings
+- **AND** eligible thin and bottom-plate floor openings MUST pass through the
+  floor so the Hex Mesh is visible from both floor faces
+- **AND** the floor lattice MUST extend to the protected circular frame, with
+  intersecting boundary cells clipped at the frame instead of discarded
+  wholesale
+- **AND** the outer circular frame, central mating feature, floor/ramp or
+  fillet transition, and peripheral lower stacking boundary MUST remain solid
+- **AND** the center hole and every permitted cardinal outer hole MUST retain
+  its existing center, diameter, stepped section depths, and enabled/disabled
+  state
+- **AND** every existing bottom hole MUST retain a continuous circular safety
+  ring extending 2 mm beyond its maximum opening radius
+- **AND** hexagonal cells intersecting a hole safety ring MUST be clipped to
+  the ring instead of being discarded wholesale, and no opening may cut the
+  ring
+- **AND** the usable circular floor outside protected frames, transitions,
+  and hole rings MUST NOT contain avoidable broad solid bands caused only by
+  whole-cell rejection
 
 #### Scenario: Existing cylinder interfaces remain unchanged in honeycomb mode
 
-- **WHEN** a valid honeycomb cylinder is generated with bottom holes enabled or disabled and zero or more valid side openings
-- **THEN** same-inner-diameter, same-mode cylinders MUST retain the existing protrusion/cavity mating clearance and lateral guide behavior
-- **AND** the selected default, thin-bottom, or bottom-plate floor and lower printable profile MUST remain valid
-- **AND** every enabled side opening MUST retain its requested direction, bottom, depth, angle, and neighboring structural separation
-- **AND** the result MUST remain one valid non-empty solid suitable for preview, STEP export, and STL export
+- **WHEN** a valid honeycomb cylinder is generated with bottom holes enabled
+  or disabled and zero or more valid side openings
+- **THEN** same-inner-diameter, same-mode cylinders MUST retain the existing
+  protrusion/cavity mating clearance and lateral guide behavior
+- **AND** the selected thin or bottom-plate floor and lower printable profile
+  MUST remain valid
+- **AND** every enabled side opening MUST retain its requested direction,
+  bottom, depth, angle, and neighboring structural separation
+- **AND** the result MUST remain one valid non-empty solid suitable for
+  preview, STEP export, and STL export
 
 #### Scenario: Small cylinder panels fall back without destructive cuts
 
-- **WHEN** `honeycombMode=true` but a curved wall or circular-floor region cannot contain a complete hexagonal cell after its edge and protected-region clearances are applied
+- **WHEN** `honeycombMode=true` but a curved wall or circular-floor region
+  cannot contain a complete hexagonal cell after its edge and
+  protected-region clearances are applied
 - **THEN** that region MUST remain solid or use only complete safe cells
 - **AND** generation MUST remain valid
-- **AND** the builder MUST NOT enlarge, move, merge, or remove any existing hole, opening, or stacking feature merely to fit a lattice cell
-- **AND** thin-bottom mode alone MUST NOT force a no-cell fallback when complete protected floor cells fit
-- **AND** a circular-floor boundary or hole safety ring MAY use a clipped partial cell when every retained frame, transition, hole, and stacking-interface constraint remains satisfied
-- **AND** a curved side-wall or side-opening boundary MAY use a clipped partial cell when every retained rim, transition, and structural-bridge constraint remains satisfied
+- **AND** the builder MUST NOT enlarge, move, merge, or remove any existing
+  hole, opening, or stacking feature merely to fit a lattice cell
+- **AND** the thin profile MUST NOT force a no-cell fallback when complete
+  protected floor cells fit
+- **AND** a circular-floor boundary or hole safety ring MAY use a clipped
+  partial cell when every retained frame, transition, hole, and
+  stacking-interface constraint remains satisfied
+- **AND** a curved side-wall or side-opening boundary MAY use a clipped
+  partial cell when every retained rim, transition, and structural-bridge
+  constraint remains satisfied
 
 #### Scenario: Honeycomb cylinder output is distinguishable and materially lighter
 
-- **WHEN** a valid honeycomb cylinder with at least one eligible lattice panel is exported
-- **THEN** its STEP and STL filenames MUST identify the honeycomb profile with a deterministic `honeycomb` suffix
-- **AND** its B-Rep volume MUST be lower than the otherwise identical non-honeycomb profile within geometry tolerance
-- **AND** the existing filename identity MUST remain unchanged when `honeycombMode=false`
+- **WHEN** a valid honeycomb cylinder with at least one eligible lattice
+  panel is exported
+- **THEN** its STEP and STL filenames MUST identify the honeycomb profile
+  with a deterministic `honeycomb` suffix
+- **AND** its B-Rep volume MUST be lower than the otherwise identical
+  non-honeycomb profile within geometry tolerance
+- **AND** the existing filename identity MUST remain unchanged when
+  `honeycombMode=false`
 
 ### Requirement: Honeycomb cylinder quality protection
 
@@ -633,17 +719,17 @@ The stackable-cylinder quality gate MUST inspect honeycomb-mode candidates separ
 
 The CAD workspace MUST bind `/cad/opengrid-stackable-cylinder` exclusively to
 `modelId=opengrid-stackable-cylinder`. The catalog entry MUST expose the
-existing typed inner-diameter, height, profile, and opening controls plus
-exactly one visible locating-seat radio group with `無角座`, `鎖定角座`, and
-`內建角座`. The inner-diameter control MUST display the derived outer
-diameter directly beneath the input, formatted in millimetres with trailing
-zeros trimmed. The visible panel MUST NOT expose `bottomPlateMode` as a
-selectable profile, and MUST NOT expose individual center or outer-seat
-toggles. The Worker MUST validate the canonical enum and route this model ID
-to the independent cylinder builder without falling through to another
-model. Locking mode MUST provide the detachable male and holder references
-required by the builder and MUST reject generation when those references are
-unavailable.
+existing typed inner-diameter, height, and opening controls plus exactly one
+visible locating-seat radio group with `無角座`, `鎖定角座`, and `內建角座`.
+The inner-diameter control MUST display the derived outer diameter directly
+beneath the input, formatted in millimetres with trailing zeros trimmed. The
+visible panel MUST NOT expose a bottom-profile radio choice, MUST NOT expose
+`bottomPlateMode` as a selectable profile, and MUST NOT expose individual
+center or outer-seat toggles. The Worker MUST validate the canonical enum and
+route this model ID to the independent cylinder builder without falling
+through to another model. Locking mode MUST provide the detachable male and
+holder references required by the builder and MUST reject generation when
+those references are unavailable.
 
 #### Scenario: Cylinder route initializes
 
@@ -659,19 +745,18 @@ unavailable.
 - **WHEN** a user views the cylinder parameter panel
 - **THEN** it MUST show exactly `無角座`, `鎖定角座`, and `內建角座` as
   mutually exclusive radio choices
-- **AND** the thin-shell and stacking profile descriptions MUST NOT state or
-  imply different locating-post sizes between the two profiles
+- **AND** the panel MUST NOT show a bottom-profile radio choice or
+  profile-description line
 - **AND** it MUST not show rectangular X/Y, box full-grid, or
   individual-seat controls
 
 #### Scenario: Derived outer diameter is displayed under the inner diameter
 
-- **WHEN** the user edits the inner-diameter field or switches between the
-  thin-shell and stacking modes
+- **WHEN** the user edits the inner-diameter field
 - **THEN** the panel MUST show the derived outer diameter
   (`innerDiameter + 2 × wallThickness`) beneath the inner-diameter input
-- **AND** the displayed value MUST use the active mode's wall thickness
-  (2.0 mm stacking, 1.6 mm thin-shell) with trailing zeros trimmed
+- **AND** the displayed value MUST use the active profile's wall thickness
+  (1.6 mm thin, 2.0 mm bottom-plate) with trailing zeros trimmed
 
 #### Scenario: Cylinder Worker dispatch is component-specific
 

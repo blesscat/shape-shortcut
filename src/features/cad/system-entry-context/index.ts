@@ -158,7 +158,6 @@ export function getSystemPreset(
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       innerDiameter: 57,
       height: 30,
-      thinBottomMode: true,
       bottomPlateMode: false,
     })
   }

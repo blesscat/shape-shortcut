@@ -132,8 +132,8 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     { innerDiameter: 20, expectedOuterHoleCount: 0 },
     { innerDiameter: 35, expectedOuterHoleCount: 0 },
     { innerDiameter: 36, expectedOuterHoleCount: 0 },
-    { innerDiameter: 43, expectedOuterHoleCount: 4 },
-    { innerDiameter: 44, expectedOuterHoleCount: 4 },
+    { innerDiameter: 43, expectedOuterHoleCount: 0 },
+    { innerDiameter: 44, expectedOuterHoleCount: 0 },
     { innerDiameter: 52, expectedOuterHoleCount: 4 },
     { innerDiameter: 296, expectedOuterHoleCount: 4 },
   ])(
@@ -253,12 +253,8 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
 
   it.each([
     {
-      name: 'default',
-      overrides: {},
-    },
-    {
       name: 'thin',
-      overrides: { thinBottomMode: true },
+      overrides: {},
     },
     {
       name: 'bottom-plate',
@@ -293,37 +289,16 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     120_000,
   )
 
-  it('keeps the default five-millimetre floor and internal fillet profile', () => {
-    const input = parameters({ innerDiameter: 52 })
-    const shape = buildOpenGridStackableCylinder(input)
-    try {
-      const report = inspectOpenGridStackableCylinderInterface(shape, input)
-      expect(report.profile).toBe('default')
-      expect(report.thinBottomMode).toBe(false)
-      expect(report.bottomSeatMode).toBe('detachable-corner-seat')
-      expect(report.centralFloorBelowVolume).toBeGreaterThan(0.0001)
-      expect(report.centralFloorAboveVolume).toBeLessThan(0.0001)
-      expect(report.innerRampFaceCount).toBe(0)
-      expect(report.internalFilletFaceCount).toBe(1)
-      expect(report.internalFilletHeight).toBeGreaterThanOrEqual(0.55)
-    } finally {
-      deleteShape(shape)
-    }
-  }, 120_000)
-
   it.each([
-    { profile: 'default', thinBottomMode: false, bottomPlateMode: false },
-    { profile: 'thin', thinBottomMode: true, bottomPlateMode: false },
+    { profile: 'thin', bottomPlateMode: false },
     {
       profile: 'bottom-plate',
-      thinBottomMode: false,
       bottomPlateMode: true,
     },
   ])(
     'keeps the $profile stacking geometry valid in no-seat mode',
-    ({ profile, thinBottomMode, bottomPlateMode }) => {
+    ({ profile, bottomPlateMode }) => {
       const input = parameters({
-        thinBottomMode,
         bottomPlateMode,
         bottomSeatMode: 'none',
       })
@@ -331,7 +306,6 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
       try {
         const report = inspectOpenGridStackableCylinderInterface(shape, input)
         expect(report.profile).toBe(profile)
-        expect(report.thinBottomMode).toBe(thinBottomMode)
         expect(report.bottomPlateMode).toBe(bottomPlateMode)
         expect(report.bottomSeatMode).toBe('none')
         expect(report.holeRecordCount).toBe(0)
@@ -348,18 +322,15 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
   )
 
   it.each([
-    { profile: 'default', thinBottomMode: false, bottomPlateMode: false },
-    { profile: 'thin', thinBottomMode: true, bottomPlateMode: false },
+    { profile: 'thin', bottomPlateMode: false },
     {
       profile: 'bottom-plate',
-      thinBottomMode: false,
       bottomPlateMode: true,
     },
   ])(
     'builds integrated Ø5 by 3.8 mm chamfered seats in the $profile profile as one valid solid',
-    ({ thinBottomMode, bottomPlateMode }) => {
+    ({ bottomPlateMode }) => {
       const input = parameters({
-        thinBottomMode,
         bottomPlateMode,
         bottomSeatMode: 'integrated',
       })
@@ -412,7 +383,7 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     }
   }, 120_000)
 
-  it('accepts the default-mode height-minus-floor opening depth limit', () => {
+  it('accepts the height-minus-floor opening depth limit', () => {
     const input = parameters({
       openingPlusXDepth: 25,
       openingPlusXBottomLength: 8,
@@ -457,7 +428,7 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
   ])(
     'builds the thin profile at supported inner diameter $innerDiameter',
     ({ innerDiameter, expectedHoleCount }) => {
-      const input = parameters({ innerDiameter, thinBottomMode: true })
+      const input = parameters({ innerDiameter })
       const shape = buildOpenGridStackableCylinder(input)
       try {
         const report = inspectOpenGridStackableCylinderInterface(shape, input)
@@ -479,7 +450,7 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
   ])(
     'builds the thin profile at the $innerDiameter mm inner-diameter outer-hole threshold',
     ({ innerDiameter, expectedHoleCount }) => {
-      const input = parameters({ innerDiameter, thinBottomMode: true })
+      const input = parameters({ innerDiameter })
       const shape = buildOpenGridStackableCylinder(input)
       try {
         const report = inspectOpenGridStackableCylinderInterface(shape, input)
@@ -492,7 +463,7 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
   )
 
   it('keeps the central flat floor at 2 mm', () => {
-    const input = parameters({ innerDiameter: 52, thinBottomMode: true })
+    const input = parameters({ innerDiameter: 52 })
     const shape = buildOpenGridStackableCylinder(input)
     const belowCavity = makeCylinder(0.5, 0.1, [10, 0, 1.9])
     const insideCavity = makeCylinder(0.5, 0.1, [10, 0, 2.01])
@@ -511,7 +482,7 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
   }, 120_000)
 
   it('keeps every hole outer edge at least 2 mm from the cylinder edge', () => {
-    const input = parameters({ innerDiameter: 296, thinBottomMode: true })
+    const input = parameters({ innerDiameter: 296 })
     const shape = buildOpenGridStackableCylinder(input)
     try {
       const report = inspectOpenGridStackableCylinderInterface(shape, input)
@@ -559,7 +530,6 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     const input = parameters({
       innerDiameter: 54,
       height: 31,
-      thinBottomMode: true,
     })
     const derived = openGridStackableCylinderDerivedGeometryFor(input)
     const shape = buildOpenGridStackableCylinder(input)
@@ -659,15 +629,10 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     120_000,
   )
 
-  it.each([
-    { thinBottomMode: false, bottomPlateMode: false },
-    { thinBottomMode: true, bottomPlateMode: false },
-    { thinBottomMode: false, bottomPlateMode: true },
-  ])(
-    'keeps four distinct openings compatible with the $thinBottomMode/$bottomPlateMode floor profile',
-    ({ thinBottomMode, bottomPlateMode }) => {
+  it.each([{ bottomPlateMode: false }, { bottomPlateMode: true }])(
+    'keeps four distinct openings compatible with the $bottomPlateMode bottom-plate floor profile',
+    ({ bottomPlateMode }) => {
       const input = parameters({
-        thinBottomMode,
         bottomPlateMode,
         openingPlusXDepth: 12,
         openingPlusXBottomLength: 8,
@@ -724,13 +689,16 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
     }
   }, 120_000)
 
-  it.each([false, true])(
-    'mates equal-diameter cylinders through the bottom protrusion and cavity (%s)',
-    (thinBottomMode) => {
+  it.each([
+    { name: 'thin', bottomPlateMode: false, hasRamp: true },
+    { name: 'bottom-plate', bottomPlateMode: true, hasRamp: false },
+  ])(
+    'mates equal-diameter cylinders through the bottom protrusion and cavity ($name)',
+    ({ bottomPlateMode, hasRamp }) => {
       const input = parameters({
         innerDiameter: 52,
         height: 30,
-        thinBottomMode,
+        bottomPlateMode,
       })
       const derived = openGridStackableCylinderDerivedGeometryFor(input)
       const lower = buildOpenGridStackableCylinder(input)
@@ -751,25 +719,37 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
           derived.topInnerChamfer - 0.05,
         )
         expect(report.bottomOuterChamferFaceCount).toBeGreaterThan(0)
-        expect(report.bottomOuterChamferHeight).toBeGreaterThanOrEqual(
-          derived.outerTransitionEndZ - derived.outerTransitionStartZ - 0.05,
+        const outerTransitionHeight =
+          derived.outerTransitionEndZ - derived.outerTransitionStartZ
+        const outerTransitionAngle = Math.atan2(
+          outerTransitionHeight,
+          derived.outerTransitionEndRadius - derived.outerTransitionStartRadius,
         )
-        expect(report.bottomFootChamferFaceCount).toBeGreaterThan(0)
-        expect(report.bottomFootChamferHeight).toBeGreaterThanOrEqual(
-          OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.bottomFootBevel -
-            OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius -
-            0.05,
+        const bottomOuterFilletTrim = bottomPlateMode
+          ? OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius *
+            (1 - Math.cos(outerTransitionAngle))
+          : 0
+        expect(report.bottomOuterChamferHeight).toBeGreaterThanOrEqual(
+          outerTransitionHeight - bottomOuterFilletTrim - 0.05,
         )
         expect(report.bottomOuterFilletFaceCount).toBeGreaterThan(0)
         expect(report.lowerUnexpectedConicalFaceCount).toBe(0)
-        if (thinBottomMode) {
+        if (hasRamp) {
           expect(report.innerRampFaceCount).toBeGreaterThan(0)
           expect(report.internalFilletFaceCount).toBe(0)
           expect(report.innerRampBoundaryProbeCount).toBe(6)
+          expect(report.bottomFootChamferFaceCount).toBeGreaterThan(0)
+          expect(report.bottomFootChamferHeight).toBeGreaterThanOrEqual(
+            OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.bottomFootBevel -
+              OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius -
+              0.05,
+          )
         } else {
           expect(report.innerRampFaceCount).toBe(0)
           expect(report.internalFilletFaceCount).toBe(1)
           expect(report.internalFilletHeight).toBeGreaterThanOrEqual(0.55)
+          expect(report.bottomFootChamferFaceCount).toBe(0)
+          expect(report.bottomFootChamferHeight).toBe(0)
         }
         expect(report.bottomMatingBoundaryProbeCount).toBe(1)
         expect(report.matingIntersectionVolume).toBeLessThan(0.01)

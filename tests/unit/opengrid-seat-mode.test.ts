@@ -49,7 +49,6 @@ function cylinderParameters(
   return {
     innerDiameter: 56,
     height: 20,
-    thinBottomMode: false,
     bottomPlateMode: false,
     bottomSeatMode: 'detachable-corner-seat',
     openingPlusXDepth: 0,

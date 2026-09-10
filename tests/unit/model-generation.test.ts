@@ -821,7 +821,6 @@ describe('CAD model generation debounce', () => {
       {
         innerDiameter: 56,
         height: 30,
-        thinBottomMode: false,
         bottomPlateMode: false,
         bottomSeatMode: 'detachable-corner-seat',
       },
@@ -892,7 +891,6 @@ describe('CAD model generation debounce', () => {
     )
     const handlers = createModelGenerationHandlers(context)
 
-    handlers.handleInputChange('thinBottomMode', 'true')
     handlers.handleInputChange('bottomSeatMode', 'none')
     vi.advanceTimersByTime(500)
 
@@ -902,14 +900,13 @@ describe('CAD model generation debounce', () => {
         modelId: 'opengrid-stackable-cylinder',
         parameters: {
           ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-          thinBottomMode: true,
           bottomSeatMode: 'none',
         },
       }),
     )
   })
 
-  it('keeps bottom-plate mode mutually exclusive in the generation snapshot', () => {
+  it('keeps bottom-plate mode in the generation snapshot', () => {
     const { send, context } = createRuntimeContext(
       'opengrid-stackable-cylinder',
     )

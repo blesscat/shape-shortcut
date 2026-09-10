@@ -61,7 +61,6 @@ export const OPENGRID_STACKABLE_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
 export const OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'innerDiameter',
   'height',
-  'thinBottomMode',
   'bottomPlateMode',
   'bottomSeatMode',
   'honeycombMode',
@@ -216,7 +215,6 @@ function legacyParameterDefault(
     return 'false'
   }
   if (modelId !== 'opengrid-stackable-cylinder') return undefined
-  if (key === 'thinBottomMode') return 'false'
   if (key === 'bottomPlateMode') return 'false'
   if (key === 'bottomSeatMode') return 'detachable-corner-seat'
   const defaultValue = (
@@ -657,9 +655,6 @@ export function rawFromParameters(
     const raw: RawParameters = {
       innerDiameter: String(parameters.innerDiameter),
       height: String(parameters.height),
-      thinBottomMode: String(
-        'thinBottomMode' in parameters ? parameters.thinBottomMode : false,
-      ),
       bottomPlateMode: String(
         'bottomPlateMode' in parameters ? parameters.bottomPlateMode : false,
       ),
@@ -936,7 +931,9 @@ export function parseRawParameters(
 
   const keys = parameterKeysForModel(modelId)
   const legacyAliases =
-    modelId === 'opengrid-stackable-cylinder' ? (['diameter'] as const) : []
+    modelId === 'opengrid-stackable-cylinder'
+      ? (['diameter', 'thinBottomMode'] as const)
+      : []
   const unexpectedKey = Object.keys(raw).find(
     (key) =>
       !keys.includes(key as ModelParameterKey) &&
@@ -1117,7 +1114,6 @@ export function parseRawParameters(
     }
     if (
       key === 'fullBottomHoleGrid' ||
-      key === 'thinBottomMode' ||
       key === 'bottomPlateMode' ||
       key === 'basePlateMode' ||
       key === 'thinShellMode' ||

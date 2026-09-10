@@ -126,10 +126,9 @@ MUST be exactly `{ mode: 'detachable-corner-seat' }`. For
 `opengrid-stackable-box`, the Desk
 preset MUST be `x=4`, `y=2`, `height=30`, `thinShellMode=true`, and
 `basePlateMode=false`. For `opengrid-stackable-cylinder`, the Desk preset MUST
-be `diameter=60`, `height=30`, `thinBottomMode=true`, and
-`bottomPlateMode=false`. Any other visible OpenGrid entry MUST use its
-validated model definition defaults in the Desk context and MUST NOT appear in
-the Wall context.
+be `innerDiameter=57`, `height=30`, and `bottomPlateMode=false`. Any other
+visible OpenGrid entry MUST use its validated model definition defaults in
+the Desk context and MUST NOT appear in the Wall context.
 
 #### Scenario: Desk Snap entry resolves its preset
 

@@ -29,10 +29,8 @@
     fieldErrors,
     onInputChange,
   }: ComponentPanelProps = $props()
-  let thinBottomMode = $derived(rawParameters.thinBottomMode === 'true')
   let bottomPlateMode = $derived(rawParameters.bottomPlateMode === 'true')
 
-  type CylinderMode = 'default' | 'thin' | 'bottom-plate'
   type CylinderSeatMode = 'none' | 'detachable-corner-seat' | 'integrated'
 
   const seatModeOptions: ReadonlyArray<{
@@ -74,50 +72,6 @@
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     if (!event.currentTarget.checked) return
     onInputChange('bottomSeatMode', event.currentTarget.value)
-  }
-
-  function modeFor(isThin: boolean, isBottomPlate: boolean): CylinderMode {
-    if (isBottomPlate) return 'bottom-plate'
-    if (isThin) return 'thin'
-    return 'default'
-  }
-
-  function modeSummary(mode: CylinderMode): string {
-    if (mode === 'thin') return translate(locale, 'panel.thinShellDescription')
-    return translate(locale, 'panel.stackableDescription')
-  }
-
-  function onModeChange(mode: CylinderMode): void {
-    if (mode === 'thin') {
-      onInputChange('bottomPlateMode', 'false')
-      onInputChange('thinBottomMode', 'true')
-      return
-    }
-    if (mode === 'bottom-plate') {
-      onInputChange('thinBottomMode', 'false')
-      onInputChange('bottomPlateMode', 'true')
-      return
-    }
-    onInputChange('thinBottomMode', 'false')
-    onInputChange('bottomPlateMode', 'false')
-  }
-
-  function onModeRadioChange(mode: CylinderMode, event: Event): void {
-    if (!(event.currentTarget instanceof HTMLInputElement)) return
-    if (!event.currentTarget.checked) return
-    onModeChange(mode)
-  }
-
-  let activeMode = $derived(modeFor(thinBottomMode, bottomPlateMode))
-
-  function floorThicknessForMode(mode: CylinderMode): number {
-    if (mode === 'default') {
-      return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultFloorThickness
-    }
-    if (mode === 'thin') {
-      return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinFloorThickness
-    }
-    return OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.floorThickness
   }
 
   const openingGroups = [
@@ -188,7 +142,6 @@
     return {
       innerDiameter,
       height,
-      thinBottomMode: rawParameters.thinBottomMode === 'true',
       bottomPlateMode: rawParameters.bottomPlateMode === 'true',
       bottomSeatMode: seatModeForRawParameters(),
       honeycombMode: rawParameters.honeycombMode === 'true',
@@ -208,9 +161,9 @@
   function derivedOuterDiameterText(): string {
     const innerDiameter = rawNumberFor('innerDiameter')
     if (innerDiameter === null) return ''
-    const wallThickness = thinBottomMode
-      ? OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinWallThickness
-      : OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.wallThickness
+    const wallThickness = bottomPlateMode
+      ? OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.wallThickness
+      : OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinWallThickness
     const outerDiameter = Number((innerDiameter + wallThickness * 2).toFixed(2))
     return translate(locale, 'panel.innerDiameterOuterHint', {
       value: String(outerDiameter),
@@ -263,7 +216,10 @@
       if (!Number.isFinite(height)) return [displayedField]
       const maximum = Math.max(
         field.min,
-        Math.min(field.max, height - floorThicknessForMode(activeMode)),
+        Math.min(
+          field.max,
+          height - OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.thinFloorThickness,
+        ),
       )
       return [{ ...displayedField, max: maximum, sliderMax: maximum }]
     })
@@ -274,38 +230,6 @@
   class="m-0 grid gap-3 border-0 p-0"
   aria-label={translate(locale, 'panel.boxMode')}
 >
-  <div
-    class="flex items-center gap-4 whitespace-nowrap"
-    data-testid="opengrid-cylinder-mode-options"
-  >
-    <label class="flex items-center gap-2 text-sm">
-      <input
-        type="radio"
-        name="opengrid-stackable-cylinder-bottom-mode"
-        aria-label={translate(locale, 'panel.thinShell')}
-        checked={activeMode === 'thin'}
-        onchange={(event) => onModeRadioChange('thin', event)}
-      />
-      <span>{translate(locale, 'panel.thinShell')}</span>
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input
-        type="radio"
-        name="opengrid-stackable-cylinder-bottom-mode"
-        aria-label={translate(locale, 'panel.stackable')}
-        checked={activeMode === 'default'}
-        onchange={(event) => onModeRadioChange('default', event)}
-      />
-      <span>{translate(locale, 'panel.stackable')}</span>
-    </label>
-  </div>
-  <p
-    class="m-0 text-sm text-muted-foreground"
-    data-testid="opengrid-cylinder-mode-description"
-    aria-live="polite"
-  >
-    {modeSummary(activeMode)}
-  </p>
   <fieldset
     class="grid gap-2 border-0 p-0"
     aria-describedby={fieldErrors.bottomSeatMode

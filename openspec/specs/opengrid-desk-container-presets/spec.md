@@ -19,41 +19,67 @@ When a user opens the Desk System entry for `opengrid-stackable-box` without a v
 
 ### Requirement: Desk stackable-cylinder preset
 
-When a user opens the Desk System entry for `opengrid-stackable-cylinder` without a valid saved Desk snapshot, the system MUST initialize the model with `diameter=60`, `height=30`, `thinBottomMode=true`, and `bottomPlateMode=false`. The preset MUST retain the model's validated defaults for all other parameters, including bottom-hole and opening controls. The model id, route, circular geometry contract, and export contract MUST remain unchanged.
+When a user opens the Desk System entry for `opengrid-stackable-cylinder`
+without a valid saved Desk snapshot, the system MUST initialize the model
+with `innerDiameter=57`, `height=30`, and `bottomPlateMode=false`. The preset
+MUST retain the model's validated defaults for all other parameters,
+including bottom-hole and opening controls. The model id, route, circular
+geometry contract, and export contract MUST remain unchanged.
 
 #### Scenario: Desk cylinder starts with the requested thin-shell dimensions
 
-- **WHEN** a user opens `/cad/opengrid-stackable-cylinder?system=desk` with no valid saved Desk snapshot
-- **THEN** the first valid generation MUST use `diameter=60` and `height=30`
-- **AND** the thin-shell mode control MUST be selected
+- **WHEN** a user opens `/cad/opengrid-stackable-cylinder?system=desk` with
+  no valid saved Desk snapshot
+- **THEN** the first valid generation MUST use `innerDiameter=57` and
+  `height=30`
+- **AND** the generated geometry MUST use the thin profile
+- **AND** the panel MUST NOT show a selectable bottom-profile radio choice
 - **AND** the normalized `bottomPlateMode` MUST remain `false`
-- **AND** the panel MUST NOT show a selectable bottom-plate radio choice
 - **AND** the committed model MUST retain `modelId=opengrid-stackable-cylinder`
 
 ### Requirement: Desk preset precedence and legacy isolation
 
-The Desk container presets MUST be used only when the active supported context is `desk` and no valid saved `(desk, modelId)` snapshot exists. A valid saved Desk snapshot MUST continue to take precedence over the preset. A context-free route, or a route whose context is unsupported for the selected container, MUST continue to use the model definition defaults and its legacy model-id-scoped persistence behavior; it MUST NOT silently use the Desk preset.
+The Desk container presets MUST be used only when the active supported
+context is `desk` and no valid saved `(desk, modelId)` snapshot exists. A
+valid saved Desk snapshot MUST continue to take precedence over the preset. A
+context-free route, or a route whose context is unsupported for the selected
+container, MUST continue to use the model definition defaults and its legacy
+model-id-scoped persistence behavior; it MUST NOT silently use the Desk
+preset.
 
 #### Scenario: Saved Desk box parameters take precedence
 
-- **GIVEN** browser persistence contains a valid saved Desk snapshot for `opengrid-stackable-box`
+- **GIVEN** browser persistence contains a valid saved Desk snapshot for
+  `opengrid-stackable-box`
 - **WHEN** a user opens `/cad/opengrid-stackable-box?system=desk`
 - **THEN** the controls and first generation MUST use the saved Desk snapshot
 - **AND** the new `4 × 2 × 30 mm` preset MUST not overwrite it
 
 #### Scenario: Context-free routes retain model defaults
 
-- **WHEN** a user opens `/cad/opengrid-stackable-box` or `/cad/opengrid-stackable-cylinder` without a supported Desk context and without a valid legacy snapshot
+- **WHEN** a user opens `/cad/opengrid-stackable-box` or
+  `/cad/opengrid-stackable-cylinder` without a supported Desk context and
+  without a valid legacy snapshot
 - **THEN** the workspace MUST use the existing model definition defaults
-- **AND** it MUST not use the Desk dimensions or thin mode as an implicit global default
+- **AND** it MUST not use the Desk dimensions as an implicit global default
 
 ### Requirement: Desk container preview assets represent the effective preset
 
-The visible Desk entries for `opengrid-stackable-box` and `opengrid-stackable-cylinder` MUST reference non-empty static preview assets whose models are generated from their corresponding Desk presets with cleared or isolated browser persistence. The assets MUST retain deterministic identities `opengrid-stackable-box-desk.png` and `opengrid-stackable-cylinder-desk.png`, and preview generation MUST NOT change the model id, Worker protocol, or export contract.
+The visible Desk entries for `opengrid-stackable-box` and
+`opengrid-stackable-cylinder` MUST reference non-empty static preview assets
+whose models are generated from their corresponding Desk presets with cleared
+or isolated browser persistence. The assets MUST retain deterministic
+identities `opengrid-stackable-box-desk.png` and
+`opengrid-stackable-cylinder-desk.png`, and preview generation MUST NOT
+change the model id, Worker protocol, or export contract.
 
 #### Scenario: Desk container previews show the configured entries
 
-- **WHEN** the preview capture and verification workflow processes the Desk container entries
-- **THEN** it MUST visit the corresponding `?system=desk` routes without using an unrelated saved snapshot
-- **AND** it MUST verify `opengrid-stackable-box-desk.png` and `opengrid-stackable-cylinder-desk.png`
-- **AND** each asset MUST represent the requested Desk dimensions and thin-shell profile
+- **WHEN** the preview capture and verification workflow processes the Desk
+  container entries
+- **THEN** it MUST visit the corresponding `?system=desk` routes without
+  using an unrelated saved snapshot
+- **AND** it MUST verify `opengrid-stackable-box-desk.png` and
+  `opengrid-stackable-cylinder-desk.png`
+- **AND** each asset MUST represent the requested Desk dimensions and thin
+  profile

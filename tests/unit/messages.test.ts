@@ -288,7 +288,6 @@ describe('Worker contract runtime validation', () => {
       parameters: {
         innerDiameter: 56,
         height: 30,
-        thinBottomMode: false,
         bottomPlateMode: false,
         bottomSeatMode: 'detachable-corner-seat',
       },
@@ -302,7 +301,6 @@ describe('Worker contract runtime validation', () => {
         parameters: {
           innerDiameter: 56.5,
           height: 30,
-          thinBottomMode: false,
           bottomPlateMode: false,
           bottomSeatMode: 'detachable-corner-seat',
         },
@@ -314,7 +312,6 @@ describe('Worker contract runtime validation', () => {
         parameters: {
           innerDiameter: 56,
           height: 30,
-          thinBottomMode: false,
           bottomPlateMode: false,
           bottomSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,

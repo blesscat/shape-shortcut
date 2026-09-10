@@ -719,7 +719,7 @@ describe('CAD workspace validation helpers', () => {
     ).toBe('detachable-corner-seat')
     const legacyParameters = {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-      innerDiameter: 52,
+      innerDiameter: 53,
       height: 30,
     }
     expect(

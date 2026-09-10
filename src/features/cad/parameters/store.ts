@@ -103,6 +103,7 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
   if (modelId === 'opengrid-stackable-cylinder' && isRecord(value)) {
     const withoutLegacy: Record<string, unknown> = { ...value }
     delete withoutLegacy.bottomHolesEnabled
+    delete withoutLegacy.thinBottomMode
     if (
       !Object.prototype.hasOwnProperty.call(withoutLegacy, 'innerDiameter') &&
       Object.prototype.hasOwnProperty.call(withoutLegacy, 'diameter')
@@ -116,12 +117,6 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
     return {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       ...withoutLegacy,
-      thinBottomMode: Object.prototype.hasOwnProperty.call(
-        value,
-        'thinBottomMode',
-      )
-        ? value.thinBottomMode
-        : false,
       bottomPlateMode: Object.prototype.hasOwnProperty.call(
         value,
         'bottomPlateMode',

@@ -1032,7 +1032,6 @@ describe('OpenGrid Worker runtime', () => {
         parameters: {
           innerDiameter: 56,
           height: 30,
-          thinBottomMode: false,
           bottomPlateMode: true,
           bottomSeatMode: 'none',
         },
@@ -1044,7 +1043,6 @@ describe('OpenGrid Worker runtime', () => {
       {
         innerDiameter: 56,
         height: 30,
-        thinBottomMode: false,
         bottomPlateMode: true,
         bottomSeatMode: 'none',
       },
