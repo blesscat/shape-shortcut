@@ -205,6 +205,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
       holeCountY: 1,
       holeDiameter: 10,
       holeDepth: 8,
+      wallThickness: 3,
       cornerSeatMode: 'none',
       boxMode: 'stackable',
     })
@@ -237,6 +238,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
       holeCountY: 1,
       holeDiameter: 10,
       holeDepth: 8,
+      wallThickness: 3,
       cornerSeatMode: 'none',
       boxMode: 'stackable',
       stackingClearanceHeight: 3.5,
@@ -311,11 +313,12 @@ describe('OpenGrid organizer-box B-Rep', () => {
     }
   }, 180_000)
 
-  it('grows a half-grid candidate to keep stacking seams and sockets intact', async () => {
+  it('lays stacking seams on interior grid lines of a 2x2-cell box', async () => {
     const input = parameters({
-      holeCountX: 1,
-      holeCountY: 1,
+      holeCountX: 2,
+      holeCountY: 2,
       holeDiameter: 20,
+      wallThickness: 3,
       cornerSeatMode: 'detachable-corner-seat',
       boxMode: 'stackable',
     })
@@ -416,7 +419,11 @@ describe('OpenGrid organizer-box B-Rep', () => {
       )
       const holderTop =
         OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.female.depth
-      expect(cavityFloor - holderTop).toBeCloseTo(input.bottomThickness, 5)
+      expect(cavityFloor - layout.interfaceFloorDatum).toBeCloseTo(
+        input.bottomThickness,
+        5,
+      )
+      expect(cavityFloor).toBeGreaterThan(holderTop)
 
       for (const pose of poses) {
         const placedVoid = placeOpenGridDetachableCornerSeatSocketShape(
@@ -552,6 +559,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
         holeCountY: 1,
         holeDiameter: 10,
         holeDepth: 8,
+        wallThickness: boxMode === 'stackable' ? 3 : 2,
         boxMode,
         cornerSeatMode,
       })
@@ -642,6 +650,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
       holeCountY: 1,
       holeDiameter: 10,
       holeDepth: 8,
+      wallThickness: 3,
       cornerSeatMode: 'none',
       boxMode: 'stackable',
       stackingClearanceHeight: 3.5,
@@ -813,6 +822,7 @@ describe('OpenGrid organizer-box B-Rep', () => {
       holeSpacingY: 4,
       holeShape: 'hexagon',
       holeDiameter: 12,
+      wallThickness: 3,
       cornerSeatMode: 'none',
       boxMode: 'stackable',
     })

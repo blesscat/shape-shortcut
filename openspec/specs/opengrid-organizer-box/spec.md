@@ -34,24 +34,24 @@ IDs and their behavior MUST remain unchanged.
 
 The canonical organizer-box snapshot MUST contain typed `holeCountX`,
 `holeCountY`, `holeSpacingMode`, `holeSpacingX`, `holeSpacingY`, `holeShape`,
-`holeDiameter`, `holeDepth`, `bottomThickness`, `cornerSeatMode`, `boxMode`, and
-`stackingClearanceHeight` fields. `holeSpacingMode` MUST be either `linked` or
-`independent`; `holeShape` MUST be one of `circle`, `triangle`, `square`,
-`pentagon`, or `hexagon`; `cornerSeatMode` MUST be one of `none`,
-`detachable-corner-seat`, or `integrated`; and `boxMode` MUST be either
-`normal` or `stackable`.
+`holeDiameter`, `holeDepth`, `bottomThickness`, `wallThickness`,
+`cornerSeatMode`, `boxMode`, and `stackingClearanceHeight` fields.
+`holeSpacingMode` MUST be either `linked` or `independent`; `holeShape` MUST be
+one of `circle`, `triangle`, `square`, `pentagon`, or `hexagon`;
+`cornerSeatMode` MUST be one of `none`, `detachable-corner-seat`, or
+`integrated`; and `boxMode` MUST be either `normal` or `stackable`.
 
 Hole counts MUST be positive integers. All dimensional values MUST be finite
-positive millimetres, and the bottom thickness MUST default to 1 mm.
-`stackingClearanceHeight` MUST default to 3.5 mm, MUST be at least 3.5 mm, and
-MUST use the Organizer Box's existing 0.5 mm input increment. The component
-MUST reject any snapshot whose derived footprint exceeds the existing OpenGrid
-500 mm workspace limit, whose cavities cannot fit with the required material
-boundaries, whose selected seat and body features would collide with a cavity,
-whose detachable sockets would leave less than 0.5 mm of roof material, or
-whose selected shape/depth combination is geometrically invalid. In linked
-spacing mode, the canonical X and Y spacing values MUST be equal; in
-independent mode they MAY differ.
+millimetres, the bottom thickness MUST be non-negative and default to 1 mm, and
+the wall thickness MUST default to 2 mm and MUST NOT exceed 100 mm. The wall
+thickness MUST be at least 2 mm in normal mode and at least 2.95 mm in
+stackable mode. `stackingClearanceHeight` MUST default to 3.5 mm, MUST be at
+least 3.5 mm, and MUST use the Organizer Box's existing 0.5 mm input increment.
+The component MUST reject any snapshot whose derived footprint exceeds the
+existing OpenGrid 500 mm workspace limit, whose wall thickness is below the
+minimum required by the selected body mode, or whose selected shape/depth
+combination is geometrically invalid. In linked spacing mode, the canonical X
+and Y spacing values MUST be equal; in independent mode they MAY differ.
 
 The parameter hydrator MUST accept the exact legacy Organizer Box snapshot
 shape containing `bottomInterfaceMode` and migrate it before validation.
@@ -59,9 +59,14 @@ Legacy `corner-seat` MUST become `cornerSeatMode=integrated` and
 `boxMode=normal`; legacy `detachable-corner-seat` MUST become
 `cornerSeatMode=detachable-corner-seat` and `boxMode=normal`; and legacy
 `stackable` MUST become `cornerSeatMode=none` and `boxMode=stackable`. Every
-legacy migration MUST set `stackingClearanceHeight=3.5`. Accepted persistence,
-Worker requests, and exports MUST emit only the canonical fields and MUST NOT
-emit `bottomInterfaceMode`.
+legacy migration MUST set `stackingClearanceHeight=3.5` and `wallThickness` to
+the 0.5 mm grid value of the migrated body mode's minimum (2 mm normal,
+3 mm stackable). Canonical
+snapshots missing `wallThickness` MUST fail
+validation and fall back through the existing malformed-entry path; no
+dedicated hydrator is added for them. Accepted persistence, Worker requests,
+and exports MUST emit only the canonical fields and MUST NOT emit
+`bottomInterfaceMode`.
 
 #### Scenario: Default organizer-box snapshot
 
@@ -69,6 +74,7 @@ emit `bottomInterfaceMode`.
 - **THEN** it MUST select a circle cavity shape
 - **AND** it MUST select linked X/Y spacing
 - **AND** it MUST use a 1 mm bottom thickness
+- **AND** it MUST use a 2 mm wall thickness
 - **AND** it MUST select `鎖定角座`, normalized as
   `cornerSeatMode=detachable-corner-seat`
 - **AND** it MUST select `普通模式`, normalized as `boxMode=normal`
@@ -85,23 +91,37 @@ emit `bottomInterfaceMode`.
 
 - **WHEN** the user selects independent spacing
 - **THEN** the panel MUST expose separate X and Y edge-to-edge spacing values
-- **AND** the generated layout MUST use the X value horizontally and the Y value
-  vertically
+- **AND** the generated layout MUST use the X value horizontally and the Y
+  value vertically
 
 #### Scenario: Legacy bottom-interface snapshot is hydrated
 
 - **WHEN** persistence contains an otherwise valid legacy snapshot with
   `bottomInterfaceMode=stackable`
 - **THEN** hydration MUST produce `cornerSeatMode=none`,
-  `boxMode=stackable`, and `stackingClearanceHeight=3.5`
+  `boxMode=stackable`, `stackingClearanceHeight=3.5`, and
+  `wallThickness=3`
 - **AND** the next accepted canonical snapshot MUST omit `bottomInterfaceMode`
+
+#### Scenario: Wall thickness control
+
+- **WHEN** the panel renders the wall thickness control
+- **THEN** the control MUST use the label `壁厚` with a 0.5 mm increment and a
+  100 mm maximum
+- **AND** in normal mode its floor MUST be 2 mm and in stackable mode its
+  selectable floor MUST be 3 mm (the 0.5 mm grid value of the 2.95 mm
+  contract minimum)
+- **AND** switching to stackable mode while the current value is below the
+  stackable floor MUST raise the value to that floor
+- **AND** validation MUST reject a normal-mode snapshot below 2 mm and a
+  stackable snapshot below 2.95 mm with a field-specific error
 
 #### Scenario: Invalid organizer-box input
 
 - **WHEN** a snapshot contains a non-positive count, non-finite or invalid
-  dimension, unsupported enum value, overlapping layout, insufficient boundary
-  or detachable-socket roof material, a stacking clearance below 3.5 mm or off
-  the 0.5 mm input grid, or a footprint above 500 mm
+  dimension, unsupported enum value, overlapping layout, a wall thickness
+  below the selected body mode's minimum, a stacking clearance below 3.5 mm
+  or off the 0.5 mm input grid, or a footprint above 500 mm
 - **THEN** validation MUST return a diagnosable field-specific error
 - **AND** the invalid snapshot MUST NOT send `model.generate`
 - **AND** it MUST NOT replace the last valid revision or enable export
@@ -119,15 +139,14 @@ opposite sides), including the 3-, 4-, 5-, and 6-sided choices.
 outer envelope of one cavity to the outer envelope of its adjacent cavity, not
 the distance between cavity centers. The cavity array MUST be centered in the
 derived outer footprint. Cavities MUST be blind from the top, stop at the
-requested depth, and leave the requested bottom thickness above the active
-body-interface datum. That datum MUST remain 5 mm in normal mode with no or
-integrated seats, 1.75 mm in normal mode with detachable sockets, and 5 mm in
-stackable mode for every seat choice. The body between cavities and all side
-walls MUST remain solid. The selected body and seat modes MAY shape the
-underside only within their specified interface envelopes, and the top
-stacking structure MAY extend above the cavity-opening plane, but none of these
-features MUST reach a storage cavity. The component MUST NOT expose
-side-opening controls or generate side openings.
+requested depth, and the cavity floor MUST sit the requested bottom thickness
+above the active body-interface datum. That datum MUST remain 2 mm in normal
+mode and 5 mm in stackable mode for every seat choice, and MUST NOT depend on
+`cornerSeatMode`. The body between cavities and all side walls MUST remain
+solid. The selected body and seat modes MAY shape the underside within their
+specified interface envelopes even where that envelope meets a storage cavity,
+and the top stacking structure MAY extend above the cavity-opening plane. The
+component MUST NOT expose side-opening controls or generate side openings.
 
 #### Scenario: Circular cavity matrix
 
@@ -137,8 +156,8 @@ side-opening controls or generate side openings.
   blind cavities
 - **AND** adjacent cavity boundaries MUST be separated by the requested X/Y
   edge-to-edge spacing within geometry tolerance
-- **AND** every cavity floor MUST remain the requested bottom thickness above
-  the active body-interface datum
+- **AND** every cavity floor MUST sit the requested bottom thickness above the
+  active body-interface datum
 
 #### Scenario: Polygon cavity matrix
 
@@ -154,50 +173,61 @@ side-opening controls or generate side openings.
 
 - **WHEN** the user increases `holeDepth` or `bottomThickness`
 - **THEN** the cavity floor MUST move according to the requested depth
-- **AND** outside every active seat or stacking envelope the remaining solid
-  bottom MUST remain at least the requested thickness
-- **AND** a detachable socket MUST retain at least 0.5 mm of solid roof before
-  the cavity floor
-- **AND** in normal mode with detachable seats the socket roof thickness MUST
-  equal the requested `bottomThickness` within geometry tolerance
+- **AND** the remaining solid bottom MUST reach at least the body-interface
+  datum plus the requested bottom thickness outside every active stacking
+  envelope
 - **AND** the overall Z extent MUST be derived from cavity depth, bottom
-  thickness, body mode, seat mode, and stackable clearance rather than an
-  unrelated manually entered height
+  thickness, body mode, and stackable clearance rather than an unrelated
+  manually entered height
 
 #### Scenario: Stacking clearance does not alter storage cavities
 
 - **WHEN** only `stackingClearanceHeight` changes on a stackable Organizer Box
-- **THEN** every cavity opening, floor, depth, diameter, center, and spacing MUST
-  remain unchanged
+- **THEN** every cavity opening, floor, depth, diameter, center, and spacing
+  MUST remain unchanged
 - **AND** only the connected structure above the cavity-opening plane and the
   resulting upper Z bound MUST change
 
 ### Requirement: Derived OpenGrid footprint and fixed cavity orientation
 
 The organizer-box X/Y footprint MUST be derived from the cavity count, selected
-shape envelope, and edge-to-edge spacing. The derivation MUST choose the
-smallest legal OpenGrid footprint that contains the centered cavity matrix while
-preserving the fixed boundary clearance required by the union of the selected
-body-mode and corner-seat features. The resulting footprint MUST use the
-existing 28 mm OpenGrid pitch and existing per-axis exterior clearance, and the
-derived grid counts MUST be available to the UI as read-only calculated values.
+shape envelope, edge-to-edge spacing, and the requested `wallThickness`. The
+derivation MUST choose the smallest legal OpenGrid footprint that contains the
+centered cavity matrix plus `wallThickness` of wall material outside the cavity
+matrix on every side, quantized to whole 0.5-cell steps: the grid count MUST be
+`ceil((cavity span + 2 × wallThickness + 0.15 mm) / 14 mm) × 0.5` cells and
+MUST be at least 1 cell, because a half-cell footprint cannot host the
+four-corner bottom interface. The footprint MUST be
+`gridCount × 28 mm − 0.15 mm` per axis, so the delivered wall per side MUST
+always meet or exceed the requested `wallThickness`. The resulting footprint
+MUST use the existing 28 mm OpenGrid pitch and existing per-axis exterior
+clearance, and the derived grid counts MUST be available to the UI as read-only
+calculated values. Corner-seat mode MUST NOT influence the derived footprint.
 
 All cavities MUST share one deterministic orientation relative to the world X/Y
 axes. Orientation MUST NOT be independently configurable per cavity or per axis.
 
 #### Scenario: Cavity layout determines grid occupancy
 
-- **WHEN** the user changes either cavity count, cavity diameter, linked/
-  independent spacing, body mode, or corner-seat mode
+- **WHEN** the user changes either cavity count, cavity diameter,
+  linked/independent spacing, or wall thickness
 - **THEN** the derived X/Y grid occupancy and outer footprint MUST recalculate
 - **AND** the cavity matrix MUST remain centered
 - **AND** every active bottom interface position MUST remain on the derived
   footprint's fixed OpenGrid locations
 
+#### Scenario: Wall thickness trades material for capacity
+
+- **WHEN** a single 20 mm circular cavity is requested with `wallThickness=2`
+  in normal mode
+- **THEN** the derived footprint MUST occupy exactly 1 OpenGrid cell per axis
+- **AND** the same request with a wall thickness above
+  `(28 mm − 0.15 mm − 20 mm) / 2` MUST occupy at least 1.5 cells
+
 #### Scenario: Layout does not fit
 
 - **WHEN** the requested cavity matrix cannot fit inside the largest safe
-  OpenGrid footprint or would collide with any active body or seat feature
+  OpenGrid footprint within the 500 mm workspace limit
 - **THEN** validation MUST reject the snapshot with a layout error
 - **AND** no new Worker generation or export request MUST be sent
 
@@ -213,10 +243,11 @@ emitted as a separate printable part.
 
 Viewed from the box bottom, the sockets MUST use the deterministic corner
 rotations upper-left 0°, upper-right 90°, lower-right 180°, and lower-left 270°.
-The mode MUST preserve at least 0.5 mm of solid roof between each 1.5 mm-deep
-socket and the nearest storage cavity and MUST NOT generate built-in downward
-feet. A stackable body MUST retain its box-to-box bottom and top stacking
-interfaces in addition to these sockets.
+Because the normal-mode body-interface datum is 2 mm, each 1.5 mm-deep socket
+MUST retain at least 0.5 mm of solid roof above it, and storage cavities MAY
+sit directly above the socket envelope. The mode MUST NOT generate built-in
+downward feet. A stackable body MUST retain its box-to-box bottom and top
+stacking interfaces in addition to these sockets.
 
 #### Scenario: Detachable sockets are part of the box
 
@@ -238,13 +269,12 @@ interfaces in addition to these sockets.
 
 #### Scenario: Detachable socket roof is too thin
 
-- **WHEN** the selected body mode, requested bottom thickness, and cavity layout
-  would leave less than 0.5 mm of material above a 1.5 mm-deep detachable
-  socket
-- **THEN** Organizer Box validation MUST return a diagnosable corner-seat or
-  bottom-thickness error
-- **AND** the invalid snapshot MUST NOT replace the last valid revision or
-  enable export
+- **WHEN** any snapshot with `cornerSeatMode=detachable-corner-seat` is
+  validated
+- **THEN** no dedicated socket-roof rejection MUST run
+- **AND** the 0.5 mm roof MUST instead follow from the body-interface datum
+  (2 mm normal / 5 mm stackable) always exceeding the 1.5 mm socket depth
+- **AND** storage cavities MAY sit directly above the socket envelope
 
 #### Scenario: Detachable seats compose with stacking
 
@@ -262,6 +292,7 @@ interfaces in addition to these sockets.
 - **THEN** the generated underside MUST contain neither the four existing
   downward built-in feet nor the box-to-box stacking profile
 - **AND** the box lower Z bound MUST remain at its body bottom datum
+
 ### Requirement: Preview, persistence, and exports
 
 Every valid organizer-box snapshot MUST generate a non-empty watertight single
@@ -269,8 +300,9 @@ solid centered on X/Y with a valid bottom reference, remain previewable through
 the existing Worker revision lifecycle, and support STEP and binary STL export.
 The export filenames MUST identify the organizer-box model and include every
 parameter that changes cavity, body-mode, corner-seat, or stacking-clearance
-geometry, including shape, diameter, counts, spacing, depth, bottom thickness,
-corner-seat mode, body mode, and stackable clearance when active.
+geometry, including shape, diameter, counts, spacing, depth, wall thickness,
+bottom thickness, corner-seat mode, body mode, and stackable clearance when
+active.
 
 Valid organizer-box parameters MUST persist under the independent
 `opengrid-organizer-box` model ID. Invalid or incomplete raw input MUST NOT
@@ -362,14 +394,16 @@ remain canonical when normal mode is selected so toggling modes preserves the
 last accepted setting, but it MUST NOT affect normal-mode geometry or export
 identity while inactive.
 
-The cavity-opening perimeter MUST remain horizontally clear of the riser and
-rail. The Organizer Box's existing 7 mm cavity boundary and the standard
-rail's maximum 2.95 mm inward reach provide at least 4.05 mm nominal horizontal
-separation; validation MUST reject any future parameter combination that fails
-this separation. Integrated feet or detachable sockets occupy their protected
-corner interface locations below the upper box datum and MUST NOT be counted as
-part of the requested vertical clearance, while collision checks MUST still
-prevent them from intersecting storage cavities or stacking features.
+In stackable mode `wallThickness` MUST be at least 2.95 mm, which is the
+standard rail's maximum inward reach and also the bottom seam bed opening
+half-width plus clearance, so the top rail seat and the bottom seam channel
+remain inside the wall footprint at the mode floor. Validation MUST reject a
+stackable snapshot whose `wallThickness` is below 2.95 mm. Wall thickness MUST
+NOT govern the vertical clearance above the cavities; `stackingClearanceHeight`
+alone MUST govern that space. Integrated feet or detachable sockets occupy
+their corner interface locations below the upper box datum, MUST NOT be counted
+as part of the requested vertical clearance, and MAY sit beneath storage
+cavities.
 
 #### Scenario: Minimum Z preserves the standard stacking structure
 
@@ -387,6 +421,12 @@ prevent them from intersecting storage cavities or stacking features.
   0.5 mm increment
 - **THEN** validation MUST report a field-specific
   `stackingClearanceHeight` error
+- **AND** no generation, persistence replacement, or export MUST occur
+
+#### Scenario: Stackable wall below the rail ring is rejected
+
+- **WHEN** a stackable snapshot sets `wallThickness` below 2.95 mm
+- **THEN** validation MUST report a field-specific `wallThickness` error
 - **AND** no generation, persistence replacement, or export MUST occur
 
 #### Scenario: Increased Z raises only the top stacking structure

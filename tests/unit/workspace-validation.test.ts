@@ -12,6 +12,7 @@ import type {
   PillarParameters,
 } from '../../src/cad-contract/units'
 import {
+  normalizeOpenGridOrganizerBoxParameters,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
@@ -110,6 +111,7 @@ describe('CAD workspace validation helpers', () => {
       holeDiameter: 12.5,
       holeDepth: 18,
       bottomThickness: 3.5,
+      wallThickness: 3,
       cornerSeatMode: 'integrated',
       boxMode: 'stackable',
       stackingClearanceHeight: 4.5,
@@ -129,6 +131,26 @@ describe('CAD workspace validation helpers', () => {
       valid: false,
       messageId: 'validation.invalid',
       field: 'holeSpacingY',
+    })
+  })
+
+  it('round-trips the hydrated legacy organizer-box wall thickness', () => {
+    const {
+      cornerSeatMode: _cornerSeatMode,
+      boxMode: _boxMode,
+      stackingClearanceHeight: _stackingClearanceHeight,
+      wallThickness: _wallThickness,
+      ...legacyDefaults
+    } = OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
+    const normalized = normalizeOpenGridOrganizerBoxParameters({
+      ...legacyDefaults,
+      bottomInterfaceMode: 'stackable',
+    })
+    const raw = rawFromParameters(normalized as OpenGridOrganizerBoxParameters)
+
+    expect(parseRawParameters(raw, 'opengrid-organizer-box')).toEqual({
+      valid: true,
+      value: normalized,
     })
   })
 

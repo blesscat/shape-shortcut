@@ -72,7 +72,18 @@ test('OpenGrid organizer-box is listed and exposes the cavity controls', async (
   ).toHaveValue('3')
   await expect(
     page.getByTestId('opengrid-organizer-box-layout-summary'),
+  ).toContainText('X 2 格 × Y 2 格')
+
+  const wallInput = page.getByRole('textbox', { name: '壁厚' })
+  await expect(wallInput).toHaveValue('2')
+  await wallInput.fill('8')
+  await expect(
+    page.getByTestId('opengrid-organizer-box-layout-summary'),
   ).toContainText('X 2.5 格 × Y 2.5 格')
+  await wallInput.fill('2')
+  await expect(
+    page.getByTestId('opengrid-organizer-box-layout-summary'),
+  ).toContainText('X 2 格 × Y 2 格')
 
   const shapes = page.getByRole('combobox', { name: '孔形狀' })
   await expect(shapes).toHaveValue('circle')
@@ -141,6 +152,7 @@ test('OpenGrid organizer-box is listed and exposes the cavity controls', async (
 
   const stackingZ = page.getByRole('textbox', { name: '堆疊淨空（Z）' })
   await expect(stackingZ).toHaveValue('3.5')
+  await expect(wallInput).toHaveValue('3')
   await stackingZ.fill('4.5')
   await seatMode.getByRole('radio', { name: '內建角座' }).check()
   await expect(bodyMode.getByRole('radio', { name: '堆疊模式' })).toBeChecked()

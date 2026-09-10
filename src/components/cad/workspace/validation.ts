@@ -110,6 +110,7 @@ export const OPENGRID_ORGANIZER_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'holeDiameter',
   'holeDepth',
   'bottomThickness',
+  'wallThickness',
   'cornerSeatMode',
   'boxMode',
   'stackingClearanceHeight',
@@ -440,6 +441,7 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
       | 'holeDiameter'
       | 'holeDepth'
       | 'bottomThickness'
+      | 'wallThickness'
       | 'stackingClearanceHeight',
     fallback: number,
   ): number | null => parseHalfStepInput(raw[field] ?? String(fallback))
@@ -459,6 +461,7 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     'holeDiameter',
     'holeDepth',
     'bottomThickness',
+    'wallThickness',
     'cornerSeatMode',
     'boxMode',
     'stackingClearanceHeight',
@@ -502,6 +505,8 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     defaults.bottomThickness,
   )
   if (bottomThickness === null) return invalid('bottomThickness')
+  const wallThickness = decimalFor('wallThickness', defaults.wallThickness)
+  if (wallThickness === null) return invalid('wallThickness')
 
   const cornerSeatMode = raw.cornerSeatMode ?? defaults.cornerSeatMode
   if (
@@ -535,6 +540,7 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     holeDiameter,
     holeDepth,
     bottomThickness,
+    wallThickness,
     cornerSeatMode,
     boxMode,
     stackingClearanceHeight,
@@ -706,6 +712,7 @@ export function rawFromParameters(
       holeDiameter: String(organizerParameters.holeDiameter),
       holeDepth: String(organizerParameters.holeDepth),
       bottomThickness: String(organizerParameters.bottomThickness),
+      wallThickness: String(organizerParameters.wallThickness),
       cornerSeatMode: organizerParameters.cornerSeatMode,
       boxMode: organizerParameters.boxMode,
       stackingClearanceHeight: String(
