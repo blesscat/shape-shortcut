@@ -15,10 +15,18 @@ import {
   openGridDividerPegCentersFor,
   openGridDividerPlanBoundsFor,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  openGridDividerHoneycombMinHeightFor,
   type OpenGridDividerParameters,
   openGridDividerTransitionHeightFor,
 } from '../../src/cad-contract/units'
+import { createBooleanOperationReporter } from '../../src/cad-kernel/boolean-progress'
+import {
+  openGridDividerHoneycombCellCountFor,
+  openGridDividerHoneycombCellGroupsFor,
+} from '../../src/cad-kernel/lattice/opengrid-honeycomb'
+import { polygonArea } from '../../src/cad-kernel/lattice/opengrid-honeycomb-cells'
 import { exportStepBytes, exportStlBytes } from '../../src/cad-kernel/export'
 import { meshBRep } from '../../src/cad-kernel/mesh'
 import { buildOpenGridDivider } from '../../src/cad-kernel/components/opengrid-divider/builder'
@@ -176,16 +184,298 @@ function pegProbeZ(): number {
   )
 }
 
+describe('OpenGrid divider honeycomb saving mode', () => {
+  const honeycombParameters: OpenGridDividerParameters = {
+    left: 2,
+    right: 2,
+    up: 0,
+    down: 0,
+    height: 40,
+    wallThickness: 2,
+    honeycombMode: true,
+  }
+
+  it('cuts framed voids while staying a single lighter solid', async () => {
+    const progress: Array<{
+      completed?: number
+      total?: number
+      unit?: string
+    }> = []
+    const reporter = createBooleanOperationReporter((event) => {
+      if (event.unit === 'cells') {
+        progress.push({
+          completed: event.completed,
+          total: event.total,
+          unit: event.unit,
+        })
+      }
+    })
+    const expectedCells =
+      openGridDividerHoneycombCellCountFor(honeycombParameters)
+    expect(expectedCells).toBeGreaterThan(0)
+
+    const [shape, solidShape] = await Promise.all([
+      buildOpenGridDivider(honeycombParameters, {
+        booleanOperations: reporter,
+      }),
+      buildOpenGridDivider({
+        ...honeycombParameters,
+        honeycombMode: false,
+      }),
+    ])
+    try {
+      expect(progress.length).toBeGreaterThan(0)
+      expect(progress.every((event) => event.unit === 'cells')).toBe(true)
+      expect(new Set(progress.map((event) => event.total))).toEqual(
+        new Set([expectedCells]),
+      )
+      const lastCompleted = progress.at(-1)?.completed ?? 0
+      expect(lastCompleted).toBe(expectedCells)
+
+      // Every estimated cell must actually be cut: the removed volume must
+      // match the summed cell polygon areas times the wall thickness.
+      const removedVolume = measureVolume(solidShape) - measureVolume(shape)
+      const expectedRemovedVolume =
+        openGridDividerHoneycombCellGroupsFor(honeycombParameters).reduce(
+          (total, group) =>
+            total +
+            group.reduce((area, polygon) => area + polygonArea(polygon), 0),
+          0,
+        ) * honeycombParameters.wallThickness
+      expect(removedVolume).toBeGreaterThan(0)
+      expect(
+        Math.abs(removedVolume - expectedRemovedVolume) / expectedRemovedVolume,
+      ).toBeLessThan(0.001)
+
+      expect(measureVolume(shape)).toBeLessThan(measureVolume(solidShape))
+      const mesh = meshBRep(shape, { tolerance: 0.05, angularTolerance: 0.1 })
+      const quality = inspectOpenGridDividerShapeQuality(
+        shape,
+        honeycombParameters,
+        mesh,
+      )
+      expect(quality.passed, quality.failures.join(';')).toBe(true)
+      expect(mesh.triangleCount).toBeGreaterThan(0)
+    } finally {
+      deleteShape(shape)
+      deleteShape(solidShape)
+    }
+  }, 240_000)
+
+  it('keeps a too-short wall solid instead of cutting partial cells', async () => {
+    const parameters: OpenGridDividerParameters = {
+      ...honeycombParameters,
+      height: Math.floor(
+        openGridDividerHoneycombMinHeightFor({ wallThickness: 2 }),
+      ),
+    }
+    expect(openGridDividerHoneycombCellCountFor(parameters)).toBe(0)
+    const shape = await buildOpenGridDivider(parameters)
+    try {
+      const solidShape = await buildOpenGridDivider({
+        ...parameters,
+        honeycombMode: false,
+      })
+      try {
+        expect(measureVolume(shape)).toBeCloseTo(measureVolume(solidShape), 4)
+      } finally {
+        deleteShape(solidShape)
+      }
+    } finally {
+      deleteShape(shape)
+    }
+  }, 240_000)
+
+  it('builds stuck-on short walls as solids without quality failures', async () => {
+    // t=1/h=3 is excluded: the divider builder fails its side fillet there
+    // even with the saving mode off (pre-existing, unrelated to this change).
+    for (const { wallThickness, height } of [
+      { wallThickness: 1, height: 2 },
+      { wallThickness: 2, height: 2 },
+      { wallThickness: 3, height: 2 },
+      { wallThickness: 4, height: 2 },
+      { wallThickness: 2, height: 3 },
+      { wallThickness: 3, height: 3 },
+      { wallThickness: 4, height: 3 },
+      { wallThickness: 5, height: 3 },
+    ] as const) {
+      const parameters: OpenGridDividerParameters = {
+        left: 2,
+        right: 2,
+        up: 0,
+        down: 0,
+        height,
+        wallThickness,
+        honeycombMode: true,
+      }
+      expect(openGridDividerHoneycombCellCountFor(parameters)).toBe(0)
+      const shape = await buildOpenGridDivider(parameters)
+      try {
+        const mesh = meshBRep(shape, { tolerance: 0.05, angularTolerance: 0.1 })
+        const quality = inspectOpenGridDividerShapeQuality(
+          shape,
+          parameters,
+          mesh,
+        )
+        expect(quality.passed, quality.failures.join(';')).toBe(true)
+      } finally {
+        deleteShape(shape)
+      }
+    }
+  }, 240_000)
+
+  it('cuts vertical arms and a full-thickness wall without transition', async () => {
+    const cases: OpenGridDividerParameters[] = [
+      {
+        left: 0,
+        right: 0,
+        up: 2,
+        down: 2,
+        height: 40,
+        wallThickness: 2,
+        honeycombMode: true,
+      },
+      {
+        left: 2,
+        right: 2,
+        up: 0,
+        down: 0,
+        height: 20,
+        wallThickness: 5,
+        honeycombMode: true,
+      },
+    ]
+    for (const parameters of cases) {
+      expect(openGridDividerHoneycombCellCountFor(parameters)).toBeGreaterThan(
+        0,
+      )
+      const [shape, solidShape] = await Promise.all([
+        buildOpenGridDivider(parameters),
+        buildOpenGridDivider({ ...parameters, honeycombMode: false }),
+      ])
+      try {
+        // Cut completeness: removed volume must equal the summed cell
+        // polygon areas times the wall thickness for both arm orientations.
+        const removedVolume = measureVolume(solidShape) - measureVolume(shape)
+        const expectedRemovedVolume =
+          openGridDividerHoneycombCellGroupsFor(parameters).reduce(
+            (total, group) =>
+              total +
+              group.reduce((area, polygon) => area + polygonArea(polygon), 0),
+            0,
+          ) * parameters.wallThickness
+        expect(removedVolume).toBeGreaterThan(0)
+        expect(
+          Math.abs(removedVolume - expectedRemovedVolume) /
+            expectedRemovedVolume,
+        ).toBeLessThan(0.001)
+        expect(measureVolume(shape)).toBeLessThan(measureVolume(solidShape))
+        const mesh = meshBRep(shape, { tolerance: 0.05, angularTolerance: 0.1 })
+        const quality = inspectOpenGridDividerShapeQuality(
+          shape,
+          parameters,
+          mesh,
+        )
+        expect(quality.passed, quality.failures.join(';')).toBe(true)
+      } finally {
+        deleteShape(shape)
+        deleteShape(solidShape)
+      }
+    }
+  }, 240_000)
+
+  it('rejects over-limit saving-mode snapshots before building', async () => {
+    const parameters: OpenGridDividerParameters = {
+      left: 8,
+      right: 8,
+      up: 8,
+      down: 8,
+      height: 500,
+      wallThickness: 2,
+      honeycombMode: true,
+    }
+    const estimated = openGridDividerHoneycombCellCountFor(parameters)
+    expect(estimated).toBeGreaterThan(OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS)
+    await expect(buildOpenGridDivider(parameters)).rejects.toThrow(
+      /OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT/,
+    )
+  })
+})
+
 describe('OpenGrid divider CAD kernel integration', () => {
   it.each([
-    { left: 1, right: 1, up: 0, down: 0, height: 20, wallThickness: 2 },
-    { left: 0, right: 1, up: 0, down: 0, height: 20, wallThickness: 2 },
-    { left: 0, right: 0, up: 1, down: 2, height: 12, wallThickness: 2 },
-    { left: 1, right: 0, up: 2, down: 0, height: 20, wallThickness: 2 },
-    { left: 1, right: 1, up: 2, down: 1, height: 20, wallThickness: 2 },
-    { left: 1.5, right: 2, up: 0, down: 0, height: 35, wallThickness: 2 },
-    { left: 0.5, right: 0, up: 0.5, down: 0, height: 20, wallThickness: 2 },
-    { left: 10, right: 0, up: 0.5, down: 0, height: 500, wallThickness: 2 },
+    {
+      left: 1,
+      right: 1,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 0,
+      right: 1,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 0,
+      right: 0,
+      up: 1,
+      down: 2,
+      height: 12,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 1,
+      right: 0,
+      up: 2,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 1,
+      right: 1,
+      up: 2,
+      down: 1,
+      height: 20,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 1.5,
+      right: 2,
+      up: 0,
+      down: 0,
+      height: 35,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 0.5,
+      right: 0,
+      up: 0.5,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
+    {
+      left: 10,
+      right: 0,
+      up: 0.5,
+      down: 0,
+      height: 500,
+      wallThickness: 2,
+      honeycombMode: false,
+    },
   ])(
     'builds a centered one-solid divider for %#',
     async (parameters) => {
@@ -263,7 +553,12 @@ describe('OpenGrid divider CAD kernel integration', () => {
     'rounds the short edges of the 45-degree transition for %s arms',
     async (_axis, plan) => {
       for (const wallThickness of [1, 2, 3, 4]) {
-        const parameters = { ...plan, height: 20, wallThickness }
+        const parameters = {
+          ...plan,
+          height: 20,
+          wallThickness,
+          honeycombMode: false,
+        }
         const shape = await buildOpenGridDivider(parameters)
         try {
           expect(transitionRoundFaceCount(shape, parameters)).toBeGreaterThan(0)
@@ -380,6 +675,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     }
     const shape = await buildOpenGridDivider(parameters)
     const baseProbeZ =
@@ -415,6 +711,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     }
     const shape = await buildOpenGridDivider(parameters)
     try {
@@ -447,6 +744,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
           down: 0,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         },
         axis: 'x',
         activeDirection: 'right',
@@ -459,6 +757,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
           down: 0,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         },
         axis: 'x',
         activeDirection: 'left',
@@ -471,6 +770,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
           down: 0,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         },
         axis: 'y',
         activeDirection: 'up',
@@ -483,6 +783,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
           down: 1,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         },
         axis: 'y',
         activeDirection: 'down',
@@ -555,6 +856,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     }
     const shape = await buildOpenGridDivider(parameters)
     const [centerX, centerY] = rawPlanCenter(parameters)
@@ -596,6 +898,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       down: 1,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     }
     const shape = await buildOpenGridDivider(parameters)
     try {
@@ -616,7 +919,15 @@ describe('OpenGrid divider CAD kernel integration', () => {
     let current = true
     await expect(
       buildOpenGridDivider(
-        { left: 3, right: 3, up: 2, down: 2, height: 20, wallThickness: 2 },
+        {
+          left: 3,
+          right: 3,
+          up: 2,
+          down: 2,
+          height: 20,
+          wallThickness: 2,
+          honeycombMode: false,
+        },
         {
           isGenerationCurrent: () => current,
           yieldToEventLoop: async () => {

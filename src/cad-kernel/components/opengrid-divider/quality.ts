@@ -9,6 +9,7 @@ import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import {
   boundsForOpenGridDivider,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_HONEYCOMB_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   openGridDividerPlanBoundsFor,
   openGridDividerPegCentersFor,
@@ -450,11 +451,17 @@ export function inspectOpenGridDividerShapeQuality(
       OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.bottomEdgeFilletRadius + 0.01,
     )
     profileStage = 'upper'
-    upperProfileWidth = profileWidthAt(
-      shape,
-      parameters,
-      transitionEndHeight + upperStraightHeight / 2,
-    )
+    // Saving-mode voids live in the upper straight wall, so probe the solid
+    // lower frame band instead of the cell-covered mid height. Short walls
+    // below one framed row never get cells, so the band may not exist there;
+    // clamp the probe back inside the model for those snapshots.
+    const upperProbeZ = parameters.honeycombMode
+      ? Math.min(
+          transitionEndHeight + OPENGRID_HONEYCOMB_CONFIGURATION.lowerFrame / 2,
+          parameters.height - 0.05,
+        )
+      : transitionEndHeight + upperStraightHeight / 2
+    upperProfileWidth = profileWidthAt(shape, parameters, upperProbeZ)
     if (
       !isCloseTo(baseProfileWidth, OPENGRID_DIVIDER_CONFIGURATION.wallWidth)
     ) {

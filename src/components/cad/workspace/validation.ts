@@ -73,6 +73,7 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'down',
   'height',
   'wallThickness',
+  'honeycombMode',
 ]
 export const HEXAGONAL_COLUMN_PARAMETER_KEYS: ScalarModelParameterKey[] = [
   'height',
@@ -213,7 +214,8 @@ function legacyParameterDefault(
   if (
     (modelId === 'opengrid-stackable-box' ||
       modelId === 'opengrid-stackable-cylinder' ||
-      modelId === 'opengrid-open-shelf') &&
+      modelId === 'opengrid-open-shelf' ||
+      modelId === 'opengrid-divider') &&
     key === 'honeycombMode'
   ) {
     return 'false'
@@ -873,6 +875,7 @@ export function rawFromParameters(
       down: number
       height: number
       wallThickness: number
+      honeycombMode?: boolean
     }
     return {
       left: String(dividerParameters.left),
@@ -881,6 +884,7 @@ export function rawFromParameters(
       down: String(dividerParameters.down),
       height: String(dividerParameters.height),
       wallThickness: String(dividerParameters.wallThickness),
+      honeycombMode: String(dividerParameters.honeycombMode ?? false),
     }
   }
 

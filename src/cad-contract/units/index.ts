@@ -132,12 +132,14 @@ import {
   openGridDividerArmEndpointsFor,
   openGridDividerAxisFor,
   openGridDividerFileName,
+  openGridDividerHoneycombMinHeightFor,
   openGridDividerPegCentersFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPlanDimensionsFor,
   openGridDividerStlFileName,
   openGridDividerTransitionHeightFor,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   validateOpenGridDividerParameters,
 } from './opengrid-divider'
 import type {
@@ -323,12 +325,14 @@ export {
   openGridDividerArmEndpointsFor,
   openGridDividerAxisFor,
   openGridDividerFileName,
+  openGridDividerHoneycombMinHeightFor,
   openGridDividerPegCentersFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPlanDimensionsFor,
   openGridDividerStlFileName,
   openGridDividerTransitionHeightFor,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   validateOpenGridDividerParameters,
 } from './opengrid-divider'
 export {

@@ -1,11 +1,18 @@
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
+import { OPENGRID_HONEYCOMB_CONFIGURATION } from './opengrid-honeycomb'
 import { OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION } from './opengrid-locating-assembly'
 
 export type OpenGridDividerShape = 'single' | 'straight' | 'L' | 'T' | 'cross'
 export type OpenGridDividerAxis = 'horizontal' | 'vertical' | null
 
 export type OpenGridDividerParameterKey =
-  'left' | 'right' | 'up' | 'down' | 'height' | 'wallThickness'
+  | 'left'
+  | 'right'
+  | 'up'
+  | 'down'
+  | 'height'
+  | 'wallThickness'
+  | 'honeycombMode'
 
 export type OpenGridDividerParameters = {
   left: number
@@ -14,6 +21,7 @@ export type OpenGridDividerParameters = {
   down: number
   height: number
   wallThickness: number
+  honeycombMode: boolean
 }
 
 export type OpenGridDividerPoint2D = [number, number]
@@ -50,13 +58,14 @@ export type OpenGridDividerValidation =
   | { valid: true; value: OpenGridDividerParameters }
   | { valid: false; issues: OpenGridDividerValidationIssue[] }
 
+const DIVIDER_LEGACY_PARAMETER_KEYS: readonly Exclude<
+  OpenGridDividerParameterKey,
+  'honeycombMode'
+>[] = ['left', 'right', 'up', 'down', 'height', 'wallThickness']
+
 const DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
-  'left',
-  'right',
-  'up',
-  'down',
-  'height',
-  'wallThickness',
+  ...DIVIDER_LEGACY_PARAMETER_KEYS,
+  'honeycombMode',
 ]
 
 const DIVIDER_GRID_STEP = 0.5
@@ -91,6 +100,7 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   minHeight: 2,
   maxHeight: 500,
   heightSliderMax: 200,
+  defaultHoneycombMode: false,
   defaultParameters: {
     left: 1.5,
     right: 1.5,
@@ -98,8 +108,14 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
     down: 0,
     height: 20,
     wallThickness: 2,
+    honeycombMode: false,
   } satisfies OpenGridDividerParameters,
 } as const
+
+// Conservative divider-specific admission ceiling; the two thin crossing walls
+// clip against each other's keepouts and produce a different boolean profile
+// from the stackable-box panel builder.
+export const OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS = 3000
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -238,6 +254,31 @@ export function openGridDividerTransitionHeightFor(
   )
 }
 
+export function openGridDividerHoneycombMinHeightFor(
+  parameters: Pick<OpenGridDividerParameters, 'wallThickness'>,
+): number {
+  const {
+    bottomSupportHeight,
+    geometrySafetyMargin,
+    wallWidth,
+    topFilletRadius,
+  } = OPENGRID_DIVIDER_CONFIGURATION
+  const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+  const maxTransitionHeight = Math.max(
+    0,
+    (wallWidth - parameters.wallThickness) / 2,
+  )
+  const upperWallStartZ = bottomSupportHeight + maxTransitionHeight
+  return (
+    upperWallStartZ +
+    honeycomb.lowerFrame +
+    honeycomb.minimumPanelSpan +
+    honeycomb.topFrame +
+    topFilletRadius +
+    geometrySafetyMargin
+  )
+}
+
 export function validateOpenGridDividerParameters(
   value: unknown,
 ): OpenGridDividerValidation {
@@ -249,7 +290,9 @@ export function validateOpenGridDividerParameters(
   }
 
   const issues: OpenGridDividerValidationIssue[] = []
-  if (!hasExactKeys(value, DIVIDER_PARAMETER_KEYS)) {
+  const hasCurrentParameters = hasExactKeys(value, DIVIDER_PARAMETER_KEYS)
+  const hasLegacyParameters = hasExactKeys(value, DIVIDER_LEGACY_PARAMETER_KEYS)
+  if (!hasCurrentParameters && !hasLegacyParameters) {
     issues.push({
       field: 'parameters',
       messageId: 'validation.invalid',
@@ -276,6 +319,13 @@ export function validateOpenGridDividerParameters(
   if (!isSafeWallThickness(value.wallThickness)) {
     issues.push({
       field: 'wallThickness',
+      messageId: 'validation.invalid',
+    })
+  }
+
+  if (hasCurrentParameters && typeof value.honeycombMode !== 'boolean') {
+    issues.push({
+      field: 'honeycombMode',
       messageId: 'validation.invalid',
     })
   }
@@ -320,6 +370,9 @@ export function validateOpenGridDividerParameters(
       down: value.down as number,
       height: value.height as number,
       wallThickness: value.wallThickness as number,
+      honeycombMode: hasCurrentParameters
+        ? (value.honeycombMode as boolean)
+        : OPENGRID_DIVIDER_CONFIGURATION.defaultHoneycombMode,
     },
   }
 }
@@ -385,11 +438,12 @@ export function boundsForOpenGridDivider(
 export function openGridDividerFileName(
   parameters: OpenGridDividerParameters,
 ): string {
-  return `opengrid-divider-l${parameters.left}-r${parameters.right}-u${parameters.up}-d${parameters.down}-t${parameters.wallThickness}-h${parameters.height}.step`
+  const honeycombSuffix = parameters.honeycombMode ? '-honeycomb' : ''
+  return `opengrid-divider-l${parameters.left}-r${parameters.right}-u${parameters.up}-d${parameters.down}-t${parameters.wallThickness}-h${parameters.height}${honeycombSuffix}.step`
 }
 
 export function openGridDividerStlFileName(
   parameters: OpenGridDividerParameters,
 ): string {
-  return `opengrid-divider-l${parameters.left}-r${parameters.right}-u${parameters.up}-d${parameters.down}-t${parameters.wallThickness}-h${parameters.height}.stl`
+  return openGridDividerFileName(parameters).replace(/\.step$/, '.stl')
 }

@@ -233,6 +233,51 @@ describe('OpenGrid Worker runtime', () => {
     }
   })
 
+  it('reports an actionable divider limit alongside the other saving modes', async () => {
+    const events: unknown[] = []
+    const runtime = new CadWorkerRuntime('divider-limit-epoch', (event) =>
+      events.push(event),
+    )
+    await runtime.handle(initCommand())
+    mocks.buildModelBRep.mockRejectedValueOnce(
+      new Error('OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT:4000:3000'),
+    )
+    await runtime.handle(
+      generateCommand({
+        modelId: 'opengrid-divider',
+        parameters: {
+          left: 1,
+          right: 1,
+          up: 0,
+          down: 0,
+          height: 20,
+          wallThickness: 2,
+          honeycombMode: true,
+        },
+      }),
+    )
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'operation.error',
+        code: 'OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT',
+        stage: 'building',
+        recoverable: true,
+        messageId: 'diagnostic.dividerHoneycombMemoryLimit',
+      }),
+    )
+    expect(
+      translate('zh-Hant', 'diagnostic.dividerHoneycombMemoryLimit'),
+    ).toContain('關閉省料模式')
+    expect(translate('en', 'diagnostic.dividerHoneycombMemoryLimit')).toContain(
+      'turn off',
+    )
+    for (const locale of ['zh-Hant', 'en'] as const) {
+      expect(
+        translate(locale, 'diagnostic.dividerHoneycombMemoryLimit'),
+      ).not.toContain('⟦')
+    }
+  })
+
   it('accepts the former blocked-size tuple when it uses official parameters', async () => {
     const events: unknown[] = []
     const runtime = new CadWorkerRuntime('epoch-opengrid', (event) =>
@@ -877,6 +922,7 @@ describe('OpenGrid Worker runtime', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     }
     expect(mocks.buildModelBRep).toHaveBeenCalledWith(
       'opengrid-divider',

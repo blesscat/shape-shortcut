@@ -823,6 +823,7 @@ describe('CAD component catalog', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     })
     expect(definition?.exportFileName(definition.defaultParameters)).toBe(
       'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20.step',

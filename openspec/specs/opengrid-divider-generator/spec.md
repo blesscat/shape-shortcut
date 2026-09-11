@@ -6,18 +6,18 @@
 
 ### Requirement: 獨立的分隔牆參數契約
 
-The system MUST expose a runtime-validated component with stable `modelId=opengrid-divider`. Its normalized parameters MUST include non-negative `left`, `right`, `up`, and `down` arm counts that are multiples of 0.5 grid, plus an integer `height` in millimetres. `height` MUST be in the inclusive range 2–500 mm. The normalized parameters MUST also include an integer `wallThickness` from 1 through 5 mm. One full divider grid MUST be 28 mm, one half-grid MUST be 14 mm, and the divider grid definition MUST resolve from the shared official OpenGrid grid contract rather than defining a separate pitch. The divider's planar footprint MUST continue to use its existing 500 mm safety limit independently of the height range. Every directional arm count MUST be no greater than 10 grids, while the combined planar envelope MUST still be checked independently against the 500 mm limit. The default snapshot MUST be `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, and `wallThickness=2`.
+The system MUST expose a runtime-validated component with stable `modelId=opengrid-divider`. Its normalized parameters MUST include non-negative `left`, `right`, `up`, and `down` arm counts that are multiples of 0.5 grid, plus an integer `height` in millimetres. `height` MUST be in the inclusive range 2–500 mm. The normalized parameters MUST also include an integer `wallThickness` from 1 through 5 mm and a boolean `honeycombMode`. One full divider grid MUST be 28 mm, one half-grid MUST be 14 mm, and the divider grid definition MUST resolve from the shared official OpenGrid grid contract rather than defining a separate pitch. The divider's planar footprint MUST continue to use its existing 500 mm safety limit independently of the height range. Every directional arm count MUST be no greater than 10 grids, while the combined planar envelope MUST still be checked independently against the 500 mm limit. The default snapshot MUST be `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, `wallThickness=2`, and `honeycombMode=false`. Validation MUST accept the six-field legacy snapshot without `honeycombMode` and normalize it to `honeycombMode=false`; when the current seven-field key set is presented, a non-boolean `honeycombMode` MUST fail field-specific validation.
 
 #### Scenario: 合法分隔牆參數
 
-- **WHEN** `left`、`right`、`up`、`down` are non-negative 0.5-grid multiples with at least one non-zero direction, and `height` is an integer from 2 through 500 mm with a planar footprint within 500 mm, and `wallThickness` is an integer from 1 through 5 mm
+- **WHEN** `left`、`right`、`up`、`down` are non-negative 0.5-grid multiples with at least one non-zero direction, and `height` is an integer from 2 through 500 mm with a planar footprint within 500 mm, and `wallThickness` is an integer from 1 through 5 mm, and `honeycombMode` is a boolean or omitted
 - **THEN** the component MUST accept the normalized snapshot
 - **AND** the generated arm lengths MUST use 28 mm per configured full grid unit and 14 mm per half-grid unit
 - **AND** the snapshot MUST remain independent from `modelId=opengrid`
 
 #### Scenario: 不支援的形狀被拒絕
 
-- **WHEN** all four directions are zero, or any directional value is not a 0.5-grid multiple, negative, non-finite, greater than 10 grids, or outside the supported height, planar footprint, or `wallThickness` range
+- **WHEN** all four directions are zero, or any directional value is not a 0.5-grid multiple, negative, non-finite, greater than 10 grids, or outside the supported height, planar footprint, or `wallThickness` range, or `honeycombMode` is present but not boolean
 - **THEN** validation MUST fail with field-specific diagnostics
 - **AND** the system MUST NOT send the snapshot for CAD generation or export
 
@@ -42,6 +42,17 @@ The system MUST expose a runtime-validated component with stable `modelId=opengr
 
 - **WHEN** `left=10` and `right=10` produce a 560 mm nominal horizontal span
 - **THEN** validation MUST reject the snapshot because its planar footprint exceeds 500 mm even though each individual arm is within the 10-grid limit
+
+#### Scenario: 缺少省料模式欄位的既有快照仍有效
+
+- **WHEN** a previously saved snapshot contains only `left`, `right`, `up`, `down`, `height`, and `wallThickness`
+- **THEN** validation MUST accept it and normalize `honeycombMode` to `false`
+
+#### Scenario: 省料模式欄位型別錯誤被拒絕
+
+- **WHEN** the seven-field snapshot presents `honeycombMode` as a non-boolean value
+- **THEN** validation MUST fail with a `honeycombMode` field diagnostic
+
 
 ### Requirement: 依四方向格數判定形狀
 
@@ -207,7 +218,7 @@ When the selected upper wall is thinner than the 5 mm base support, the generato
 
 ### Requirement: 預覽、bounds 與匯出
 
-The committed divider MUST expose finite bounds, a non-empty mesh, and a single B-Rep solid. The wall base MUST be at `Z=0` and the complete bounds MUST include the peg bottom at `Z=-3.8` and the actual shortened 5 mm base support envelope. STEP and binary STL exports MUST be generated from the committed divider B-Rep and MUST be non-empty. Export filenames MUST identify the selected wall thickness and MUST retain the existing identity format for the normalized parameter fields.
+The committed divider MUST expose finite bounds, a non-empty mesh, and a single B-Rep solid. The wall base MUST be at `Z=0` and the complete bounds MUST include the peg bottom at `Z=-3.8` and the actual shortened 5 mm base support envelope. STEP and binary STL exports MUST be generated from the committed divider B-Rep and MUST be non-empty. Export filenames MUST identify the selected wall thickness and MUST retain the existing identity format for the normalized parameter fields, appending `-honeycomb` when the committed snapshot enables the material-saving mode.
 
 #### Scenario: 可預覽的分隔牆
 
@@ -221,6 +232,13 @@ The committed divider MUST expose finite bounds, a non-empty mesh, and a single 
 - **THEN** STEP and STL requests MUST use the committed model revision
 - **AND** both downloads MUST contain non-empty geometry for the same normalized parameters, including wall thickness and the fixed active-end retraction
 - **AND** exports with different wall thicknesses MUST have distinct deterministic filenames
+
+#### Scenario: 省料模式檔名後綴
+
+- **WHEN** the user exports a committed divider snapshot with `honeycombMode=true`
+- **THEN** the STEP and STL filenames MUST append `-honeycomb` before the extension while keeping the existing parameter identity fields
+- **AND** the same snapshot with `honeycombMode=false` MUST keep the pre-existing filename without the suffix
+
 
 ### Requirement: 底部 45 度斜角過渡
 
@@ -291,3 +309,62 @@ The divider workspace MUST use the existing typed generation, debounce, latest-w
 - **THEN** the workspace MUST show a field-specific validation error
 - **AND** it MUST send `model.invalidate` instead of `model.generate`
 - **AND** export MUST remain disabled for the invalid or stale generation
+
+### Requirement: 分隔牆省料模式幾何（六角鏤空）
+
+The divider MUST support an optional material-saving mode that removes hexagonal voids through the upper straight wall thickness using the shared OpenGrid honeycomb lattice (3 mm hexagon inscribed radius, 2.5 mm rib width) resolved from the shared honeycomb contract rather than divider-specific lattice dimensions. Voids MUST be confined to the upper straight wall region above the 45-degree transition chamfer: the 5 mm base support, the transition chamfer, the top rounding band, and the arm end retraction zones MUST remain solid as configured frames. The lattice MUST be clipped to those frames so no partial cell leaves a wall edge below the frame width. With `honeycombMode=false` the generated geometry MUST be identical to the pre-existing divider behavior, and the committed body MUST remain a single connected solid in both modes.
+
+#### Scenario: 開啟省料模式的長牆
+
+- **WHEN** a valid divider with `honeycombMode=true` and sufficient height is generated
+- **THEN** the upper straight wall MUST contain hexagonal voids cut through the wall thickness on the shared lattice
+- **AND** the base support, transition chamfer, top rounding band, and arm end frames MUST remain solid
+- **AND** the committed body MUST remain a single connected solid
+
+#### Scenario: 關閉省料模式維持原幾何
+
+- **WHEN** a valid divider with `honeycombMode=false` is generated
+- **THEN** the generated geometry MUST match the pre-existing solid divider for the same directional parameters, height, and wall thickness
+
+#### Scenario: 矮牆省料模式不產生格子
+
+- **WHEN** a divider height is too small to fit a framed lattice row above the transition chamfer with `honeycombMode=true`
+- **THEN** generation MUST still produce the valid solid divider without honeycomb voids rather than failing
+
+### Requirement: 分隔牆省料模式 UI 門檻與保護上限
+
+The divider panel MUST expose a material-saving toggle labelled as the shared saving-mode control with a beta hint and, when enabled, a cell-count estimate. The unchecked toggle MUST be disabled with an explanation while the current height cannot fit the framed lattice above the transition chamfer, while an already-enabled toggle MUST remain usable to turn the mode off. A divider-specific cell ceiling (3000 cells) MUST bound the estimated lattice; while the estimate exceeds the ceiling the unchecked toggle MUST be disabled with a reduce-size hint instead of allowing an over-limit build to start. If a snapshot is generated with `honeycombMode=true` while its estimate exceeds the ceiling, the Worker-side guard MUST reject generation with a localized diagnostic and MUST NOT commit a candidate.
+
+#### Scenario: 面板開關與格數預估
+
+- **WHEN** the divider panel is rendered and the current estimate is within the ceiling
+- **THEN** the saving-mode toggle MUST be available and default to off
+- **AND** enabling it MUST show the beta hint and the estimated cell count
+
+#### Scenario: 矮牆停用開關
+
+- **WHEN** the current height cannot fit the framed lattice above the transition chamfer and the saving mode is not already enabled
+- **THEN** the unchecked toggle MUST be disabled with an explanation instead of being enablable without effect
+- **AND** an already-enabled toggle MUST remain usable so the mode can be turned off
+
+#### Scenario: 超過格數上限時停用開關
+
+- **WHEN** the estimated honeycomb cell count for the current size exceeds the divider ceiling and the saving mode is not already enabled
+- **THEN** the unchecked toggle MUST be disabled with a localized hint to reduce the size
+- **AND** a saving-mode generation request MUST NOT be startable from the panel for that size
+
+#### Scenario: 已開啟後放大尺寸的建模防護
+
+- **WHEN** a divider snapshot with `honeycombMode=true` exceeds the cell ceiling at generation time
+- **THEN** the Worker MUST fail generation with a localized diagnostic naming the saving-mode limit
+- **AND** no candidate MUST be committed for that request
+
+### Requirement: 分隔牆省料模式切削進度
+
+While divider material-saving cutting is in progress, the Worker MUST report cut progress in honeycomb cells using the existing boolean-operation progress reporting, with the estimated cell count as the panel total, consistent with the other saving-mode components.
+
+#### Scenario: 以格為單位回報切削進度
+
+- **WHEN** a divider with `honeycombMode=true` is being generated
+- **THEN** the honeycomb cutting stage MUST report completed and total progress in cells
+- **AND** the panel estimate MUST match the reported total

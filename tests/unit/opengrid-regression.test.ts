@@ -134,6 +134,7 @@ describe('existing OpenGrid regression contract', () => {
       down: 0,
       height: 25,
       wallThickness: 3,
+      honeycombMode: false,
     })
     store.dispose()
   })
