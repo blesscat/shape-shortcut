@@ -160,6 +160,7 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
       'endClearance',
       'pegLengthMode',
       'pegDiameterIncrement',
+      'honeycombMode',
     ] as const) {
       if (!Object.prototype.hasOwnProperty.call(merged, key)) {
         merged[key] = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters[key]

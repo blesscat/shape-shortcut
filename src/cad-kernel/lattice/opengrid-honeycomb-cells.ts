@@ -1,6 +1,9 @@
 import type { BooleanOperationReporter } from '../boolean-progress'
 import {
+  classifyOpenGridDividerShape,
   nominalOpenGridStackableBoxFootprintFor,
+  openGridDividerArmEndpointsFor,
+  openGridDividerTransitionHeightFor,
   openGridOpenShelfAngleRadiansFor,
   openGridOpenShelfDividerCentersFor,
   openGridOpenShelfFootprintFor,
@@ -16,12 +19,14 @@ import {
   openGridStackableCylinderDerivedGeometryFor,
   openGridStackableCylinderHoleCentersFor,
   OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION,
+  OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_HONEYCOMB_CONFIGURATION,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
   type OpenGridStackableBoxOpeningDirection,
   type OpenGridStackableBoxParameters,
+  type OpenGridDividerParameters,
   type OpenGridOpenShelfParameters,
   type OpenGridStackableCylinderOpeningDirection,
   type OpenGridStackableCylinderParameters,
@@ -1668,4 +1673,105 @@ export function openGridOpenShelfHoneycombCellCountFor(
     bottomCount +
     slopedCellCount
   )
+}
+
+function openGridDividerArmSpanFor(
+  parameters: OpenGridDividerParameters,
+  armAxis: 'horizontal' | 'vertical',
+): { start: number; end: number; active: boolean } {
+  const { wallWidth } = OPENGRID_DIVIDER_CONFIGURATION
+  const endpoints = openGridDividerArmEndpointsFor(parameters)
+  const centerExtension =
+    classifyOpenGridDividerShape(parameters) === 'single' ? wallWidth / 2 : 0
+  if (armAxis === 'horizontal') {
+    const active = parameters.left > 0 || parameters.right > 0
+    return {
+      start: parameters.left > 0 ? endpoints.left : -centerExtension,
+      end: parameters.right > 0 ? endpoints.right : centerExtension,
+      active,
+    }
+  }
+  const active = parameters.up > 0 || parameters.down > 0
+  return {
+    start: parameters.down > 0 ? endpoints.down : -centerExtension,
+    end: parameters.up > 0 ? endpoints.up : centerExtension,
+    active,
+  }
+}
+
+function openGridDividerHoneycombWallCells(
+  parameters: OpenGridDividerParameters,
+  armAxis: 'horizontal' | 'vertical',
+): Point2D[][][] {
+  const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+  const { wallWidth, topFilletRadius } = OPENGRID_DIVIDER_CONFIGURATION
+  const span = openGridDividerArmSpanFor(parameters, armAxis)
+  if (!span.active) return []
+
+  const upperWallStartZ =
+    OPENGRID_DIVIDER_CONFIGURATION.bottomSupportHeight +
+    openGridDividerTransitionHeightFor(parameters)
+  const minimumU = span.start + honeycomb.sideFrame
+  const maximumU = span.end - honeycomb.sideFrame
+  const minimumV = upperWallStartZ + honeycomb.lowerFrame
+  const maximumV = parameters.height - honeycomb.topFrame - topFilletRadius
+  const minimumSpan = honeycomb.minimumPanelSpan
+  if (
+    maximumU - minimumU < minimumSpan - EPSILON ||
+    maximumV - minimumV < minimumSpan - EPSILON
+  ) {
+    // Below one framed row the wall stays solid instead of accepting
+    // partial clipped cells.
+    return []
+  }
+
+  const keepouts: Rectangle2D[] = []
+  const perpendicularActive =
+    armAxis === 'horizontal'
+      ? parameters.up > 0 || parameters.down > 0
+      : parameters.left > 0 || parameters.right > 0
+  if (perpendicularActive) {
+    const junctionHalfWidth =
+      parameters.wallThickness / 2 + honeycomb.ribThickness / 2
+    keepouts.push({
+      minimumU: -junctionHalfWidth,
+      maximumU: junctionHalfWidth,
+      minimumV,
+      maximumV,
+    })
+  }
+
+  return rectangularLatticeCells(
+    { minimumU, maximumU, minimumV, maximumV },
+    honeycomb,
+    keepouts,
+  ).map((cell) => cell.polygons)
+}
+
+export type OpenGridDividerHoneycombCellLayout = {
+  horizontal: Point2D[][][]
+  vertical: Point2D[][][]
+}
+
+export function openGridDividerHoneycombCellLayoutFor(
+  parameters: OpenGridDividerParameters,
+): OpenGridDividerHoneycombCellLayout {
+  return {
+    horizontal: openGridDividerHoneycombWallCells(parameters, 'horizontal'),
+    vertical: openGridDividerHoneycombWallCells(parameters, 'vertical'),
+  }
+}
+
+export function openGridDividerHoneycombCellGroupsFor(
+  parameters: OpenGridDividerParameters,
+): Point2D[][][] {
+  const layout = openGridDividerHoneycombCellLayoutFor(parameters)
+  return [...layout.horizontal, ...layout.vertical]
+}
+
+export function openGridDividerHoneycombCellCountFor(
+  parameters: OpenGridDividerParameters,
+): number {
+  if (!parameters.honeycombMode) return 0
+  return openGridDividerHoneycombCellGroupsFor(parameters).length
 }

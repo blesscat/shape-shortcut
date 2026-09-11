@@ -81,6 +81,7 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'endClearance',
   'pegLengthMode',
   'pegDiameterIncrement',
+  'honeycombMode',
 ]
 export const HEXAGONAL_COLUMN_PARAMETER_KEYS: ScalarModelParameterKey[] = [
   'height',
@@ -221,7 +222,8 @@ function legacyParameterDefault(
   if (
     (modelId === 'opengrid-stackable-box' ||
       modelId === 'opengrid-stackable-cylinder' ||
-      modelId === 'opengrid-open-shelf') &&
+      modelId === 'opengrid-open-shelf' ||
+      modelId === 'opengrid-divider') &&
     key === 'honeycombMode'
   ) {
     return 'false'
@@ -953,12 +955,14 @@ export function rawFromParameters(
   if ('left' in parameters) {
     const dividerParameters = parameters as unknown as Record<
       (typeof OPENGRID_DIVIDER_PARAMETER_KEYS)[number],
-      number | string
+      number | string | boolean
     >
     return Object.fromEntries(
       OPENGRID_DIVIDER_PARAMETER_KEYS.map((key) => [
         key,
-        String(dividerParameters[key]),
+        String(
+          dividerParameters[key] ?? (key === 'honeycombMode' ? false : ''),
+        ),
       ]),
     ) as RawParameters
   }
@@ -983,7 +987,8 @@ function withStackableBoxLegacyModeRawParameters(
   return {
     ...rest,
     topRimMode: raw.topRimMode ?? (thinShell ? 'flat-top' : 'stacking-rail'),
-    bottomMode: raw.bottomMode ??
+    bottomMode:
+      raw.bottomMode ??
       (thinShell ? 'thin-shell' : basePlate ? 'none' : 'stacking'),
   }
 }
