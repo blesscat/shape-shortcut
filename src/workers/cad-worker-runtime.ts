@@ -304,6 +304,14 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    if (code === 'OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT') {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.dividerHoneycombMemoryLimit'),
+        true,
+      )
+    }
     if (code === 'OPENGRID_HONEYCOMB_MEMORY_LIMIT') {
       return makeError(
         'building',

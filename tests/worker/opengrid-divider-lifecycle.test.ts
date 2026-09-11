@@ -64,6 +64,7 @@ function dividerGenerateCommand(generation = 1) {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     },
     previewConfig: { tolerance: 0.01, angularTolerance: 0.1 },
   }
@@ -204,6 +205,7 @@ describe('OpenGrid divider Worker lifecycle', () => {
           down: 0,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         }),
         mime: 'model/step' as const,
       },

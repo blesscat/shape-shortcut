@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
+  OPENGRID_HONEYCOMB_CONFIGURATION,
   boundsForOpenGridDivider,
   classifyOpenGridDividerShape,
   isOpenGridDividerParameters,
@@ -8,6 +10,7 @@ import {
   openGridDividerArmEndpointsFor,
   openGridDividerAxisFor,
   openGridDividerFileName,
+  openGridDividerHoneycombMinHeightFor,
   openGridDividerPegCentersFor,
   openGridDividerPlanDimensionsFor,
   openGridDividerStlFileName,
@@ -57,6 +60,7 @@ describe('OpenGrid divider contract', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     })
     expect(openGridDividerPlanDimensionsFor(parameters)).toMatchObject({
       wallThickness: 2,
@@ -108,6 +112,7 @@ describe('OpenGrid divider contract', () => {
       height: 20,
       wallThickness:
         OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
+      honeycombMode: false,
     })
     expect(classifyOpenGridDividerShape(parameters)).toBe('straight')
     expect(openGridDividerAxisFor(parameters)).toBe('horizontal')
@@ -311,6 +316,7 @@ describe('OpenGrid divider contract', () => {
       down: 0,
       height: 20,
       wallThickness: 2,
+      honeycombMode: false,
     })
 
     expect(bounds).toEqual({
@@ -336,11 +342,101 @@ describe('OpenGrid divider contract', () => {
       'opengrid-divider-l1-r2-u3-d4-t2-h20.stl',
     )
     expect(
+      openGridDividerFileName({ ...parameters, honeycombMode: true }),
+    ).toBe('opengrid-divider-l1-r2-u3-d4-t2-h20-honeycomb.step')
+    expect(
+      openGridDividerStlFileName({ ...parameters, honeycombMode: true }),
+    ).toBe('opengrid-divider-l1-r2-u3-d4-t2-h20-honeycomb.stl')
+    expect(
       openGridDividerFileName({ ...parameters, wallThickness: 1 }),
     ).not.toBe(openGridDividerFileName(parameters))
     expect(
       openGridDividerStlFileName({ ...parameters, wallThickness: 5 }),
     ).not.toBe(openGridDividerStlFileName(parameters))
+  })
+
+  it('accepts the six-field legacy snapshot and normalizes honeycombMode off', () => {
+    const validation = validateOpenGridDividerParameters({
+      left: 1,
+      right: 1,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+    })
+
+    expect(validation).toEqual({
+      valid: true,
+      value: {
+        left: 1,
+        right: 1,
+        up: 0,
+        down: 0,
+        height: 20,
+        wallThickness: 2,
+        honeycombMode: false,
+      },
+    })
+  })
+
+  it('accepts an explicit honeycombMode and rejects non-boolean values', () => {
+    const base = {
+      left: 1,
+      right: 1,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+    }
+
+    expect(
+      validateOpenGridDividerParameters({ ...base, honeycombMode: true }).valid,
+    ).toBe(true)
+    const invalid = validateOpenGridDividerParameters({
+      ...base,
+      honeycombMode: 'true',
+    })
+    expect(invalid.valid).toBe(false)
+    if (!invalid.valid) {
+      expect(invalid.issues).toEqual([
+        { field: 'honeycombMode', messageId: 'validation.invalid' },
+      ])
+    }
+    expect(
+      validateOpenGridDividerParameters({
+        ...base,
+        honeycombMode: true,
+        extra: 1,
+      }).valid,
+    ).toBe(false)
+  })
+
+  it('derives the honeycomb minimum height from the framed upper wall', () => {
+    const expectedFor = (wallThickness: number): number => {
+      const { bottomSupportHeight, geometrySafetyMargin, wallWidth } =
+        OPENGRID_DIVIDER_CONFIGURATION
+      const upperWallStartZ =
+        bottomSupportHeight + (wallWidth - wallThickness) / 2
+      return (
+        upperWallStartZ +
+        OPENGRID_HONEYCOMB_CONFIGURATION.lowerFrame +
+        OPENGRID_HONEYCOMB_CONFIGURATION.minimumPanelSpan +
+        OPENGRID_HONEYCOMB_CONFIGURATION.topFrame +
+        OPENGRID_DIVIDER_CONFIGURATION.topFilletRadius +
+        geometrySafetyMargin
+      )
+    }
+
+    expect(openGridDividerHoneycombMinHeightFor({ wallThickness: 2 })).toBe(
+      expectedFor(2),
+    )
+    expect(openGridDividerHoneycombMinHeightFor({ wallThickness: 5 })).toBe(
+      expectedFor(5),
+    )
+    expect(
+      openGridDividerHoneycombMinHeightFor({ wallThickness: 5 }),
+    ).toBeLessThan(openGridDividerHoneycombMinHeightFor({ wallThickness: 1 }))
+    expect(OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS).toBe(3000)
   })
 
   it('uses a 45-degree transition height when the profile has room', () => {

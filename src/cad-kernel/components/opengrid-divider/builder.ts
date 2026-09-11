@@ -1,7 +1,8 @@
-import { getOC, Sketcher, Solid, type Shape3D } from 'replicad'
+import { getOC, makeCompound, Sketcher, Solid, type Shape3D } from 'replicad'
 import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import {
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   classifyOpenGridDividerShape,
   openGridDividerArmEndpointsFor,
@@ -13,6 +14,11 @@ import {
 } from '../../../cad-contract/units'
 import { makeOpenGridIntegratedSeat } from '../opengrid-locating-assembly/integrated'
 import {
+  makeOpenGridDividerHoneycombCutters,
+  openGridDividerHoneycombCellCountFor,
+} from '../../lattice/opengrid-honeycomb'
+import {
+  measureBooleanCountInScope,
   measureBooleanInScope,
   type BooleanOperationScope,
   type BooleanOperationReporter,
@@ -63,6 +69,7 @@ function reportProgress(
   })
 }
 
+const HONEYCOMB_CUT_BATCH_SIZE = 128
 const FILLET_RADIUS_EPSILON = 0.0001
 const FILLET_RADIUS_SAFETY_MARGIN =
   OPENGRID_DIVIDER_CONFIGURATION.geometrySafetyMargin
@@ -602,6 +609,49 @@ function makePeg(center: [number, number]): Shape3D {
   return makeOpenGridIntegratedSeat(center, overlapIntoWall)
 }
 
+async function applyHoneycombMode(
+  shape: Shape3D,
+  parameters: OpenGridDividerParameters,
+  cellCount: number,
+  context: OpenGridDividerBuildContext,
+): Promise<Shape3D> {
+  const scope = context.booleanOperations?.createScope(cellCount, {
+    unit: 'cells',
+  })
+  const cutters = makeOpenGridDividerHoneycombCutters(parameters, context)
+  let result = shape
+  try {
+    while (cutters.length > 0) {
+      assertGenerationCurrent(context)
+      const batch = cutters.splice(0, HONEYCOMB_CUT_BATCH_SIZE)
+      let compound: Shape3D | null = null
+      try {
+        compound =
+          batch.length === 1
+            ? (batch[0] ?? null)
+            : makeCompound(batch).asShape3D()
+        if (!compound) throw new Error('OPENGRID_HONEYCOMB_CUTTER_EMPTY')
+        const activeCompound = compound
+        const cut = measureBooleanCountInScope(scope, 'cut', batch.length, () =>
+          result.cut(activeCompound),
+        )
+        if (cut !== result) deleteShape(result)
+        result = cut
+      } finally {
+        batch.forEach(deleteShape)
+        if (compound !== batch[0]) deleteShape(compound)
+      }
+      await yieldAtSafeBoundary(context)
+    }
+    return result
+  } catch (error) {
+    if (result !== shape) deleteShape(result)
+    throw error
+  } finally {
+    cutters.forEach(deleteShape)
+  }
+}
+
 export async function buildOpenGridDivider(
   parameters: OpenGridDividerParameters,
   context: OpenGridDividerBuildContext = {},
@@ -609,8 +659,20 @@ export async function buildOpenGridDivider(
   const validation = validateOpenGridDividerParameters(parameters)
   if (!validation.valid) throw new Error('OPENGRID_DIVIDER_PARAMETERS_INVALID')
 
+  const honeycombCellCount = parameters.honeycombMode
+    ? openGridDividerHoneycombCellCountFor(parameters)
+    : 0
+  if (
+    parameters.honeycombMode &&
+    honeycombCellCount > OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS
+  ) {
+    throw new Error(
+      `OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT:${honeycombCellCount}:${OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS}`,
+    )
+  }
+
   const pegCenters = openGridDividerPegCentersFor(parameters)
-  const totalSteps = pegCenters.length + 3
+  const totalSteps = pegCenters.length + 3 + honeycombCellCount
   let completedSteps = 0
   let current: Shape3D | null = null
 
@@ -630,7 +692,28 @@ export async function buildOpenGridDivider(
     await yieldAtSafeBoundary(context)
     assertGenerationCurrent(context)
 
-    current = translateToCenteredEnvelope(current, parameters)
+    if (honeycombCellCount > 0) {
+      try {
+        current = await applyHoneycombMode(
+          current!,
+          parameters,
+          honeycombCellCount,
+          context,
+        )
+      } catch (error) {
+        if (error instanceof Error && error.message === 'STALE_GENERATION') {
+          throw error
+        }
+        const detail = error instanceof Error ? error.message : String(error)
+        throw new Error(`OPENGRID_DIVIDER_HONEYCOMB_INVALID:${detail}`)
+      }
+      completedSteps += honeycombCellCount
+      reportProgress(context, completedSteps, totalSteps)
+      await yieldAtSafeBoundary(context)
+      assertGenerationCurrent(context)
+    }
+
+    current = translateToCenteredEnvelope(current!, parameters)
     completedSteps += 2
     reportProgress(context, completedSteps, totalSteps)
     assertGenerationCurrent(context)

@@ -678,6 +678,7 @@ describe('component parameter store', () => {
       down: 0,
       height: 25,
       wallThickness: 3,
+      honeycombMode: false,
     })
     expect(store.get('opengrid-pillar')).toEqual({
       mode: 'detachable-corner-seat',
@@ -958,6 +959,7 @@ describe('component parameter store', () => {
       height: 20,
       wallThickness:
         OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
+      honeycombMode: false,
     })
     store.dispose()
 

@@ -509,6 +509,8 @@ export const zhHantMessages = {
     'OpenGrid Wall Cover 預設字體載入失敗，請重新整理後重試。',
   'diagnostic.dividerQualityInvalid':
     'OpenGrid 分隔器幾何未通過品質檢查，請調整參數後重試。',
+  'diagnostic.dividerHoneycombMemoryLimit':
+    '此尺寸的 OpenGrid 分隔牆省料模式蜂巢數量超過保護上限，請縮小尺寸或關閉省料模式。',
   'diagnostic.openConnectOrganizerQualityInvalid':
     'OpenGrid OpenConnect 壁掛收納件未通過單一實體與接孔品質檢查，請調整參數後重試。',
   'diagnostic.browserEnvironmentRequired':
@@ -643,6 +645,11 @@ export const zhHantMessages = {
   'panel.honeycombWarning':
     '省料模式會明顯降低模型渲染速度；物件太大時可能導致建模失敗。建議先使用一般模式確認形狀，下載前再啟用省料模式。',
   'panel.honeycombCellCount': '預計切除 {count} 格',
+  'panel.divider.honeycomb': '省料模式（六角鏤空）',
+  'panel.divider.honeycombTooSmall':
+    '目前牆高不足以容納一排六角鏤空，請提高牆高後再啟用省料模式。',
+  'panel.divider.honeycombTooLarge':
+    '此尺寸的蜂巢數量超過省料模式保護上限（{max} 格），請縮小尺寸或關閉省料模式。',
   'panel.organizerBox.description':
     '頂部為實體盲孔；孔距以孔的外圍到外圍計算，所有孔固定同一方向。',
   'panel.organizerBox.spacingMode': 'X/Y 孔距設定',
@@ -1331,6 +1338,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'The OpenGrid Wall Cover default font could not be loaded. Reload and try again.',
   'diagnostic.dividerQualityInvalid':
     'The OpenGrid divider geometry did not pass quality checks. Adjust the parameters and try again.',
+  'diagnostic.dividerHoneycombMemoryLimit':
+    'This OpenGrid Divider saving-mode model exceeds the configured cell limit. Reduce the size or turn off the saving mode.',
   'diagnostic.openConnectOrganizerQualityInvalid':
     'The OpenGrid OpenConnect wall organizer did not pass its single-solid and socket quality checks. Adjust the parameters and try again.',
   'diagnostic.browserEnvironmentRequired':
@@ -1475,6 +1484,11 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.honeycombWarning':
     'Material-saving mode can significantly slow model rendering; very large objects may fail to build. Check the shape in normal mode first, then enable material-saving mode before downloading.',
   'panel.honeycombCellCount': 'Estimated cells to cut: {count}',
+  'panel.divider.honeycomb': 'Material-saving mode (hexagonal voids)',
+  'panel.divider.honeycombTooSmall':
+    'The current wall height cannot fit a row of honeycomb cells. Increase the height before enabling material-saving mode.',
+  'panel.divider.honeycombTooLarge':
+    'This size exceeds the material-saving cell limit ({max} cells). Reduce the size or turn off material-saving mode.',
   'panel.organizerBox.description':
     'The top is a solid plate with blind cavities. Spacing is measured outer-envelope to outer-envelope, with one fixed orientation for every cavity.',
   'panel.organizerBox.spacingMode': 'X/Y hole spacing',
