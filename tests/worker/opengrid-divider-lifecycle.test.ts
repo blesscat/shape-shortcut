@@ -32,7 +32,10 @@ vi.mock('../../src/cad-kernel/export', () => ({
   exportStlBytes: mocks.exportStlBytes,
 }))
 
-import { openGridDividerFileName } from '../../src/cad-contract/units'
+import {
+  OPENGRID_DIVIDER_CONFIGURATION,
+  openGridDividerFileName,
+} from '../../src/cad-contract/units'
 import { CadWorkerRuntime } from '../../src/workers/cad.worker'
 
 const base = {
@@ -198,6 +201,7 @@ describe('OpenGrid divider Worker lifecycle', () => {
       workerEpoch: 'epoch-divider-revision',
       file: {
         name: openGridDividerFileName({
+          ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
           left: 1,
           right: 1,
           up: 0,

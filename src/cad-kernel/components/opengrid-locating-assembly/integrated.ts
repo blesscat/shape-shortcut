@@ -69,23 +69,37 @@ function chamferBottomEdge(
   }
 }
 
+export type OpenGridIntegratedSeatOptions = {
+  diameter?: number
+  length?: number
+}
+
 export function makeOpenGridIntegratedSeat(
   center: readonly [number, number],
   hostOverlap = 0,
+  options: OpenGridIntegratedSeatOptions = {},
 ): Shape3D {
   if (!Number.isFinite(hostOverlap) || hostOverlap < 0) {
     throw new Error('OPENGRID_INTEGRATED_SEAT_INVALID_OVERLAP')
   }
 
   const configuration = OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION
-  const seat = makeCylinder(
-    configuration.integratedSeatDiameter / 2,
-    configuration.integratedSeatHeight + hostOverlap,
-    [center[0], center[1], configuration.integratedSeatMinZ],
-  )
+  const diameter = options.diameter ?? configuration.integratedSeatDiameter
+  const length = options.length ?? configuration.integratedSeatHeight
+  if (!Number.isFinite(diameter) || diameter <= 0) {
+    throw new Error('OPENGRID_INTEGRATED_SEAT_INVALID_DIAMETER')
+  }
+  if (!Number.isFinite(length) || length <= 0) {
+    throw new Error('OPENGRID_INTEGRATED_SEAT_INVALID_LENGTH')
+  }
+  const seat = makeCylinder(diameter / 2, length + hostOverlap, [
+    center[0],
+    center[1],
+    -length,
+  ])
   return chamferBottomEdge(
     seat,
-    configuration.integratedSeatMinZ,
+    -length,
     configuration.integratedSeatBottomChamfer,
   )
 }

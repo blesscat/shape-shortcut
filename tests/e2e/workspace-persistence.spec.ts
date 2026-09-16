@@ -71,3 +71,39 @@ test('CAD workspaces restore valid parameters independently per component', asyn
   await waitForCadReady(page)
   await expect(page.getByLabel('寬度 X 25 mm')).toBeVisible()
 })
+
+test('migrates legacy divider snapshots with alignment and peg defaults', async ({
+  page,
+  browserName,
+}) => {
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'shape-shortcut.component-parameters',
+      JSON.stringify({
+        version: 2,
+        values: {
+          desk: {
+            'opengrid-divider': {
+              left: 1,
+              right: 1,
+              up: 0,
+              down: 0,
+              height: 20,
+            },
+          },
+        },
+      }),
+    )
+  })
+  await page.goto('/cad/opengrid-divider?system=desk')
+  await waitForCadReady(page)
+
+  await expect(page.getByRole('slider', { name: '左臂（X）' })).toHaveValue('1')
+  await expect(
+    page.getByTestId('opengrid-divider-alignment-free'),
+  ).toBeChecked()
+  await expect(
+    page.getByTestId('opengrid-divider-peg-length-snap'),
+  ).toBeChecked()
+})

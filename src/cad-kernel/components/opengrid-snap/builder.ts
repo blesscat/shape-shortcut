@@ -400,11 +400,11 @@ function makeCenterRemoverCutter(
     if (steppedCutter !== lower) deleteShape(lower)
     deleteShape(upper)
 
-    centerPassage = makeCylinder(
-      definition.centerPassageRadius,
-      topZ - baseZ,
-      [0, 0, baseZ],
-    )
+    centerPassage = makeCylinder(definition.centerPassageRadius, topZ - baseZ, [
+      0,
+      0,
+      baseZ,
+    ])
     const completeCutter = fuseCutter(steppedCutter, centerPassage, scope)
     cutter = completeCutter
     centerPassage = null

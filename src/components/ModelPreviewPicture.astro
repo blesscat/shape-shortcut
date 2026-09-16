@@ -32,5 +32,22 @@ const lightClass = [className, 'dark:hidden'].filter(Boolean).join(' ')
 const darkClass = [className, 'hidden dark:block'].filter(Boolean).join(' ')
 ---
 
-<img src={src} alt={alt} width={width} height={height} loading={loading} class={lightClass} onerror={onerror} />
-<img src={darkSrc} alt="" aria-hidden="true" width={width} height={height} loading={loading} class={darkClass} onerror={onerror} />
+<img
+  src={src}
+  alt={alt}
+  width={width}
+  height={height}
+  loading={loading}
+  class={lightClass}
+  onerror={onerror}
+/>
+<img
+  src={darkSrc}
+  alt=""
+  aria-hidden="true"
+  width={width}
+  height={height}
+  loading={loading}
+  class={darkClass}
+  onerror={onerror}
+/>

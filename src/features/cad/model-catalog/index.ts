@@ -213,7 +213,9 @@ function openGridSubgroups(
 }
 
 export function groupModelDefinitions(
-  definitions: ReadonlyArray<ModelDefinition<ModelPreviewImage>> = modelDefinitions,
+  definitions: ReadonlyArray<
+    ModelDefinition<ModelPreviewImage>
+  > = modelDefinitions,
 ): ReadonlyArray<ModelFamilyGroup> {
   return modelFamilyOrder.map((family) => {
     if (family === 'opengrid') {

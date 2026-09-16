@@ -54,10 +54,8 @@ describe('OpenGrid locating and assembly interface contract', () => {
     expect(openGridSnapProfileFor('Standard', 'Lite').locatingHoleRadius).toBe(
       configuration.nominalDiameter / 2,
     )
-    expect(OPENGRID_DIVIDER_CONFIGURATION.pegDiameter).toBe(
-      configuration.nominalDiameter,
-    )
-    expect(OPENGRID_DIVIDER_CONFIGURATION.pegLength).toBe(
+    expect(OPENGRID_DIVIDER_CONFIGURATION.pegDiameter).toBe(4.9)
+    expect(OPENGRID_DIVIDER_CONFIGURATION.pegLengths.snap).toBe(
       configuration.integratedSeatHeight,
     )
     expect(OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer).toBe(

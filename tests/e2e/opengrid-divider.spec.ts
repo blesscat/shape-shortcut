@@ -80,7 +80,8 @@ test('OpenGrid divider exports the committed normalized shape', async ({
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe(
-    'opengrid-divider-l1.5-r1.5-u0-d0-t2-h24.step',
+    'opengrid-divider-l1.5-r1.5-u0-d0-t2-h24-a' +
+      'free-g4.5x4.5-c0.15-psnap-i0.step',
   )
 })
 
@@ -101,4 +102,40 @@ test('OpenGrid divider rejects a planar footprint above 500 mm', async ({
   await expect(page.getByRole('alert')).toContainText('500 mm')
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '下載 STL' })).toBeDisabled()
+})
+
+test('OpenGrid divider box-fit shows the alignment badge and diagnostics', async ({
+  page,
+  browserName,
+}) => {
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/cad/opengrid-divider')
+  await waitForCadReady(page)
+
+  await page.getByTestId('opengrid-divider-alignment-box-fit').check()
+  await waitForCadReady(page)
+  const badge = page.getByTestId('opengrid-divider-alignment-badge')
+  await expect(badge).toContainText('中心柱：有')
+
+  const targetX = page.getByRole('textbox', { name: '目標盒格數（X）' })
+  await targetX.fill('5')
+  await waitForCadReady(page)
+  await expect(badge).toContainText('中心柱：無')
+
+  const left = page.getByRole('slider', { name: '左臂（X）' })
+  const right = page.getByRole('slider', { name: '右臂（X）' })
+  await left.fill('3')
+  await right.fill('2.5')
+  await expect(
+    page.locator('[role="alert"]', { hasText: '超過目標盒格數' }).first(),
+  ).toBeVisible()
+
+  await right.fill('1.5')
+  await targetX.fill('4.5')
+  await waitForCadReady(page)
+  await page.getByRole('slider', { name: '上臂（Y）' }).fill('2')
+  await expect(
+    page.getByText('盒內對位僅支援單臂與一字型分隔牆。'),
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: '下載 STEP' })).toBeDisabled()
 })
