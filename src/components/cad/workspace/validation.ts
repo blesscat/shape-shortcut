@@ -116,6 +116,9 @@ export const OPENGRID_ORGANIZER_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'holeSpacingY',
   'holeShape',
   'holeDiameter',
+  'holeWidth',
+  'holeHeight',
+  'holeCornerRadius',
   'holeDepth',
   'bottomThickness',
   'wallThickness',
@@ -132,6 +135,9 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] 
     'holeSpacingY',
     'holeShape',
     'holeDiameter',
+    'holeWidth',
+    'holeHeight',
+    'holeCornerRadius',
     'holeDepth',
     'bottomThickness',
     'edgeThickness',
@@ -524,6 +530,9 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
       | 'holeSpacingX'
       | 'holeSpacingY'
       | 'holeDiameter'
+      | 'holeWidth'
+      | 'holeHeight'
+      | 'holeCornerRadius'
       | 'holeDepth'
       | 'bottomThickness'
       | 'wallThickness'
@@ -544,6 +553,9 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     'holeSpacingY',
     'holeShape',
     'holeDiameter',
+    'holeWidth',
+    'holeHeight',
+    'holeCornerRadius',
     'holeDepth',
     'bottomThickness',
     'wallThickness',
@@ -577,12 +589,23 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     holeShape !== 'triangle' &&
     holeShape !== 'square' &&
     holeShape !== 'pentagon' &&
-    holeShape !== 'hexagon'
+    holeShape !== 'hexagon' &&
+    holeShape !== 'rectangle' &&
+    holeShape !== 'ellipse'
   ) {
     return invalid('holeShape')
   }
   const holeDiameter = decimalFor('holeDiameter', defaults.holeDiameter)
   if (holeDiameter === null) return invalid('holeDiameter')
+  const holeWidth = decimalFor('holeWidth', defaults.holeWidth)
+  if (holeWidth === null) return invalid('holeWidth')
+  const holeHeight = decimalFor('holeHeight', defaults.holeHeight)
+  if (holeHeight === null) return invalid('holeHeight')
+  const holeCornerRadius = decimalFor(
+    'holeCornerRadius',
+    defaults.holeCornerRadius,
+  )
+  if (holeCornerRadius === null) return invalid('holeCornerRadius')
   const holeDepth = decimalFor('holeDepth', defaults.holeDepth)
   if (holeDepth === null) return invalid('holeDepth')
   const bottomThickness = decimalFor(
@@ -623,6 +646,9 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     holeSpacingY,
     holeShape,
     holeDiameter,
+    holeWidth,
+    holeHeight,
+    holeCornerRadius,
     holeDepth,
     bottomThickness,
     wallThickness,
@@ -680,13 +706,21 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     holeShape !== 'triangle' &&
     holeShape !== 'square' &&
     holeShape !== 'pentagon' &&
-    holeShape !== 'hexagon'
+    holeShape !== 'hexagon' &&
+    holeShape !== 'rectangle' &&
+    holeShape !== 'ellipse'
   ) {
     return invalid('holeShape')
   }
 
   const holeDiameter = parseFiniteDecimalInput(raw.holeDiameter ?? '')
   if (holeDiameter === null) return invalid('holeDiameter')
+  const holeWidth = parseFiniteDecimalInput(raw.holeWidth ?? '')
+  if (holeWidth === null) return invalid('holeWidth')
+  const holeHeight = parseFiniteDecimalInput(raw.holeHeight ?? '')
+  if (holeHeight === null) return invalid('holeHeight')
+  const holeCornerRadius = parseFiniteDecimalInput(raw.holeCornerRadius ?? '')
+  if (holeCornerRadius === null) return invalid('holeCornerRadius')
   const holeDepth = parseFiniteDecimalInput(raw.holeDepth ?? '')
   if (holeDepth === null) return invalid('holeDepth')
   const bottomThickness = parseFiniteDecimalInput(raw.bottomThickness ?? '')
@@ -704,6 +738,9 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     holeSpacingY,
     holeShape,
     holeDiameter,
+    holeWidth,
+    holeHeight,
+    holeCornerRadius,
     holeDepth,
     bottomThickness,
     edgeThickness,
@@ -778,6 +815,9 @@ export function rawFromParameters(
       holeSpacingY: String(organizerParameters.holeSpacingY),
       holeShape: organizerParameters.holeShape,
       holeDiameter: String(organizerParameters.holeDiameter),
+      holeWidth: String(organizerParameters.holeWidth),
+      holeHeight: String(organizerParameters.holeHeight),
+      holeCornerRadius: String(organizerParameters.holeCornerRadius),
       holeDepth: String(organizerParameters.holeDepth),
       bottomThickness: String(organizerParameters.bottomThickness),
       edgeThickness: String(organizerParameters.edgeThickness),
@@ -795,6 +835,9 @@ export function rawFromParameters(
       holeSpacingY: String(organizerParameters.holeSpacingY),
       holeShape: organizerParameters.holeShape,
       holeDiameter: String(organizerParameters.holeDiameter),
+      holeWidth: String(organizerParameters.holeWidth),
+      holeHeight: String(organizerParameters.holeHeight),
+      holeCornerRadius: String(organizerParameters.holeCornerRadius),
       holeDepth: String(organizerParameters.holeDepth),
       bottomThickness: String(organizerParameters.bottomThickness),
       wallThickness: String(organizerParameters.wallThickness),
@@ -983,7 +1026,8 @@ function withStackableBoxLegacyModeRawParameters(
   return {
     ...rest,
     topRimMode: raw.topRimMode ?? (thinShell ? 'flat-top' : 'stacking-rail'),
-    bottomMode: raw.bottomMode ??
+    bottomMode:
+      raw.bottomMode ??
       (thinShell ? 'thin-shell' : basePlate ? 'none' : 'stacking'),
   }
 }

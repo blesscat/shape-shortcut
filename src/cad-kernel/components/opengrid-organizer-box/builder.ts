@@ -1,10 +1,13 @@
 import {
+  drawEllipse,
   loft,
   makeCompound,
   makeCylinder,
   type Shape3D,
   Sketcher,
   sketchRoundedRectangle,
+  sketchRectangle,
+  type Sketch,
   type Wire,
 } from 'replicad'
 import {
@@ -198,8 +201,17 @@ function polygonCavityCutter(
   bottomZ: number,
   height: number,
 ): Shape3D {
+  const shape = parameters.holeShape
+  if (
+    shape !== 'triangle' &&
+    shape !== 'square' &&
+    shape !== 'pentagon' &&
+    shape !== 'hexagon'
+  ) {
+    throw new Error('OPENGRID_ORGANIZER_BOX_POLYGON_EXPECTED')
+  }
   const points = openGridOrganizerBoxPolygonPointsFor(
-    parameters.holeShape === 'circle' ? 'square' : parameters.holeShape,
+    shape,
     parameters.holeDiameter,
   )
   const sketcher = new Sketcher('XY', [center[0], center[1], bottomZ])
@@ -222,6 +234,81 @@ function polygonCavityCutter(
   }
 }
 
+function rectangleCavityCutter(
+  parameters: OpenGridOrganizerBoxParameters,
+  center: [number, number],
+  bottomZ: number,
+  height: number,
+): Shape3D {
+  const { holeWidth, holeHeight } = parameters
+  const radius = Math.min(
+    parameters.holeCornerRadius,
+    holeWidth / 2,
+    holeHeight / 2,
+  )
+  if (radius <= 0) {
+    const sketch = sketchRectangle(holeWidth, holeHeight, {
+      plane: 'XY',
+      origin: [center[0], center[1], bottomZ],
+    })
+    try {
+      return sketch.extrude(height, { extrusionDirection: [0, 0, 1] })
+    } finally {
+      deleteShape(sketch)
+    }
+  }
+  if (radius === holeWidth / 2 && radius === holeHeight / 2) {
+    return makeCylinder(radius, height, [center[0], center[1], bottomZ])
+  }
+  if (radius === holeWidth / 2) {
+    // Degenerate straight edges on the X side: replicate the stadium profile
+    // with the straights along X, rotated onto Y.
+    const sketch = sketchRoundedRectangle(holeHeight, holeWidth, radius, {
+      plane: 'XY',
+      origin: [0, 0, bottomZ],
+    })
+    try {
+      const solid = sketch.extrude(height, { extrusionDirection: [0, 0, 1] })
+      return solid
+        .rotate(90, [0, 0, bottomZ], [0, 0, 1])
+        .translate(center[0], center[1], 0)
+    } finally {
+      deleteShape(sketch)
+    }
+  }
+  const sketch = sketchRoundedRectangle(holeWidth, holeHeight, radius, {
+    plane: 'XY',
+    origin: [center[0], center[1], bottomZ],
+  })
+  try {
+    return sketch.extrude(height, { extrusionDirection: [0, 0, 1] })
+  } finally {
+    deleteShape(sketch)
+  }
+}
+
+function ellipseCavityCutter(
+  parameters: OpenGridOrganizerBoxParameters,
+  center: [number, number],
+  bottomZ: number,
+  height: number,
+): Shape3D {
+  const drawing = drawEllipse(
+    parameters.holeWidth / 2,
+    parameters.holeHeight / 2,
+  )
+  const sketch = drawing.sketchOnPlane('XY', [
+    center[0],
+    center[1],
+    bottomZ,
+  ]) as unknown as Sketch
+  try {
+    return sketch.extrude(height, { extrusionDirection: [0, 0, 1] })
+  } finally {
+    deleteShape(sketch)
+  }
+}
+
 function cavityCutterFor(
   parameters: OpenGridOrganizerBoxParameters,
   center: [number, number],
@@ -235,6 +322,12 @@ function cavityCutterFor(
       center[1],
       bottomZ,
     ])
+  }
+  if (parameters.holeShape === 'rectangle') {
+    return rectangleCavityCutter(parameters, center, bottomZ, height)
+  }
+  if (parameters.holeShape === 'ellipse') {
+    return ellipseCavityCutter(parameters, center, bottomZ, height)
   }
   return polygonCavityCutter(parameters, center, bottomZ, height)
 }

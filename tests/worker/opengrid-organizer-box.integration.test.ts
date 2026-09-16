@@ -881,6 +881,198 @@ describe('OpenGrid organizer-box B-Rep', () => {
     },
   )
 
+  it.each([
+    ['rectangle', 0, 4],
+    ['rectangle', 2, 8],
+    ['rectangle', 10, 4],
+    ['ellipse', 0, 2],
+  ] as const)(
+    'builds %s cavities (r=%i) with %i side faces each and passes quality',
+    (holeShape, holeCornerRadius, expectedSideCount) => {
+      const input = parameters({
+        holeCountX: 2,
+        holeCountY: 1,
+        holeShape,
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius,
+        holeSpacingMode: 'independent',
+        holeSpacingX: 3,
+        holeSpacingY: 5,
+        cornerSeatMode: 'none',
+        boxMode: 'normal',
+      })
+      const shape = buildOpenGridOrganizerBox(input)
+
+      try {
+        expect(measureVolume(shape)).toBeGreaterThan(0)
+        const layout = openGridOrganizerBoxLayoutFor(input)
+        expect(layout.cavityEnvelope).toEqual({ x: 30, y: 20 })
+        expect(layout.cavityCenters).toHaveLength(2)
+        expect(() =>
+          assertOpenGridOrganizerBoxGeometry(shape, input),
+        ).not.toThrow()
+        const expected = boundsForOpenGridOrganizerBox(input)
+        expect(shape.boundingBox.bounds[1][2]).toBeCloseTo(expected.max[2], 2)
+      } finally {
+        deleteShape(shape)
+      }
+    },
+  )
+
+  it('builds a fully-round rectangle cavity when r reaches min(width, height) / 2', () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'rectangle',
+      holeWidth: 20,
+      holeHeight: 20,
+      holeCornerRadius: 10,
+      holeSpacingMode: 'independent',
+      holeSpacingX: 3,
+      holeSpacingY: 5,
+      cornerSeatMode: 'none',
+      boxMode: 'normal',
+    })
+    const shape = buildOpenGridOrganizerBox(input)
+
+    try {
+      expect(measureVolume(shape)).toBeGreaterThan(0)
+      expect(() =>
+        assertOpenGridOrganizerBoxGeometry(shape, input),
+      ).not.toThrow()
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it('builds a tall stadium rectangle cavity when r reaches holeWidth / 2', () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'rectangle',
+      holeWidth: 20,
+      holeHeight: 30,
+      holeCornerRadius: 10,
+      holeSpacingMode: 'independent',
+      holeSpacingX: 3,
+      holeSpacingY: 5,
+      cornerSeatMode: 'none',
+      boxMode: 'normal',
+    })
+    const shape = buildOpenGridOrganizerBox(input)
+
+    try {
+      expect(measureVolume(shape)).toBeGreaterThan(0)
+      expect(() =>
+        assertOpenGridOrganizerBoxGeometry(shape, input),
+      ).not.toThrow()
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it('builds a tall extreme-aspect ellipse a single valid solid', () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'ellipse',
+      holeWidth: 1,
+      holeHeight: 300,
+      holeDepth: 20,
+      holeSpacingMode: 'independent',
+      holeSpacingX: 3,
+      holeSpacingY: 5,
+      cornerSeatMode: 'none',
+      boxMode: 'normal',
+    })
+    const shape = buildOpenGridOrganizerBox(input)
+
+    try {
+      expect(measureVolume(shape)).toBeGreaterThan(0)
+      expect(() =>
+        assertOpenGridOrganizerBoxGeometry(shape, input),
+      ).not.toThrow()
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it('builds a rectangular cavity with the exact B-Rep envelope', () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'rectangle',
+      holeWidth: 30,
+      holeHeight: 20,
+      holeCornerRadius: 2,
+      holeSpacingMode: 'independent',
+      holeSpacingX: 3,
+      holeSpacingY: 5,
+      cornerSeatMode: 'none',
+      boxMode: 'normal',
+    })
+    const shape = buildOpenGridOrganizerBox(input)
+
+    try {
+      const floorZ = input.wallThickness + input.bottomThickness
+      const justInside = probeVolume(shape, [
+        [-0.1, 9.5, floorZ + 1],
+        [0.1, 9.9, floorZ + input.holeDepth - 1],
+      ])
+      const justOutside = probeVolume(shape, [
+        [-0.1, 10.1, floorZ + 1],
+        [0.1, 11, floorZ + input.holeDepth - 1],
+      ])
+      expect(justInside).toBeLessThanOrEqual(0.002)
+      expect(justOutside).toBeGreaterThan(0.0001)
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
+  it('builds a true analytic elliptical cavity section', () => {
+    const input = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'ellipse',
+      holeWidth: 30,
+      holeHeight: 20,
+      holeSpacingMode: 'independent',
+      holeSpacingX: 3,
+      holeSpacingY: 5,
+      cornerSeatMode: 'none',
+      boxMode: 'normal',
+    })
+    const shape = buildOpenGridOrganizerBox(input)
+
+    try {
+      const faces = shape.faces
+      try {
+        const extrusionFaceCount = faces.filter(
+          (face) => face.surface.surfaceType === 'EXTRUSION_SURFACE',
+        ).length
+        expect(extrusionFaceCount).toBeGreaterThanOrEqual(2)
+      } finally {
+        faces.forEach((face) => deleteShape(face as unknown as Shape3D))
+      }
+
+      const floorZ = input.wallThickness + input.bottomThickness
+      const insideAxisEnd = probeVolume(shape, [
+        [-0.1, 9.5, floorZ + 1],
+        [0.1, 9.9, floorZ + input.holeDepth - 1],
+      ])
+      const outsideAxisEnd = probeVolume(shape, [
+        [-0.1, 10.1, floorZ + 1],
+        [0.1, 11, floorZ + input.holeDepth - 1],
+      ])
+      expect(insideAxisEnd).toBeLessThanOrEqual(0.002)
+      expect(outsideAxisEnd).toBeGreaterThan(0.0001)
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
   it('is available through the kernel registry without loading external assets', async () => {
     const input = parameters({
       holeCountX: 1,

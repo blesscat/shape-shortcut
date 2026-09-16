@@ -39,7 +39,7 @@ function parameters(
 }
 
 describe('OpenGrid OpenConnect organizer workspace integration', () => {
-  it('round-trips the exact eleven-field snapshot used for generation', () => {
+  it('round-trips the exact fourteen-field snapshot used for generation', () => {
     const value = parameters({
       holeCountX: 3,
       holeCountY: 4,
@@ -48,6 +48,9 @@ describe('OpenGrid OpenConnect organizer workspace integration', () => {
       holeSpacingY: 4,
       holeShape: 'hexagon',
       holeDiameter: 18.5,
+      holeWidth: 30,
+      holeHeight: 20,
+      holeCornerRadius: 2.5,
       holeDepth: 32,
       bottomThickness: 3.5,
       edgeThickness: 4.5,
@@ -63,6 +66,9 @@ describe('OpenGrid OpenConnect organizer workspace integration', () => {
       holeSpacingY: '4',
       holeShape: 'hexagon',
       holeDiameter: '18.5',
+      holeWidth: '30',
+      holeHeight: '20',
+      holeCornerRadius: '2.5',
       holeDepth: '32',
       bottomThickness: '3.5',
       edgeThickness: '4.5',

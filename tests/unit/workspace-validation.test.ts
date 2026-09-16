@@ -14,6 +14,7 @@ import type {
 import {
   normalizeOpenGridOrganizerBoxParameters,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -140,6 +141,9 @@ describe('CAD workspace validation helpers', () => {
       boxMode: _boxMode,
       stackingClearanceHeight: _stackingClearanceHeight,
       wallThickness: _wallThickness,
+      holeWidth: _holeWidth,
+      holeHeight: _holeHeight,
+      holeCornerRadius: _holeCornerRadius,
       ...legacyDefaults
     } = OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
     const normalized = normalizeOpenGridOrganizerBoxParameters({
@@ -164,6 +168,36 @@ describe('CAD workspace validation helpers', () => {
       field: 'holeDepth',
     })
   })
+
+  it.each(['holeWidth', 'holeHeight', 'holeCornerRadius'] as const)(
+    'rejects organizer-box raw input missing %s instead of defaulting fields',
+    (missingField) => {
+      const raw = rawFromParameters(OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS)
+      delete raw[missingField]
+
+      expect(parseRawParameters(raw, 'opengrid-organizer-box')).toMatchObject({
+        valid: false,
+        field: missingField,
+      })
+    },
+  )
+
+  it.each(['holeWidth', 'holeHeight', 'holeCornerRadius'] as const)(
+    'rejects OpenConnect organizer raw input missing %s instead of defaulting fields',
+    (missingField) => {
+      const raw = rawFromParameters(
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
+      )
+      delete raw[missingField]
+
+      expect(
+        parseRawParameters(raw, 'opengrid-openconnect-organizer'),
+      ).toMatchObject({
+        valid: false,
+        field: missingField,
+      })
+    },
+  )
 
   it('preserves inactive organizer-box Z in normal mode', () => {
     const parameters: OpenGridOrganizerBoxParameters = {

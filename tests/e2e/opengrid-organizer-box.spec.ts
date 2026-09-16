@@ -175,6 +175,62 @@ test('OpenGrid organizer-box is listed and exposes the cavity controls', async (
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe(
-    'opengrid-organizer-box-2x2-hexagon-sm-independent-d20-sx3-sy3-h20-b1-seats-integrated-body-stackable-z4p5.step',
+    'opengrid-organizer-box-2x2-hexagon-sm-independent-d20-sx3-sy3-h20-wt3-b1-seats-integrated-body-stackable-z4p5.step',
+  )
+})
+
+test('rectangle and ellipse shapes swap the size fields and rename exports', async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(240_000)
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/zh-Hant/cad/opengrid-organizer-box')
+  await waitForCadReady(page, 90_000)
+
+  const shape = page.getByRole('combobox', { name: '孔形狀' })
+  const diameter = page.getByRole('textbox', { name: /孔直徑/ })
+  await expect(diameter).toBeVisible()
+
+  await shape.selectOption('rectangle')
+  await expect(diameter).toHaveCount(0)
+  const width = page.getByRole('textbox', { name: '孔寬（X）' })
+  const height = page.getByRole('textbox', { name: '孔高（Y）' })
+  const cornerRadius = page.getByRole('textbox', { name: '孔圓角半徑' })
+  await expect(width).toHaveValue('20')
+  await expect(height).toHaveValue('20')
+  await expect(cornerRadius).toHaveValue('0')
+
+  await width.fill('30')
+  await height.fill('20')
+  await cornerRadius.fill('2')
+
+  const viewport = page.getByTestId('cad-viewport')
+  const initialRevision = await viewport.getAttribute('data-model-revision')
+  await expect(viewport).not.toHaveAttribute(
+    'data-model-revision',
+    initialRevision ?? '',
+    { timeout: 90_000 },
+  )
+  await waitForCadReady(page, 90_000)
+  await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下載 STEP' }).click()
+  const rectangleDownload = await downloadPromise
+  expect(rectangleDownload.suggestedFilename()).toBe(
+    'opengrid-organizer-box-2x2-rectangle-w30-h20-r2-sm-linked-sx2-sy2-h20-wt2-b1-seats-detachable-corner-seat-body-normal.step',
+  )
+
+  await shape.selectOption('ellipse')
+  await expect(cornerRadius).toHaveCount(0)
+  await expect(width).toBeVisible()
+  await expect(height).toBeVisible()
+
+  const ellipseDownloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下載 STEP' }).click()
+  const ellipseDownload = await ellipseDownloadPromise
+  expect(ellipseDownload.suggestedFilename()).toBe(
+    'opengrid-organizer-box-2x2-ellipse-w30-h20-sm-linked-sx2-sy2-h20-wt2-b1-seats-detachable-corner-seat-body-normal.step',
   )
 })

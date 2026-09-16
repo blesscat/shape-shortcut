@@ -47,11 +47,29 @@ describe('OpenGrid OpenConnect organizer catalog identity', () => {
       'holeSpacingX',
       'holeSpacingY',
       'holeDiameter',
+      'holeWidth',
+      'holeHeight',
+      'holeCornerRadius',
       'holeDepth',
       'bottomThickness',
       'edgeThickness',
       'tiltAngle',
     ])
+    expect(
+      definition?.parameterSchema.find(({ key }) => key === 'holeWidth'),
+    ).toMatchObject({
+      min: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.minHoleWidth,
+      max: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.maxHoleWidth,
+      defaultValue:
+        OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleWidth,
+    })
+    expect(
+      definition?.parameterSchema.find(({ key }) => key === 'holeCornerRadius'),
+    ).toMatchObject({
+      min: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.minHoleCornerRadius,
+      defaultValue:
+        OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleCornerRadius,
+    })
     expect(
       definition?.parameterSchema.find(({ key }) => key === 'bottomThickness'),
     ).toMatchObject({

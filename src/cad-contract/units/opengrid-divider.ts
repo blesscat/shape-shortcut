@@ -148,7 +148,8 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   pegLengths: {
     snap: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatHeight,
     'thin-shell': OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellFloorThickness,
-    stackable: OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatum,
+    stackable:
+      OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatumStackable,
   },
   pegBottomChamfer:
     OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatBottomChamfer,
