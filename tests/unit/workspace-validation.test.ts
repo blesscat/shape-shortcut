@@ -564,9 +564,25 @@ describe('CAD workspace validation helpers', () => {
       endClearance: alignmentDefaults.endClearance,
       pegLengthMode: alignmentDefaults.pegLengthMode,
       pegDiameterIncrement: alignmentDefaults.pegDiameterIncrement,
+      honeycombMode: false,
     }
     const raw = rawFromParameters(parameters)
 
+    expect(raw).toEqual({
+      left: '1',
+      right: '1',
+      up: '1.5',
+      down: '0',
+      height: '20',
+      wallThickness: '2',
+      alignmentMode: 'free',
+      targetBoxGridsX: '4.5',
+      targetBoxGridsY: '4.5',
+      endClearance: '0.15',
+      pegLengthMode: 'snap',
+      pegDiameterIncrement: '0',
+      honeycombMode: 'false',
+    })
     expect(parseRawParameters(raw, 'opengrid-divider')).toEqual({
       valid: true,
       value: parameters,

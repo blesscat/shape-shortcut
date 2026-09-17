@@ -813,6 +813,7 @@ describe('CAD model generation debounce', () => {
           down: 0,
           height: 20,
           wallThickness: 2,
+          honeycombMode: false,
         },
       }),
     )

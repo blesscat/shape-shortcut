@@ -1,4 +1,5 @@
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
+import { OPENGRID_HONEYCOMB_CONFIGURATION } from './opengrid-honeycomb'
 import { OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION } from './opengrid-locating-assembly'
 import { OPENGRID_STACKABLE_BOX_CONFIGURATION } from './opengrid-stackable-box'
 import { OPENGRID_ORGANIZER_BOX_CONFIGURATION } from './opengrid-organizer-box'
@@ -22,6 +23,7 @@ export type OpenGridDividerParameterKey =
   | 'endClearance'
   | 'pegLengthMode'
   | 'pegDiameterIncrement'
+  | 'honeycombMode'
 
 export type OpenGridDividerParameters = {
   left: number
@@ -36,6 +38,7 @@ export type OpenGridDividerParameters = {
   endClearance: number
   pegLengthMode: OpenGridDividerPegLengthMode
   pegDiameterIncrement: number
+  honeycombMode: boolean
 }
 
 export type OpenGridDividerAlignmentInfo = {
@@ -100,6 +103,7 @@ const DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
   'endClearance',
   'pegLengthMode',
   'pegDiameterIncrement',
+  'honeycombMode',
 ]
 
 const LEGACY_DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
@@ -148,7 +152,8 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   pegLengths: {
     snap: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatHeight,
     'thin-shell': OPENGRID_STACKABLE_BOX_CONFIGURATION.thinShellFloorThickness,
-    stackable: OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatum,
+    stackable:
+      OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatumStackable,
   },
   pegBottomChamfer:
     OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.integratedSeatBottomChamfer,
@@ -169,6 +174,7 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   minHeight: 2,
   maxHeight: 500,
   heightSliderMax: 200,
+  defaultHoneycombMode: false,
   defaultParameters: {
     left: 1.5,
     right: 1.5,
@@ -182,11 +188,27 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
     endClearance: 0.15,
     pegLengthMode: 'snap',
     pegDiameterIncrement: 0,
+    honeycombMode: false,
   } satisfies OpenGridDividerParameters,
 } as const
 
+// Conservative divider-specific admission ceiling; the two thin crossing walls
+// clip against each other's keepouts and produce a different boolean profile
+// from the stackable-box panel builder.
+export const OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS = 3000
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function hasExactKeys(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  return (
+    Object.keys(value).length === keys.length &&
+    keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
+  )
 }
 
 function isSafeCount(value: unknown): value is number {
@@ -630,6 +652,31 @@ function withAlignmentDefaults(
   return merged
 }
 
+export function openGridDividerHoneycombMinHeightFor(
+  parameters: Pick<OpenGridDividerParameters, 'wallThickness'>,
+): number {
+  const {
+    bottomSupportHeight,
+    geometrySafetyMargin,
+    wallWidth,
+    topFilletRadius,
+  } = OPENGRID_DIVIDER_CONFIGURATION
+  const honeycomb = OPENGRID_HONEYCOMB_CONFIGURATION
+  const maxTransitionHeight = Math.max(
+    0,
+    (wallWidth - parameters.wallThickness) / 2,
+  )
+  const upperWallStartZ = bottomSupportHeight + maxTransitionHeight
+  return (
+    upperWallStartZ +
+    honeycomb.lowerFrame +
+    honeycomb.minimumPanelSpan +
+    honeycomb.topFrame +
+    topFilletRadius +
+    geometrySafetyMargin
+  )
+}
+
 export function validateOpenGridDividerParameters(
   value: unknown,
 ): OpenGridDividerValidation {
@@ -641,7 +688,12 @@ export function validateOpenGridDividerParameters(
   }
 
   const issues: OpenGridDividerValidationIssue[] = []
-  if (!hasAcceptableKeys(value)) {
+  const hasCurrentParameters = hasExactKeys(value, DIVIDER_PARAMETER_KEYS)
+  const hasHoneycombField = Object.prototype.hasOwnProperty.call(
+    value,
+    'honeycombMode',
+  )
+  if (!hasCurrentParameters && !hasAcceptableKeys(value)) {
     issues.push({
       field: 'parameters',
       messageId: 'validation.invalid',
@@ -717,6 +769,12 @@ export function validateOpenGridDividerParameters(
   if (!isSafePegDiameterIncrement(candidateRecord.pegDiameterIncrement)) {
     issues.push({
       field: 'pegDiameterIncrement',
+      messageId: 'validation.invalid',
+    })
+  }
+  if (hasHoneycombField && typeof value.honeycombMode !== 'boolean') {
+    issues.push({
+      field: 'honeycombMode',
       messageId: 'validation.invalid',
     })
   }
@@ -802,6 +860,9 @@ export function validateOpenGridDividerParameters(
       pegLengthMode:
         candidateRecord.pegLengthMode as OpenGridDividerPegLengthMode,
       pegDiameterIncrement: candidateRecord.pegDiameterIncrement as number,
+      honeycombMode: hasHoneycombField
+        ? (value.honeycombMode as boolean)
+        : OPENGRID_DIVIDER_CONFIGURATION.defaultHoneycombMode,
     },
   }
 }
@@ -879,17 +940,15 @@ function openGridDividerFileNameSuffix(
 export function openGridDividerFileName(
   parameters: OpenGridDividerParameters,
 ): string {
+  const honeycombSuffix = parameters.honeycombMode ? '-honeycomb' : ''
   return (
     `opengrid-divider-l${parameters.left}-r${parameters.right}-u${parameters.up}-d${parameters.down}-t${parameters.wallThickness}-h${parameters.height}` +
-    `${openGridDividerFileNameSuffix(parameters)}.step`
+    `${openGridDividerFileNameSuffix(parameters)}${honeycombSuffix}.step`
   )
 }
 
 export function openGridDividerStlFileName(
   parameters: OpenGridDividerParameters,
 ): string {
-  return (
-    `opengrid-divider-l${parameters.left}-r${parameters.right}-u${parameters.up}-d${parameters.down}-t${parameters.wallThickness}-h${parameters.height}` +
-    `${openGridDividerFileNameSuffix(parameters)}.stl`
-  )
+  return openGridDividerFileName(parameters).replace(/\.step$/, '.stl')
 }

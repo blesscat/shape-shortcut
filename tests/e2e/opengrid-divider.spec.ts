@@ -25,7 +25,10 @@ test('OpenGrid divider is listed with independent directional controls', async (
   await expect(page.getByText(/自製底座半格 7 mm、整格 14 mm/)).toHaveCount(0)
   await expect(page.getByText(/中心距 28 mm/)).toHaveCount(0)
   await expect(page.getByTestId('opengrid-divider-summary')).toHaveCount(0)
-  await expect(page.getByRole('checkbox')).toHaveCount(0)
+  await expect(
+    page.getByTestId('opengrid-divider-honeycomb-mode'),
+  ).toBeVisible()
+  await expect(page.getByRole('checkbox')).toHaveCount(1)
   await expect(page.getByText(/Full|Lite|Heavy|螺絲|接頭孔/)).toHaveCount(0)
 
   for (const name of ['左臂（X）', '右臂（X）', '上臂（Y）', '下臂（Y）']) {
@@ -62,6 +65,54 @@ test('OpenGrid divider is listed with independent directional controls', async (
   await expect(wallThickness).toHaveValue('4')
 
   await page.getByRole('slider', { name: '上臂（Y）' }).press('ArrowRight')
+})
+
+test('OpenGrid divider saving mode gates by height and shows the cell estimate', async ({
+  page,
+  browserName,
+}) => {
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/cad/opengrid-divider')
+  await waitForCadReady(page)
+
+  const toggle = page.getByTestId('opengrid-divider-honeycomb-mode')
+  await expect(toggle).toBeEnabled()
+
+  await toggle.check()
+  await expect(page.getByTestId('honeycomb-cell-count-estimate')).toBeVisible()
+  await waitForCadReady(page)
+
+  const height = page.getByRole('textbox', { name: '分隔牆高度（Z）' })
+  await height.fill('11')
+  await expect(
+    page.getByTestId('opengrid-divider-honeycomb-too-small'),
+  ).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await toggle.uncheck()
+  await expect(toggle).toBeDisabled()
+})
+
+test('OpenGrid divider saving mode disables over-limit sizes with a hint', async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(120_000)
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/cad/opengrid-divider')
+  await waitForCadReady(page)
+
+  for (const name of ['左臂（X）', '右臂（X）', '上臂（Y）', '下臂（Y）']) {
+    await page.getByRole('slider', { name }).fill('8')
+  }
+  const height = page.getByRole('textbox', { name: '分隔牆高度（Z）' })
+  await height.fill('500')
+  await waitForCadReady(page)
+
+  const toggle = page.getByTestId('opengrid-divider-honeycomb-mode')
+  await expect(toggle).toBeDisabled()
+  await expect(
+    page.getByTestId('opengrid-divider-honeycomb-too-large'),
+  ).toBeVisible()
 })
 
 test('OpenGrid divider exports the committed normalized shape', async ({

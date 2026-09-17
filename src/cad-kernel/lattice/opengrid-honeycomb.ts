@@ -22,6 +22,7 @@ import {
   cylinderBottomProtectedCircles,
   cylinderSideCellGroups,
   expandedPanelBounds,
+  openGridDividerHoneycombCellLayoutFor,
   openShelfBackboardCellPolygonGroups,
   openShelfBottomCells,
   openShelfBottomProtectedCircles,
@@ -49,6 +50,7 @@ import {
   OPENGRID_HONEYCOMB_CONFIGURATION,
   OPENGRID_OPEN_SHELF_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
+  type OpenGridDividerParameters,
   type OpenGridOpenShelfParameters,
   type OpenGridStackableBoxParameters,
   type OpenGridStackableCylinderParameters,
@@ -64,6 +66,9 @@ export {
   OPENGRID_HONEYCOMB_BOTTOM_PANEL_BATCH_SIZE,
   OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_BUDGET,
   estimateOpenGridStackableBoxHoneycombMemory,
+  openGridDividerHoneycombCellCountFor,
+  openGridDividerHoneycombCellGroupsFor,
+  openGridDividerHoneycombCellLayoutFor,
   openGridOpenShelfHoneycombCellCountFor,
   openGridStackableBoxBottomHoneycombCellCountFor,
   openGridStackableBoxHoneycombCellCountFor,
@@ -75,6 +80,7 @@ export {
 } from './opengrid-honeycomb-cells'
 export type {
   OpenGridHoneycombBuildContext,
+  OpenGridDividerHoneycombCellLayout,
   OpenGridStackableBoxHoneycombMemoryEstimate,
 } from './opengrid-honeycomb-cells'
 
@@ -956,5 +962,48 @@ export function makeOpenGridOpenShelfPlateHoneycombCutters(
     throw error
   } finally {
     pegProtectors.forEach(deleteShape)
+  }
+}
+
+export function makeOpenGridDividerHoneycombCutters(
+  parameters: OpenGridDividerParameters,
+  context: OpenGridHoneycombBuildContext = {},
+): Shape3D[] {
+  if (!parameters.honeycombMode) return []
+  const margin = OPENGRID_HONEYCOMB_CONFIGURATION.cutterMargin
+  const layout = openGridDividerHoneycombCellLayoutFor(parameters)
+  const distance = parameters.wallThickness + margin * 2
+  const cutters: Shape3D[] = []
+  try {
+    // Horizontal arms run along X with their thickness along Y; vertical arms
+    // are the same profile rotated 90 degrees, so the cutter planes swap.
+    for (const polygons of layout.horizontal) {
+      assertHoneycombGenerationCurrent(context)
+      cutters.push(
+        extrudePolygonGroup(
+          'XZ',
+          [0, -parameters.wallThickness / 2 - margin, 0],
+          polygons,
+          distance,
+          [0, 1, 0],
+        ),
+      )
+    }
+    for (const polygons of layout.vertical) {
+      assertHoneycombGenerationCurrent(context)
+      cutters.push(
+        extrudePolygonGroup(
+          'YZ',
+          [-parameters.wallThickness / 2 - margin, 0, 0],
+          polygons,
+          distance,
+          [1, 0, 0],
+        ),
+      )
+    }
+    return cutters
+  } catch (error) {
+    cutters.forEach(deleteShape)
+    throw error
   }
 }

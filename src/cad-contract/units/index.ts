@@ -137,6 +137,7 @@ import {
   openGridDividerAlignmentInfoFor,
   openGridDividerBoxFitPegCentersFor,
   openGridDividerLatticeStationsFor,
+  openGridDividerHoneycombMinHeightFor,
   openGridDividerPegCentersFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPlanDimensionsFor,
@@ -146,6 +147,7 @@ import {
   openGridDividerStlFileName,
   openGridDividerTransitionHeightFor,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   validateOpenGridDividerParameters,
 } from './opengrid-divider'
 import type {
@@ -341,6 +343,7 @@ export {
   openGridDividerAlignmentInfoFor,
   openGridDividerBoxFitPegCentersFor,
   openGridDividerLatticeStationsFor,
+  openGridDividerHoneycombMinHeightFor,
   openGridDividerPegCentersFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPlanDimensionsFor,
@@ -350,6 +353,7 @@ export {
   openGridDividerStlFileName,
   openGridDividerTransitionHeightFor,
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   validateOpenGridDividerParameters,
 } from './opengrid-divider'
 export {

@@ -740,7 +740,7 @@ describe('CAD component catalog', () => {
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
           topRimMode: 'stacking-rail',
-        bottomMode: 'stacking',
+          bottomMode: 'stacking',
         },
       },
     })
@@ -837,6 +837,7 @@ describe('CAD component catalog', () => {
       endClearance: 0.15,
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
+      honeycombMode: false,
     })
     expect(definition?.exportFileName(definition.defaultParameters)).toBe(
       'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' +
