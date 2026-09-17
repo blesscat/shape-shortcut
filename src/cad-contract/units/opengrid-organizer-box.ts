@@ -13,7 +13,13 @@ import {
 } from './opengrid-stackable-box'
 
 export type OpenGridOrganizerBoxShape =
-  'circle' | 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  | 'circle'
+  | 'triangle'
+  | 'square'
+  | 'pentagon'
+  | 'hexagon'
+  | 'rectangle'
+  | 'ellipse'
 
 export type OpenGridOrganizerBoxSpacingMode = 'linked' | 'independent'
 export type OpenGridOrganizerBoxBoxMode = 'normal' | 'stackable'
@@ -37,6 +43,9 @@ export type OpenGridOrganizerBoxParameterKey =
   | 'holeSpacingY'
   | 'holeShape'
   | 'holeDiameter'
+  | 'holeWidth'
+  | 'holeHeight'
+  | 'holeCornerRadius'
   | 'holeDepth'
   | 'bottomThickness'
   | 'wallThickness'
@@ -52,6 +61,9 @@ export type OpenGridOrganizerBoxParameters = {
   holeSpacingY: number
   holeShape: OpenGridOrganizerBoxShape
   holeDiameter: number
+  holeWidth: number
+  holeHeight: number
+  holeCornerRadius: number
   holeDepth: number
   bottomThickness: number
   wallThickness: number
@@ -70,6 +82,8 @@ export type OpenGridOrganizerBoxCavityEnvelope = {
 export type OpenGridOrganizerBoxCavityEnvelopeInput = {
   shape: OpenGridOrganizerBoxShape
   diameter: number
+  width: number
+  height: number
 }
 
 export type OpenGridOrganizerBoxLayout = {
@@ -108,6 +122,8 @@ export const OPENGRID_ORGANIZER_BOX_SHAPES = [
   'square',
   'pentagon',
   'hexagon',
+  'rectangle',
+  'ellipse',
 ] as const satisfies readonly OpenGridOrganizerBoxShape[]
 
 export const OPENGRID_ORGANIZER_BOX_SPACING_MODES = [
@@ -134,6 +150,9 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   defaultHoleSpacing: 2,
   defaultHoleShape: 'circle' as OpenGridOrganizerBoxShape,
   defaultHoleDiameter: 20,
+  defaultHoleWidth: 20,
+  defaultHoleHeight: 20,
+  defaultHoleCornerRadius: 0,
   defaultHoleDepth: 20,
   defaultBottomThickness: 1,
   defaultWallThickness: 2,
@@ -150,6 +169,11 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   maxHoleSpacing: 300,
   minHoleDiameter: 1,
   maxHoleDiameter: 300,
+  minHoleWidth: 1,
+  maxHoleWidth: 300,
+  minHoleHeight: 1,
+  maxHoleHeight: 300,
+  minHoleCornerRadius: 0,
   minHoleDepth: 1,
   maxHoleDepth: 500,
   minBottomThickness: 0,
@@ -180,6 +204,10 @@ export const OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS: OpenGridOrganizerBoxPara
     holeSpacingY: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleSpacing,
     holeShape: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleShape,
     holeDiameter: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleDiameter,
+    holeWidth: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleWidth,
+    holeHeight: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleHeight,
+    holeCornerRadius:
+      OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleCornerRadius,
     holeDepth: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultHoleDepth,
     bottomThickness:
       OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultBottomThickness,
@@ -191,7 +219,7 @@ export const OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS: OpenGridOrganizerBoxPara
   }
 
 const POLYGON_SIDES_BY_SHAPE: Record<
-  Exclude<OpenGridOrganizerBoxShape, 'circle'>,
+  Exclude<OpenGridOrganizerBoxShape, 'circle' | 'rectangle' | 'ellipse'>,
   number
 > = {
   triangle: 3,
@@ -260,7 +288,12 @@ function issue(
 function cavityEnvelopeFor(
   shape: OpenGridOrganizerBoxShape,
   diameter: number,
+  width: number,
+  height: number,
 ): OpenGridOrganizerBoxCavityEnvelope {
+  if (shape === 'rectangle' || shape === 'ellipse') {
+    return { x: width, y: height }
+  }
   if (shape === 'circle') return { x: diameter, y: diameter }
 
   const sides = POLYGON_SIDES_BY_SHAPE[shape]
@@ -283,14 +316,24 @@ function cavityEnvelopeFor(
 export function openGridOrganizerBoxCavityEnvelopeFor(
   input: OpenGridOrganizerBoxCavityEnvelopeInput,
 ): OpenGridOrganizerBoxCavityEnvelope {
-  if (!isShape(input.shape) || !isFiniteNumber(input.diameter)) {
+  if (
+    !isShape(input.shape) ||
+    !isFiniteNumber(input.diameter) ||
+    !isFiniteNumber(input.width) ||
+    !isFiniteNumber(input.height)
+  ) {
     throw new Error('OPENGRID_ORGANIZER_BOX_CAVITY_INVALID')
   }
-  return cavityEnvelopeFor(input.shape, input.diameter)
+  return cavityEnvelopeFor(
+    input.shape,
+    input.diameter,
+    input.width,
+    input.height,
+  )
 }
 
 export function openGridOrganizerBoxPolygonPointsFor(
-  shape: Exclude<OpenGridOrganizerBoxShape, 'circle'>,
+  shape: Exclude<OpenGridOrganizerBoxShape, 'circle' | 'rectangle' | 'ellipse'>,
   diameter: number,
 ): OpenGridOrganizerBoxPoint2D[] {
   const sides = POLYGON_SIDES_BY_SHAPE[shape]
@@ -442,6 +485,8 @@ function openGridOrganizerBoxLayoutForUnchecked(
   const envelope = cavityEnvelopeFor(
     parameters.holeShape,
     parameters.holeDiameter,
+    parameters.holeWidth,
+    parameters.holeHeight,
   )
   const pitchX = envelope.x + parameters.holeSpacingX
   const pitchY = envelope.y + parameters.holeSpacingY
@@ -513,6 +558,9 @@ const CANONICAL_PARAMETER_KEYS: readonly OpenGridOrganizerBoxParameterKey[] = [
   'holeSpacingY',
   'holeShape',
   'holeDiameter',
+  'holeWidth',
+  'holeHeight',
+  'holeCornerRadius',
   'holeDepth',
   'bottomThickness',
   'wallThickness',
@@ -565,11 +613,14 @@ export function normalizeOpenGridOrganizerBoxParameters(
 
   const { bottomInterfaceMode, ...withoutLegacyMode } = value
   const modes = modesForLegacyBottomInterface(bottomInterfaceMode)
+  const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
   return {
     ...withoutLegacyMode,
     ...modes,
-    stackingClearanceHeight:
-      OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultStackingClearanceHeight,
+    holeWidth: configuration.defaultHoleWidth,
+    holeHeight: configuration.defaultHoleHeight,
+    holeCornerRadius: configuration.defaultHoleCornerRadius,
+    stackingClearanceHeight: configuration.defaultStackingClearanceHeight,
     wallThickness: hydratableWallThicknessFor(modes.boxMode),
   }
 }
@@ -633,6 +684,8 @@ export function validateOpenGridOrganizerBoxParameters(
       configuration.minHoleDiameter,
       configuration.maxHoleDiameter,
     ],
+    ['holeWidth', configuration.minHoleWidth, configuration.maxHoleWidth],
+    ['holeHeight', configuration.minHoleHeight, configuration.maxHoleHeight],
     ['holeDepth', configuration.minHoleDepth, configuration.maxHoleDepth],
     [
       'bottomThickness',
@@ -665,6 +718,17 @@ export function validateOpenGridOrganizerBoxParameters(
     ) > VALIDATION_TOLERANCE
   ) {
     issues.push(issue('stackingClearanceHeight'))
+  }
+
+  if (
+    !isFiniteNumber(value.holeCornerRadius) ||
+    value.holeCornerRadius < configuration.minHoleCornerRadius ||
+    (isFiniteNumber(value.holeWidth) &&
+      isFiniteNumber(value.holeHeight) &&
+      value.holeCornerRadius - VALIDATION_TOLERANCE >
+        Math.min(value.holeWidth, value.holeHeight) / 2)
+  ) {
+    issues.push(issue('holeCornerRadius'))
   }
 
   if (!isCornerSeatMode(value.cornerSeatMode)) {
@@ -729,12 +793,20 @@ function numberToken(value: number): string {
 function organizerBoxFileStem(
   parameters: OpenGridOrganizerBoxParameters,
 ): string {
+  const shapeToken =
+    parameters.holeShape === 'rectangle'
+      ? `rectangle-w${numberToken(parameters.holeWidth)}-h${numberToken(parameters.holeHeight)}-r${numberToken(parameters.holeCornerRadius)}`
+      : parameters.holeShape === 'ellipse'
+        ? `ellipse-w${numberToken(parameters.holeWidth)}-h${numberToken(parameters.holeHeight)}`
+        : parameters.holeShape
   const tokens = [
     'opengrid-organizer-box',
     `${parameters.holeCountX}x${parameters.holeCountY}`,
-    parameters.holeShape,
+    shapeToken,
     `sm-${parameters.holeSpacingMode}`,
-    `d${numberToken(parameters.holeDiameter)}`,
+    parameters.holeShape === 'rectangle' || parameters.holeShape === 'ellipse'
+      ? null
+      : `d${numberToken(parameters.holeDiameter)}`,
     `sx${numberToken(parameters.holeSpacingX)}`,
     `sy${numberToken(parameters.holeSpacingY)}`,
     `h${numberToken(parameters.holeDepth)}`,
@@ -742,7 +814,7 @@ function organizerBoxFileStem(
     `b${numberToken(parameters.bottomThickness)}`,
     `seats-${parameters.cornerSeatMode}`,
     `body-${parameters.boxMode}`,
-  ]
+  ].filter((token): token is string => token !== null)
   if (parameters.boxMode === 'stackable') {
     tokens.push(`z${numberToken(parameters.stackingClearanceHeight)}`)
   }

@@ -62,7 +62,7 @@ test('OpenConnect organizer is Wall-only and starts from the canonical snapshot'
     '28',
   )
   await expect(
-    page.getByRole('textbox', { name: '底部加厚（Z）' }),
+    page.getByRole('textbox', { name: '腔體底部厚度（Z）' }),
   ).toHaveValue('1')
   await expect(
     page.getByRole('textbox', { name: '孔洞至外緣厚度（X/Y）' }),
@@ -95,7 +95,7 @@ test('the default circular matrix stays exportable with an open bottom', async (
   const initialRevision = await viewport.getAttribute('data-model-revision')
   expect(initialRevision).toBeTruthy()
 
-  await page.getByRole('textbox', { name: '底部加厚（Z）' }).fill('0')
+  await page.getByRole('textbox', { name: '腔體底部厚度（Z）' }).fill('0')
   await expect(viewport).not.toHaveAttribute(
     'data-model-revision',
     initialRevision ?? '',
@@ -106,7 +106,7 @@ test('the default circular matrix stays exportable with an open bottom', async (
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled()
   await expect(page.getByRole('button', { name: '下載 STL' })).toBeEnabled()
   await expect(
-    page.getByRole('textbox', { name: '底部加厚（Z）' }),
+    page.getByRole('textbox', { name: '腔體底部厚度（Z）' }),
   ).toHaveValue('0')
 })
 
@@ -130,19 +130,27 @@ test('OpenConnect organizer edits, persists, resets, and exports one committed r
   ).toHaveValue('2.5')
 
   const shape = page.getByRole('combobox', { name: '孔形狀' })
-  await expect(shape.locator('option')).toHaveCount(5)
+  await expect(shape.locator('option')).toHaveCount(7)
   expect(
     await shape
       .locator('option')
       .evaluateAll((options) =>
         options.map((option) => option.getAttribute('value')),
       ),
-  ).toEqual(['circle', 'triangle', 'square', 'pentagon', 'hexagon'])
+  ).toEqual([
+    'circle',
+    'triangle',
+    'square',
+    'pentagon',
+    'hexagon',
+    'rectangle',
+    'ellipse',
+  ])
   for (const value of ['triangle', 'square', 'pentagon', 'hexagon'] as const) {
     await shape.selectOption(value)
     await expect(shape).toHaveValue(value)
   }
-  await page.getByRole('textbox', { name: '底部加厚（Z）' }).fill('0')
+  await page.getByRole('textbox', { name: '腔體底部厚度（Z）' }).fill('0')
   await page.getByRole('textbox', { name: '孔洞至外緣厚度（X/Y）' }).fill('4')
   await page.getByRole('slider', { name: /開口前傾角/ }).fill('30')
 
@@ -190,7 +198,7 @@ test('OpenConnect organizer edits, persists, resets, and exports one committed r
     '30',
   )
   await expect(
-    page.getByRole('textbox', { name: '底部加厚（Z）' }),
+    page.getByRole('textbox', { name: '腔體底部厚度（Z）' }),
   ).toHaveValue('0')
   await expect(
     page.getByRole('textbox', { name: '孔洞至外緣厚度（X/Y）' }),
@@ -200,4 +208,63 @@ test('OpenConnect organizer edits, persists, resets, and exports one committed r
     '15',
   )
   await waitForCadReady(page, 90_000)
+})
+
+test('rectangle and ellipse shapes swap the size fields and rename exports', async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(240_000)
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.goto('/zh-Hant/cad/opengrid-openconnect-organizer?system=wall')
+  await waitForCadReady(page, 90_000)
+
+  const shape = page.getByRole('combobox', { name: '孔形狀' })
+  const diameter = page.getByRole('textbox', { name: /孔直徑/ })
+  await expect(diameter).toBeVisible()
+
+  await shape.selectOption('rectangle')
+  await expect(diameter).toHaveCount(0)
+  const width = page.getByRole('textbox', { name: '孔寬（X）' })
+  const height = page.getByRole('textbox', { name: '孔高（Y）' })
+  const cornerRadius = page.getByRole('textbox', { name: '孔圓角半徑' })
+  await expect(width).toBeVisible()
+  await expect(height).toBeVisible()
+  await expect(cornerRadius).toBeVisible()
+  await expect(width).toHaveValue('20')
+  await expect(height).toHaveValue('20')
+  await expect(cornerRadius).toHaveValue('0')
+
+  await width.fill('30')
+  await height.fill('20')
+  await cornerRadius.fill('2')
+
+  const viewport = page.getByTestId('cad-viewport')
+  const initialRevision = await viewport.getAttribute('data-model-revision')
+  await expect(viewport).not.toHaveAttribute(
+    'data-model-revision',
+    initialRevision ?? '',
+    { timeout: 90_000 },
+  )
+  await waitForCadReady(page, 90_000)
+  await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下載 STEP' }).click()
+  const rectangleDownload = await downloadPromise
+  expect(rectangleDownload.suggestedFilename()).toContain(
+    'opengrid-openconnect-organizer-x2-y2-sm-linked-sx1-sy1-rectangle-w30-h20-r2-h28-b1-e1-a15.step',
+  )
+
+  await shape.selectOption('ellipse')
+  await expect(cornerRadius).toHaveCount(0)
+  await expect(width).toBeVisible()
+  await expect(height).toBeVisible()
+
+  const ellipseDownloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下載 STEP' }).click()
+  const ellipseDownload = await ellipseDownloadPromise
+  expect(ellipseDownload.suggestedFilename()).toContain(
+    'opengrid-openconnect-organizer-x2-y2-sm-linked-sx1-sy1-ellipse-w30-h20-h28-b1-e1-a15.step',
+  )
 })

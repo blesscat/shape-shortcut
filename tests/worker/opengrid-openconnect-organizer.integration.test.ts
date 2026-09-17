@@ -184,6 +184,188 @@ describe('OpenGrid OpenConnect organizer CAD kernel integration', () => {
     180_000,
   )
 
+  const newShapeCases: ReadonlyArray<
+    [OpenGridOpenConnectOrganizerShape, number, number]
+  > = [
+    ['rectangle', 0, 4],
+    ['rectangle', 2, 8],
+    ['rectangle', 10, 4],
+    ['ellipse', 0, 2],
+  ]
+  it.each(newShapeCases)(
+    'builds one exact %s blind cavity (r=%i) with %i side surface(s)',
+    async (holeShape, holeCornerRadius, sideCount) => {
+      const value = parameters({
+        holeCountX: 1,
+        holeCountY: 1,
+        holeShape,
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius,
+        holeDepth: 12,
+        bottomThickness: 3,
+        tiltAngle: 20,
+      })
+      const { shape, slot, quality } = await buildAndInspect(value)
+      try {
+        expect(measureVolume(shape)).toBeGreaterThan(0)
+        expect(quality).toMatchObject({
+          passed: true,
+          failures: [],
+          validBRep: true,
+          solidCount: 1,
+          cavityCount: 1,
+          cavitySideCounts: [sideCount],
+          cavityFloorCount: 1,
+          bottomThicknessValid: true,
+        })
+      } finally {
+        deleteShape(shape)
+        deleteShape(slot)
+      }
+    },
+    180_000,
+  )
+
+  it('builds a fully-round rectangle cavity when r reaches min(width, height) / 2', async () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'rectangle',
+      holeWidth: 20,
+      holeHeight: 20,
+      holeCornerRadius: 10,
+      holeDepth: 12,
+      bottomThickness: 3,
+      tiltAngle: 20,
+    })
+    const { shape, slot, quality } = await buildAndInspect(value)
+    try {
+      expect(quality).toMatchObject({
+        passed: true,
+        failures: [],
+        solidCount: 1,
+        cavityCount: 1,
+        cavitySideCounts: [1],
+        cavityFloorCount: 1,
+      })
+    } finally {
+      deleteShape(shape)
+      deleteShape(slot)
+    }
+  }, 180_000)
+
+  it('builds a tall stadium rectangle cavity when r reaches holeWidth / 2', async () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'rectangle',
+      holeWidth: 20,
+      holeHeight: 30,
+      holeCornerRadius: 10,
+      holeDepth: 12,
+      bottomThickness: 3,
+      tiltAngle: 20,
+    })
+    const { shape, slot, quality } = await buildAndInspect(value)
+    try {
+      expect(measureVolume(shape)).toBeGreaterThan(0)
+      expect(quality).toMatchObject({
+        passed: true,
+        failures: [],
+        validBRep: true,
+        solidCount: 1,
+        cavityCount: 1,
+        cavitySideCounts: [4],
+        cavityFloorCount: 1,
+        bottomThicknessValid: true,
+      })
+    } finally {
+      deleteShape(shape)
+      deleteShape(slot)
+    }
+  }, 180_000)
+
+  it('builds a through-open ellipse when bottom thickness is zero', async () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'ellipse',
+      holeWidth: 30,
+      holeHeight: 20,
+      holeDepth: 12,
+      bottomThickness: 0,
+      tiltAngle: 0,
+    })
+    const { shape, slot, quality } = await buildAndInspect(value)
+    try {
+      expect(quality).toMatchObject({
+        passed: true,
+        failures: [],
+        cavityCount: 1,
+        cavitySideCounts: [2],
+        cavityFloorCount: 0,
+        bottomThicknessValid: true,
+      })
+    } finally {
+      deleteShape(shape)
+      deleteShape(slot)
+    }
+  }, 180_000)
+
+  it('keeps an extreme-aspect ellipse a single valid solid', async () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'ellipse',
+      holeWidth: 300,
+      holeHeight: 1,
+      holeDepth: 2,
+      bottomThickness: 1,
+      tiltAngle: 0,
+    })
+    const { shape, slot, quality } = await buildAndInspect(value)
+    try {
+      expect(quality).toMatchObject({
+        passed: true,
+        failures: [],
+        validBRep: true,
+        solidCount: 1,
+        cavityCount: 1,
+      })
+    } finally {
+      deleteShape(shape)
+      deleteShape(slot)
+    }
+  }, 180_000)
+
+  it('keeps a tall extreme-aspect ellipse a single valid solid', async () => {
+    const value = parameters({
+      holeCountX: 1,
+      holeCountY: 1,
+      holeShape: 'ellipse',
+      holeWidth: 1,
+      holeHeight: 300,
+      holeDepth: 2,
+      bottomThickness: 1,
+      tiltAngle: 0,
+    })
+    const { shape, slot, quality } = await buildAndInspect(value)
+    try {
+      expect(quality).toMatchObject({
+        passed: true,
+        failures: [],
+        validBRep: true,
+        solidCount: 1,
+        cavityCount: 1,
+        cavitySideCounts: [2],
+      })
+    } finally {
+      deleteShape(shape)
+      deleteShape(slot)
+    }
+  }, 180_000)
+
   it('keeps the exact default circular matrix valid when the bottom is open', async () => {
     const value = parameters({ bottomThickness: 0 })
     const { shape, slot, quality } = await buildAndInspect(value)

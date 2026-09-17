@@ -35,6 +35,9 @@ describe('OpenGrid OpenConnect organizer contract', () => {
       holeSpacingY: 1,
       holeShape: 'circle',
       holeDiameter: 20,
+      holeWidth: 20,
+      holeHeight: 20,
+      holeCornerRadius: 0,
       holeDepth: 28,
       bottomThickness: 1,
       edgeThickness: 1,
@@ -46,31 +49,133 @@ describe('OpenGrid OpenConnect organizer contract', () => {
     })
   })
 
-  it.each(['circle', 'triangle', 'square', 'pentagon', 'hexagon'] as const)(
-    'accepts the %s cavity shape',
-    (holeShape) => {
-      expect(
-        validateOpenGridOpenConnectOrganizerParameters(
-          parameters({ holeShape }),
-        ).valid,
-      ).toBe(true)
-    },
-  )
+  it.each([
+    'circle',
+    'triangle',
+    'square',
+    'pentagon',
+    'hexagon',
+    'rectangle',
+    'ellipse',
+  ] as const)('accepts the %s cavity shape', (holeShape) => {
+    expect(
+      validateOpenGridOpenConnectOrganizerParameters(parameters({ holeShape }))
+        .valid,
+    ).toBe(true)
+  })
 
   it('uses an inscribed diameter and fixed polygon orientation', () => {
     const square = openGridOpenConnectOrganizerCavityEnvelopeFor({
       shape: 'square',
       diameter: 10,
+      width: 20,
+      height: 20,
     })
     const hexagon = openGridOpenConnectOrganizerCavityEnvelopeFor({
       shape: 'hexagon',
       diameter: 10,
+      width: 20,
+      height: 20,
     })
 
     expect(square.x).toBeCloseTo(10, 8)
     expect(square.y).toBeCloseTo(10, 8)
     expect(hexagon.x).toBeGreaterThan(10)
     expect(hexagon.y).toBeCloseTo(10, 8)
+  })
+
+  it('uses the requested width and height as the exact rectangle/ellipse envelope', () => {
+    for (const holeShape of ['rectangle', 'ellipse'] as const) {
+      const envelope = openGridOpenConnectOrganizerCavityEnvelopeFor({
+        shape: holeShape,
+        diameter: 20,
+        width: 30,
+        height: 20,
+      })
+
+      expect(envelope.x).toBe(30)
+      expect(envelope.y).toBe(20)
+    }
+  })
+
+  it('keeps the corner radius inside the rectangle envelope', () => {
+    const layout = openGridOpenConnectOrganizerLayoutFor(
+      parameters({
+        holeCountX: 1,
+        holeCountY: 1,
+        holeShape: 'rectangle',
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius: 2,
+        holeSpacingMode: 'independent',
+        holeSpacingX: 2,
+        holeSpacingY: 4,
+      }),
+    )
+
+    expect(layout.cavityEnvelope).toEqual({ x: 30, y: 20 })
+    expect(layout.requiredSpan).toEqual({ x: 30, y: 20 })
+    expect(layout.cavityPitch).toEqual([32, 24])
+  })
+
+  it('rejects corner radii outside 0..min(width, height) / 2 for every shape', () => {
+    const invalid = [
+      {
+        value: parameters({ holeShape: 'rectangle', holeCornerRadius: -0.5 }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'rectangle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 10.5,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'circle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 11,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'ellipse',
+          holeCornerRadius: Number.NaN,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({ holeShape: 'rectangle', holeWidth: 0.5 }),
+        field: 'holeWidth',
+      },
+      {
+        value: parameters({ holeShape: 'rectangle', holeHeight: 301 }),
+        field: 'holeHeight',
+      },
+    ] as const
+
+    for (const { value, field } of invalid) {
+      const validation = validateOpenGridOpenConnectOrganizerParameters(value)
+      expect(validation.valid).toBe(false)
+      if (!validation.valid) {
+        expect(validation.issues.map(({ field }) => field)).toContain(field)
+      }
+    }
+    expect(
+      validateOpenGridOpenConnectOrganizerParameters(
+        parameters({
+          holeShape: 'rectangle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 10,
+        }),
+      ).valid,
+    ).toBe(true)
   })
 
   it('centers cavities using outer-envelope spacing', () => {
@@ -293,7 +398,9 @@ describe('OpenGrid OpenConnect organizer contract', () => {
         holeSpacingMode: 'independent',
         holeSpacingX: 300,
         holeSpacingY: 300,
-        holeDiameter: 300,
+        holeShape: 'rectangle',
+        holeWidth: 300,
+        holeHeight: 300,
       }),
     )
 
@@ -369,5 +476,29 @@ describe('OpenGrid OpenConnect organizer contract', () => {
     }
     expect(step.endsWith('.step')).toBe(true)
     expect(stl).toBe(step.replace(/\.step$/, '.stl'))
+  })
+
+  it('names exports with shape-specific width/height/radius tokens', () => {
+    const rectangle = openGridOpenConnectOrganizerFileName(
+      parameters({
+        holeShape: 'rectangle',
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius: 2.5,
+      }),
+    )
+    const ellipse = openGridOpenConnectOrganizerFileName(
+      parameters({
+        holeShape: 'ellipse',
+        holeWidth: 30,
+        holeHeight: 20,
+      }),
+    )
+
+    expect(rectangle).toContain('rectangle-w30-h20-r2.5')
+    expect(rectangle).not.toMatch(/(^|-)d\d/)
+    expect(ellipse).toContain('ellipse-w30-h20')
+    expect(ellipse).not.toMatch(/(^|-)d\d/)
+    expect(rectangle).toContain('h28')
   })
 })

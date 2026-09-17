@@ -10,7 +10,7 @@ import {
   type OpenGridOrganizerBoxDetachableSocketPose,
   type OpenGridOrganizerBoxParameters,
 } from '../../../cad-contract/units'
-import { makeBox, measureVolume, type Shape3D } from 'replicad'
+import { getOC, makeBox, measureVolume, type Shape3D } from 'replicad'
 import {
   countSolids,
   isBRepValid,
@@ -38,6 +38,11 @@ function boundsOf(shape: Shape3D): ModelBounds {
   } finally {
     boundingBox.delete()
   }
+}
+
+function clearTriangulation(shape: Shape3D): void {
+  const oc = getOC()
+  oc.BRepTools.Clean(shape.wrapped, true)
 }
 
 function boundsMatch(actual: ModelBounds, expected: ModelBounds): boolean {
@@ -154,14 +159,38 @@ function hasIntegratedSeatChamferRecordFor(
   })
 }
 
-function polygonSideCount(
+type CavitySideExpectation = {
+  surfaces: readonly string[]
+  count: number
+}
+
+function cavitySideExpectationFor(
   shape: OpenGridOrganizerBoxParameters['holeShape'],
-): number {
-  if (shape === 'circle') return 1
-  if (shape === 'triangle') return 3
-  if (shape === 'square') return 4
-  if (shape === 'pentagon') return 5
-  return 6
+  holeWidth: number,
+  holeHeight: number,
+  holeCornerRadius: number,
+): CavitySideExpectation {
+  if (shape === 'circle') return { surfaces: ['CYLINDRE'], count: 1 }
+  if (shape === 'ellipse') {
+    return { surfaces: ['EXTRUSION_SURFACE'], count: 2 }
+  }
+  if (shape === 'rectangle') {
+    if (holeCornerRadius <= 0) return { surfaces: ['PLANE'], count: 4 }
+    const straightX = holeCornerRadius < holeWidth / 2
+    const straightY = holeCornerRadius < holeHeight / 2
+    if (!straightX && !straightY) return { surfaces: ['CYLINDRE'], count: 1 }
+    if (!straightX || !straightY) {
+      return { surfaces: ['PLANE', 'CYLINDRE'], count: 4 }
+    }
+    return { surfaces: ['PLANE', 'CYLINDRE'], count: 8 }
+  }
+  const polygonSideCounts = {
+    triangle: 3,
+    square: 4,
+    pentagon: 5,
+    hexagon: 6,
+  } as const
+  return { surfaces: ['PLANE'], count: polygonSideCounts[shape] }
 }
 
 function aggregateBounds(records: readonly FaceRecord[]): ModelBounds {
@@ -185,13 +214,16 @@ function assertCavityFaceGeometry(
 ): void {
   const layout = openGridOrganizerBoxLayoutFor(parameters)
   const floorZ = layout.bodyHeight - parameters.holeDepth
-  const expectedSideCount = polygonSideCount(parameters.holeShape)
+  const sideExpectation = cavitySideExpectationFor(
+    parameters.holeShape,
+    parameters.holeWidth,
+    parameters.holeHeight,
+    parameters.holeCornerRadius,
+  )
   const cavityFaceRecords = faceRecordsFor(shape).filter((record) => {
     const zSpan = record.max[2] - record.min[2]
-    const expectedSurface =
-      parameters.holeShape === 'circle' ? 'CYLINDRE' : 'PLANE'
     return (
-      record.surfaceType === expectedSurface &&
+      sideExpectation.surfaces.includes(record.surfaceType) &&
       record.min[2] >= floorZ - 0.12 &&
       record.max[2] >= layout.bodyHeight - 0.12 &&
       zSpan >= parameters.holeDepth - 0.12
@@ -209,7 +241,7 @@ function assertCavityFaceGeometry(
         Math.abs(recordCenterY - centerY) <= envelope.y / 2 + 0.25
       )
     })
-    if (records.length !== expectedSideCount) {
+    if (records.length !== sideExpectation.count) {
       throw new Error(
         `OPENGRID_ORGANIZER_BOX_QUALITY_INVALID:cavity-face-count-${index}`,
       )
@@ -525,6 +557,7 @@ export function assertOpenGridOrganizerBoxGeometry(
   detachableCornerSeatHolderReference?: Shape3D,
   detachableCornerSeatReference?: Shape3D,
 ): void {
+  clearTriangulation(shape)
   const actualBounds = boundsOf(shape)
   const expectedBounds = boundsForOpenGridOrganizerBox(parameters)
   if (!boundsMatch(actualBounds, expectedBounds)) {

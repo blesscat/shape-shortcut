@@ -32,6 +32,9 @@
     'holeSpacingX',
     'holeSpacingY',
     'holeDiameter',
+    'holeWidth',
+    'holeHeight',
+    'holeCornerRadius',
     'holeDepth',
     'bottomThickness',
     'edgeThickness',
@@ -64,6 +67,8 @@
     { value: 'square', labelKey: 'panel.organizerBox.shape.square' },
     { value: 'pentagon', labelKey: 'panel.organizerBox.shape.pentagon' },
     { value: 'hexagon', labelKey: 'panel.organizerBox.shape.hexagon' },
+    { value: 'rectangle', labelKey: 'panel.organizerBox.shape.rectangle' },
+    { value: 'ellipse', labelKey: 'panel.organizerBox.shape.ellipse' },
   ]
 
   function fieldFor(
@@ -104,6 +109,19 @@
       : ['holeSpacingX', 'holeSpacingY']
   }
 
+  function sizeFieldKeysForRawParameters(): ReadonlyArray<
+    (typeof numericKeys)[number]
+  > {
+    const shape = shapeForRawParameters()
+    if (shape === 'rectangle') {
+      return ['holeWidth', 'holeHeight', 'holeCornerRadius']
+    }
+    if (shape === 'ellipse') {
+      return ['holeWidth', 'holeHeight']
+    }
+    return ['holeDiameter']
+  }
+
   function layoutForRawParameters() {
     const numberFor = (key: string, fallback: number): number =>
       Number(rawParameters[key] ?? String(fallback))
@@ -133,6 +151,18 @@
       holeDiameter: numberFor(
         'holeDiameter',
         OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.holeDiameter,
+      ),
+      holeWidth: numberFor(
+        'holeWidth',
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.holeWidth,
+      ),
+      holeHeight: numberFor(
+        'holeHeight',
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.holeHeight,
+      ),
+      holeCornerRadius: numberFor(
+        'holeCornerRadius',
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.holeCornerRadius,
       ),
       holeDepth: numberFor(
         'holeDepth',
@@ -324,7 +354,8 @@
     {translate(locale, 'parameter.organizerThicknessHelp')}
   </p>
 
-  {#each [fieldFor('holeDiameter'), fieldFor('holeDepth'), fieldFor('bottomThickness'), fieldFor('edgeThickness')] as field (field.key)}
+  {#each [...sizeFieldKeysForRawParameters(), 'holeDepth', 'bottomThickness', 'edgeThickness'] as fieldKey (fieldKey)}
+    {@const field = fieldFor(fieldKey)}
     {@const value = valueFor(field)}
     <ParameterField
       {locale}

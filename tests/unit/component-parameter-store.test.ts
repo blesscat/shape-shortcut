@@ -5,6 +5,7 @@ import {
 } from '../../src/features/cad/parameters'
 import {
   OPENGRID_CONFIGURATION,
+  OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -130,6 +131,40 @@ describe('component parameter store', () => {
     store.dispose()
   })
 
+  it.each(['holeWidth', 'holeHeight', 'holeCornerRadius'] as const)(
+    'falls back to defaults when a persisted organizer-box snapshot misses %s',
+    (missingField) => {
+      const { [missingField]: _missing, ...withoutNewField } =
+        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
+      const storage = createMemoryStorage(
+        createPayload({ 'opengrid-organizer-box': withoutNewField }),
+      )
+      const store = createComponentParameterStore({ storage })
+
+      expect(store.get('opengrid-organizer-box')).toEqual(
+        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+      )
+      store.dispose()
+    },
+  )
+
+  it.each(['holeWidth', 'holeHeight', 'holeCornerRadius'] as const)(
+    'falls back to defaults when a persisted OpenConnect organizer snapshot misses %s',
+    (missingField) => {
+      const { [missingField]: _missing, ...withoutNewField } =
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS
+      const storage = createMemoryStorage(
+        createPayload({ 'opengrid-openconnect-organizer': withoutNewField }),
+      )
+      const store = createComponentParameterStore({ storage })
+
+      expect(store.get('opengrid-openconnect-organizer')).toEqual(
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
+      )
+      store.dispose()
+    },
+  )
+
   it.each([
     ['corner-seat', 'integrated', 'normal', 2],
     ['detachable-corner-seat', 'detachable-corner-seat', 'normal', 2],
@@ -142,6 +177,9 @@ describe('component parameter store', () => {
         boxMode: _boxMode,
         stackingClearanceHeight: _stackingClearanceHeight,
         wallThickness: _wallThickness,
+        holeWidth: _holeWidth,
+        holeHeight: _holeHeight,
+        holeCornerRadius: _holeCornerRadius,
         ...legacyDefaults
       } = OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
       const storage = createMemoryStorage(
@@ -155,7 +193,7 @@ describe('component parameter store', () => {
       const store = createComponentParameterStore({ storage })
 
       expect(store.get('opengrid-organizer-box')).toEqual({
-        ...legacyDefaults,
+        ...OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
         cornerSeatMode,
         boxMode,
         stackingClearanceHeight: 3.5,

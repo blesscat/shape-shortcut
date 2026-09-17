@@ -1,7 +1,13 @@
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 
 export type OpenGridOpenConnectOrganizerShape =
-  'circle' | 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  | 'circle'
+  | 'triangle'
+  | 'square'
+  | 'pentagon'
+  | 'hexagon'
+  | 'rectangle'
+  | 'ellipse'
 
 export type OpenGridOpenConnectOrganizerSpacingMode = 'linked' | 'independent'
 
@@ -13,6 +19,9 @@ export type OpenGridOpenConnectOrganizerParameterKey =
   | 'holeSpacingY'
   | 'holeShape'
   | 'holeDiameter'
+  | 'holeWidth'
+  | 'holeHeight'
+  | 'holeCornerRadius'
   | 'holeDepth'
   | 'bottomThickness'
   | 'edgeThickness'
@@ -26,6 +35,9 @@ export type OpenGridOpenConnectOrganizerParameters = {
   holeSpacingY: number
   holeShape: OpenGridOpenConnectOrganizerShape
   holeDiameter: number
+  holeWidth: number
+  holeHeight: number
+  holeCornerRadius: number
   holeDepth: number
   bottomThickness: number
   edgeThickness: number
@@ -71,6 +83,8 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_SHAPES = [
   'square',
   'pentagon',
   'hexagon',
+  'rectangle',
+  'ellipse',
 ] as const satisfies readonly OpenGridOpenConnectOrganizerShape[]
 
 export const OPENGRID_OPENCONNECT_ORGANIZER_SPACING_MODES = [
@@ -92,6 +106,11 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION = {
   maxHoleSpacing: 300,
   minHoleDiameter: 1,
   maxHoleDiameter: 300,
+  minHoleWidth: 1,
+  maxHoleWidth: 300,
+  minHoleHeight: 1,
+  maxHoleHeight: 300,
+  minHoleCornerRadius: 0,
   minHoleDepth: 1,
   maxHoleDepth: 500,
   minBottomThickness: 0,
@@ -107,6 +126,9 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION = {
   defaultHoleSpacing: 1,
   defaultHoleShape: 'circle' as OpenGridOpenConnectOrganizerShape,
   defaultHoleDiameter: 20,
+  defaultHoleWidth: 20,
+  defaultHoleHeight: 20,
+  defaultHoleCornerRadius: 0,
   defaultHoleDepth: 28,
   defaultBottomThickness: 1,
   defaultEdgeThickness: 1,
@@ -126,6 +148,10 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConn
     holeShape: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleShape,
     holeDiameter:
       OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleDiameter,
+    holeWidth: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleWidth,
+    holeHeight: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleHeight,
+    holeCornerRadius:
+      OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleCornerRadius,
     holeDepth: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleDepth,
     bottomThickness:
       OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultBottomThickness,
@@ -142,6 +168,9 @@ const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
   'holeSpacingY',
   'holeShape',
   'holeDiameter',
+  'holeWidth',
+  'holeHeight',
+  'holeCornerRadius',
   'holeDepth',
   'bottomThickness',
   'edgeThickness',
@@ -149,7 +178,10 @@ const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
 ]
 
 const POLYGON_SIDES: Record<
-  Exclude<OpenGridOpenConnectOrganizerShape, 'circle'>,
+  Exclude<
+    OpenGridOpenConnectOrganizerShape,
+    'circle' | 'rectangle' | 'ellipse'
+  >,
   number
 > = {
   triangle: 3,
@@ -229,8 +261,13 @@ function issue(
   return { field, messageId: 'validation.invalid' }
 }
 
+export type OpenGridOpenConnectOrganizerPolygonShape = Exclude<
+  OpenGridOpenConnectOrganizerShape,
+  'circle' | 'rectangle' | 'ellipse'
+>
+
 export function openGridOpenConnectOrganizerPolygonPointsFor(
-  shape: Exclude<OpenGridOpenConnectOrganizerShape, 'circle'>,
+  shape: OpenGridOpenConnectOrganizerPolygonShape,
   diameter: number,
 ): OpenGridOpenConnectOrganizerPoint2D[] {
   const sides = POLYGON_SIDES[shape]
@@ -245,9 +282,19 @@ export function openGridOpenConnectOrganizerPolygonPointsFor(
 export function openGridOpenConnectOrganizerCavityEnvelopeFor(input: {
   shape: OpenGridOpenConnectOrganizerShape
   diameter: number
+  width: number
+  height: number
 }): OpenGridOpenConnectOrganizerCavityEnvelope {
-  if (!isShape(input.shape) || !isFiniteNumber(input.diameter)) {
+  if (
+    !isShape(input.shape) ||
+    !isFiniteNumber(input.diameter) ||
+    !isFiniteNumber(input.width) ||
+    !isFiniteNumber(input.height)
+  ) {
     throw new Error('OPENGRID_OPENCONNECT_ORGANIZER_CAVITY_INVALID')
+  }
+  if (input.shape === 'rectangle' || input.shape === 'ellipse') {
+    return { x: input.width, y: input.height }
   }
   if (input.shape === 'circle') {
     return { x: input.diameter, y: input.diameter }
@@ -282,6 +329,8 @@ function layoutForUnchecked(
   const cavityEnvelope = openGridOpenConnectOrganizerCavityEnvelopeFor({
     shape: parameters.holeShape,
     diameter: parameters.holeDiameter,
+    width: parameters.holeWidth,
+    height: parameters.holeHeight,
   })
   const pitchX = cavityEnvelope.x + parameters.holeSpacingX
   const pitchY = cavityEnvelope.y + parameters.holeSpacingY
@@ -588,6 +637,27 @@ export function validateOpenGridOpenConnectOrganizerParameters(
   ) {
     issues.push(issue('holeDiameter'))
   }
+  for (const field of ['holeWidth', 'holeHeight'] as const) {
+    if (
+      !isFiniteInRange(
+        value[field],
+        configuration.minHoleWidth,
+        configuration.maxHoleWidth,
+      )
+    ) {
+      issues.push(issue(field))
+    }
+  }
+  if (
+    !isFiniteNumber(value.holeCornerRadius) ||
+    value.holeCornerRadius < configuration.minHoleCornerRadius ||
+    (isFiniteNumber(value.holeWidth) &&
+      isFiniteNumber(value.holeHeight) &&
+      value.holeCornerRadius - VALIDATION_TOLERANCE >
+        Math.min(value.holeWidth, value.holeHeight) / 2)
+  ) {
+    issues.push(issue('holeCornerRadius'))
+  }
   if (
     !isFiniteInRange(
       value.holeDepth,
@@ -642,6 +712,12 @@ export function isOpenGridOpenConnectOrganizerParameters(
 }
 
 function fileStem(parameters: OpenGridOpenConnectOrganizerParameters): string {
+  const shapeToken =
+    parameters.holeShape === 'rectangle'
+      ? `rectangle-w${parameters.holeWidth}-h${parameters.holeHeight}-r${parameters.holeCornerRadius}`
+      : parameters.holeShape === 'ellipse'
+        ? `ellipse-w${parameters.holeWidth}-h${parameters.holeHeight}`
+        : parameters.holeShape
   return [
     'opengrid-openconnect-organizer',
     `x${parameters.holeCountX}`,
@@ -649,13 +725,17 @@ function fileStem(parameters: OpenGridOpenConnectOrganizerParameters): string {
     `sm-${parameters.holeSpacingMode}`,
     `sx${parameters.holeSpacingX}`,
     `sy${parameters.holeSpacingY}`,
-    parameters.holeShape,
-    `d${parameters.holeDiameter}`,
+    shapeToken,
+    parameters.holeShape === 'rectangle' || parameters.holeShape === 'ellipse'
+      ? null
+      : `d${parameters.holeDiameter}`,
     `h${parameters.holeDepth}`,
     `b${parameters.bottomThickness}`,
     `e${parameters.edgeThickness}`,
     `a${parameters.tiltAngle}`,
-  ].join('-')
+  ]
+    .filter((token): token is string => token !== null)
+    .join('-')
 }
 
 export function openGridOpenConnectOrganizerFileName(

@@ -50,6 +50,9 @@ function legacyParameters(
     boxMode: _boxMode,
     stackingClearanceHeight: _stackingClearanceHeight,
     wallThickness: _wallThickness,
+    holeWidth: _holeWidth,
+    holeHeight: _holeHeight,
+    holeCornerRadius: _holeCornerRadius,
     ...legacy
   } = OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS
   return { ...legacy, bottomInterfaceMode }
@@ -70,6 +73,9 @@ describe('OpenGrid organizer-box contract', () => {
     expect(value.cornerSeatMode).toBe('detachable-corner-seat')
     expect(value.boxMode).toBe('normal')
     expect(value.stackingClearanceHeight).toBe(3.5)
+    expect(value.holeWidth).toBe(20)
+    expect(value.holeHeight).toBe(20)
+    expect(value.holeCornerRadius).toBe(0)
   })
 
   it.each([
@@ -149,16 +155,128 @@ describe('OpenGrid organizer-box contract', () => {
     const square = openGridOrganizerBoxCavityEnvelopeFor({
       shape: 'square',
       diameter: 10,
+      width: 20,
+      height: 20,
     })
     const hexagon = openGridOrganizerBoxCavityEnvelopeFor({
       shape: 'hexagon',
       diameter: 10,
+      width: 20,
+      height: 20,
     })
 
     expect(square.x).toBeCloseTo(10, 8)
     expect(square.y).toBeCloseTo(10, 8)
     expect(hexagon.x).toBeGreaterThan(10)
     expect(hexagon.y).toBeCloseTo(10, 8)
+  })
+
+  it.each(['rectangle', 'ellipse'] as const)(
+    'sizes the %s cavity by exact width and height',
+    (holeShape) => {
+      const value = parameters({
+        holeCountX: 2,
+        holeCountY: 1,
+        holeShape,
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius: holeShape === 'rectangle' ? 2 : 0,
+        holeSpacingMode: 'independent',
+        holeSpacingX: 2,
+        holeSpacingY: 4,
+      })
+
+      expect(validateOpenGridOrganizerBoxParameters(value).valid).toBe(true)
+      const layout = openGridOrganizerBoxLayoutFor(value)
+      expect(layout.cavityEnvelope).toEqual({ x: 30, y: 20 })
+      expect(layout.cavityPitch).toEqual([32, 24])
+      expect(layout.requiredSpan).toEqual({ x: 62, y: 20 })
+    },
+  )
+
+  it('rejects corner radii outside 0..min(width, height) / 2', () => {
+    const invalid = [
+      {
+        value: parameters({ holeShape: 'rectangle', holeCornerRadius: -1 }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'rectangle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 10.5,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'circle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 11,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'ellipse',
+          holeWidth: 300,
+          holeHeight: 2,
+          holeCornerRadius: 2,
+        }),
+        field: 'holeCornerRadius',
+      },
+      {
+        value: parameters({
+          holeShape: 'rectangle',
+          holeCornerRadius: Number.NaN,
+        }),
+        field: 'holeCornerRadius',
+      },
+    ] as const
+
+    for (const { value, field } of invalid) {
+      const validation = validateOpenGridOrganizerBoxParameters(value)
+      expect(validation.valid).toBe(false)
+      if (!validation.valid) {
+        expect(validation.issues.map(({ field }) => field)).toContain(field)
+      }
+    }
+    expect(
+      validateOpenGridOrganizerBoxParameters(
+        parameters({
+          holeShape: 'rectangle',
+          holeWidth: 30,
+          holeHeight: 20,
+          holeCornerRadius: 10,
+        }),
+      ).valid,
+    ).toBe(true)
+  })
+
+  it('composes the new shapes with body and seat modes', () => {
+    for (const holeShape of ['rectangle', 'ellipse'] as const) {
+      for (const boxMode of ['normal', 'stackable'] as const) {
+        for (const cornerSeatMode of [
+          'none',
+          'detachable-corner-seat',
+          'integrated',
+        ] as const) {
+          const value = parameters({
+            holeShape,
+            holeWidth: 30,
+            holeHeight: 20,
+            holeCornerRadius: holeShape === 'rectangle' ? 2 : 0,
+            boxMode,
+            cornerSeatMode,
+            wallThickness: boxMode === 'stackable' ? 3 : 2,
+          })
+
+          expect(validateOpenGridOrganizerBoxParameters(value).valid).toBe(true)
+        }
+      }
+    }
   })
 
   it('rejects unequal linked spacing and unsupported shapes', () => {
@@ -183,7 +301,9 @@ describe('OpenGrid organizer-box contract', () => {
         holeSpacingX: 300,
         holeSpacingY: 300,
         holeSpacingMode: 'independent',
-        holeDiameter: 300,
+        holeShape: 'rectangle',
+        holeWidth: 300,
+        holeHeight: 300,
       }),
     )
 
@@ -236,6 +356,23 @@ describe('OpenGrid organizer-box contract', () => {
     expect(step).toContain('z4')
     expect(step.endsWith('.step')).toBe(true)
     expect(stl.endsWith('.stl')).toBe(true)
+    expect(
+      openGridOrganizerBoxFileName({
+        ...value,
+        holeShape: 'rectangle',
+        holeWidth: 30,
+        holeHeight: 20,
+        holeCornerRadius: 2,
+      }),
+    ).toMatch(/rectangle-w30-h20-r2/)
+    expect(
+      openGridOrganizerBoxFileName({
+        ...value,
+        holeShape: 'ellipse',
+        holeWidth: 30,
+        holeHeight: 20,
+      }),
+    ).toMatch(/ellipse-w30-h20/)
     expect(
       boundsForOpenGridOrganizerBox({
         ...value,
