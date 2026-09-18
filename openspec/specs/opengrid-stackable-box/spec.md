@@ -123,7 +123,7 @@ unsupported values after legacy alias migration.
 
 ### Requirement: Identical box-to-box stacking interface
 
-Boxes generated with `topRimMode='stacking-rail'` and `bottomMode='stacking'` MUST have the same box-to-box interface and MUST be usable as either the lower or upper box without an upper/lower variant or mode switch. The stacking guide MUST use the reference-style independent stepped top rail fused into the nominal 1.2 mm side wall and continuous box rim, with the reference 3.75 mm external corner radius and compact 0.8 mm inner rail corner radius. The top rail MUST remain within the derived external envelope and MUST use the fixed reference sequence of a 1.75 mm 45° inner lead-in, 1.2 mm vertical sliding-block segment, 0.8 mm 45° transition, 1.8 mm vertical segment, and 2.0 mm 45° return to the side wall. It MUST mate with the fixed complementary bottom guide profile based on a 0.8 mm bed-facing foot chamfer, a 1.8 mm vertical support segment, and a 1.2 mm 45° guide transition. Each internal cell-seam relief MUST continue the fixed 45° transition to a single central apex and MUST NOT leave a horizontal closure land at the 3.8 mm floor datum. The bottom guide MUST follow the reference cell-boundary and internal-seam relief pattern rather than a separate suspended perimeter plate or an isolated hole-only interface. The top rail and bottom guide MUST provide complementary guide faces, a positive bearing land, and a dedicated sliding clearance of 0.25 mm. The bottom stacking surface MUST NOT rely on permanently protruding positioning posts, a thin unsupported perimeter lip, or a continuous recessed groove around the outer perimeter. Every internal relief MUST end at the lower surface of the supported floor and MUST leave the box interior floor continuous. A valid enabled side opening MAY interrupt only the selected straight wall span from its sill to the external top-edge datum, including the corresponding selected top-rail span; it MUST NOT remove a corner guide land, bottom guide, supported floor, or any unselected rail/interface span.
+Boxes generated with `topRimMode='stacking-rail'` and `bottomMode='stacking'` MUST have the same box-to-box interface and MUST be usable as either the lower or upper box without an upper/lower variant or mode switch. The stacking guide MUST use the reference-style independent stepped top rail fused into the nominal 1.2 mm side wall and continuous box rim, with the reference 3.75 mm external corner radius and concentric inner rail corner arcs. The top rail MUST remain within the derived external envelope and MUST use the fixed reference sequence of a 1.75 mm inner lead-in, 1.2 mm vertical sliding-block segment, 0.8 mm 45° transition, 1.8 mm vertical segment, and 0.9 mm 45° return to the side wall, for a 6.45 mm total rail height. It MUST mate with the fixed complementary bottom guide profile based on a 0.8 mm bed-facing foot chamfer, a 1.8 mm vertical support segment, and a 1.2 mm 45° guide transition. The rail's inner guide faces (the 2.75 mm sliding-block segment, the 0.8 mm transition, the 1.95 mm vertical segment, and the 1.05 mm return) MUST stand 0.2 mm radially clear of the complementary bottom guide faces at every guide level, so the dedicated sliding clearance of 0.2 mm is realized on the printed part and is independent of the 0.15 mm OpenGrid footprint clearance. At the seated position the upper box's 45° guide transition MUST bear in surface contact on the rail's 45° return as the positive bearing land, and the seated position MUST be 0.2 mm lower than the sliding-block segment top. Each internal cell-seam relief MUST be a constant-width slot positioned on the nominal 28 mm grid independently of the footprint clearance, MUST run from the bed relief to the lower surface of the supported floor, and MUST leave the interior floor continuous. The bottom guide MUST follow the reference cell-boundary and internal-seam relief pattern rather than a separate suspended perimeter plate or an isolated hole-only interface. The bottom stacking surface MUST NOT rely on permanently protruding positioning posts, a thin unsupported perimeter lip, or a continuous recessed groove around the outer perimeter. Every internal relief MUST end at the lower surface of the supported floor and MUST leave the box interior floor continuous. A valid enabled side opening MAY interrupt only the selected straight wall span from its sill to the external top-edge datum, including the corresponding selected top-rail span; it MUST NOT remove a corner guide land, bottom guide, supported floor, or any unselected rail/interface span.
 
 Only `topRimMode='stacking-rail'` provides the upper stepped rail, and only `bottomMode='stacking'` provides the bottom guide. Combinations missing one of these interfaces MUST NOT claim the corresponding half of the same-model sliding mating: a `flat-top` box MUST NOT be described as accepting another box above, and a `thin-shell` or `none` bottom MUST NOT be described as sliding onto a rail below. A `flat-top` rim MUST end in the continuous 45° top chamfer without the stepped rail, and `thin-shell` and `none` bottoms MUST use the open constructions defined in the top-rim and bottom-structure requirement.
 
@@ -133,14 +133,15 @@ Only `topRimMode='stacking-rail'` provides the upper stepped rail, and only `bot
 - **THEN** the upper box's internal-seam relief MUST remain aligned with the lower box's integrated guide geometry
 - **AND** the two boxes MUST remain laterally guided without requiring different model types
 - **AND** the upper box MUST mate with the lower box's fused stepped top rail through the fixed bottom guide profile without stacking posts
+- **AND** every guide face pair MUST hold the 0.2 mm radial sliding clearance at the seated position
 - **AND** any enabled side opening MUST leave the corner and bottom guide interfaces valid for the same-model mating contract
 
 #### Scenario: Printable integrated guide interface
 
 - **WHEN** a `stacking-rail` + `stacking` stackable-box guide interface is generated
-- **THEN** the stepped top rail MUST remain continuously fused to the 1.2 mm side wall and rim, with its 1.75 / 1.2 / 0.8 / 1.8 / 2.0 mm reference sequence preserved and the outer stacking datum preserved
+- **THEN** the stepped top rail MUST remain continuously fused to the 1.2 mm side wall and rim, with its 1.75 / 1.2 / 0.8 / 1.8 / 0.9 mm reference sequence preserved and a 6.45 mm total rail height
 - **AND** the fixed bottom assembly MUST measure 5.0 mm from the bed-facing plane to the upper interior floor
-- **AND** the bottom guide MUST use a 0.8 mm bed-facing 45° foot, a 1.8 mm vertical segment, and a 1.2 mm 45° transition that continues to a pointed internal-seam closure without a horizontal land at the 3.8 mm datum
+- **AND** the bottom guide MUST use a 0.8 mm bed-facing 45° foot, a 1.8 mm vertical segment, and a constant-width internal seam slot that rises to the floor underside without a horizontal closure land
 - **AND** the guide and internal-seam relief MUST stop at the lower surface of the supported floor without cutting into the box interior or leaving an unconnected overhanging lip
 - **AND** the lower floor surface above each relief MUST remain supported and continuous through the fixed 1.2 mm interior floor
 - **AND** the mating clearance MUST be independent of the 0.15 mm OpenGrid footprint clearance
@@ -152,20 +153,19 @@ Only `topRimMode='stacking-rail'` provides the upper stepped rail, and only `bot
 - **THEN** the 1×1 box MUST be able to slide continuously along the 1×4 long axis while remaining captured by the guide geometry
 - **AND** the interface MUST NOT force the 1×1 box to stop only at isolated 28 mm holes
 
-#### Scenario: Larger box bridges adjacent boxes
+#### Scenario: Junction clearance between side-by-side boxes
 
-- **WHEN** two `stacking-rail` + `stacking` 1×2 boxes are placed side by side to form a 2×2 footprint and a `stacking-rail` + `stacking` 2×2 box is placed above them
-- **THEN** the upper 2×2 box MUST be supported by the combined outer guide geometry
-- **AND** the seam between the two lower boxes MUST NOT prevent the upper box from seating
-- **AND** the upper 2×2 box MUST remain a valid member of the same stackable-box model
+- **WHEN** two `stacking-rail` + `stacking` boxes sit side by side, either pushed together or latticed on the nominal grid, and an upper box spanning both (2×2 above 1×2 + 1×2, or 3×3 above 1×3 + 2×3) is seated
+- **THEN** the upper box MUST seat at the single-box seated position with a residual volumetric intersection against both lower boxes below 2 mm³, limited to the documented local contact between its floor-slab corners and the lower boxes' outer corner cones
+- **AND** the internal cell-seam reliefs MUST be anchored on the nominal 28 mm grid so the junction clearance is symmetric on both sides of the seam
+- **AND** each outer guide face pair MUST remain clear at the seated position despite the upper box's footprint overhanging the combined lower footprint by 0.075 mm per side
+- **AND** dropping the upper box 0.05 mm below the seated position MUST produce positive intersection
 
 #### Scenario: Thin-shell mode does not claim stacking
 
 - **WHEN** a box whose bottom is `thin-shell` or `none` is placed above another generated box, or a box is placed above a `flat-top` box
 - **THEN** the system MUST NOT claim that the pair has a valid box-to-box sliding interface on the missing half
 - **AND** `flat-top`, `thin-shell`, and `none` generation MUST remain valid as individual solids
-
-
 ### Requirement: OpenGrid Snap base mounting sockets
 
 The box MUST retain its existing fixed bottom profiles: the 5 mm stacking
@@ -726,7 +726,7 @@ The stackable-box model MUST generate every valid combination of
 - The interior floor datum MUST be 5 mm for the `stacking` bottom and 2 mm for
   the `thin-shell` and `none` bottoms, and the upper inner-rim datum MUST
   remain `floor datum + height` in every combination. The external height
-  MUST add the 7.55 mm rail only for `stacking-rail`.
+  MUST add the 6.45 mm rail only for `stacking-rail`.
 - Side openings, the locating-seat modes, the full-hole grid where a floor
   exists, and honeycomb mode MUST remain available in every combination.
 

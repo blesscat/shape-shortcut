@@ -161,8 +161,8 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   defaultStackingClearanceHeight: 3.5,
   minimumStackingMatingDatum:
     OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerChamfer +
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerVerticalHeight +
-    OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingClearance,
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerVerticalHeight -
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingGuideClearance,
   minHoleCount: 1,
   maxHoleCount: 20,
   minHoleSpacing: 0.5,

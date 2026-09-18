@@ -1,7 +1,6 @@
 import { makeBox, type Shape3D } from 'replicad'
 import type { BooleanOperationReporter } from '../../boolean-progress'
 import { toGeometryError } from '../../geometry-errors'
-import { bottomGridSeamApexTopZ } from './geometry'
 import {
   externalOpenGridStackableBoxHeightFor,
   nominalOpenGridStackableBoxFootprintFor,
@@ -87,13 +86,13 @@ export function openGridStackableBoxQualityRegionZBounds(
     configuration.topRailHeight -
     configuration.topRailOuterChamfer -
     LOWEST_TOP_PROBE_CLEARANCE
-  // Every bottom probe must fit inside the bottom region: seam reliefs end
-  // at the seam apex, the shell-thickness side-wall band ends slightly above
-  // the bottom assembly, the detachable-seat reference is its total height,
-  // and the flanged socket-insert probe tops out at floor + flange.
+  // Every bottom probe must fit inside the bottom region: the seam slots end
+  // at the floor underside, the shell-thickness side-wall band ends slightly
+  // above the bottom assembly, the detachable-seat reference is its total
+  // height, and the flanged socket-insert probe tops out at floor + flange.
   const bottomMaxZ =
     Math.max(
-      bottomGridSeamApexTopZ(),
+      configuration.bottomAssemblyHeight - configuration.floorThickness,
       configuration.bottomAssemblyHeight + 0.1,
       OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male.totalHeight,
     ) + REGION_PROBE_MARGIN

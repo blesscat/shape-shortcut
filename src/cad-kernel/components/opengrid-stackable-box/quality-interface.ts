@@ -15,7 +15,6 @@ import {
 import { openGridStackableBoxHoneycombCellCountFor } from '../../lattice/opengrid-honeycomb'
 import {
   applyStackingProfile,
-  bottomGridSeamApexTopZ,
   bottomGridSeamsFor,
   type OpenGridStackableBoxBottomGridSeam,
   bottomGuideSupportInset,
@@ -26,11 +25,9 @@ import {
 } from './geometry'
 import {
   countFortyFiveDegreeFaces,
-  countFortyFiveDegreeFacesNearSeam,
-  countHorizontalReliefClosureFaces,
-  countReliefApexFaces,
   countRoundedProfileContinuationFaces,
   countRoundedProfileFacesWithRadius,
+  countVerticalFacesNearSeam,
   countVerticalProfileFaces,
   edgeBandExpectedVolumes,
   edgeBandVolumes,
@@ -371,6 +368,7 @@ function matingClearanceFixtureFor(height: number): MatingClearanceFixture {
 
 function inspectStackingClearance(parameters: OpenGridStackableBoxParameters): {
   stackingClearanceNominalIntersectionVolume: number
+  stackingClearanceNearSeatIntersectionVolume: number
   stackingClearanceBelowNominalIntersectionVolume: number
 } {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
@@ -379,7 +377,10 @@ function inspectStackingClearance(parameters: OpenGridStackableBoxParameters): {
     configuration.bottomAssemblyHeight +
     configuration.topRailInnerChamfer +
     configuration.topRailInnerVerticalHeight
-  const belowNominalDrop = configuration.stackingClearance + 0.05
+  // The upper box rests 0.05 mm brackets around the radial-clearance drop
+  // below the stack datum: above it the parts must stay free, below it they
+  // must collide.
+  const seatDrop = configuration.stackingGuideClearance
   const fixture = matingClearanceFixtureFor(parameters.height)
   const intersectionVolume = (candidate: Shape3D): number => {
     const intersection = fixture.lower.intersect(candidate)
@@ -389,24 +390,23 @@ function inspectStackingClearance(parameters: OpenGridStackableBoxParameters): {
       deleteShape(intersection)
     }
   }
-  const nominal = fixture.upper
+  const nominal = fixture.upper.clone().translate(0, 0, stackDatum)
+  const nearSeat = fixture.upper
     .clone()
-    .translate(0, 0, stackDatum + configuration.stackingClearance)
+    .translate(0, 0, stackDatum - seatDrop + 0.05)
   const belowNominal = fixture.upper
     .clone()
-    .translate(
-      0,
-      0,
-      stackDatum + configuration.stackingClearance - belowNominalDrop,
-    )
+    .translate(0, 0, stackDatum - seatDrop - 0.05)
   try {
     return {
       stackingClearanceNominalIntersectionVolume: intersectionVolume(nominal),
+      stackingClearanceNearSeatIntersectionVolume: intersectionVolume(nearSeat),
       stackingClearanceBelowNominalIntersectionVolume:
         intersectionVolume(belowNominal),
     }
   } finally {
     deleteShape(nominal)
+    deleteShape(nearSeat)
     deleteShape(belowNominal)
   }
 }
@@ -685,13 +685,13 @@ function inspectGridSeams(
   const bottomGridSeams = bottomGridSeamsFor(parameters)
   const seamProbeHalfWidth = Math.min(
     0.25,
-    configuration.bottomGridSeamOpeningWidth / 2 - 0.08,
+    configuration.bottomGridSeamSupportOpeningWidth / 2 - 0.08,
   )
   const seamChipFor = (seam: OpenGridStackableBoxBottomGridSeam): Shape3D => {
     if (!regions) return shape
     const { bottomMinZ, bottomMaxZ } =
       openGridStackableBoxQualityRegionZBounds(parameters)
-    const extent = 3
+    const extent = configuration.bottomGridSeamSupportOpeningWidth / 2 + 1.2
     const zone: Bounds =
       seam.axis === 'x'
         ? [
@@ -741,42 +741,21 @@ function inspectGridSeams(
       shape,
       seam,
       parameters,
-      bottomGridSeamApexTopZ() + 0.03,
+      bottomStackingProfileTopZ() + 0.03,
       configuration.bottomAssemblyHeight + 0.01,
-      Math.max(0.1, configuration.bottomGridSeamOpeningWidth / 2 - 0.05),
+      configuration.bottomGridSeamSupportOpeningWidth / 2 - 0.05,
       0,
       seamChipFor(seam),
     ),
   )
-  const bottomGridSeamSlopeFaceCounts = bottomGridSeams.map((seam) =>
-    countFortyFiveDegreeFacesNearSeam(
+  const bottomGridSeamWallFaceCounts = bottomGridSeams.map((seam) =>
+    countVerticalFacesNearSeam(
       shape,
       seam,
-      bottomStackingSupportTopZ() - 0.03,
-      bottomGridSeamApexTopZ() + 0.03,
-      configuration.bottomGridSeamSupportOpeningWidth / 2,
-      0,
+      -0.05,
+      bottomStackingProfileTopZ() + 0.03,
+      configuration.bottomGridSeamSupportOpeningWidth / 2 + 0.25,
     ),
-  )
-  const bottomGridSeamClosureFaceCount = countHorizontalReliefClosureFaces(
-    shape,
-    bottomGridSeams,
-    bottomStackingProfileTopZ(),
-    configuration.bottomGridSeamOpeningWidth / 2,
-  )
-  const bottomGridSeamApexFaceCounts = bottomGridSeams.map((seam) =>
-    countReliefApexFaces(
-      shape,
-      [seam],
-      bottomStackingSupportTopZ(),
-      bottomGridSeamApexTopZ(),
-      configuration.bottomGridSeamOpeningWidth / 2,
-      bottomGridSeamApexTopZ() - bottomStackingSupportTopZ(),
-    ),
-  )
-  const bottomGridSeamApexFaceCount = bottomGridSeamApexFaceCounts.reduce(
-    (total, faceCount) => total + faceCount,
-    0,
   )
   return {
     bottomGridSeams,
@@ -784,10 +763,7 @@ function inspectGridSeams(
     bottomGridSeamSupportVolumes,
     bottomGridSeamSupportThicknesses,
     bottomGridSeamFloorVolumes,
-    bottomGridSeamSlopeFaceCounts,
-    bottomGridSeamApexFaceCounts,
-    bottomGridSeamApexFaceCount,
-    bottomGridSeamClosureFaceCount,
+    bottomGridSeamWallFaceCounts,
   }
 }
 
@@ -890,12 +866,6 @@ export function inspectOpenGridStackableBoxInterface(
       upperInnerRimZ,
       upperInnerRimZ + configuration.topRailHeight,
     )
-  const topRailInnerCornerRadiusFaceCount = countRoundedProfileFacesWithRadius(
-    shape,
-    upperInnerRimZ,
-    upperInnerRimZ + configuration.topRailHeight,
-    0.8,
-  )
   const topRailOuterCornerRadiusFaceCount = countRoundedProfileFacesWithRadius(
     shape,
     upperInnerRimZ,
@@ -956,11 +926,10 @@ export function inspectOpenGridStackableBoxInterface(
     bottomGuideSupportInset(),
     -1,
   )
-  const bottomGridSeamSlopeFaceCount =
-    grid.bottomGridSeamSlopeFaceCounts.reduce(
-      (total, faceCount) => total + faceCount,
-      0,
-    )
+  const bottomGridSeamWallFaceCount = grid.bottomGridSeamWallFaceCounts.reduce(
+    (total, faceCount) => total + faceCount,
+    0,
+  )
   const socketCenters: [number, number][] = []
   const mountingHoleStepVolumes = measureMountingHoleStepVolumes(
     shape,
@@ -991,13 +960,12 @@ export function inspectOpenGridStackableBoxInterface(
     bottomGuideProfileHeight: bottomGuideTransitionTopZ(),
     ...profileSegments,
     topRailCornerContinuationFaceCount,
-    topRailInnerCornerRadiusFaceCount,
     topRailOuterCornerRadiusFaceCount,
     ...shell,
     ...stackingClearance,
     topGuideLeadInFaceCount,
     bottomGuideLeadInFaceCount,
-    bottomGridSeamSlopeFaceCount,
+    bottomGridSeamWallFaceCount,
     bottomGridSeamCount: grid.bottomGridSeams.length,
     ...grid,
     bearingLandVolumes,

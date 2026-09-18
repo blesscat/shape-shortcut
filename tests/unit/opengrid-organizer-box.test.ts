@@ -333,7 +333,7 @@ describe('OpenGrid organizer-box contract', () => {
     expect(bounds.max[1]).toBe(-bounds.min[1])
     expect(bounds.min[2]).toBe(0)
     expect(layout.stacking).not.toBeNull()
-    expect(layout.stacking?.riserHeight).toBeCloseTo(0.8, 8)
+    expect(layout.stacking?.riserHeight).toBeCloseTo(1.25, 8)
     expect(layout.stacking?.seatDatumZ).toBeCloseTo(
       layout.bodyHeight + value.stackingClearanceHeight,
       8,
@@ -341,7 +341,7 @@ describe('OpenGrid organizer-box contract', () => {
     expect(bounds.max[2]).toBeCloseTo(
       layout.bodyHeight +
         value.stackingClearanceHeight +
-        (OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight - 3.2),
+        (OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight - 2.75),
       8,
     )
 

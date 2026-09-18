@@ -123,10 +123,7 @@ function innerCavitySections(
       ),
     ]
   }
-  return [
-    baseSection,
-    ...topRailInnerSections(width, depth, upperInnerRimZ),
-  ]
+  return [baseSection, ...topRailInnerSections(width, depth, upperInnerRimZ)]
 }
 
 function topRailInnerSections(
@@ -135,6 +132,7 @@ function topRailInnerSections(
   railBaseZ: number,
 ): RoundedRectangleSection[] {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const guideClearance = configuration.stackingGuideClearance
   const firstTransitionZ = railBaseZ + configuration.topRailInnerChamfer
   const firstVerticalTopZ =
     firstTransitionZ + configuration.topRailInnerVerticalHeight
@@ -143,12 +141,19 @@ function topRailInnerSections(
   const secondVerticalTopZ =
     secondTransitionZ + configuration.topRailOuterVerticalHeight
   const externalHeight = railBaseZ + configuration.topRailHeight
-  const finalInset =
+  const slidingInset =
     configuration.wallThickness +
     configuration.topRailInnerChamfer -
-    configuration.topRailMiddleChamfer -
-    configuration.topRailOuterChamfer
-
+    guideClearance
+  const bearingInset = slidingInset - configuration.topRailMiddleChamfer
+  const finalInset = bearingInset - configuration.topRailOuterChamfer
+  // Square inner rail corners: concentric corner arcs would bulge the hole
+  // boundary up to 0.56-1.1 mm deeper than the straight guide faces and
+  // seize a spanning box's straight seam relief at the junction ends.
+  // All rail sections stay in the concentric corner family (center at the
+  // outer corner radius) so the ruled loft produces planar 45° guide faces
+  // and matching corner cones; the junction corner-cone bulge is absorbed
+  // by the widened seam slot instead.
   return [
     insetSection(
       width,
@@ -161,32 +166,28 @@ function topRailInnerSections(
       width,
       depth,
       configuration.outerCornerRadius,
-      configuration.wallThickness + configuration.topRailInnerChamfer,
+      slidingInset,
       firstTransitionZ,
     ),
     insetSection(
       width,
       depth,
       configuration.outerCornerRadius,
-      configuration.wallThickness + configuration.topRailInnerChamfer,
+      slidingInset,
       firstVerticalTopZ,
     ),
     insetSection(
       width,
       depth,
       configuration.outerCornerRadius,
-      configuration.wallThickness +
-        configuration.topRailInnerChamfer -
-        configuration.topRailMiddleChamfer,
+      bearingInset,
       secondTransitionZ,
     ),
     insetSection(
       width,
       depth,
       configuration.outerCornerRadius,
-      configuration.wallThickness +
-        configuration.topRailInnerChamfer -
-        configuration.topRailMiddleChamfer,
+      bearingInset,
       secondVerticalTopZ,
     ),
     insetSection(
@@ -215,20 +216,8 @@ function outerEnvelopeSections(
   if (parameters.bottomMode === 'thin-shell') {
     const chamfer = configuration.thinShellBottomChamfer
     return [
-      insetSection(
-        width,
-        depth,
-        configuration.outerCornerRadius,
-        chamfer,
-        0,
-      ),
-      insetSection(
-        width,
-        depth,
-        configuration.outerCornerRadius,
-        0,
-        chamfer,
-      ),
+      insetSection(width, depth, configuration.outerCornerRadius, chamfer, 0),
+      insetSection(width, depth, configuration.outerCornerRadius, 0, chamfer),
       insetSection(
         width,
         depth,
@@ -310,11 +299,7 @@ function makeOpenBottomCornerPads(
   try {
     for (const [centerX, centerY] of centers) {
       pads.push(
-        makeCylinder(
-          padRadius,
-          padTopZ + 0.02,
-          [centerX, centerY, -0.02],
-        ),
+        makeCylinder(padRadius, padTopZ + 0.02, [centerX, centerY, -0.02]),
       )
     }
     // Clip the pad blocks to the outer envelope so they can never protrude
@@ -455,13 +440,6 @@ export function bottomStackingProfileTopZ(): number {
   return (
     bottomStackingSupportTopZ() +
     OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomStackingLeadIn
-  )
-}
-
-export function bottomGridSeamApexTopZ(): number {
-  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  return (
-    bottomStackingProfileTopZ() + configuration.bottomGridSeamOpeningWidth / 2
   )
 }
 
@@ -829,20 +807,23 @@ export type OpenGridStackableBoxBottomGridSeam = {
 export function bottomGridSeamsFor(
   parameters: OpenGridStackableBoxParameters,
 ): OpenGridStackableBoxBottomGridSeam[] {
-  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const seams: OpenGridStackableBoxBottomGridSeam[] = []
 
   for (let index = 1; index < Math.ceil(parameters.x); index += 1) {
     seams.push({
       axis: 'x',
-      position: -width / 2 + index * configuration.gridPitch,
+      position:
+        (-parameters.x * configuration.gridPitch) / 2 +
+        index * configuration.gridPitch,
     })
   }
   for (let index = 1; index < Math.ceil(parameters.y); index += 1) {
     seams.push({
       axis: 'y',
-      position: -depth / 2 + index * configuration.gridPitch,
+      position:
+        (-parameters.y * configuration.gridPitch) / 2 +
+        index * configuration.gridPitch,
     })
   }
   return seams
@@ -855,42 +836,22 @@ function makeBottomGridSeamCutter(
   const [width, footprintDepth] =
     nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
-  const footChamferHeight = configuration.bottomFootChamferHeight
-  const supportTop = bottomStackingSupportTopZ()
-  const transitionTop = bottomStackingProfileTopZ()
-  const bedHalfOpening = configuration.bottomGridSeamBedOpeningWidth / 2
-  const supportHalfOpening = configuration.bottomGridSeamSupportOpeningWidth / 2
-  const transitionHalfOpening = configuration.bottomGridSeamOpeningWidth / 2
-  const transitionApexTop = bottomGridSeamApexTopZ()
   const margin = 0.02
-  const profile: readonly [number, number][] = [
-    [-bedHalfOpening, -margin],
-    [bedHalfOpening, -margin],
-    [supportHalfOpening, footChamferHeight],
-    [supportHalfOpening, supportTop],
-    [transitionHalfOpening, transitionTop],
-    [0, transitionApexTop],
-    [-transitionHalfOpening, transitionTop],
-    [-supportHalfOpening, supportTop],
-    [-supportHalfOpening, footChamferHeight],
-  ]
-
+  const halfWidth = configuration.bottomGridSeamSupportOpeningWidth / 2
+  // The slot rises to the floor underside so a spanning box's floor slab
+  // stays above every junction wall top.
+  const slotTopZ =
+    configuration.bottomAssemblyHeight - configuration.floorThickness
   if (seam.axis === 'x') {
-    return extrudeProfile(
-      'XZ',
-      [seam.position, -footprintDepth / 2 - margin, 0],
-      profile,
-      footprintDepth + 2 * margin,
-      [0, 1, 0],
+    return makeBox(
+      [seam.position - halfWidth, -footprintDepth / 2 - margin, -margin],
+      [seam.position + halfWidth, footprintDepth / 2 + margin, slotTopZ],
     )
   }
 
-  return extrudeProfile(
-    'YZ',
-    [-width / 2 - margin, seam.position, 0],
-    profile,
-    width + 2 * margin,
-    [1, 0, 0],
+  return makeBox(
+    [-width / 2 - margin, seam.position - halfWidth, -margin],
+    [width / 2 + margin, seam.position + halfWidth, slotTopZ],
   )
 }
 

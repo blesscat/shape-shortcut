@@ -97,9 +97,10 @@ describe('honeycomb quality inspection stays memory-bounded', () => {
       counter.restore()
       shape.delete()
     }
-    // Only the two measurement-region cuts (plus the small fixture-vs-fixture
-    // stacking probes) may touch the full-height candidate; a regression back
-    // to per-probe full-shape booleans would push this well past 30.
-    expect(counter.counted()).toBeLessThanOrEqual(8)
+    // Only the two measurement-region cuts, the three single-box stacking
+    // seat probes, and the near-seat/below-seat bracketing probes may touch
+    // the full-height candidate; a regression back to per-probe full-shape
+    // booleans would push this well past 30.
+    expect(counter.counted()).toBeLessThanOrEqual(12)
   }, 300_000)
 })
