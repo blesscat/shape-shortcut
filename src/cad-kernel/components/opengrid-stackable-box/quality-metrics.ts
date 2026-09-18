@@ -226,18 +226,19 @@ function isFortyFiveDegreeFace(
   return spanIsExpected && zRangeIsExpected && normalIsExpected
 }
 
-export function countVerticalFacesNearSeam(
+export function countSeamWallFaces(
   shape: Shape3D,
   seam: ReliefSeam,
   zMin: number,
   zMax: number,
   expectedSpan: number,
+  maxNormalZ = 0.75,
 ): number {
   const records = readFaceQualityRecords(shape)
   let count = 0
   for (const record of records) {
     if (record.surfaceType !== 'PLANE' || record.normal === null) continue
-    if (Math.abs(record.normal[2]) > 0.05) continue
+    if (Math.abs(record.normal[2]) > maxNormalZ) continue
     const coordinate = seam.axis === 'x' ? 0 : 1
     const coordinateMin = record.min[coordinate]
     const coordinateMax = record.max[coordinate]
@@ -247,14 +248,7 @@ export function countVerticalFacesNearSeam(
       0,
     )
     if (distanceToSeam > expectedSpan + 0.03) continue
-    const span = record.max[2] - record.min[2]
-    if (
-      record.min[2] >= zMin - 0.03 &&
-      record.max[2] <= zMax + 0.03 &&
-      span >= (zMax - zMin) * 0.7
-    ) {
-      count += 1
-    }
+    if (record.min[2] <= zMax && record.max[2] >= zMin) count += 1
   }
   return count
 }

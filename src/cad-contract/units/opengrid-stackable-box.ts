@@ -169,6 +169,8 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   bottomGridSeamOpeningWidth: 1.6,
   bottomGridSeamBedOpeningWidth: 6.8,
   bottomGridSeamSupportOpeningWidth: 6.4,
+  bottomGridSeamTopOpeningWidth: 4.5,
+  bottomGridSeamTaperStartHeight: 1,
   baseHoleDiameter: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter,
   baseHoleClearance: 0.25,
   baseHoleOffset: 7,

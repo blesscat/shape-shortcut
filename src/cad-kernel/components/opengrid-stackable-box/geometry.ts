@@ -837,21 +837,37 @@ function makeBottomGridSeamCutter(
     nominalOpenGridStackableBoxFootprintFor(parameters)
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const margin = 0.02
-  const halfWidth = configuration.bottomGridSeamSupportOpeningWidth / 2
+  const bedHalfWidth = configuration.bottomGridSeamSupportOpeningWidth / 2
+  const topHalfWidth = configuration.bottomGridSeamTopOpeningWidth / 2
+  const taperStartHeight = configuration.bottomGridSeamTaperStartHeight
   // The slot rises to the floor underside so a spanning box's floor slab
   // stays above every junction wall top.
   const slotTopZ =
     configuration.bottomAssemblyHeight - configuration.floorThickness
+  const profile: readonly [number, number][] = [
+    [-bedHalfWidth, -margin],
+    [bedHalfWidth, -margin],
+    [bedHalfWidth, taperStartHeight],
+    [topHalfWidth, slotTopZ],
+    [-topHalfWidth, slotTopZ],
+    [-bedHalfWidth, taperStartHeight],
+  ]
   if (seam.axis === 'x') {
-    return makeBox(
-      [seam.position - halfWidth, -footprintDepth / 2 - margin, -margin],
-      [seam.position + halfWidth, footprintDepth / 2 + margin, slotTopZ],
+    return extrudeProfile(
+      'XZ',
+      [seam.position, -footprintDepth / 2 - margin, 0],
+      profile,
+      footprintDepth + 2 * margin,
+      [0, 1, 0],
     )
   }
 
-  return makeBox(
-    [-width / 2 - margin, seam.position - halfWidth, -margin],
-    [width / 2 + margin, seam.position + halfWidth, slotTopZ],
+  return extrudeProfile(
+    'YZ',
+    [-width / 2 - margin, seam.position, 0],
+    profile,
+    width + 2 * margin,
+    [1, 0, 0],
   )
 }
 

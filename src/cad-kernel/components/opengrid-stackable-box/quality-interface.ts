@@ -27,7 +27,7 @@ import {
   countFortyFiveDegreeFaces,
   countRoundedProfileContinuationFaces,
   countRoundedProfileFacesWithRadius,
-  countVerticalFacesNearSeam,
+  countSeamWallFaces,
   countVerticalProfileFaces,
   edgeBandExpectedVolumes,
   edgeBandVolumes,
@@ -749,7 +749,7 @@ function inspectGridSeams(
     ),
   )
   const bottomGridSeamWallFaceCounts = bottomGridSeams.map((seam) =>
-    countVerticalFacesNearSeam(
+    countSeamWallFaces(
       shape,
       seam,
       -0.05,
