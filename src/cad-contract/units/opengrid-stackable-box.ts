@@ -149,23 +149,28 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   bottomAssemblyHeight: 5,
   outerCornerRadius: 3.75,
   topRailOuterInset: 0.1,
-  topRailHeight: 7.55,
+  topRailHeight: 6.45,
   topRailWidth: 2,
   topRailInnerChamfer: 1.75,
   topRailInnerVerticalHeight: 1.2,
   topRailMiddleChamfer: 0.8,
   topRailOuterVerticalHeight: 1.8,
-  topRailOuterChamfer: 2,
+  topRailOuterChamfer: 0.9,
   stackingLeadIn: 1.75,
   bottomStackingLeadIn: 1.2,
   bottomFootChamferHeight: 0.8,
   bottomSupportBandHeight: 1.8,
   stackingClearance: 0.25,
+  // Radial clearance between the top rail guide faces and the bottom guide
+  // blocks; the rail holes stand this much clear so printed boxes slide.
+  stackingGuideClearance: 0.2,
   stackingBearingLand: 0.8,
   bottomGrooveDepth: 1.2,
   bottomGridSeamOpeningWidth: 1.6,
-  bottomGridSeamBedOpeningWidth: 5.6,
-  bottomGridSeamSupportOpeningWidth: 4,
+  bottomGridSeamBedOpeningWidth: 6.8,
+  bottomGridSeamSupportOpeningWidth: 6.4,
+  bottomGridSeamTopOpeningWidth: 4.5,
+  bottomGridSeamTaperStartHeight: 1,
   baseHoleDiameter: OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.nominalDiameter,
   baseHoleClearance: 0.25,
   baseHoleOffset: 7,
@@ -446,10 +451,7 @@ function validateTopRimMode(
   value: unknown,
   issues: OpenGridStackableBoxValidationIssue[],
 ): void {
-  if (
-    value !== 'stacking-rail' &&
-    value !== 'flat-top'
-  ) {
+  if (value !== 'stacking-rail' && value !== 'flat-top') {
     issues.push({
       field: 'topRimMode',
       messageId: 'validation.invalid',
@@ -539,9 +541,7 @@ export function externalOpenGridStackableBoxHeightFor(
     parameters.topRimMode === 'stacking-rail'
       ? OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight
       : 0
-  return (
-    openGridStackableBoxUpperInnerRimZFor(parameters) + railHeight
-  )
+  return openGridStackableBoxUpperInnerRimZFor(parameters) + railHeight
 }
 
 export function openGridStackableBoxActiveFloorTopZFor(
@@ -1083,8 +1083,7 @@ function modeSuffixFor(parameters: OpenGridStackableBoxParameters): string {
       : parameters.bottomMode === 'none'
         ? '-open-bottom'
         : ''
-  const topSuffix =
-    parameters.topRimMode === 'flat-top' ? '-flat-top' : ''
+  const topSuffix = parameters.topRimMode === 'flat-top' ? '-flat-top' : ''
   return `${bottomSuffix}${topSuffix}`
 }
 

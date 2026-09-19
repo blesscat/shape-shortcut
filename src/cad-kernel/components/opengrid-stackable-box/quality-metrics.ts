@@ -226,17 +226,19 @@ function isFortyFiveDegreeFace(
   return spanIsExpected && zRangeIsExpected && normalIsExpected
 }
 
-export function countFortyFiveDegreeFacesNearSeam(
+export function countSeamWallFaces(
   shape: Shape3D,
   seam: ReliefSeam,
   zMin: number,
   zMax: number,
   expectedSpan: number,
-  normalZSign: -1 | 0 | 1,
+  maxNormalZ = 0.75,
 ): number {
   const records = readFaceQualityRecords(shape)
   let count = 0
   for (const record of records) {
+    if (record.surfaceType !== 'PLANE' || record.normal === null) continue
+    if (Math.abs(record.normal[2]) > maxNormalZ) continue
     const coordinate = seam.axis === 'x' ? 0 : 1
     const coordinateMin = record.min[coordinate]
     const coordinateMax = record.max[coordinate]
@@ -245,65 +247,9 @@ export function countFortyFiveDegreeFacesNearSeam(
       seam.position - coordinateMax,
       0,
     )
-    if (
-      distanceToSeam > expectedSpan + 0.03 ||
-      coordinateMax - coordinateMin > expectedSpan * 1.3
-    ) {
-      continue
-    }
-    if (
-      isFortyFiveDegreeFace(record, zMin, zMax, expectedSpan, normalZSign, 0.7)
-    ) {
-      count += 1
-    }
+    if (distanceToSeam > expectedSpan + 0.03) continue
+    if (record.min[2] <= zMax && record.max[2] >= zMin) count += 1
   }
-  return count
-}
-
-export function countReliefApexFaces(
-  shape: Shape3D,
-  seams: ReadonlyArray<ReliefSeam>,
-  supportTopZ: number,
-  apexTopZ: number,
-  seamHalfWidth: number,
-  seamProfileSpan: number,
-): number {
-  const records = readFaceQualityRecords(shape)
-  let count = 0
-
-  for (const record of records) {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) continue
-    if (
-      Math.abs(Math.abs(record.normal[2]) - Math.SQRT1_2) > 0.05 ||
-      Math.abs(record.min[2] - supportTopZ) > 0.05 ||
-      Math.abs(record.max[2] - apexTopZ) > 0.05
-    ) {
-      continue
-    }
-
-    const belongsToRelief = seams.some((seam) => {
-      const coordinate = seam.axis === 'x' ? 0 : 1
-      const coordinateSpan = record.max[coordinate] - record.min[coordinate]
-      if (coordinateSpan > seamProfileSpan * 1.3) return false
-
-      if (seam.axis === 'x') {
-        return (
-          record.min[0] <= seam.position + seamHalfWidth + 0.05 &&
-          record.max[0] >= seam.position - seamHalfWidth - 0.05 &&
-          record.max[1] - record.min[1] >= 2
-        )
-      }
-
-      return (
-        record.min[1] <= seam.position + seamHalfWidth + 0.05 &&
-        record.max[1] >= seam.position - seamHalfWidth - 0.05 &&
-        record.max[0] - record.min[0] >= 2
-      )
-    })
-
-    if (belongsToRelief) count += 1
-  }
-
   return count
 }
 
@@ -393,45 +339,5 @@ export function countRoundedProfileFacesWithRadius(
       face.delete()
     }
   }
-  return count
-}
-
-export function countHorizontalReliefClosureFaces(
-  shape: Shape3D,
-  seams: ReadonlyArray<ReliefSeam>,
-  closureZ: number,
-  closureHalfWidth: number,
-): number {
-  const records = readFaceQualityRecords(shape)
-  let count = 0
-
-  for (const record of records) {
-    if (record.surfaceType !== 'PLANE' || record.normal === null) continue
-    const zSpan = record.max[2] - record.min[2]
-    const normalIsHorizontal = Math.abs(record.normal[2]) > 0.95
-    const isClosurePlane =
-      Math.abs(record.min[2] - closureZ) < 0.05 &&
-      Math.abs(record.max[2] - closureZ) < 0.05
-    if (!normalIsHorizontal || zSpan > 0.08 || !isClosurePlane) continue
-
-    const belongsToRelief = seams.some((seam) => {
-      if (seam.axis === 'x') {
-        return (
-          record.min[0] <= seam.position + closureHalfWidth + 0.05 &&
-          record.max[0] >= seam.position - closureHalfWidth - 0.05 &&
-          record.max[1] - record.min[1] >= 2
-        )
-      }
-
-      return (
-        record.min[1] <= seam.position + closureHalfWidth + 0.05 &&
-        record.max[1] >= seam.position - closureHalfWidth - 0.05 &&
-        record.max[0] - record.min[0] >= 2
-      )
-    })
-
-    if (belongsToRelief) count += 1
-  }
-
   return count
 }

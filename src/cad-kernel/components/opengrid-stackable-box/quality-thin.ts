@@ -54,8 +54,7 @@ function interiorFloorProbeCenterFor(
     ...openGridStackableBoxSocketCentersFor(parameters),
     ...openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters),
   ]
-  const holeRadius =
-    configuration.baseHoleTopOpeningDiameter / 2
+  const holeRadius = configuration.baseHoleTopOpeningDiameter / 2
   const xLimit = width / 2 - configuration.wallThickness - halfExtent
   const yLimit = depth / 2 - configuration.wallThickness - halfExtent
   const padHalf =

@@ -35,7 +35,6 @@ export type OpenGridStackableBoxInterfaceQualityReport = {
     outerReturn: number
   }
   topRailCornerContinuationFaceCount: number
-  topRailInnerCornerRadiusFaceCount: number
   topRailOuterCornerRadiusFaceCount: number
   bottomGuideProfileSegmentFaceCounts: {
     bedFoot: number
@@ -45,22 +44,20 @@ export type OpenGridStackableBoxInterfaceQualityReport = {
   floorProbeVolumes: number[]
   floorProbeThicknesses: number[]
   stackingClearanceNominalIntersectionVolume: number
+  stackingClearanceNearSeatIntersectionVolume: number
   stackingClearanceBelowNominalIntersectionVolume: number
   sideWallProbeVolumes: number[]
   sideWallProbeExpectedVolumes: number[]
   sideWallProbeThicknesses: number[]
   topGuideLeadInFaceCount: number
   bottomGuideLeadInFaceCount: number
-  bottomGridSeamSlopeFaceCount: number
+  bottomGridSeamWallFaceCount: number
   bottomGridSeamCount: number
   bottomGridSeams: OpenGridStackableBoxBottomGridSeam[]
   bottomGridSeamClearanceVolumes: number[]
   bottomGridSeamSupportVolumes: number[]
   bottomGridSeamSupportThicknesses: number[]
-  bottomGridSeamSlopeFaceCounts: number[]
-  bottomGridSeamApexFaceCounts: number[]
-  bottomGridSeamApexFaceCount: number
-  bottomGridSeamClosureFaceCount: number
+  bottomGridSeamWallFaceCounts: number[]
   bottomGridSeamFloorVolumes: number[]
   bearingLandVolumes: number[]
   topRailProbeVolumes: number[]

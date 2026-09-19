@@ -10,7 +10,7 @@ import {
   openGridStackableBoxUpperInnerRimZFor,
   type OpenGridStackableBoxParameters,
 } from '../../src/cad-contract/units'
-import { bottomGridSeamApexTopZ } from '../../src/cad-kernel/components/opengrid-stackable-box/geometry'
+import { bottomStackingProfileTopZ } from '../../src/cad-kernel/components/opengrid-stackable-box/geometry'
 import {
   createOpenGridStackableBoxQualityRegions,
   openGridStackableBoxQualityRegionZBounds,
@@ -81,7 +81,7 @@ describe('stackable-box quality region bounds', () => {
         openGridStackableBoxUpperInnerRimZFor(boxParameters)
 
       const highestBottomProbeZ = Math.max(
-        bottomGridSeamApexTopZ() + 0.03,
+        bottomStackingProfileTopZ() + 0.03,
         configuration.bottomAssemblyHeight + 0.03,
         OPENGRID_DETACHABLE_CORNER_SEAT_CONFIGURATION.male.totalHeight,
       )

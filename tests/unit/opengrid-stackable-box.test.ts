@@ -162,7 +162,7 @@ describe('OpenGrid stackable-box contract', () => {
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.floorThickness).toBe(1.2)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight).toBe(5)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.wallThickness).toBe(1.2)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight).toBe(7.55)
+    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailHeight).toBe(6.45)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailWidth).toBe(2)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailOuterInset).toBe(0.1)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.outerCornerRadius).toBe(3.75)
@@ -174,7 +174,10 @@ describe('OpenGrid stackable-box contract', () => {
     expect(
       OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailOuterVerticalHeight,
     ).toBe(1.8)
-    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailOuterChamfer).toBe(2)
+    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailOuterChamfer).toBe(0.9)
+    expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingGuideClearance).toBe(
+      0.2,
+    )
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingLeadIn).toBe(1.75)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomStackingLeadIn).toBe(1.2)
     expect(OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomFootChamferHeight).toBe(
@@ -240,12 +243,12 @@ describe('OpenGrid stackable-box contract', () => {
     })
 
     expect(externalOpenGridStackableBoxHeightFor(railStacking)).toBeCloseTo(
-      32.55,
+      31.45,
       3,
     )
     expect(externalOpenGridStackableBoxHeightFor(flatStacking)).toBe(25)
     expect(externalOpenGridStackableBoxHeightFor(railThinShell)).toBeCloseTo(
-      29.55,
+      28.45,
       3,
     )
     expect(externalOpenGridStackableBoxHeightFor(flatThinShell)).toBe(22)
@@ -266,7 +269,7 @@ describe('OpenGrid stackable-box contract', () => {
     ])
     expect(boundsForOpenGridStackableBox(value)).toEqual({
       min: [-13.925, -55.925, 0],
-      max: [13.925, 55.925, 37.55],
+      max: [13.925, 55.925, 36.45],
     })
     expect(
       boundsForModel({ modelId: 'opengrid-stackable-box', parameters: value }),
@@ -352,8 +355,11 @@ describe('OpenGrid stackable-box contract', () => {
   })
 
   it('normalizes legacy mode booleans into the new controls', () => {
-    const { topRimMode: _topRim, bottomMode: _bottom, ...legacyShape } =
-      parameters({ openingPlusXDepth: 6 })
+    const {
+      topRimMode: _topRim,
+      bottomMode: _bottom,
+      ...legacyShape
+    } = parameters({ openingPlusXDepth: 6 })
 
     const legacyThinShell = validateOpenGridStackableBoxParameters({
       ...legacyShape,
@@ -468,12 +474,12 @@ describe('OpenGrid stackable-box contract', () => {
       enabled: true,
       bottomZ: 21,
       arcRadius: expect.closeTo(2.5, 5),
-      horizontalRun: expect.closeTo(13.621, 3),
-      upperWidth: expect.closeTo(35.242, 3),
+      horizontalRun: expect.closeTo(12.521, 3),
+      upperWidth: expect.closeTo(33.042, 3),
     })
     expect(
       openGridStackableBoxOpeningBottomLengthMaximumFor(sloped, '+X'),
-    ).toBe(17)
+    ).toBe(19)
   })
 
   it('rejects enabled openings that pass the floor or the corner bridge', () => {

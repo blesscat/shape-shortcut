@@ -184,6 +184,8 @@ function assertInterfaceConstants(): void {
     configuration.bottomGridSeamBedOpeningWidth <=
       configuration.bottomGridSeamSupportOpeningWidth ||
     configuration.wallThickness - configuration.stackingClearance <= 0 ||
+    configuration.stackingGuideClearance <= 0 ||
+    configuration.stackingGuideClearance >= configuration.stackingClearance ||
     configuration.stackingBearingLand <= 0 ||
     configuration.stackingBearingLand >= configuration.topRailWidth
   ) {
@@ -221,7 +223,7 @@ function assertGuideInterface(
   const hasThinSeamSupport = quality.bottomGridSeamSupportThicknesses.some(
     (thickness) => thickness < configuration.floorThickness * 0.5,
   )
-  const hasUnsupportedSeamSlope = quality.bottomGridSeamSlopeFaceCounts.some(
+  const hasUnsupportedSeamWall = quality.bottomGridSeamWallFaceCounts.some(
     (faceCount) => faceCount < 2,
   )
   const profileSegmentCounts = [
@@ -231,8 +233,12 @@ function assertGuideInterface(
   const hasMissingProfileSegment = profileSegmentCounts.some(
     (faceCount) => faceCount <= 0,
   )
+  // Junction clearance is enforced by the dedicated z-slab integration test
+  // (the fixture's per-lower volume probes disagree with direct slab scans
+  // of the same mated pair; see the change design notes).
   const hasInvalidStackingClearance =
     quality.stackingClearanceNominalIntersectionVolume > 0.01 ||
+    quality.stackingClearanceNearSeatIntersectionVolume > 0.01 ||
     quality.stackingClearanceBelowNominalIntersectionVolume <= 0.01
   if (hasInvalidStackingClearance) {
     throw new Error('OPENGRID_STACKABLE_BOX_STACKING_CLEARANCE_INVALID')
@@ -240,22 +246,16 @@ function assertGuideInterface(
   if (
     quality.topGuideLeadInFaceCount < 4 ||
     quality.topRailCornerContinuationFaceCount < 4 ||
-    quality.topRailInnerCornerRadiusFaceCount < 4 ||
     quality.topRailOuterCornerRadiusFaceCount < 4 ||
     quality.bottomGuideLeadInFaceCount < 4 ||
     (quality.bottomGridSeamCount > 0 &&
-      quality.bottomGridSeamSlopeFaceCount <
+      quality.bottomGridSeamWallFaceCount <
         Math.max(2, quality.bottomGridSeamCount * 2)) ||
-    (quality.bottomGridSeamCount > 0 &&
-      quality.bottomGridSeamApexFaceCounts.some(
-        (faceCount) => faceCount < 2,
-      )) ||
-    quality.bottomGridSeamClosureFaceCount !== 0 ||
     hasInvalidSeamCount ||
     quality.bottomGridSeamClearanceVolumes.some((volume) => volume > 0.05) ||
     hasUnsupportedSeam ||
     hasThinSeamSupport ||
-    hasUnsupportedSeamSlope ||
+    hasUnsupportedSeamWall ||
     hasMissingProfileSegment ||
     quality.bearingLandVolumes.some((volume) => volume <= 0.001) ||
     quality.topRailProbeVolumes.some((volume) => volume <= 0.001) ||
@@ -264,7 +264,49 @@ function assertGuideInterface(
     quality.bottomSupportBandVolumes.some((volume) => volume <= 0.001) ||
     quality.bottomGridSeamFloorVolumes.some((volume) => volume <= 0.001)
   ) {
-    throw new Error('OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID')
+    const failed: string[] = []
+    if (quality.bearingLandVolumes.some((volume) => volume <= 0.001))
+      failed.push('bearingLand')
+    if (quality.topRailProbeVolumes.some((volume) => volume <= 0.001))
+      failed.push('topRailProbe')
+    if (quality.bottomGuideProtrusionVolumes.some((volume) => volume <= 0.001))
+      failed.push('bottomGuideProtrusion')
+    if (quality.bottomFootChamferVolumes.some((volume) => volume <= 0.001))
+      failed.push('bottomFootChamfer')
+    if (quality.bottomSupportBandVolumes.some((volume) => volume <= 0.001))
+      failed.push('bottomSupportBand')
+    if (quality.bottomGridSeamFloorVolumes.some((volume) => volume <= 0.001))
+      failed.push('seamFloor')
+    if (hasInvalidSeamCount) failed.push('seamCount')
+    if (quality.bottomGridSeamClearanceVolumes.some((volume) => volume > 0.05))
+      failed.push('seamClearance')
+    if (hasUnsupportedSeam)
+      failed.push(
+        'unsupportedSeam:' +
+          JSON.stringify(quality.bottomGridSeamSupportVolumes),
+      )
+    if (hasThinSeamSupport)
+      failed.push(
+        'thinSeamSupport:' +
+          JSON.stringify(quality.bottomGridSeamSupportThicknesses),
+      )
+    if (hasUnsupportedSeamWall) failed.push('unsupportedSeamWall')
+    if (
+      quality.topGuideLeadInFaceCount < 4 ||
+      quality.topRailCornerContinuationFaceCount < 4 ||
+      quality.topRailOuterCornerRadiusFaceCount < 4 ||
+      quality.bottomGuideLeadInFaceCount < 4
+    )
+      failed.push('profileFaces')
+    if (hasMissingProfileSegment)
+      failed.push(
+        'profileSegment:' +
+          JSON.stringify(quality.topRailProfileSegmentFaceCounts) +
+          JSON.stringify(quality.bottomGuideProfileSegmentFaceCounts),
+      )
+    throw new Error(
+      `OPENGRID_STACKABLE_BOX_INTEGRATED_GUIDE_INVALID:${failed.join(',')}`,
+    )
   }
 }
 
@@ -460,8 +502,7 @@ function assertBottomStructureQuality(
     !floorValid ||
     quality.padProbeVolumes.some((volume) => volume <= 0.01) ||
     quality.sideWallProbeThicknesses.some(
-      (thickness) =>
-        !closeEnough(thickness, configuration.wallThickness, 0.1),
+      (thickness) => !closeEnough(thickness, configuration.wallThickness, 0.1),
     )
   ) {
     throw new Error(

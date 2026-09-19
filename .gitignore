@@ -10,3 +10,4 @@ coverage/
 .worktrees/
 openspec/changes/archive/
 .DS_Store
+.orca/

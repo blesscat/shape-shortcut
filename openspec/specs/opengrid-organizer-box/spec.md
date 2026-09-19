@@ -444,28 +444,28 @@ replace or suppress stacking geometry.
 When `boxMode=stackable`, the Organizer Box MUST preserve the existing OpenGrid
 Box bottom stacking profile and add the exact matching stepped top stacking
 rail around the outer perimeter. The fixed rail profile MUST retain the
-OpenGrid Box's 0.1 mm outer inset, 2 mm nominal rail width, 7.55 mm total
+OpenGrid Box's 0.1 mm outer inset, 2 mm nominal rail width, 6.45 mm total
 height, and its 1.75 mm inner chamfer, 1.2 mm inner vertical, 0.8 mm middle
-chamfer, 1.8 mm outer vertical, and 2 mm outer chamfer sequence. The rail MUST
-remain a connected part of the one Organizer Box solid and MUST mate with a
-standard OpenGrid Box bottom interface of the same footprint.
+chamfer, 1.8 mm outer vertical, and 0.9 mm outer chamfer sequence. The rail
+MUST remain a connected part of the one Organizer Box solid and MUST mate with
+a standard OpenGrid Box bottom interface of the same footprint.
 
 `stackingClearanceHeight` MUST directly equal the vertical distance from the
 Organizer Box cavity-opening plane to the nominal Z=0 bottom datum of the box
-stacked above. The fixed rail's mating datum is 3.20 mm above its base
-(1.75 mm inner chamfer + 1.2 mm inner vertical + 0.25 mm stacking clearance),
-so the system MUST place a straight perimeter riser of
-`stackingClearanceHeight - 3.20 mm` below the unchanged rail. The user-facing
+stacked above. The fixed rail's mating datum is 2.75 mm above its base
+(1.75 mm inner chamfer + 1.2 mm inner vertical, less the 0.2 mm radial guide
+clearance that lowers the physical seat from the 2.95 mm sliding-block segment
+top), so the system MUST place a straight perimeter riser of
+`stackingClearanceHeight - 2.75 mm` below the unchanged rail. The user-facing
 control MUST be labeled `堆疊淨空（Z）`, MUST appear only in stackable mode,
 and MUST have a 3.5 mm minimum/default on the 0.5 mm input grid. Its value MUST
 remain canonical when normal mode is selected so toggling modes preserves the
 last accepted setting, but it MUST NOT affect normal-mode geometry or export
 identity while inactive.
 
-In stackable mode `wallThickness` MUST be at least 2.95 mm, which is the
-standard rail's maximum inward reach and also the bottom seam bed opening
-half-width plus clearance, so the top rail seat and the bottom seam channel
-remain inside the wall footprint at the mode floor. Validation MUST reject a
+In stackable mode `wallThickness` MUST be at least 2.95 mm, which keeps the
+standard rail's maximum inward reach (2.75 mm) plus margin inside the wall
+footprint at the mode floor. Validation MUST reject a
 stackable snapshot whose `wallThickness` is below 2.95 mm. Wall thickness MUST
 NOT govern the vertical clearance above the cavities; `stackingClearanceHeight`
 alone MUST govern that space. Integrated feet or detachable sockets occupy
@@ -477,7 +477,7 @@ cavities.
 
 - **WHEN** a user selects stackable mode with
   `stackingClearanceHeight=3.5`
-- **THEN** the fixed rail MUST sit on a 0.3 mm straight perimeter riser
+- **THEN** the fixed rail MUST sit on a 0.75 mm straight perimeter riser
 - **AND** the upper box's nominal bottom datum MUST be 3.5 mm above the cavity
   opening plane within geometry tolerance
 - **AND** no rail segment MUST be truncated, lowered into a cavity, or changed
@@ -511,7 +511,7 @@ cavities.
 - **WHEN** a standard OpenGrid Box with a matching footprint is placed on a
   stackable Organizer Box
 - **THEN** its bottom stacking profile MUST seat on the Organizer Box top rail
-  with the existing 0.25 mm stacking clearance
+  with the 0.2 mm radial guide clearance held on every guide face
 - **AND** its nominal bottom datum MUST be exactly the requested
   `stackingClearanceHeight` above the Organizer Box cavity-opening plane within
   geometry tolerance
