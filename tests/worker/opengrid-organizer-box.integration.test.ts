@@ -661,7 +661,15 @@ describe('OpenGrid organizer-box B-Rep', () => {
     try {
       const minimumLayout = openGridOrganizerBoxLayoutFor(minimumInput)
       const raisedLayout = openGridOrganizerBoxLayoutFor(raisedInput)
-      expect(minimumLayout.stacking?.riserHeight).toBeCloseTo(0.3, 8)
+      expect(minimumLayout.stacking?.riserHeight).toBeGreaterThan(0)
+      expect(
+        raisedLayout.stacking!.riserHeight -
+          minimumLayout.stacking!.riserHeight,
+      ).toBeCloseTo(
+        raisedInput.stackingClearanceHeight -
+          minimumInput.stackingClearanceHeight,
+        8,
+      )
       expect(minimumLayout.stacking?.seatDatumZ).toBeCloseTo(
         minimumLayout.bodyHeight + minimumInput.stackingClearanceHeight,
         8,

@@ -123,7 +123,16 @@ unsupported values after legacy alias migration.
 
 ### Requirement: Identical box-to-box stacking interface
 
-Boxes generated with `topRimMode='stacking-rail'` and `bottomMode='stacking'` MUST have the same box-to-box interface and MUST be usable as either the lower or upper box without an upper/lower variant or mode switch. The stacking guide MUST use the reference-style independent stepped top rail fused into the nominal 1.2 mm side wall and continuous box rim, with the reference 3.75 mm external corner radius and concentric inner rail corner arcs. The top rail MUST remain within the derived external envelope and MUST use the fixed reference sequence of a 1.75 mm inner lead-in, 1.2 mm vertical sliding-block segment, 0.8 mm 45° transition, 1.8 mm vertical segment, and 0.9 mm 45° return to the side wall, for a 6.45 mm total rail height. It MUST mate with the fixed complementary bottom guide profile based on a 0.8 mm bed-facing foot chamfer, a 1.8 mm vertical support segment, and a 1.2 mm 45° guide transition. The rail's inner guide faces (the 2.75 mm sliding-block segment, the 0.8 mm transition, the 1.95 mm vertical segment, and the 1.05 mm return) MUST stand 0.2 mm radially clear of the complementary bottom guide faces at every guide level, so the dedicated sliding clearance of 0.2 mm is realized on the printed part and is independent of the 0.15 mm OpenGrid footprint clearance. At the seated position the upper box's 45° guide transition MUST bear in surface contact on the rail's 45° return as the positive bearing land, and the seated position MUST be 0.2 mm lower than the sliding-block segment top. Each internal cell-seam relief MUST be a waisted slot positioned on the nominal 28 mm grid independently of the footprint clearance, MUST run from the 6.4 mm bed opening through a 19° taper to a 4.5 mm opening at the lower surface of the supported floor, and MUST leave the interior floor continuous. The bottom guide MUST follow the reference cell-boundary and internal-seam relief pattern rather than a separate suspended perimeter plate or an isolated hole-only interface. The bottom stacking surface MUST NOT rely on permanently protruding positioning posts, a thin unsupported perimeter lip, or a continuous recessed groove around the outer perimeter. Every internal relief MUST end at the lower surface of the supported floor and MUST leave the box interior floor continuous. A valid enabled side opening MAY interrupt only the selected straight wall span from its sill to the external top-edge datum, including the corresponding selected top-rail span; it MUST NOT remove a corner guide land, bottom guide, supported floor, or any unselected rail/interface span.
+Boxes generated with `topRimMode='stacking-rail'` and `bottomMode='stacking'` MUST have the same box-to-box interface and MUST be usable as either the lower or upper box without an upper/lower variant or mode switch. The stacking guide MUST use the reference-style independent stepped top rail fused into the nominal 1.2 mm side wall and continuous box rim, with the reference 3.75 mm external corner radius and concentric inner rail corner arcs. The top rail MUST remain within the derived external envelope and MUST use the fixed reference sequence of a 1.75 mm inner lead-in, 1.2 mm vertical sliding-block segment, 0.8 mm 45° transition, 1.8 mm vertical segment, and 0.9 mm 45° return to the side wall, for a 6.45 mm total rail height. It MUST mate with the fixed complementary bottom guide profile based on a 0.8 mm bed-facing foot chamfer, a 1.8 mm vertical support segment, and a 1.2 mm 45° guide transition. The rail's inner guide faces (the 2.75 mm sliding-block segment, the 0.8 mm transition, the 1.95 mm vertical segment, and the 1.05 mm return) MUST stand 0.2 mm radially clear of the complementary bottom guide faces at every guide level, so the dedicated sliding clearance of 0.2 mm is realized on the printed part and is independent of the 0.15 mm OpenGrid footprint clearance. At the seated position the upper box's 45° guide transition MUST bear in surface contact on the rail's 45° return as the positive bearing land, and the seated position MUST be 0.2 mm lower than the sliding-block segment top. Each internal cell-seam relief MUST be a waisted slot positioned on the nominal 28 mm grid independently of the footprint clearance, MUST run from the 6.4 mm bed opening through a 19° taper to a 4.5 mm opening at the lower surface of the supported floor, and MUST leave the interior floor continuous. The bottom guide MUST follow the reference cell-boundary and internal-seam relief pattern rather than a separate suspended perimeter plate or an isolated hole-only interface. The bottom stacking surface MUST NOT rely on permanently protruding positioning posts, a thin unsupported perimeter lip, or a continuous recessed groove around the outer perimeter. Every internal cell-seam relief MUST end at the lower surface of the supported floor and MUST leave the box interior floor continuous. A valid enabled side opening MAY interrupt only the selected straight wall span from its sill to the external top-edge datum, including the corresponding selected top-rail span; it MUST NOT remove a corner guide land, bottom guide, supported floor, or any unselected rail/interface span.
+
+Additional diagonal relief at every bottom cell corner MUST clear only the
+board corner's lowest square section and MUST stop where the upper board
+chamfer begins. The relief MUST NOT continue through that chamfer. This
+intentionally leaves possible interference at the former fully seated board
+datum; it MUST NOT be described as free drop-in compatibility with Lite or
+Full boards. The continuous floor and box-to-box guide and bearing surfaces
+MUST remain intact, preserving the existing box-to-box seated height and
+sliding clearance.
 
 Only `topRimMode='stacking-rail'` provides the upper stepped rail, and only `bottomMode='stacking'` provides the bottom guide. Combinations missing one of these interfaces MUST NOT claim the corresponding half of the same-model sliding mating: a `flat-top` box MUST NOT be described as accepting another box above, and a `thin-shell` or `none` bottom MUST NOT be described as sliding onto a rail below. A `flat-top` rim MUST end in the continuous 45° top chamfer without the stepped rail, and `thin-shell` and `none` bottoms MUST use the open constructions defined in the top-rim and bottom-structure requirement.
 
@@ -166,6 +175,7 @@ Only `topRimMode='stacking-rail'` provides the upper stepped rail, and only `bot
 - **WHEN** a box whose bottom is `thin-shell` or `none` is placed above another generated box, or a box is placed above a `flat-top` box
 - **THEN** the system MUST NOT claim that the pair has a valid box-to-box sliding interface on the missing half
 - **AND** `flat-top`, `thin-shell`, and `none` generation MUST remain valid as individual solids
+
 ### Requirement: OpenGrid Snap base mounting sockets
 
 The box MUST retain its existing fixed bottom profiles: the 5 mm stacking
@@ -757,3 +767,38 @@ The stackable-box model MUST generate every valid combination of
   or seat interface on a 2 mm corner pad
 - **AND** the floor between the corners MUST remain open through the full
   footprint interior
+
+### Requirement: Square-section-only OpenGrid board-corner relief
+
+The `opengrid-stackable-box` stacking bottom MUST cut diagonal relief at each
+cell corner only through the lower square section of an OpenGrid board corner.
+The relief MUST terminate at the beginning of the board corner's upper
+chamfer, leaving the upper chamfer uncleared. At the previous fully seated
+board datum, the box MAY intersect the Lite or Full board and MUST NOT be
+claimed to drop in, sit flush, or lift vertically without interference. The
+box-to-box stacking guide, continuous floor, model identity, and parameter
+defaults MUST remain valid.
+
+#### Scenario: Corner relief stops at the board chamfer
+- **WHEN** a stacking-bottom box is generated with or without locating seats
+- **THEN** its diagonal corner relief MUST end at the start of the board
+  corner's upper chamfer
+- **AND** the box MUST retain material above that relief
+- **AND** the box-to-box sliding and stacking interface MUST remain usable
+
+#### Scenario: Former board seating datum may interfere
+- **WHEN** a seat-free stacking box is aligned to the former fully seated
+  datum on a matching Lite or Full board
+- **THEN** positive-volume intersection MAY remain at the uncleared board
+  chamfer
+- **AND** the model MUST NOT be represented as freely removable from that
+  seated position
+
+#### Scenario: Original stacking remains usable
+- **WHEN** a relieved box stacks on another compatible box or slides along a longer box
+- **THEN** its remaining guide and bearing surfaces MUST preserve the existing seated height, sliding clearance and support
+
+#### Scenario: Other bottom and seat combinations
+- **WHEN** thin-shell, open-bottom, half-cell or locating-seat configurations are generated
+- **THEN** their existing solid and socket contracts MUST remain valid
+- **AND** board-fit claims MUST be restricted to combinations supported by geometric verification

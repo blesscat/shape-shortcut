@@ -18,6 +18,7 @@ import {
   OPENGRID_STACKABLE_BOX_OPENING_DIRECTIONS,
   openGridStackableBoxSocketCentersFor,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  OPENGRID_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   type OpenGridStackableBoxOpeningDirection,
   type OpenGridStackableBoxDerivedOpening,
@@ -936,6 +937,78 @@ function fuseWithToolBatch(
   }
 }
 
+/** Clears only the bottom square section of an OpenGrid board junction.
+ * The board corner's upper chamfer remains uncut, so full drop-in seating is
+ * not guaranteed.
+ */
+function makeBoardCornerReliefPrototype(): Shape3D {
+  const board = OPENGRID_CONFIGURATION
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  // Independent of box-to-box sliding clearance: allow 0.2 mm at each
+  // diagonal board face without changing the straight bearing surfaces.
+  const sideClearance = 0.2
+  const halfSide =
+    board.intersectionDistance / Math.SQRT2 +
+    board.cornerSquareThickness +
+    sideClearance
+  const topRailInset =
+    (board.gridPitch - board.tileInnerSize) / 2 - board.insideGridTopChamfer
+  const boardCornerChamferHeight =
+    board.topCaptureInitialInset - board.insideGridMiddleChamfer
+  const reliefHeight =
+    bottomGuideTransitionTopZ() -
+    topRailInset +
+    configuration.clearanceTotal / 2 -
+    boardCornerChamferHeight
+  const profile: [number, number][] = [
+    [-halfSide, -0.02],
+    [halfSide, -0.02],
+    [halfSide, reliefHeight],
+    [-halfSide, reliefHeight],
+  ]
+  // Intersect two planar extrusions to keep planar faces and tight bounds.
+  const strip = extrudeProfile(
+    'XZ',
+    [0, -halfSide, 0],
+    profile,
+    2 * halfSide,
+    [0, 1, 0],
+  )
+  let perpendicular: Shape3D | undefined
+  try {
+    perpendicular = strip.clone().rotate(90)
+    return strip.intersect(perpendicular).rotate(45)
+  } finally {
+    deleteShape(strip)
+    deleteShape(perpendicular)
+  }
+}
+
+function makeBoardCornerReliefTools(
+  prototype: Shape3D,
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridStackableBoxBuildContext,
+  parity: number,
+): Shape3D[] {
+  const pitch = OPENGRID_STACKABLE_BOX_CONFIGURATION.gridPitch
+  const tools: Shape3D[] = []
+  try {
+    for (let column = 0; column <= Math.ceil(parameters.x); column += 1) {
+      const x = (Math.min(column, parameters.x) - parameters.x / 2) * pitch
+      for (let row = 0; row <= Math.ceil(parameters.y); row += 1) {
+        if ((column + row) % 2 !== parity) continue
+        assertGenerationCurrent(context)
+        const y = (Math.min(row, parameters.y) - parameters.y / 2) * pitch
+        tools.push(prototype.clone().translate(x, y, 0))
+      }
+    }
+    return tools
+  } catch (error) {
+    tools.forEach(deleteShape)
+    throw error
+  }
+}
+
 function addIntegratedStackingProfile(
   shape: Shape3D,
   parameters: OpenGridStackableBoxParameters,
@@ -943,11 +1016,11 @@ function addIntegratedStackingProfile(
 ): Shape3D {
   let current = shape
   const seams = bottomGridSeamsFor(parameters)
-  const cutTotal = (['x', 'y'] as const).filter((axis) =>
-    seams.some((seam) => seam.axis === axis),
-  ).length
-  const cutScope =
-    cutTotal > 0 ? context.booleanOperations?.createScope(cutTotal) : undefined
+  const cutTotal =
+    (['x', 'y'] as const).filter((axis) =>
+      seams.some((seam) => seam.axis === axis),
+    ).length + 2
+  const cutScope = context.booleanOperations?.createScope(cutTotal)
   for (const axis of ['x', 'y'] as const) {
     const cutters = makeBottomGridSeamTools(parameters, context, axis)
     if (cutters.length === 0) continue
@@ -955,7 +1028,23 @@ function addIntegratedStackingProfile(
     assertGenerationCurrent(context)
     current = cutWithToolBatch(current, cutters, cutScope)
   }
-  return current
+  // Adjacent junction cutters overlap on a half cell. Separate checkerboard
+  // batches keep each compound disjoint, which OCC requires for clean cuts.
+  const prototype = makeBoardCornerReliefPrototype()
+  try {
+    for (const parity of [0, 1]) {
+      const cutters = makeBoardCornerReliefTools(
+        prototype,
+        parameters,
+        context,
+        parity,
+      )
+      current = cutWithToolBatch(current, cutters, cutScope)
+    }
+    return current
+  } finally {
+    deleteShape(prototype)
+  }
 }
 
 function activeBottomThicknessFor(
