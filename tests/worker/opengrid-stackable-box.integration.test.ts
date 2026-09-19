@@ -1455,6 +1455,75 @@ describe('OpenGrid stackable-box B-Rep', () => {
     }
   }, 120_000)
 
+  it('flares every seam relief mouth at 45 degrees from an 8.4 mm bed opening', () => {
+    const input = parameters({ x: 2, y: 2, cornerSeatMode: 'none' })
+    const shape = buildOpenGridStackableBox(input)
+    const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+    // Probe bands are derived from the declared reference dimensions so the
+    // test locks the flare to the configuration: at offset bed + d the flare
+    // face sits at z = chamfer - d.
+    const bed = configuration.bottomGridSeamSupportOpeningWidth / 2
+    const chamfer = configuration.bottomGridSeamMouthChamfer
+    const seamAxisProbes: Array<{
+      build: (
+        fromOffset: number,
+        toOffset: number,
+        zMin: number,
+        zMax: number,
+      ) => Shape3D
+    }> = [
+      {
+        build: (from, to, zMin, zMax) =>
+          makeBox([from, -8, zMin], [to, 8, zMax]),
+      },
+      {
+        build: (from, to, zMin, zMax) =>
+          makeBox([-8, from, zMin], [8, to, zMax]),
+      },
+    ]
+    try {
+      const report = inspectOpenGridStackableBoxInterface(shape, input)
+      expect(report.bottomGridSeamCount).toBe(2)
+      expect(
+        report.bottomGridSeamMouthFlareFaceCounts.every(
+          (faceCount) => faceCount >= 2,
+        ),
+      ).toBe(true)
+      for (const { build } of seamAxisProbes) {
+        // Air below the flare face (face z spans chamfer-0.5..chamfer-0.3).
+        expect(
+          measureVolume(
+            shape.intersect(build(bed + 0.3, bed + 0.5, 0.02, chamfer - 0.55)),
+          ),
+        ).toBeLessThan(0.01)
+        // Solid above the flare face at the same offsets.
+        expect(
+          measureVolume(
+            shape.intersect(
+              build(bed + 0.3, bed + 0.5, chamfer - 0.25, chamfer + 0.15),
+            ),
+          ),
+        ).toBeGreaterThan(0.01)
+        // Air where the former vertical bed wall was solid at every probed z.
+        expect(
+          measureVolume(
+            shape.intersect(build(bed + 0.8, bed + 0.9, 0.02, 0.08)),
+          ),
+        ).toBeLessThan(0.01)
+        // Solid just beyond the widened mouth.
+        expect(
+          measureVolume(
+            shape.intersect(
+              build(bed + chamfer + 0.1, bed + chamfer + 0.3, 0.02, 0.1),
+            ),
+          ),
+        ).toBeGreaterThan(0.01)
+      }
+    } finally {
+      deleteShape(shape)
+    }
+  }, 120_000)
+
   it('enforces the fixed 0.2 mm radial stacking guide clearance', () => {
     const input = parameters({ x: 1, y: 4, cornerSeatMode: 'none' })
     const shape = buildOpenGridStackableBox(input)

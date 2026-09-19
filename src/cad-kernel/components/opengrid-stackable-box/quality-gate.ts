@@ -183,6 +183,9 @@ function assertInterfaceConstants(): void {
       configuration.bottomGridSeamOpeningWidth ||
     configuration.bottomGridSeamBedOpeningWidth <=
       configuration.bottomGridSeamSupportOpeningWidth ||
+    configuration.bottomGridSeamMouthChamfer <= 0 ||
+    configuration.bottomGridSeamMouthChamfer >
+      configuration.bottomGridSeamTaperStartHeight ||
     configuration.wallThickness - configuration.stackingClearance <= 0 ||
     configuration.stackingGuideClearance <= 0 ||
     configuration.stackingGuideClearance >= configuration.stackingClearance ||
@@ -226,6 +229,10 @@ function assertGuideInterface(
   const hasUnsupportedSeamWall = quality.bottomGridSeamWallFaceCounts.some(
     (faceCount) => faceCount < 2,
   )
+  const hasMissingSeamMouthFlare =
+    quality.bottomGridSeamMouthFlareFaceCounts.some(
+      (faceCount) => faceCount < 2,
+    )
   const profileSegmentCounts = [
     ...Object.values(quality.topRailProfileSegmentFaceCounts),
     ...Object.values(quality.bottomGuideProfileSegmentFaceCounts),
@@ -256,6 +263,7 @@ function assertGuideInterface(
     hasUnsupportedSeam ||
     hasThinSeamSupport ||
     hasUnsupportedSeamWall ||
+    hasMissingSeamMouthFlare ||
     hasMissingProfileSegment ||
     quality.bearingLandVolumes.some((volume) => volume <= 0.001) ||
     quality.topRailProbeVolumes.some((volume) => volume <= 0.001) ||
@@ -291,6 +299,11 @@ function assertGuideInterface(
           JSON.stringify(quality.bottomGridSeamSupportThicknesses),
       )
     if (hasUnsupportedSeamWall) failed.push('unsupportedSeamWall')
+    if (hasMissingSeamMouthFlare)
+      failed.push(
+        'seamMouthFlare:' +
+          JSON.stringify(quality.bottomGridSeamMouthFlareFaceCounts),
+      )
     if (
       quality.topGuideLeadInFaceCount < 4 ||
       quality.topRailCornerContinuationFaceCount < 4 ||

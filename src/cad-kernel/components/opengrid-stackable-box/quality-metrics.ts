@@ -226,31 +226,75 @@ function isFortyFiveDegreeFace(
   return spanIsExpected && zRangeIsExpected && normalIsExpected
 }
 
-export function countSeamWallFaces(
+export type SeamFaceCounts = {
+  wallFaceCount: number
+  mouthFlareFaceCount: number
+}
+
+export type SeamFaceCountProbe = {
+  wall: { zMin: number; zMax: number; expectedSpan: number }
+  flare: { span: number; minimumDistance: number; maximumDistance: number }
+}
+
+export function measureSeamFaceCounts(
   shape: Shape3D,
-  seam: ReliefSeam,
-  zMin: number,
-  zMax: number,
-  expectedSpan: number,
-  maxNormalZ = 0.75,
-): number {
+  seams: ReliefSeam[],
+  probe: SeamFaceCountProbe,
+): SeamFaceCounts[] {
+  // One shared face-record scan for every seam: readFaceQualityRecords
+  // materializes every face, so per-seam scans multiply wasm heap churn.
   const records = readFaceQualityRecords(shape)
-  let count = 0
+  return seams.map((seam) => seamFaceCountsForRecords(records, seam, probe))
+}
+
+function seamFaceCountsForRecords(
+  records: FaceQualityRecord[],
+  seam: ReliefSeam,
+  probe: SeamFaceCountProbe,
+): SeamFaceCounts {
+  let wallFaceCount = 0
+  let mouthFlareFaceCount = 0
   for (const record of records) {
     if (record.surfaceType !== 'PLANE' || record.normal === null) continue
-    if (Math.abs(record.normal[2]) > maxNormalZ) continue
+    const normalZ = record.normal[2]
     const coordinate = seam.axis === 'x' ? 0 : 1
     const coordinateMin = record.min[coordinate]
     const coordinateMax = record.max[coordinate]
-    const distanceToSeam = Math.max(
+    const nearestDistance = Math.max(
       coordinateMin - seam.position,
       seam.position - coordinateMax,
       0,
     )
-    if (distanceToSeam > expectedSpan + 0.03) continue
-    if (record.min[2] <= zMax && record.max[2] >= zMin) count += 1
+    const farthestDistance = Math.max(
+      seam.position - coordinateMin,
+      coordinateMax - seam.position,
+    )
+    if (
+      Math.abs(normalZ) <= 0.75 &&
+      nearestDistance <= probe.wall.expectedSpan + 0.03 &&
+      record.min[2] <= probe.wall.zMax &&
+      record.max[2] >= probe.wall.zMin
+    ) {
+      wallFaceCount += 1
+    }
+    const span = record.max[2] - record.min[2]
+    // The flare face must sit fully inside the mouth annulus: the real flare
+    // faces span bedHalfWidth..mouthHalfWidth, while long perimeter faces
+    // merely straddle the seam and would otherwise satisfy every other
+    // predicate and mask a missing flare.
+    if (
+      closeEnough(Math.abs(normalZ), Math.SQRT1_2, 0.12) &&
+      nearestDistance >= probe.flare.minimumDistance - 0.03 &&
+      farthestDistance <= probe.flare.maximumDistance + 0.03 &&
+      span >= probe.flare.span * 0.7 &&
+      span <= probe.flare.span * 1.3 &&
+      record.min[2] >= -0.03 &&
+      record.max[2] <= probe.flare.span + 0.03
+    ) {
+      mouthFlareFaceCount += 1
+    }
   }
-  return count
+  return { wallFaceCount, mouthFlareFaceCount }
 }
 
 export function countVerticalProfileFaces(

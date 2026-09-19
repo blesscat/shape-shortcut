@@ -58,6 +58,7 @@ export type OpenGridStackableBoxInterfaceQualityReport = {
   bottomGridSeamSupportVolumes: number[]
   bottomGridSeamSupportThicknesses: number[]
   bottomGridSeamWallFaceCounts: number[]
+  bottomGridSeamMouthFlareFaceCounts: number[]
   bottomGridSeamFloorVolumes: number[]
   bearingLandVolumes: number[]
   topRailProbeVolumes: number[]
