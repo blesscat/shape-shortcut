@@ -199,6 +199,18 @@ describe('OpenGrid stackable-box contract', () => {
       OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamOpeningWidth,
     ).toBe(1.6)
     expect(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamSupportOpeningWidth,
+    ).toBe(6.4)
+    expect(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamTopOpeningWidth,
+    ).toBe(4.5)
+    expect(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamTaperStartHeight,
+    ).toBe(1)
+    expect(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridSeamMouthChamfer,
+    ).toBe(1)
+    expect(
       OPENGRID_STACKABLE_BOX_CONFIGURATION.baseHoleBottomOpeningDiameter,
     ).toBe(OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION.shaftOpeningDiameter)
     expect(

@@ -27,10 +27,10 @@ import {
   countFortyFiveDegreeFaces,
   countRoundedProfileContinuationFaces,
   countRoundedProfileFacesWithRadius,
-  countSeamWallFaces,
   countVerticalProfileFaces,
   edgeBandExpectedVolumes,
   edgeBandVolumes,
+  measureSeamFaceCounts,
   readFaceQualityRecords,
   volumeInBox,
 } from './quality-metrics'
@@ -748,22 +748,36 @@ function inspectGridSeams(
       seamChipFor(seam),
     ),
   )
-  const bottomGridSeamWallFaceCounts = bottomGridSeams.map((seam) =>
-    countSeamWallFaces(
-      shape,
-      seam,
-      -0.05,
-      bottomStackingProfileTopZ() + 0.03,
-      configuration.bottomGridSeamSupportOpeningWidth / 2 + 0.25,
-    ),
+  const seamFaceCounts = measureSeamFaceCounts(shape, bottomGridSeams, {
+    wall: {
+      zMin: -0.05,
+      zMax: bottomStackingProfileTopZ() + 0.03,
+      expectedSpan: configuration.bottomGridSeamSupportOpeningWidth / 2 + 0.25,
+    },
+    flare: {
+      span: configuration.bottomGridSeamMouthChamfer,
+      minimumDistance:
+        configuration.bottomGridSeamSupportOpeningWidth / 2 - 0.1,
+      maximumDistance:
+        configuration.bottomGridSeamSupportOpeningWidth / 2 +
+        configuration.bottomGridSeamMouthChamfer +
+        0.3,
+    },
+  })
+  const bottomGridSeamWallFaceCounts = seamFaceCounts.map(
+    (counts) => counts.wallFaceCount,
+  )
+  const bottomGridSeamMouthFlareFaceCounts = seamFaceCounts.map(
+    (counts) => counts.mouthFlareFaceCount,
   )
   return {
     bottomGridSeams,
     bottomGridSeamClearanceVolumes,
     bottomGridSeamSupportVolumes,
     bottomGridSeamSupportThicknesses,
-    bottomGridSeamFloorVolumes,
     bottomGridSeamWallFaceCounts,
+    bottomGridSeamMouthFlareFaceCounts,
+    bottomGridSeamFloorVolumes,
   }
 }
 

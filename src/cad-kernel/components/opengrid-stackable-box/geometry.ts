@@ -840,13 +840,14 @@ function makeBottomGridSeamCutter(
   const bedHalfWidth = configuration.bottomGridSeamSupportOpeningWidth / 2
   const topHalfWidth = configuration.bottomGridSeamTopOpeningWidth / 2
   const taperStartHeight = configuration.bottomGridSeamTaperStartHeight
+  const mouthHalfWidth = bedHalfWidth + configuration.bottomGridSeamMouthChamfer
   // The slot rises to the floor underside so a spanning box's floor slab
   // stays above every junction wall top.
   const slotTopZ =
     configuration.bottomAssemblyHeight - configuration.floorThickness
   const profile: readonly [number, number][] = [
-    [-bedHalfWidth, -margin],
-    [bedHalfWidth, -margin],
+    [-mouthHalfWidth, -margin],
+    [mouthHalfWidth, -margin],
     [bedHalfWidth, taperStartHeight],
     [topHalfWidth, slotTopZ],
     [-topHalfWidth, slotTopZ],
