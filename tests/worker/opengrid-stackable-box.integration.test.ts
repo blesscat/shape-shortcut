@@ -1614,15 +1614,15 @@ describe('OpenGrid stackable-box B-Rep', () => {
     deleteShape(leftPositioned)
     deleteShape(rightPositioned)
     try {
-      // The bridged upper box seats on the junction return cones, 0.15 mm
-      // above the single-box seat.
+      // Corner relief clears the junction return cones; the straight guide
+      // now bears at the same seated height as a single lower box.
       const positionedUpper = upper
         .clone()
         .translate(
           0,
           0,
           captureProbeStackZ(10) -
-            OPENGRID_STACKABLE_BOX_CONFIGURATION.clearanceTotal,
+            OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingGuideClearance,
         )
       try {
         // The spanning box's slab corners pass the outer corner cones with
@@ -1640,7 +1640,7 @@ describe('OpenGrid stackable-box B-Rep', () => {
           0,
           0,
           captureProbeStackZ(10) -
-            OPENGRID_STACKABLE_BOX_CONFIGURATION.clearanceTotal -
+            OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingGuideClearance -
             0.05,
         )
       try {
