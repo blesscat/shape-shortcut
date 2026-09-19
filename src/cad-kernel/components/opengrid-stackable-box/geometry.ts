@@ -937,8 +937,9 @@ function fuseWithToolBatch(
   }
 }
 
-/** Board-junction insertion envelope. The upper taper follows the board's
- * lead-in; the relieved foot grows upward, so removal never meets an undercut.
+/** Clears only the bottom square section of an OpenGrid board junction.
+ * The board corner's upper chamfer remains uncut, so full drop-in seating is
+ * not guaranteed.
  */
 function makeBoardCornerReliefPrototype(): Shape3D {
   const board = OPENGRID_CONFIGURATION
@@ -952,20 +953,18 @@ function makeBoardCornerReliefPrototype(): Shape3D {
     sideClearance
   const topRailInset =
     (board.gridPitch - board.tileInnerSize) / 2 - board.insideGridTopChamfer
+  const boardCornerChamferHeight =
+    board.topCaptureInitialInset - board.insideGridMiddleChamfer
   const reliefHeight =
     bottomGuideTransitionTopZ() -
     topRailInset +
-    configuration.clearanceTotal / 2
-  const cornerChamfer =
-    board.topCaptureInitialInset - board.insideGridMiddleChamfer
-  const topHalfSide = halfSide - cornerChamfer
+    configuration.clearanceTotal / 2 -
+    boardCornerChamferHeight
   const profile: [number, number][] = [
     [-halfSide, -0.02],
     [halfSide, -0.02],
-    [halfSide, reliefHeight - cornerChamfer],
-    [topHalfSide, reliefHeight],
-    [-topHalfSide, reliefHeight],
-    [-halfSide, reliefHeight - cornerChamfer],
+    [halfSide, reliefHeight],
+    [-halfSide, reliefHeight],
   ]
   // Intersect two planar extrusions to keep planar faces and tight bounds.
   const strip = extrudeProfile(

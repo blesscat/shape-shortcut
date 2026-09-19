@@ -78,7 +78,7 @@ function intersectionVolume(a: Shape3D, b: Shape3D): number {
 }
 
 describe('stacking feet on openGrid boards', () => {
-  it('rejects missing straight support after clearing the board junctions', () => {
+  it('rejects missing straight guide support for the relieved foot', () => {
     const input = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       x: 1,
@@ -104,6 +104,26 @@ describe('stacking feet on openGrid boards', () => {
     }
   }, 120_000)
 
+  it('cuts the bottom square corner section and keeps material above it', () => {
+    const box = buildOpenGridStackableBox({
+      ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+      x: 1,
+      y: 1,
+      height: 10,
+      cornerSeatMode: 'none',
+    })
+    const belowChamfer = makeBox([10, 10, 2.2], [10.2, 10.2, 2.3])
+    const aboveChamfer = makeBox([10, 10, 2.35], [10.2, 10.2, 2.45])
+    try {
+      expect(intersectionVolume(box, belowChamfer)).toBeLessThan(0.001)
+      expect(intersectionVolume(box, aboveChamfer)).toBeGreaterThan(0.001)
+    } finally {
+      aboveChamfer.delete()
+      belowChamfer.delete()
+      box.delete()
+    }
+  }, 120_000)
+
   it.each([
     { x: 1, y: 1, variant: 'Lite' as const },
     { x: 1, y: 2, variant: 'Lite' as const },
@@ -124,7 +144,7 @@ describe('stacking feet on openGrid boards', () => {
       cornerSeatMode: 'detachable-corner-seat' as const,
     },
   ])(
-    'seats and lifts $x×$y on $variant ($cornerSeatMode)',
+    'stops corner relief at the $variant board chamfer for $x×$y ($cornerSeatMode)',
     async ({ x, y, variant, cornerSeatMode }) => {
       const board = await buildOpenGridBRep(
         normalizeOpenGridParameters({
@@ -167,37 +187,11 @@ describe('stacking feet on openGrid boards', () => {
       const seatedZ =
         OPENGRID_CONFIGURATION.variants[variant].thickness - insertionDepth
       try {
-        for (const lift of [0, 0.2, 1, 2, insertionDepth]) {
-          const placed = box.clone().translate(offsetX, offsetY, seatedZ + lift)
-          try {
-            expect(
-              intersectionVolume(board, placed),
-              `lift=${lift}`,
-            ).toBeLessThan(1e-5)
-          } finally {
-            placed.delete()
-          }
-        }
-        for (const [dx, dy] of [
-          [0.25, 0],
-          [-0.25, 0],
-          [0, 0.25],
-          [0, -0.25],
-        ]) {
-          const shifted = box
-            .clone()
-            .translate(offsetX + dx, offsetY + dy, seatedZ)
-          try {
-            expect(intersectionVolume(board, shifted)).toBeGreaterThan(0.01)
-          } finally {
-            shifted.delete()
-          }
-        }
-        const below = box.clone().translate(offsetX, offsetY, seatedZ - 0.05)
+        const placed = box.clone().translate(offsetX, offsetY, seatedZ)
         try {
-          expect(intersectionVolume(board, below)).toBeGreaterThan(0.01)
+          expect(intersectionVolume(board, placed)).toBeGreaterThan(0.01)
         } finally {
-          below.delete()
+          placed.delete()
         }
       } finally {
         box.delete()
