@@ -399,6 +399,13 @@ function parseOpenGridDividerRawParameters(raw: RawParameters):
   )
   if (pegDiameterIncrement === null) return invalid('pegDiameterIncrement')
   parsed.pegDiameterIncrement = pegDiameterIncrement
+  const honeycombMode =
+    raw.honeycombMode ??
+    legacyParameterDefault('opengrid-divider', 'honeycombMode')
+  if (honeycombMode !== 'true' && honeycombMode !== 'false') {
+    return invalid('honeycombMode')
+  }
+  parsed.honeycombMode = honeycombMode === 'true'
 
   const validation = validateModelParameters(
     'opengrid-divider',

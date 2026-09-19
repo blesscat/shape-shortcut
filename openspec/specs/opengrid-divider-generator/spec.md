@@ -386,7 +386,7 @@ The system MUST register `opengrid-divider` as an independent model definition a
 - **THEN** the workspace MUST show the straight-arm diagnostic and MUST NOT send the snapshot for generation
 ### Requirement: 分隔器輸入生命週期
 
-The divider workspace MUST use the existing typed generation, debounce, latest-wins, invalidation, candidate, commit, stale-preview, and export gates for its component-specific parameters, including `wallThickness`.
+The divider workspace MUST use the existing typed generation, debounce, latest-wins, invalidation, candidate, commit, stale-preview, and export gates for its component-specific parameters, including `wallThickness`. The workspace raw panel-state parse MUST carry the boolean material-saving flag into the typed snapshot: a raw `honeycombMode` of `'true'` or `'false'` MUST parse to the corresponding boolean in the `model.generate` snapshot, and the parse MUST NOT silently normalize a presented `honeycombMode` key to `false`.
 
 #### Scenario: 合法輸入建模
 
@@ -401,6 +401,21 @@ The divider workspace MUST use the existing typed generation, debounce, latest-w
 - **THEN** the workspace MUST show a field-specific validation error
 - **AND** it MUST send `model.invalidate` instead of `model.generate`
 - **AND** export MUST remain disabled for the invalid or stale generation
+
+#### Scenario: 省料模式開關進入生成快照
+
+- **WHEN** the user enables the material-saving toggle and the input debounce settles
+- **THEN** the next `model.generate` snapshot MUST carry `honeycombMode=true`
+- **AND** the generated geometry MUST follow the 分隔牆省料模式幾何（六角鏤空）requirement
+- **WHEN** the user disables the toggle
+- **THEN** the next `model.generate` snapshot MUST carry `honeycombMode=false` and the geometry MUST return to the solid divider
+
+#### Scenario: 省料模式原始值非法
+
+- **WHEN** the raw panel state presents `honeycombMode` as a value other than `'true'` or `'false'`
+- **THEN** the workspace MUST reject the input with a `honeycombMode` field-scoped diagnostic
+- **AND** it MUST send `model.invalidate` instead of `model.generate`
+- **AND** export MUST remain disabled for the invalid generation
 
 ### Requirement: 分隔牆省料模式幾何（六角鏤空）
 

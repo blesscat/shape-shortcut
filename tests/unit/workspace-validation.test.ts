@@ -598,7 +598,7 @@ describe('CAD workspace validation helpers', () => {
       endClearance: alignmentDefaults.endClearance,
       pegLengthMode: alignmentDefaults.pegLengthMode,
       pegDiameterIncrement: alignmentDefaults.pegDiameterIncrement,
-      honeycombMode: false,
+      honeycombMode: true,
     }
     const raw = rawFromParameters(parameters)
 
@@ -615,11 +615,20 @@ describe('CAD workspace validation helpers', () => {
       endClearance: '0.15',
       pegLengthMode: 'snap',
       pegDiameterIncrement: '0',
-      honeycombMode: 'false',
+      honeycombMode: 'true',
     })
     expect(parseRawParameters(raw, 'opengrid-divider')).toEqual({
       valid: true,
       value: parameters,
+    })
+    expect(
+      parseRawParameters(
+        { ...raw, honeycombMode: 'false' },
+        'opengrid-divider',
+      ),
+    ).toEqual({
+      valid: true,
+      value: { ...parameters, honeycombMode: false },
     })
     expect(
       parseRawParameters(
@@ -635,7 +644,13 @@ describe('CAD workspace validation helpers', () => {
       ),
     ).toEqual({
       valid: true,
-      value: { ...parameters, right: 0, up: 0, down: 0 },
+      value: {
+        ...parameters,
+        honeycombMode: false,
+        right: 0,
+        up: 0,
+        down: 0,
+      },
     })
     expect(
       parseRawParameters(
@@ -653,6 +668,27 @@ describe('CAD workspace validation helpers', () => {
       valid: false,
       messageId: 'validation.invalid',
       field: 'left',
+    })
+  })
+
+  it('rejects a malformed divider honeycombMode raw value', () => {
+    expect(
+      parseRawParameters(
+        {
+          left: '1',
+          right: '1',
+          up: '0',
+          down: '0',
+          height: '20',
+          wallThickness: '2',
+          honeycombMode: 'enabled',
+        },
+        'opengrid-divider',
+      ),
+    ).toEqual({
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'honeycombMode',
     })
   })
 
