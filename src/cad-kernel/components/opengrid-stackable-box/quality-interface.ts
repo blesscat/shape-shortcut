@@ -556,8 +556,14 @@ function inspectBottomSupport(
 ) {
   const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
   const crossCenters = {
-    x: chooseSafeCrossCenter(width, 'x', parameters),
-    y: chooseSafeCrossCenter(depth, 'y', parameters),
+    // Cell centers retain the straight support lands. Junctions now contain
+    // intentional diagonal board reliefs, even when a straight seam is clear.
+    x:
+      (-parameters.x / 2 + Math.min(parameters.x, 1) / 2) *
+      configuration.gridPitch,
+    y:
+      (-parameters.y / 2 + Math.min(parameters.y, 1) / 2) *
+      configuration.gridPitch,
   }
   const supportInset = bottomGuideSupportInset()
   const sideTargetFor = regions
