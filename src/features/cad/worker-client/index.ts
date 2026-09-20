@@ -147,7 +147,9 @@ export function validateModelPartMeshes(
   const names = new Set<string>()
   for (const part of partMeshes) {
     if (
-      (part.name !== 'body' && part.name !== 'text') ||
+      (part.name !== 'body' &&
+        part.name !== 'text' &&
+        part.name !== 'rim') ||
       names.has(part.name) ||
       !validateMeshSnapshot(part.mesh)
     ) {

@@ -12,6 +12,8 @@ export type OpenGridStackableCylinderParameterKey =
   | 'bottomPlateMode'
   | 'bottomSeatMode'
   | 'honeycombMode'
+  | 'topRimEnabled'
+  | 'topRimHeight'
   | 'openingPlusXDepth'
   | 'openingPlusXBottomLength'
   | 'openingPlusXAngle'
@@ -36,6 +38,8 @@ export type OpenGridStackableCylinderParameters = {
   bottomPlateMode: boolean
   bottomSeatMode: OpenGridLocatingSeatMode
   honeycombMode: boolean
+  topRimEnabled: boolean
+  topRimHeight: number
 } & Record<OpenGridStackableCylinderOpeningParameterKey, number>
 
 export type OpenGridStackableCylinderOpeningParameterKey =
@@ -141,6 +145,10 @@ export const OPENGRID_STACKABLE_CYLINDER_CONFIGURATION = {
   defaultOpeningAngle: 90,
   openingLengthStep: 1,
   openingAngleStep: 1,
+  defaultTopRimEnabled: false,
+  defaultTopRimHeight: 2,
+  minTopRimHeight: 1,
+  topRimHeightMin: 1,
 } as const
 
 export const OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS = {
@@ -150,6 +158,8 @@ export const OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS = {
   bottomSeatMode:
     OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultBottomSeatMode,
   honeycombMode: false,
+  topRimEnabled: false,
+  topRimHeight: 2,
   openingPlusXDepth:
     OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultOpeningDepth,
   openingPlusXBottomLength:
@@ -277,7 +287,7 @@ function validateIntegerField(
 
 function validateBooleanField(
   value: unknown,
-  field: 'bottomPlateMode' | 'honeycombMode',
+  field: 'bottomPlateMode' | 'honeycombMode' | 'topRimEnabled',
   issues: OpenGridStackableCylinderValidationIssue[],
 ): void {
   if (typeof value !== 'boolean') {
@@ -306,6 +316,8 @@ const ALL_SUPPORTED_PARAMETER_KEYS = new Set<string>([
   'bottomSeatMode',
   'bottomHolesEnabled',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
   ...OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
 ])
 
@@ -491,6 +503,26 @@ export function validateOpenGridStackableCylinderParameters(
   if (hasOwn(value, 'honeycombMode')) {
     validateBooleanField(value.honeycombMode, 'honeycombMode', issues)
   }
+  if (hasOwn(value, 'topRimEnabled')) {
+    validateBooleanField(value.topRimEnabled, 'topRimEnabled', issues)
+  }
+  if (hasOwn(value, 'topRimHeight')) {
+    const heightValue =
+      typeof value.height === 'number' && Number.isFinite(value.height)
+        ? value.height
+        : configuration.defaultHeight
+    const maxRimHeight = Math.max(
+      configuration.minTopRimHeight,
+      Math.floor(heightValue / 2),
+    )
+    validateIntegerField(
+      value.topRimHeight,
+      'topRimHeight',
+      configuration.minTopRimHeight,
+      maxRimHeight,
+      issues,
+    )
+  }
   if (hasOpeningParameters) {
     for (const key of OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS) {
       if (!hasOwn(value, key)) continue
@@ -532,6 +564,15 @@ export function validateOpenGridStackableCylinderParameters(
       typeof value.honeycombMode === 'boolean'
         ? (value.honeycombMode as boolean)
         : false,
+    topRimEnabled:
+      typeof value.topRimEnabled === 'boolean'
+        ? (value.topRimEnabled as boolean)
+        : false,
+    topRimHeight:
+      typeof value.topRimHeight === 'number' &&
+      Number.isSafeInteger(value.topRimHeight)
+        ? (value.topRimHeight as number)
+        : configuration.defaultTopRimHeight,
     ...openingValues,
   }
   if (issues.length === 0 && hasOpeningParameters) {
@@ -1010,4 +1051,17 @@ export function openGridStackableCylinderStlFileName(
   const honeycombSuffix = honeycombSuffixFor(parameters)
   const openingSuffix = openingFingerprintFor(parameters)
   return `opengrid-stackable-cylinder-d${parameters.innerDiameter}-h${parameters.height}${seatSuffix}${modeSuffix}${honeycombSuffix}${openingSuffix}.stl`
+}
+
+export function openGridStackableCylinderThreeMfFileName(
+  parameters: OpenGridStackableCylinderParameters,
+): string {
+  const modeSuffix = modeSuffixFor(parameters)
+  const seatSuffix = seatSuffixFor(parameters)
+  const honeycombSuffix = honeycombSuffixFor(parameters)
+  const openingSuffix = openingFingerprintFor(parameters)
+  const rimSuffix = parameters.topRimEnabled
+    ? `-rim${parameters.topRimHeight}`
+    : ''
+  return `opengrid-stackable-cylinder-d${parameters.innerDiameter}-h${parameters.height}${seatSuffix}${modeSuffix}${honeycombSuffix}${openingSuffix}${rimSuffix}.3mf`
 }

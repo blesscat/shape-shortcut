@@ -5,6 +5,7 @@ export const CAD_VIEWPORT_CONFIG = {
   modelPartColors: {
     body: '#4e7cff',
     text: '#f59e0b',
+    rim: '#f59e0b',
   },
   modelEmissiveIntensity: 0.2,
   edgeThresholdAngle: 20,

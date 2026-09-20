@@ -4,6 +4,7 @@ import {
   isOpenGridStackableCylinderParameters,
   openGridStackableCylinderFileName,
   openGridStackableCylinderStlFileName,
+  openGridStackableCylinderThreeMfFileName,
   OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   validateOpenGridStackableCylinderParameters,
@@ -254,6 +255,15 @@ function exportStlFileName(parameters: ModelParameterValues): string {
   return openGridStackableCylinderStlFileName(parameters)
 }
 
+function exportThreeMfFileName(parameters: ModelParameterValues): string | null {
+  if (!isOpenGridStackableCylinderParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder')
+  }
+  return parameters.topRimEnabled
+    ? openGridStackableCylinderThreeMfFileName(parameters)
+    : null
+}
+
 export const opengridStackableCylinderDefinition: ModelDefinition = {
   id: 'opengrid-stackable-cylinder',
   buildKey: 'opengrid-stackable-cylinder',
@@ -275,4 +285,5 @@ export const opengridStackableCylinderDefinition: ModelDefinition = {
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName: exportStlFileName,
+  threeMfFileName: exportThreeMfFileName,
 }

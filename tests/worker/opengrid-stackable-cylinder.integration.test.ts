@@ -12,18 +12,25 @@ import {
 } from 'replicad'
 import {
   buildOpenGridStackableCylinder as buildOpenGridStackableCylinderKernel,
+  buildOpenGridStackableCylinderWithParts,
   inspectOpenGridStackableCylinderInterface,
 } from '../../src/cad-kernel/components/opengrid-stackable-cylinder/builder'
 import {
   boundsForOpenGridStackableCylinder,
   openGridStackableCylinderDerivedGeometryFor,
   openGridStackableCylinderHoleCentersFor,
+  openGridStackableCylinderThreeMfFileName,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   type OpenGridStackableCylinderParameters,
 } from '../../src/cad-contract/units'
-import { exportStlBytes, exportStepBytes } from '../../src/cad-kernel/export'
+import {
+  exportStlBytes,
+  exportStepBytes,
+  exportThreeMfBytes,
+  isThreeMfPackage,
+} from '../../src/cad-kernel/export'
 import { meshBRep } from '../../src/cad-kernel/mesh'
 import {
   importOpenGridDetachableCornerSeatHolderReference,
@@ -78,6 +85,17 @@ function buildOpenGridStackableCylinder(
   context: Parameters<typeof buildOpenGridStackableCylinderKernel>[1] = {},
 ): Shape3D {
   return buildOpenGridStackableCylinderKernel(parameters, {
+    detachableCornerSeatReference,
+    detachableCornerSeatHolderReference,
+    ...context,
+  })
+}
+
+function buildOpenGridStackableCylinderParts(
+  parameters: OpenGridStackableCylinderParameters,
+  context: Parameters<typeof buildOpenGridStackableCylinderWithParts>[1] = {},
+) {
+  return buildOpenGridStackableCylinderWithParts(parameters, {
     detachableCornerSeatReference,
     detachableCornerSeatHolderReference,
     ...context,
@@ -826,4 +844,93 @@ describe('OpenGrid stackable-cylinder B-Rep', () => {
       }),
     ).toThrow('STALE_GENERATION')
   })
+
+  it('partitions cylinder into body and rim parts when topRimEnabled is true', async () => {
+    const input = parameters({
+      height: 30,
+      topRimEnabled: true,
+      topRimHeight: 4,
+    })
+    const result = buildOpenGridStackableCylinderParts(input)
+    try {
+      expect(result.parts).toBeDefined()
+      expect(result.parts).toHaveLength(2)
+      expect(result.parts![0]?.name).toBe('body')
+      expect(result.parts![1]?.name).toBe('rim')
+
+      const body = result.parts![0]!.shape
+      const rim = result.parts![1]!.shape
+      const bodyVol = measureVolume(body)
+      const rimVol = measureVolume(rim)
+      const totalVol = measureVolume(result.shape)
+
+      expect(bodyVol).toBeGreaterThan(0)
+      expect(rimVol).toBeGreaterThan(0)
+      expect(bodyVol + rimVol).toBeCloseTo(totalVol, -1)
+
+      const bodyBounds = boundsOf(body)
+      const rimBounds = boundsOf(rim)
+      expect(bodyBounds[1][2]).toBeCloseTo(26, 1)
+      expect(rimBounds[0][2]).toBeCloseTo(26, 1)
+      expect(rimBounds[1][2]).toBeCloseTo(30, 1)
+
+      const threeMf = await exportThreeMfBytes(
+        [
+          { name: 'body', shape: body },
+          { name: 'rim', shape: rim },
+        ],
+        {
+          modelName: 'opengrid-stackable-cylinder',
+          sourceFile: openGridStackableCylinderThreeMfFileName(input),
+        },
+      )
+      expect(isThreeMfPackage(threeMf)).toBe(true)
+      const threeMfText = new TextDecoder().decode(new Uint8Array(threeMf))
+      expect(threeMfText).toContain('3D/3dmodel.model')
+      expect(threeMfText).toContain('3D/Objects/object_1.model')
+      expect(threeMfText).toContain('Metadata/project_settings.config')
+      expect(threeMfText).toContain('Metadata/model_settings.config')
+      expect(threeMfText).toContain('opengrid-stackable-cylinder')
+      expect(threeMfText).toContain('OpenGrid Stackable Cylinder')
+      expect(threeMfText).toContain('Cylinder Body')
+      expect(threeMfText).toContain('Cylinder Rim')
+      expect(threeMfText).toContain('key="filament_maps" value="1 2"')
+      expect(threeMfText).toContain('<part id="1"')
+      expect(threeMfText).toContain('name="body"')
+      expect(threeMfText).toContain('<part id="2"')
+      expect(threeMfText).toContain('name="rim"')
+      expect(threeMfText).toContain('key="extruder" value="1"')
+      expect(threeMfText).toContain('key="extruder" value="2"')
+    } finally {
+      if (result.parts) {
+        for (const part of result.parts) deleteShape(part.shape)
+      }
+      deleteShape(result.shape)
+    }
+  }, 120_000)
+
+  it('partitions cleanly when side opening depth cuts across the rim boundary', () => {
+    const input = parameters({
+      height: 30,
+      topRimEnabled: true,
+      topRimHeight: 3,
+      openingPlusXDepth: 8,
+      openingPlusXBottomLength: 5,
+      openingPlusXAngle: 90,
+    })
+    const result = buildOpenGridStackableCylinderParts(input)
+    try {
+      expect(result.parts).toBeDefined()
+      expect(result.parts).toHaveLength(2)
+      const body = result.parts![0]!.shape
+      const rim = result.parts![1]!.shape
+      expect(measureVolume(body)).toBeGreaterThan(0)
+      expect(measureVolume(rim)).toBeGreaterThan(0)
+    } finally {
+      if (result.parts) {
+        for (const part of result.parts) deleteShape(part.shape)
+      }
+      deleteShape(result.shape)
+    }
+  }, 120_000)
 })

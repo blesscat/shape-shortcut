@@ -11,34 +11,40 @@ The system MUST expose the independently validated
 `modelId=opengrid-stackable-cylinder`, `buildKey=opengrid-stackable-cylinder`,
 and route `/cad/opengrid-stackable-cylinder`. Its display name MUST remain
 `Round Box (圓盒)`. The normalized snapshot MUST contain integer
-`innerDiameter` and `height`, boolean `bottomPlateMode` and `honeycombMode`,
-enum `bottomSeatMode`, and the existing twelve typed opening fields; the
-removed `thinBottomMode` flag MUST NOT appear in a canonical snapshot.
-`innerDiameter` MUST be an integer between 20 and 300 and MUST carry
-inner-cavity semantics: the derived outer diameter MUST equal
-`innerDiameter + 2 × wallThickness` for the selected profile, where the
-profile wall thickness is 1.6 mm in the thin profile and 2.0 mm in
-bottom-plate mode. `bottomSeatMode` MUST be exactly `none`,
-`detachable-corner-seat`, or `integrated`, with visible labels `無角座`,
-`鎖定角座`, and `內建角座` respectively. The height and opening numeric
-ranges, opening semantics, 1 mm controls, and the hidden non-panel status of
-`bottomPlateMode` MUST remain unchanged.
+`innerDiameter` and `height`, boolean `bottomPlateMode`, `honeycombMode`, and
+`topRimEnabled`, integer `topRimHeight`, enum `bottomSeatMode`, and the existing
+twelve typed opening fields; the removed `thinBottomMode` flag MUST NOT appear
+in a canonical snapshot. `innerDiameter` MUST be an integer between 20 and 300
+and MUST carry inner-cavity semantics: the derived outer diameter MUST equal
+`innerDiameter + 2 × wallThickness` for the selected profile, where the profile
+wall thickness is 1.6 mm in the thin profile and 2.0 mm in bottom-plate mode.
+`topRimEnabled` MUST be a boolean defaulting to `false`. `topRimHeight` MUST be
+an integer between 1 and `floor(height / 2)` defaulting to 2 mm. When
+`topRimEnabled` is false, `topRimHeight` MUST still normalize to a valid integer
+within range. `bottomSeatMode` MUST be exactly `none`, `detachable-corner-seat`,
+or `integrated`, with visible labels `無角座`, `鎖定角座`, and `內建角座`
+respectively. The height and opening numeric ranges, opening semantics, 1 mm
+controls, and the hidden non-panel status of `bottomPlateMode` MUST remain
+unchanged.
 
 The default snapshot MUST be `innerDiameter=56`, `height=20`,
-`bottomPlateMode=false`, and
-`bottomSeatMode='detachable-corner-seat'`, so the shipped default box uses
-the thin profile with a 59.2 mm outer diameter, with zero-depth openings,
-bottom length 1, and angle 90. A legacy `bottomHolesEnabled=false/true` value
-MUST migrate to `bottomSeatMode='none'/'detachable-corner-seat'`; a missing
-legacy value MUST migrate to `'detachable-corner-seat'`. A persisted
-`thinBottomMode` value MUST be ignored during hydration and MUST NOT be
-persisted again. A legacy outer-semantics `diameter` value without
-`innerDiameter` MUST migrate to `innerDiameter = round(diameter − 3.2)`,
-shifting the derived outer envelope by exactly +0.2 mm relative to the
-persisted outer value. A canonical `innerDiameter` MUST take precedence over
-a stale legacy `diameter`, and a canonical enum value MUST take precedence
-over a stale boolean. Unsupported enum values MUST be rejected. Existing
-model identity, route, opening, and height contracts MUST remain unchanged.
+`bottomPlateMode=false`, `bottomSeatMode='detachable-corner-seat'`,
+`honeycombMode=false`, `topRimEnabled=false`, and `topRimHeight=2`, so the
+shipped default box uses the thin profile with a 59.2 mm outer diameter, with
+zero-depth openings, bottom length 1, and angle 90. A legacy
+`bottomHolesEnabled=false/true` value MUST migrate to
+`bottomSeatMode='none'/'detachable-corner-seat'`; a missing legacy value MUST
+migrate to `'detachable-corner-seat'`. A persisted snapshot missing
+`topRimEnabled` or `topRimHeight` MUST hydrate with `topRimEnabled=false` and
+`topRimHeight=2`. A persisted `thinBottomMode` value MUST be ignored during
+hydration and MUST NOT be persisted again. A legacy outer-semantics `diameter`
+value without `innerDiameter` MUST migrate to `innerDiameter = round(diameter − 3.2)`,
+shifting the derived outer envelope by exactly +0.2 mm relative to the persisted
+outer value. A canonical `innerDiameter` MUST take precedence over a stale
+legacy `diameter`, and a canonical enum value MUST take precedence over a stale
+boolean. Unsupported enum values, `topRimHeight < 1`, or
+`topRimHeight > floor(height / 2)` MUST be rejected. Existing model identity,
+route, opening, and height contracts MUST remain unchanged.
 
 #### Scenario: Valid cylinder defaults
 
@@ -46,6 +52,8 @@ model identity, route, opening, and height contracts MUST remain unchanged.
 - **THEN** the panel MUST select `鎖定角座`
 - **AND** the normalized snapshot MUST use
   `bottomSeatMode='detachable-corner-seat'`
+- **AND** `topRimEnabled` MUST default to `false`
+- **AND** `topRimHeight` MUST default to `2`
 - **AND** the generated shell MUST use the thin profile with
   `innerDiameter=56`
 
@@ -55,6 +63,23 @@ model identity, route, opening, and height contracts MUST remain unchanged.
 - **THEN** exactly one of `無角座`, `鎖定角座`, or `內建角座` MUST be selected
 - **AND** the Worker snapshot MUST contain the corresponding enum value
 - **AND** no `bottomHolesEnabled` field MUST be sent in the canonical snapshot
+
+#### Scenario: Top rim controls in panel
+
+- **WHEN** the cylinder panel initializes
+- **THEN** a `雙色飾圈` (`Two-Color Rim`) checkbox MUST be visible
+- **AND** the `topRimHeight` numeric input/slider MUST be hidden when
+  `topRimEnabled` is `false`
+- **AND** checking `雙色飾圈` MUST reveal the `topRimHeight` control bounded
+  from `1` to `floor(height / 2)`
+
+#### Scenario: Top rim height bound validation
+
+- **WHEN** `topRimEnabled` is `true` and `topRimHeight` exceeds
+  `floor(height / 2)` or is less than `1`
+- **THEN** parameter validation MUST fail with a field-specific error on
+  `topRimHeight`
+- **AND** the invalid parameter set MUST NOT trigger B-Rep generation
 
 #### Scenario: Legacy cylinder migration
 
@@ -770,19 +795,20 @@ those references are unavailable.
 ### Requirement: Cylinder workspace lifecycle and export gates
 
 The cylinder route MUST use the existing debounce, latest-wins,
-candidate-ready, commit/discard, invalid-input, stale-preview, Worker
-recovery, preview mesh, STEP export, and STL export lifecycle. A failed or
-stale cylinder generation MUST NOT replace the latest committed revision or
-enable export.
+candidate-ready, commit/discard, invalid-input, stale-preview, Worker recovery,
+preview mesh, STEP export, and STL export lifecycle. A failed or stale cylinder
+generation MUST NOT replace the latest committed revision or enable export. When
+the latest committed revision has `topRimEnabled=true`, 3MF export MUST be
+enabled in the workspace panel; when `topRimEnabled=false`, 3MF export MUST
+remain disabled for the cylinder.
 
 #### Scenario: Valid cylinder update commits
 
-- **WHEN** a valid inner-diameter or height update settles after the
-  existing input debounce
+- **WHEN** a valid inner-diameter or height update settles after the existing
+  input debounce
 - **THEN** the workspace MUST request a newer cylinder generation
 - **AND** only the latest valid candidate MUST be eligible for commit
-- **AND** the committed bounds MUST match the typed parameters within
-  tolerance
+- **AND** the committed bounds MUST match the typed parameters within tolerance
 
 #### Scenario: Invalid or stale cylinder update
 
@@ -793,3 +819,50 @@ enable export.
 - **AND** the previous committed preview MAY remain visible as stale
 - **AND** STEP/STL export MUST remain disabled for the invalid or stale
   snapshot
+
+#### Scenario: 3MF export enabled when rim is active
+
+- **WHEN** the cylinder finishes building a committed revision with
+  `topRimEnabled=true`
+- **THEN** `下載 3MF` (`Download 3MF`) MUST be enabled in the workspace
+- **AND** selecting it MUST trigger a valid `.3mf` download
+
+#### Scenario: 3MF export disabled when rim is inactive
+
+- **WHEN** the cylinder finishes building a committed revision with
+  `topRimEnabled=false`
+- **THEN** `下載 3MF` (`Download 3MF`) MUST NOT be enabled for the cylinder
+
+### Requirement: Two-color top accent rim shell partitioning
+
+When `topRimEnabled` is `true`, the cylinder build pipeline MUST partition the
+final geometry at horizontal split plane $Z = \text{height} - \text{topRimHeight}$
+into two complementary parts: a `body` solid occupying $Z \in [0, \text{height} - \text{topRimHeight}]$
+and a `rim` solid occupying $Z \in [\text{height} - \text{topRimHeight}, \text{height}]$.
+The uncut host shape MUST serve as the quality shape and MUST satisfy all
+existing cylinder quality rules (including bounds, floor thickness, and
+locating seat integrity). Both the `body` and `rim` parts MUST be non-empty valid
+B-Rep solids whose combined compound reproduces the complete container geometry,
+preserving any intersecting side opening profiles or honeycomb cells across the
+split boundary. The Worker candidate and committed records MUST emit both parts
+as distinct `partMeshes` assigned to `body` and `rim`.
+
+#### Scenario: Partitioning creates complementary non-empty parts
+
+- **WHEN** `topRimEnabled` is `true` and the cylinder is built
+- **THEN** the build output MUST contain `parts` with names `body` and `rim`
+- **AND** the bounding box $Z$ maximum of `body` MUST equal
+  $\text{height} - \text{topRimHeight}$ within tolerance
+- **AND** the bounding box $Z$ minimum of `rim` MUST equal
+  $\text{height} - \text{topRimHeight}$ within tolerance
+- **AND** the volume sum of `body` and `rim` MUST match the uncut quality shape
+  volume within 0.1%
+
+#### Scenario: Intersecting side opening is preserved across the rim split
+
+- **WHEN** `topRimEnabled` is `true` and a side opening depth exceeds
+  `topRimHeight`
+- **THEN** both the `rim` part and `body` part MUST reflect the opening cut
+- **AND** the `rim` part MAY consist of multiple disconnected solid shells
+  within a single compound part
+- **AND** no non-manifold edges or invalid B-Rep geometry MUST result

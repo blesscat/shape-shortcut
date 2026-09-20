@@ -145,6 +145,10 @@
       bottomPlateMode: rawParameters.bottomPlateMode === 'true',
       bottomSeatMode: seatModeForRawParameters(),
       honeycombMode: rawParameters.honeycombMode === 'true',
+      topRimEnabled: rawParameters.topRimEnabled === 'true',
+      topRimHeight:
+        rawNumberFor('topRimHeight') ??
+        OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultTopRimHeight,
       ...openingValues,
     }
   }
@@ -224,6 +228,27 @@
       return [{ ...displayedField, max: maximum, sliderMax: maximum }]
     })
   }
+
+  const topRimHeightField = $derived.by((): ParameterFieldDefinition => {
+    const height =
+      rawNumberFor('height') ??
+      OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultHeight
+    const max = Math.max(1, Math.floor(height / 2))
+    return {
+      key: 'topRimHeight',
+      label: 'parameter.topRimHeight',
+      axis: 'Z',
+      unit: 'mm',
+      control: 'range-text',
+      defaultValue:
+        OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.defaultTopRimHeight,
+      min: OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.minTopRimHeight,
+      max,
+      step: OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.inputStep,
+      sliderMin: OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.minTopRimHeight,
+      sliderMax: max,
+    }
+  })
 </script>
 
 <fieldset
@@ -319,6 +344,42 @@
       {/if}
     </ParameterField>
   {/each}
+  <label class="flex items-start gap-2 text-sm">
+    <input
+      class="mt-0.5"
+      type="checkbox"
+      aria-label={translate(locale, 'panel.topRim')}
+      data-testid="opengrid-stackable-cylinder-top-rim-enabled"
+      checked={rawParameters.topRimEnabled === 'true'}
+      onchange={(event) => {
+        if (!(event.currentTarget instanceof HTMLInputElement)) return
+        onInputChange('topRimEnabled', String(event.currentTarget.checked))
+      }}
+    />
+    <span>{translate(locale, 'panel.topRim')}</span>
+  </label>
+  {#if rawParameters.topRimEnabled === 'true'}
+    {@const value =
+      rawParameters.topRimHeight ?? String(topRimHeightField.defaultValue)}
+    <ParameterField
+      {locale}
+      label={displayParameterLabel(topRimHeightField, locale)}
+      unit={unitLabelFor(locale, topRimHeightField.unit)}
+      changed={value !== String(topRimHeightField.defaultValue)}
+      error={fieldErrors.topRimHeight}
+      errorId="topRimHeight-error"
+      onRestore={() =>
+        onInputChange('topRimHeight', String(topRimHeightField.defaultValue))}
+    >
+      <ParameterControl
+        {locale}
+        field={topRimHeightField}
+        {value}
+        error={fieldErrors.topRimHeight}
+        onChange={(nextValue) => onInputChange('topRimHeight', nextValue)}
+      />
+    </ParameterField>
+  {/if}
   <details
     class="grid gap-3 rounded-lg border border-border-field p-3"
     data-testid="opengrid-cylinder-opening-disclosure"

@@ -29,7 +29,7 @@ export type MeshSnapshot = {
 }
 
 export type ModelPartMeshSnapshot = {
-  name: 'body' | 'text'
+  name: 'body' | 'text' | 'rim'
   mesh: MeshSnapshot
 }
 
@@ -451,7 +451,9 @@ function isPartMeshes(value: unknown): value is ModelPartMeshSnapshot[] {
   for (const item of value) {
     if (
       !isRecord(item) ||
-      (item.name !== 'body' && item.name !== 'text') ||
+      (item.name !== 'body' &&
+        item.name !== 'text' &&
+        item.name !== 'rim') ||
       names.has(item.name) ||
       !isMesh(item.mesh)
     ) {

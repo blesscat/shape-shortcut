@@ -7,8 +7,20 @@ import { PROTOTYPE_CONFIGURATION } from '../../cad-contract/units'
 import { meshBRep, type MeshData } from '../mesh'
 
 export type ThreeMfShapePart = {
-  name: 'body' | 'text'
+  name: 'body' | 'text' | 'rim'
   shape: Shape3D
+}
+
+export type ExportThreeMfOptions = {
+  tolerance?: number
+  angularTolerance?: number
+  modelName?: string
+  sourceFile?: string
+  plateName?: string
+  baseMaterialName?: string
+  accentMaterialName?: string
+  baseColor?: string
+  accentColor?: string
 }
 
 type ZipEntry = {
@@ -43,6 +55,7 @@ const BODY_COMPONENT_UUID = '00010000-b206-40ff-9872-83e8017abed1'
 const TEXT_COMPONENT_UUID = '00010001-b206-40ff-9872-83e8017abed1'
 const BODY_PART_UUID = 'd61eef14-56af-4be9-bec2-808d851cfa24'
 const TEXT_PART_UUID = '81413479-78c8-4c21-b3e4-f05c65c66752'
+const RIM_PART_UUID = '81413479-78c8-4c21-b3e4-f05c65c66753'
 const BUILD_UUID = '2c7c17d8-22b5-4d84-8835-1976022ea369'
 const BUILD_ITEM_UUID = '00000003-b1ec-4553-aec9-835e5b724bb4'
 
@@ -97,6 +110,12 @@ function meshXml(mesh: MeshData): string {
 
 function objectModelXml(
   parts: readonly { name: string; mesh: MeshData }[],
+  materials: {
+    baseName: string
+    baseColor: string
+    accentName: string
+    accentColor: string
+  },
 ): string {
   const objects = parts
     .map((part, index) => {
@@ -110,8 +129,8 @@ function objectModelXml(
   <metadata name="BambuStudio:3mfVersion">1</metadata>
   <resources>
     <basematerials id="1">
-      <base name="${BASE_MATERIAL.name}" displaycolor="${BASE_MATERIAL.color}" />
-      <base name="${TEXT_MATERIAL.name}" displaycolor="${TEXT_MATERIAL.color}" />
+      <base name="${xmlEscape(materials.baseName)}" displaycolor="${materials.baseColor}" />
+      <base name="${xmlEscape(materials.accentName)}" displaycolor="${materials.accentColor}" />
     </basematerials>
     ${objects}
   </resources>
@@ -147,10 +166,13 @@ function contentTypesXml(): string {
 </Types>`
 }
 
-function projectSettingsJson(): string {
+function projectSettingsJson(materials: {
+  baseColor: string
+  accentColor: string
+}): string {
   return `{
   "extruder_type": ["Direct Drive"],
-  "filament_colour": ["${BASE_MATERIAL.color}", "${TEXT_MATERIAL.color}"],
+  "filament_colour": ["${materials.baseColor}", "${materials.accentColor}"],
   "filament_flow_ratio": ["1", "1"],
   "filament_map": ["1", "1"],
   "filament_settings_id": ["Bambu PLA Basic @BBL A1", "Bambu PLA Basic @BBL A1"],
@@ -177,19 +199,26 @@ function projectSettingsJson(): string {
 
 function modelSettingsXml(
   parts: readonly { name: string; mesh: MeshData }[],
+  meta: {
+    modelName: string
+    sourceFile: string
+    plateName: string
+  },
 ): string {
   const bodyFaceCount = parts[0]!.mesh.indices.length / 3
-  const textFaceCount = parts[1]!.mesh.indices.length / 3
+  const accentFaceCount = parts[1]!.mesh.indices.length / 3
+  const accentPartUuid =
+    parts[1]!.name === 'rim' ? RIM_PART_UUID : TEXT_PART_UUID
   return `<?xml version="1.0" encoding="UTF-8"?>
 <config>
   <object id="3">
-    <metadata key="name" value="opengrid-wall-cover" />
+    <metadata key="name" value="${xmlEscape(meta.modelName)}" />
     <metadata key="extruder" value="1" />
-    <metadata face_count="${bodyFaceCount + textFaceCount}" />
+    <metadata face_count="${bodyFaceCount + accentFaceCount}" />
     <part id="1" subtype="normal_part" uuid="${BODY_PART_UUID}">
-      <metadata key="name" value="body" />
+      <metadata key="name" value="${xmlEscape(parts[0]!.name)}" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="opengrid-wall-cover.3mf" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFile)}" />
       <metadata key="source_object_id" value="0" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
@@ -198,22 +227,22 @@ function modelSettingsXml(
       <metadata key="extruder" value="1" />
       <mesh_stat face_count="${bodyFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
     </part>
-    <part id="2" subtype="normal_part" uuid="${TEXT_PART_UUID}">
-      <metadata key="name" value="text" />
+    <part id="2" subtype="normal_part" uuid="${accentPartUuid}">
+      <metadata key="name" value="${xmlEscape(parts[1]!.name)}" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="opengrid-wall-cover.3mf" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFile)}" />
       <metadata key="source_object_id" value="1" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
       <metadata key="source_offset_y" value="0" />
       <metadata key="source_offset_z" value="0" />
       <metadata key="extruder" value="2" />
-      <mesh_stat face_count="${textFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
+      <mesh_stat face_count="${accentFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
     </part>
   </object>
   <plate>
     <metadata key="plater_id" value="1" />
-    <metadata key="plater_name" value="OpenGrid Wall Cover" />
+    <metadata key="plater_name" value="${xmlEscape(meta.plateName)}" />
     <metadata key="locked" value="false" />
     <metadata key="filament_map_mode" value="Auto For Flush" />
     <metadata key="filament_maps" value="1 2" />
@@ -346,25 +375,60 @@ function zipStore(entries: readonly ZipEntry[]): ArrayBuffer {
 
 export async function exportThreeMfBytes(
   parts: readonly ThreeMfShapePart[],
-  options = {
-    tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
-    angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
-  },
+  options: ExportThreeMfOptions = {},
 ): Promise<ArrayBuffer> {
   if (
     parts.length !== 2 ||
     parts[0]?.name !== 'body' ||
-    parts[1]?.name !== 'text'
+    (parts[1]?.name !== 'text' && parts[1]?.name !== 'rim')
   ) {
     throw new Error('THREEMF_PARTS_INVALID')
   }
 
+  const modelName = options.modelName ?? 'opengrid-wall-cover'
+  const sourceFile = options.sourceFile ?? `${modelName}.3mf`
+  const isCylinder =
+    modelName === 'opengrid-stackable-cylinder' || parts[1]?.name === 'rim'
+  const plateName =
+    options.plateName ??
+    (isCylinder ? 'OpenGrid Stackable Cylinder' : 'OpenGrid Wall Cover')
+  const baseMaterialName =
+    options.baseMaterialName ??
+    (isCylinder ? 'Cylinder Body' : 'Wall Cover Body')
+  const accentMaterialName =
+    options.accentMaterialName ??
+    (isCylinder ? 'Cylinder Rim' : 'Wall Cover Text')
+  const baseColor = options.baseColor ?? BASE_MATERIAL.color
+  const accentColor =
+    options.accentColor ?? (isCylinder ? '#f59e0b' : TEXT_MATERIAL.color)
+
+  const meshOptions = {
+    tolerance: options.tolerance ?? PROTOTYPE_CONFIGURATION.stlTolerance,
+    angularTolerance:
+      options.angularTolerance ??
+      PROTOTYPE_CONFIGURATION.stlAngularTolerance,
+  }
+
   const meshes = parts.map((part) => ({
     name: part.name,
-    mesh: meshBRep(part.shape, options),
+    mesh: meshBRep(part.shape, meshOptions),
   }))
+
+  const materials = {
+    baseName: baseMaterialName,
+    baseColor,
+    accentName: accentMaterialName,
+    accentColor,
+  }
+
+  const meta = {
+    modelName,
+    sourceFile,
+    plateName,
+  }
+
   const model = TEXT_ENCODER.encode(modelXml())
-  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes))
+  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes, materials))
   const entries: ZipEntry[] = [
     {
       name: '[Content_Types].xml',
@@ -382,11 +446,11 @@ export async function exportThreeMfBytes(
     { name: OBJECT_MODEL_PATH, bytes: objectModel },
     {
       name: PROJECT_SETTINGS_PATH,
-      bytes: TEXT_ENCODER.encode(projectSettingsJson()),
+      bytes: TEXT_ENCODER.encode(projectSettingsJson(materials)),
     },
     {
       name: MODEL_SETTINGS_PATH,
-      bytes: TEXT_ENCODER.encode(modelSettingsXml(meshes)),
+      bytes: TEXT_ENCODER.encode(modelSettingsXml(meshes, meta)),
     },
   ]
   const bytes = zipStore(entries)

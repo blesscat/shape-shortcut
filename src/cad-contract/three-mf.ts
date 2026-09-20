@@ -236,7 +236,9 @@ function validProjectSettings(json: string): boolean {
     settings.printer_technology === 'FFF' &&
     stringArray(settings.nozzle_diameter, ['0.4']) &&
     stringArray(settings.extruder_type, ['Direct Drive']) &&
-    stringArray(settings.filament_colour, ['#657080', '#F4C542']) &&
+    (stringArray(settings.filament_colour, ['#657080', '#F4C542']) ||
+      stringArray(settings.filament_colour, ['#657080', '#f59e0b']) ||
+      stringArray(settings.filament_colour, ['#657080', '#F59E0B'])) &&
     stringArray(settings.filament_map, ['1', '1']) &&
     stringArray(settings.filament_volume_map, ['0', '0'])
   )
@@ -338,12 +340,16 @@ function validObjectModel(xml: string): boolean {
   }
   const materials = materialSection[1]!.match(/<base\b[^>]*\/\s*>/g) ?? []
   if (materials.length !== 2) return false
-  if (
-    attribute(materials[0]!, 'name') !== 'Wall Cover Body' ||
-    attribute(materials[0]!, 'displaycolor') !== '#657080' ||
-    attribute(materials[1]!, 'name') !== 'Wall Cover Text' ||
-    attribute(materials[1]!, 'displaycolor') !== '#F4C542'
-  ) {
+  const baseName = attribute(materials[0]!, 'name')
+  const baseColor = attribute(materials[0]!, 'displaycolor')
+  const accentName = attribute(materials[1]!, 'name')
+  const accentColor = attribute(materials[1]!, 'displaycolor')
+  const validMaterials =
+    ((baseName === 'Wall Cover Body' && accentName === 'Wall Cover Text') ||
+      (baseName === 'Cylinder Body' && accentName === 'Cylinder Rim')) &&
+    baseColor === '#657080' &&
+    (accentColor === '#F4C542' || accentColor?.toLowerCase() === '#f59e0b')
+  if (!validMaterials) {
     return false
   }
 
@@ -359,21 +365,22 @@ function validObjectModel(xml: string): boolean {
   }
 
   const body = objectById.get('1')
-  const text = objectById.get('2')
-  if (!body || !text) return false
+  const accent = objectById.get('2')
+  if (!body || !accent) return false
+  const accentPartName = attribute(accent.attributes, 'name')
   if (
     attribute(body.attributes, 'type') !== 'model' ||
     attribute(body.attributes, 'name') !== 'body' ||
     attribute(body.attributes, 'pid') !== '1' ||
     attribute(body.attributes, 'pindex') !== '0' ||
-    attribute(text.attributes, 'type') !== 'model' ||
-    attribute(text.attributes, 'name') !== 'text' ||
-    attribute(text.attributes, 'pid') !== '1' ||
-    attribute(text.attributes, 'pindex') !== '1'
+    attribute(accent.attributes, 'type') !== 'model' ||
+    (accentPartName !== 'text' && accentPartName !== 'rim') ||
+    attribute(accent.attributes, 'pid') !== '1' ||
+    attribute(accent.attributes, 'pindex') !== '1'
   ) {
     return false
   }
-  if (!validMesh(body.body) || !validMesh(text.body)) return false
+  if (!validMesh(body.body) || !validMesh(accent.body)) return false
   return (
     /<build\b[^>]*\/\s*>/.test(xml) &&
     (xml.match(/<item\b[^>]*\/\s*>/g) ?? []).length === 0
@@ -502,11 +509,12 @@ function validSettingsPart(
       'matrix',
       THREE_MF_IDENTITY_MATRIX,
     ) &&
-    validSettingsMetadata(
-      metadataFor('source_file'),
-      'source_file',
-      'opengrid-wall-cover.3mf',
-    ) &&
+    (() => {
+      const sourceFile = metadataFor('source_file')
+      if (!sourceFile) return false
+      const val = attribute(sourceFile, 'value')
+      return val !== null && val.endsWith('.3mf') && val.length > 4
+    })() &&
     validSettingsMetadata(
       metadataFor('source_object_id'),
       'source_object_id',
@@ -581,7 +589,12 @@ function validSettingsObject(
     attribute(object[1]!, 'id') === '3' &&
     faceCount !== undefined &&
     nameMetadata !== undefined &&
-    validSettingsMetadata(nameMetadata, 'name', 'opengrid-wall-cover') &&
+    (validSettingsMetadata(nameMetadata, 'name', 'opengrid-wall-cover') ||
+      validSettingsMetadata(
+        nameMetadata,
+        'name',
+        'opengrid-stackable-cylinder',
+      )) &&
     extruderMetadata !== undefined &&
     validSettingsMetadata(extruderMetadata, 'extruder', '1') &&
     objectFaceCount !== null &&
@@ -590,7 +603,8 @@ function validSettingsObject(
     bodyFaceCount !== null &&
     textFaceCount !== null &&
     validSettingsPart(parts[0]!, '1', 'body', '1', '0') &&
-    validSettingsPart(parts[1]!, '2', 'text', '2', '1') &&
+    (validSettingsPart(parts[1]!, '2', 'text', '2', '1') ||
+      validSettingsPart(parts[1]!, '2', 'rim', '2', '1')) &&
     objectFaceCount === bodyFaceCount + textFaceCount &&
     (expectedPartFaceCounts === undefined ||
       (bodyFaceCount === expectedPartFaceCounts[0] &&
@@ -620,11 +634,16 @@ function validSettingsPlate(xml: string): boolean {
   return (
     attribute(plate[1]!, 'id') === null &&
     validSettingsMetadata(metadataFor('plater_id')!, 'plater_id', '1') &&
-    validSettingsMetadata(
+    (validSettingsMetadata(
       metadataFor('plater_name')!,
       'plater_name',
       'OpenGrid Wall Cover',
-    ) &&
+    ) ||
+      validSettingsMetadata(
+        metadataFor('plater_name')!,
+        'plater_name',
+        'OpenGrid Stackable Cylinder',
+      )) &&
     validSettingsMetadata(metadataFor('locked')!, 'locked', 'false') &&
     validSettingsMetadata(
       metadataFor('filament_map_mode')!,
