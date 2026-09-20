@@ -15,6 +15,69 @@ const THREE_MF_IDENTITY_TRANSFORM = '1 0 0 0 1 0 0 0 1 0 0 0'
 export const THREE_MF_BUILD_TRANSFORM = '1 0 0 0 1 0 0 0 1 128 128 0'
 const THREE_MF_IDENTITY_MATRIX = '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1'
 
+/**
+ * Per-model expectations for the dual-color 3MF package. The default
+ * expectation describes the historical Wall Cover package so existing
+ * callers keep validating it unchanged.
+ */
+export type ThreeMfPackageExpectation = {
+  baseMaterialName: string
+  baseMaterialColor: string
+  accentMaterialName: string
+  accentMaterialColor: string
+  /** Package-level name of the second part: `text` (Wall Cover) or `icon`. */
+  accentPartName: string
+  /** `name` metadata of the model settings object. */
+  modelSettingsName: string
+  /** `source_file` metadata on both parts. */
+  sourceFileName: string
+  platerName: string
+  filamentColors: readonly [string, string]
+}
+
+export const THREE_MF_WALL_COVER_EXPECTATION: ThreeMfPackageExpectation = {
+  baseMaterialName: 'Wall Cover Body',
+  baseMaterialColor: '#657080',
+  accentMaterialName: 'Wall Cover Text',
+  accentMaterialColor: '#F4C542',
+  accentPartName: 'text',
+  modelSettingsName: 'opengrid-wall-cover',
+  sourceFileName: 'opengrid-wall-cover.3mf',
+  platerName: 'OpenGrid Wall Cover',
+  filamentColors: ['#657080', '#F4C542'],
+}
+
+export function threeMfExpectationForLabelTag(
+  sourceFileName: string,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: 'Label Tag Body',
+    baseMaterialColor: '#657080',
+    accentMaterialName: 'Label Tag Icon',
+    accentMaterialColor: '#F4C542',
+    accentPartName: 'icon',
+    modelSettingsName: 'opengrid-label-tag',
+    sourceFileName,
+    platerName: 'OpenGrid Label Tag',
+    filamentColors: ['#657080', '#F4C542'],
+  }
+}
+
+/**
+ * Main-thread download validation expectation derived from the requested
+ * file name. Label Tag 3MF file names embed their parameters under the
+ * `opengrid-label-tag` prefix; every other name keeps the historical
+ * Wall Cover expectation.
+ */
+export function threeMfExpectationForFileName(
+  fileName: string,
+): ThreeMfPackageExpectation {
+  if (fileName.startsWith('opengrid-label-tag')) {
+    return threeMfExpectationForLabelTag(fileName)
+  }
+  return THREE_MF_WALL_COVER_EXPECTATION
+}
+
 const REQUIRED_ENTRIES = [
   '[Content_Types].xml',
   '_rels/.rels',
@@ -211,7 +274,10 @@ function validContentTypes(xml: string): boolean {
   )
 }
 
-function validProjectSettings(json: string): boolean {
+function validProjectSettings(
+  json: string,
+  expected: ThreeMfPackageExpectation,
+): boolean {
   let parsed: unknown
   try {
     parsed = JSON.parse(json)
@@ -236,7 +302,7 @@ function validProjectSettings(json: string): boolean {
     settings.printer_technology === 'FFF' &&
     stringArray(settings.nozzle_diameter, ['0.4']) &&
     stringArray(settings.extruder_type, ['Direct Drive']) &&
-    stringArray(settings.filament_colour, ['#657080', '#F4C542']) &&
+    stringArray(settings.filament_colour, expected.filamentColors) &&
     stringArray(settings.filament_map, ['1', '1']) &&
     stringArray(settings.filament_volume_map, ['0', '0'])
   )
@@ -316,7 +382,10 @@ function validMesh(meshXml: string): boolean {
   return true
 }
 
-function validObjectModel(xml: string): boolean {
+function validObjectModel(
+  xml: string,
+  expected: ThreeMfPackageExpectation,
+): boolean {
   if (
     !/^<\?xml\b[\s\S]*?\?>\s*<model\b/.test(xml) ||
     (xml.match(/<model\b/g) ?? []).length !== 1 ||
@@ -339,10 +408,10 @@ function validObjectModel(xml: string): boolean {
   const materials = materialSection[1]!.match(/<base\b[^>]*\/\s*>/g) ?? []
   if (materials.length !== 2) return false
   if (
-    attribute(materials[0]!, 'name') !== 'Wall Cover Body' ||
-    attribute(materials[0]!, 'displaycolor') !== '#657080' ||
-    attribute(materials[1]!, 'name') !== 'Wall Cover Text' ||
-    attribute(materials[1]!, 'displaycolor') !== '#F4C542'
+    attribute(materials[0]!, 'name') !== expected.baseMaterialName ||
+    attribute(materials[0]!, 'displaycolor') !== expected.baseMaterialColor ||
+    attribute(materials[1]!, 'name') !== expected.accentMaterialName ||
+    attribute(materials[1]!, 'displaycolor') !== expected.accentMaterialColor
   ) {
     return false
   }
@@ -359,21 +428,21 @@ function validObjectModel(xml: string): boolean {
   }
 
   const body = objectById.get('1')
-  const text = objectById.get('2')
-  if (!body || !text) return false
+  const accent = objectById.get('2')
+  if (!body || !accent) return false
   if (
     attribute(body.attributes, 'type') !== 'model' ||
     attribute(body.attributes, 'name') !== 'body' ||
     attribute(body.attributes, 'pid') !== '1' ||
     attribute(body.attributes, 'pindex') !== '0' ||
-    attribute(text.attributes, 'type') !== 'model' ||
-    attribute(text.attributes, 'name') !== 'text' ||
-    attribute(text.attributes, 'pid') !== '1' ||
-    attribute(text.attributes, 'pindex') !== '1'
+    attribute(accent.attributes, 'type') !== 'model' ||
+    attribute(accent.attributes, 'name') !== expected.accentPartName ||
+    attribute(accent.attributes, 'pid') !== '1' ||
+    attribute(accent.attributes, 'pindex') !== '1'
   ) {
     return false
   }
-  if (!validMesh(body.body) || !validMesh(text.body)) return false
+  if (!validMesh(body.body) || !validMesh(accent.body)) return false
   return (
     /<build\b[^>]*\/\s*>/.test(xml) &&
     (xml.match(/<item\b[^>]*\/\s*>/g) ?? []).length === 0
@@ -467,6 +536,7 @@ function validSettingsPart(
   name: string,
   extruder: string,
   sourceObjectId: string,
+  sourceFileName: string,
 ): boolean {
   const part = xml.match(/^<part\b([^>]*)>([\s\S]*?)<\/part>\s*$/)
   if (!part) return false
@@ -505,7 +575,7 @@ function validSettingsPart(
     validSettingsMetadata(
       metadataFor('source_file'),
       'source_file',
-      'opengrid-wall-cover.3mf',
+      sourceFileName,
     ) &&
     validSettingsMetadata(
       metadataFor('source_object_id'),
@@ -549,6 +619,7 @@ function settingsPartFaceCount(xml: string): number | null {
 
 function validSettingsObject(
   xml: string,
+  expected: ThreeMfPackageExpectation,
   expectedPartFaceCounts?: readonly [number, number],
 ): boolean {
   const object = xml.match(/^<object\b([^>]*)>([\s\S]*?)<\/object>\s*$/)
@@ -581,7 +652,7 @@ function validSettingsObject(
     attribute(object[1]!, 'id') === '3' &&
     faceCount !== undefined &&
     nameMetadata !== undefined &&
-    validSettingsMetadata(nameMetadata, 'name', 'opengrid-wall-cover') &&
+    validSettingsMetadata(nameMetadata, 'name', expected.modelSettingsName) &&
     extruderMetadata !== undefined &&
     validSettingsMetadata(extruderMetadata, 'extruder', '1') &&
     objectFaceCount !== null &&
@@ -589,8 +660,22 @@ function validSettingsObject(
     objectFaceCount > 0 &&
     bodyFaceCount !== null &&
     textFaceCount !== null &&
-    validSettingsPart(parts[0]!, '1', 'body', '1', '0') &&
-    validSettingsPart(parts[1]!, '2', 'text', '2', '1') &&
+    validSettingsPart(
+      parts[0]!,
+      '1',
+      'body',
+      '1',
+      '0',
+      expected.sourceFileName,
+    ) &&
+    validSettingsPart(
+      parts[1]!,
+      '2',
+      expected.accentPartName,
+      '2',
+      '1',
+      expected.sourceFileName,
+    ) &&
     objectFaceCount === bodyFaceCount + textFaceCount &&
     (expectedPartFaceCounts === undefined ||
       (bodyFaceCount === expectedPartFaceCounts[0] &&
@@ -598,7 +683,10 @@ function validSettingsObject(
   )
 }
 
-function validSettingsPlate(xml: string): boolean {
+function validSettingsPlate(
+  xml: string,
+  expected: ThreeMfPackageExpectation,
+): boolean {
   const plate = xml.match(/^<plate\b([^>]*)>([\s\S]*?)<\/plate>\s*$/)
   if (!plate) return false
   const instance = plate[2]!.match(
@@ -623,7 +711,7 @@ function validSettingsPlate(xml: string): boolean {
     validSettingsMetadata(
       metadataFor('plater_name')!,
       'plater_name',
-      'OpenGrid Wall Cover',
+      expected.platerName,
     ) &&
     validSettingsMetadata(metadataFor('locked')!, 'locked', 'false') &&
     validSettingsMetadata(
@@ -669,6 +757,7 @@ function validSettingsAssemble(xml: string): boolean {
 
 function validModelSettings(
   xml: string,
+  expected: ThreeMfPackageExpectation,
   expectedPartFaceCounts?: readonly [number, number],
 ): boolean {
   const root = xml.match(
@@ -693,13 +782,16 @@ function validModelSettings(
   if (remainder !== '') return false
 
   return (
-    validSettingsObject(objects[0]!, expectedPartFaceCounts) &&
-    validSettingsPlate(plates[0]!) &&
+    validSettingsObject(objects[0]!, expected, expectedPartFaceCounts) &&
+    validSettingsPlate(plates[0]!, expected) &&
     validSettingsAssemble(assembles[0]!)
   )
 }
 
-export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
+export function isValidThreeMfPackage(
+  bytes: ArrayBuffer,
+  expectation: ThreeMfPackageExpectation = THREE_MF_WALL_COVER_EXPECTATION,
+): boolean {
   const entries = parseZip(bytes)
   if (!entries || entries.size !== REQUIRED_ENTRIES.length) return false
   for (const name of REQUIRED_ENTRIES) {
@@ -713,7 +805,7 @@ export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
   const projectSettings = decodeUtf8(entries.get(REQUIRED_ENTRIES[5]!)!)
   const modelSettings = decodeUtf8(entries.get(REQUIRED_ENTRIES[6]!)!)
   const objectModelIsValid =
-    objectModel !== null && validObjectModel(objectModel)
+    objectModel !== null && validObjectModel(objectModel, expectation)
   const objectModelCounts =
     objectModel !== null ? objectModelFaceCounts(objectModel) : null
   return (
@@ -730,7 +822,7 @@ export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
     validModel(model) &&
     objectModelIsValid &&
     objectModelCounts !== null &&
-    validProjectSettings(projectSettings) &&
-    validModelSettings(modelSettings, objectModelCounts)
+    validProjectSettings(projectSettings, expectation) &&
+    validModelSettings(modelSettings, expectation, objectModelCounts)
   )
 }

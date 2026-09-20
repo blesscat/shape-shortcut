@@ -3,19 +3,35 @@ import {
   modelFileName,
   modelStlFileName,
   openGridWallCoverThreeMfFileName,
+  openGridLabelTagThreeMfFileName,
   isOpenGridWallCoverParameters,
+  isOpenGridLabelTagParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
+  type ModelId,
 } from '../cad-contract/units'
 import {
   exportStepBytes,
   exportStlBytes,
   exportThreeMfBytes,
   isThreeMfPackage,
+  threeMfExpectationFor,
+  threeMfMetaFor,
 } from '../cad-kernel/export'
 import type { CadWorkerLifecycle } from './cad-worker-lifecycle'
 import { emitProgress, id } from './cad-worker-events'
 import type { EventSink } from './cad-worker-types'
+
+/**
+ * Models supporting the two-color 3MF export and the part pair they must
+ * carry on the committed revision.
+ */
+const THREE_MF_SUPPORTED_MODELS: Partial<
+  Record<ModelId, readonly ['body', 'text' | 'icon']>
+> = {
+  'opengrid-wall-cover': ['body', 'text'],
+  'opengrid-label-tag': ['body', 'icon'],
+}
 
 type ExportContext = {
   epoch: string
@@ -133,16 +149,23 @@ export async function exportThreeMfCommand(
       revision.modelId,
       revision.parameters,
     )
+    const expectedParts = THREE_MF_SUPPORTED_MODELS[revision.modelId]
+    if (!validation.valid || !expectedParts) {
+      throw new Error('THREEMF_METADATA_INVALID')
+    }
     if (
-      !validation.valid ||
-      revision.modelId !== 'opengrid-wall-cover' ||
-      !isOpenGridWallCoverParameters(validation.value.parameters)
+      revision.modelId === 'opengrid-wall-cover' &&
+      (!isOpenGridWallCoverParameters(validation.value.parameters) ||
+        command.file.name !==
+          openGridWallCoverThreeMfFileName(validation.value.parameters))
     ) {
       throw new Error('THREEMF_METADATA_INVALID')
     }
     if (
-      command.file.name !==
-      openGridWallCoverThreeMfFileName(validation.value.parameters)
+      revision.modelId === 'opengrid-label-tag' &&
+      (!isOpenGridLabelTagParameters(validation.value.parameters) ||
+        command.file.name !==
+          openGridLabelTagThreeMfFileName(validation.value.parameters))
     ) {
       throw new Error('THREEMF_METADATA_INVALID')
     }
@@ -150,14 +173,21 @@ export async function exportThreeMfCommand(
     if (
       !parts ||
       parts.length !== 2 ||
-      parts[0]?.name !== 'body' ||
-      parts[1]?.name !== 'text'
+      parts[0]?.name !== expectedParts[0] ||
+      parts[1]?.name !== expectedParts[1]
     ) {
       throw new Error('THREEMF_PARTS_INVALID')
     }
+    const meta = threeMfMetaFor(
+      revision.modelId as 'opengrid-wall-cover' | 'opengrid-label-tag',
+      command.file.name,
+    )
     const threeMfParts = [
       { name: 'body' as const, shape: parts[0].shape },
-      { name: 'text' as const, shape: parts[1].shape },
+      {
+        name: expectedParts[1] as 'text' | 'icon',
+        shape: parts[1].shape,
+      },
     ]
     context.emit({
       version: PROTOCOL_VERSION,
@@ -168,11 +198,18 @@ export async function exportThreeMfCommand(
       workerEpoch: context.epoch,
     })
     emitProgress(context.emit, command, 'exporting', revision.modelRevision)
-    const bytes = await exportThreeMfBytes(threeMfParts, {
-      tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
-      angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
-    })
-    if (bytes.byteLength === 0 || !isThreeMfPackage(bytes)) {
+    const bytes = await exportThreeMfBytes(
+      threeMfParts,
+      {
+        tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
+        angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
+      },
+      meta,
+    )
+    if (
+      bytes.byteLength === 0 ||
+      !isThreeMfPackage(bytes, threeMfExpectationFor(meta))
+    ) {
       throw new Error('THREEMF_EXPORT_FAILED')
     }
     context.emit(

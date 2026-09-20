@@ -50,7 +50,8 @@ vi.mock('../../src/cad-kernel/components/opengrid-snap/builder', () => ({
 vi.mock('../../src/cad-kernel/components/opengrid-wall-cover/builder', () => ({
   loadOpenGridWallCoverReference: mocks.loadOpenGridWallCoverReference,
 }))
-vi.mock('../../src/cad-kernel/export', () => ({
+vi.mock('../../src/cad-kernel/export', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../src/cad-kernel/export')>()),
   exportStepBytes: mocks.exportStepBytes,
   exportStlBytes: mocks.exportStlBytes,
   exportThreeMfBytes: mocks.exportThreeMfBytes,

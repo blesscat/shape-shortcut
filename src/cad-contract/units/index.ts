@@ -125,6 +125,27 @@ import type {
   OpenGridWallCoverValidation,
 } from './opengrid-wall-cover'
 import {
+  boundsForOpenGridLabelTag,
+  isOpenGridLabelTagIconId,
+  isOpenGridLabelTagParameters,
+  isOpenGridLabelTagWidthTier,
+  normalizeOpenGridLabelTagText,
+  openGridLabelTagFileName,
+  openGridLabelTagStlFileName,
+  openGridLabelTagThreeMfFileName,
+  OPENGRID_LABEL_TAG_CONFIGURATION,
+  OPENGRID_LABEL_TAG_ICON_IDS,
+  OPENGRID_LABEL_TAG_WIDTH_TIERS,
+  validateOpenGridLabelTagParameters,
+} from './opengrid-label-tag'
+import type {
+  OpenGridLabelTagIconId,
+  OpenGridLabelTagParameterKey,
+  OpenGridLabelTagParameters,
+  OpenGridLabelTagValidation,
+  OpenGridLabelTagWidthTier,
+} from './opengrid-label-tag'
+import {
   boundsForOpenGridDivider,
   classifyOpenGridDividerShape,
   isOpenGridDividerParameters,
@@ -436,6 +457,20 @@ export {
   validateOpenGridWallCoverParameters,
 } from './opengrid-wall-cover'
 export {
+  boundsForOpenGridLabelTag,
+  isOpenGridLabelTagIconId,
+  isOpenGridLabelTagParameters,
+  isOpenGridLabelTagWidthTier,
+  normalizeOpenGridLabelTagText,
+  openGridLabelTagFileName,
+  openGridLabelTagStlFileName,
+  openGridLabelTagThreeMfFileName,
+  OPENGRID_LABEL_TAG_CONFIGURATION,
+  OPENGRID_LABEL_TAG_ICON_IDS,
+  OPENGRID_LABEL_TAG_WIDTH_TIERS,
+  validateOpenGridLabelTagParameters,
+} from './opengrid-label-tag'
+export {
   HALF_CELL_CONFIGURATION,
   halfCellDirectionLabel,
   halfCellExtensionFor,
@@ -485,6 +520,13 @@ export type {
   OpenGridWallCoverParameterKey,
   OpenGridWallCoverValidation,
 } from './opengrid-wall-cover'
+export type {
+  OpenGridLabelTagIconId,
+  OpenGridLabelTagParameterKey,
+  OpenGridLabelTagParameters,
+  OpenGridLabelTagValidation,
+  OpenGridLabelTagWidthTier,
+} from './opengrid-label-tag'
 export type {
   OpenGridStackableBoxParameterKey,
   OpenGridStackableBoxParameters,
@@ -710,6 +752,7 @@ export type ModelParameterKey =
   | OpenGridOpenConnectShelfParameterKey
   | OpenGridOpenConnectOrganizerParameterKey
   | OpenGridWallCoverParameterKey
+  | OpenGridLabelTagParameterKey
 export type ScalarModelParameterKey =
   | DimensionKey
   | GridParameterKey
@@ -733,6 +776,7 @@ export type ModelId =
   | 'opengrid-open-shelf'
   | 'opengrid-openconnect-shelf'
   | 'opengrid-openconnect-organizer'
+  | 'opengrid-label-tag'
 
 export type BoxParameters = Record<DimensionKey, number>
 export type ModularGridBaseParameters = Record<GridParameterKey, number>
@@ -795,6 +839,7 @@ export type ModelParameters =
       modelId: 'opengrid-openconnect-organizer'
       parameters: OpenGridOpenConnectOrganizerParameters
     }
+  | { modelId: 'opengrid-label-tag'; parameters: OpenGridLabelTagParameters }
 
 export type ModelParameterValues = ModelParameters['parameters']
 
@@ -1443,6 +1488,21 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'opengrid-label-tag') {
+    const validation = validateOpenGridLabelTagParameters(value)
+    if (!validation.valid) {
+      return {
+        valid: false,
+        issues: validation.issues.map((issue) => ({
+          field: issue.field,
+          messageId: issue.messageId,
+          ...(issue.params ? { params: issue.params } : {}),
+        })),
+      }
+    }
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   return {
     valid: false,
     issues: [{ field: 'parameters', messageId: 'validation.invalid' }],
@@ -1743,6 +1803,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForOpenGridOpenConnectShelf(model.parameters)
     case 'opengrid-openconnect-organizer':
       return boundsForOpenGridOpenConnectOrganizer(model.parameters)
+    case 'opengrid-label-tag':
+      return boundsForOpenGridLabelTag(model.parameters)
   }
 }
 
@@ -1780,6 +1842,8 @@ export function modelFileName(model: ModelParameters): string {
       return openGridOpenConnectShelfFileName(model.parameters)
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerFileName(model.parameters)
+    case 'opengrid-label-tag':
+      return openGridLabelTagFileName(model.parameters)
   }
 }
 
@@ -1817,5 +1881,7 @@ export function modelStlFileName(model: ModelParameters): string {
       return openGridOpenConnectShelfStlFileName(model.parameters)
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerStlFileName(model.parameters)
+    case 'opengrid-label-tag':
+      return openGridLabelTagStlFileName(model.parameters)
   }
 }

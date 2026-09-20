@@ -244,7 +244,7 @@ export class CadWorkerLifecycle {
         readyMesh = serializeMesh(revision.mesh)
       }
       readyPartMeshes = revision.partMeshes?.map((part) => ({
-        name: part.name as 'body' | 'text',
+        name: part.name as 'body' | 'text' | 'icon',
         mesh: serializeMesh(part.mesh),
       }))
       const candidateEvent: WorkerEvent = {

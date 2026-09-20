@@ -20,6 +20,7 @@ import { opengridPillarDefinition as rawOpengridPillarDefinition } from './compo
 import { opengridOpenShelfDefinition as rawOpengridOpenShelfDefinition } from './components/opengrid-open-shelf'
 import { opengridOpenConnectShelfDefinition as rawOpengridOpenConnectShelfDefinition } from './components/opengrid-openconnect-shelf'
 import { opengridOpenConnectOrganizerDefinition as rawOpengridOpenConnectOrganizerDefinition } from './components/opengrid-openconnect-organizer'
+import { opengridLabelTagDefinition as rawOpengridLabelTagDefinition } from './components/opengrid-label-tag'
 import type {
   ModelDefinition,
   ModelFamily,
@@ -85,6 +86,8 @@ export const opengridOpenConnectShelfDefinition: ModelDefinition<ModelPreviewIma
   withDerivedDarkPreview(rawOpengridOpenConnectShelfDefinition)
 export const opengridOpenConnectOrganizerDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridOpenConnectOrganizerDefinition)
+export const opengridLabelTagDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawOpengridLabelTagDefinition)
 
 /** Dark variant asset name derived from the light asset name: x.webp → x-dark.webp */
 export function darkPreviewSrcFor(src: string): string {
@@ -126,6 +129,7 @@ export const modelDefinitions: ReadonlyArray<
   opengridOpenShelfDefinition,
   opengridOpenConnectShelfDefinition,
   opengridOpenConnectOrganizerDefinition,
+  opengridLabelTagDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

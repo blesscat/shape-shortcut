@@ -6,15 +6,16 @@
 
 ### Requirement: 3MF is generated from the committed multipart revision
 
-For a committed `opengrid-wall-cover` revision with valid body and flat-text
-parts, the system MUST generate 3MF bytes inside the CAD Worker from the pinned
-body and text B-Rep parts. It MUST NOT reconstruct the package from the
-viewport mesh alone or run CAD export on the main thread. The initial POC MUST
-reject unsupported models or Wall Cover configurations with a structured
+For a committed supported dual-color revision — `opengrid-wall-cover` with
+valid body and flat-text parts, or `opengrid-label-tag` with valid body and
+icon accent parts — the system MUST generate 3MF bytes inside the CAD Worker
+from the pinned B-Rep parts of that model. It MUST NOT reconstruct the package
+from the viewport mesh alone or run CAD export on the main thread. The system
+MUST reject unsupported models or invalid configurations with a structured
 recoverable export error. The former `opengrid-snap` `topText=SNAP` path MUST
 not be an export target.
 
-#### Scenario: Successful Snap 3MF export
+#### Scenario: Successful Wall Cover 3MF export
 
 - **WHEN** the workspace is ready and the user requests 3MF for a committed
   `opengrid-wall-cover` revision
@@ -23,9 +24,19 @@ not be an export target.
   text object with their relative placement preserved
 - **AND** the main thread MUST receive one validated `.3mf` download
 
+#### Scenario: Successful Label Tag 3MF export
+
+- **WHEN** the workspace is ready and the user requests 3MF for a committed
+  `opengrid-label-tag` revision with valid body and icon parts
+- **THEN** the Worker MUST pin that revision before writing the package
+- **AND** the package MUST be non-empty and contain a body object and an icon
+  accent object with their relative placement preserved
+- **AND** the main thread MUST receive one validated `.3mf` download named
+  after `opengrid-label-tag`
+
 #### Scenario: Unsupported 3MF export is rejected
 
-- **WHEN** the user requests 3MF for a revision without supported Wall Cover
+- **WHEN** the user requests 3MF for a revision without supported dual-color
   multipart data, including an `opengrid-snap` revision
 - **THEN** the Worker MUST emit a structured recoverable 3MF export error
 - **AND** it MUST NOT emit export-ready bytes or trigger a download
@@ -34,34 +45,39 @@ not be an export target.
 
 The generated 3MF package MUST be a valid ZIP-based 3MF package with a model
 part, package relationships, content types, and a separate object model. Its
-Bambu-compatible model MUST contain one parent object with distinct cover-body
-and flat-text component mesh objects, two deterministic material entries, and
-preserved body/text coordinates. The parent object MUST be the only build item;
-the body and text parts MUST remain independently addressable through
-`Metadata/model_settings.config`. The package MUST use millimetres without a
-hidden scale; its build item MUST apply the supported printer's plate-centering
-translation while component and part matrices remain identity. It MUST also
-carry a valid Bambu project configuration in `Metadata/project_settings.config`
-identifying a supported Bambu printer and two project filament slots. Bambu Studio metadata MUST
-assign model part `1` (body) to extruder/filament slot `1`, model part `2`
-(text) to extruder/filament slot `2`, and declare the plate filament map `1 2`.
+Bambu-compatible model MUST contain one parent object with distinct
+base-body and accent component mesh objects, two deterministic material
+entries, and preserved part coordinates. The parent object MUST be the only
+build item; the base and accent parts MUST remain independently addressable
+through `Metadata/model_settings.config`. For Wall Cover the accent part is
+the flat text and for Label Tag it is the icon accent; part naming inside the
+package MUST distinguish the two models (`body`/`text` versus
+`body`/`icon`). The package MUST use millimetres without a hidden scale; its
+build item MUST apply the supported printer's plate-centering translation
+while component and part matrices remain identity. It MUST also carry a valid
+Bambu project configuration in `Metadata/project_settings.config`
+identifying a supported Bambu printer and two project filament slots. Bambu
+Studio metadata MUST assign model part `1` (body) to extruder/filament slot
+`1`, model part `2` (accent) to extruder/filament slot `2`, and declare the
+plate filament map `1 2`.
 
-#### Scenario: Body and text have separate material assignments
+#### Scenario: Body and accent have separate material assignments
 
-- **WHEN** a generated Wall Cover 3MF package is inspected
-- **THEN** it MUST contain two non-empty mesh objects for the body and text
+- **WHEN** a generated Wall Cover or Label Tag 3MF package is inspected
+- **THEN** it MUST contain two non-empty mesh objects for the body and the
+  accent part
 - **AND** it MUST contain two material entries with different deterministic
   display colours
-- **AND** the text object MUST be assigned to the accent material while the
+- **AND** the accent object MUST be assigned to the accent material while the
   body object MUST be assigned to the base material
 
-#### Scenario: Body and text remain independently selectable
+#### Scenario: Body and accent remain independently selectable
 
-- **WHEN** a slicer imports a generated Wall Cover 3MF package
+- **WHEN** a slicer imports a generated Wall Cover or Label Tag 3MF package
 - **THEN** the build MUST expose one parent item containing independently
-  addressable body and text parts
+  addressable body and accent parts
 - **AND** the package MUST NOT flatten the two color parts into one mesh or
-  emit unrelated body/text build items
+  emit unrelated build items
 
 #### Scenario: Package structure is importable
 
@@ -75,18 +91,18 @@ assign model part `1` (body) to extruder/filament slot `1`, model part `2`
 
 #### Scenario: Parent object is centered on the supported printer plate
 
-- **WHEN** a Wall Cover 3MF package is generated for the supported Bambu A1
-  project profile
+- **WHEN** a Wall Cover or Label Tag 3MF package is generated for the
+  supported Bambu A1 project profile
 - **THEN** the single parent build item MUST use the plate-centering transform
   `1 0 0 0 1 0 0 0 1 128 128 0`
-- **AND** body/text component and part transforms MUST remain identity so their
+- **AND** component and part transforms MUST remain identity so their
   relative placement is unchanged
 
 #### Scenario: Bambu Studio receives distinct default filament assignments
 
-- **WHEN** Bambu Studio imports the generated Wall Cover package
+- **WHEN** Bambu Studio imports the generated Wall Cover or Label Tag package
 - **THEN** its model settings MUST map body part `1` to filament slot `1`
-- **AND** its model settings MUST map text part `2` to filament slot `2`
+- **AND** its model settings MUST map the accent part `2` to filament slot `2`
 - **AND** the plate metadata MUST contain `filament_maps=1 2`
 
 ### Requirement: 3MF export metadata and response are validated
@@ -96,14 +112,15 @@ export-ready response carrying request correlation, Worker epoch, model
 revision, `format: 3mf`, a `.3mf` filename, `model/3mf` MIME, and non-empty
 ArrayBuffer bytes. Runtime validation MUST reject unknown, mismatched, empty,
 stale, or malformed 3MF metadata and MUST NOT trigger a download for a rejected
-response. The contract MUST identify the Wall Cover model when the export is
-requested and MUST not treat a Snap revision as a supported multipart export.
+response. The contract MUST identify the supported dual-color model
+(`opengrid-wall-cover` or `opengrid-label-tag`) that requested the export, and
+MUST not treat an `opengrid-snap` revision as a supported multipart export.
 
 #### Scenario: Valid 3MF metadata is accepted
 
 - **WHEN** the main thread receives a 3MF response matching the active
   operation, Worker epoch, model revision, filename, MIME, and non-empty
-  package bytes for a Wall Cover
+  package bytes for a supported dual-color model
 - **THEN** the response MUST pass validation
 - **AND** the browser MUST trigger exactly one `.3mf` download
 
@@ -119,14 +136,15 @@ requested and MUST not treat a Snap revision as a supported multipart export.
 ### Requirement: 3MF download follows existing model lifecycle gates
 
 The 3MF action MUST be enabled only for the latest successfully committed
-supported `opengrid-wall-cover` revision while the workspace is ready, not
-stale, and not already exporting. The request MUST be correlated to the
-selected model revision and Worker epoch. The action MUST be unavailable for
-`opengrid-snap`, including any legacy `topText=SNAP` snapshot. STEP and STL
-actions MUST remain independent and their existing lifecycle behavior MUST
-remain unchanged.
+supported dual-color revision — `opengrid-wall-cover` with valid body/text
+parts or `opengrid-label-tag` with valid body/icon parts — while the
+workspace is ready, not stale, and not already exporting. The request MUST be
+correlated to the selected model revision and Worker epoch. The action MUST
+remain unavailable for `opengrid-snap`, including any legacy `topText=SNAP`
+snapshot. STEP and STL actions MUST remain independent and their existing
+lifecycle behavior MUST remain unchanged.
 
-#### Scenario: 3MF is available for the supported POC
+#### Scenario: 3MF is available for the supported Wall Cover
 
 - **GIVEN** the current revision is a committed, ready, non-stale
   `opengrid-wall-cover` with valid body/text parts
@@ -134,14 +152,14 @@ remain unchanged.
 - **THEN** `下載 3MF` / `Download 3MF` MUST be enabled
 - **AND** selecting it MUST start an `export.3mf` request for that revision
 
-#### Scenario: 3MF is disabled outside the supported lifecycle
+#### Scenario: 3MF is available for the supported Label Tag
 
-- **GIVEN** the input is invalid, the preview is stale, the Worker is loading
-  or recovering, the model is `opengrid-snap`, the Wall Cover parts are
-  missing, or another export is active
+- **GIVEN** the current revision is a committed, ready, non-stale
+  `opengrid-label-tag` with valid body/icon parts
 - **WHEN** the user views the export actions
-- **THEN** the 3MF action MUST be disabled
-- **AND** the Worker MUST NOT receive an `export.3mf` request
+- **THEN** `下載 3MF` / `Download 3MF` MUST be enabled
+- **AND** selecting it MUST start an `export.3mf` request for that revision
+  whose filename names `opengrid-label-tag`
 
 ### Requirement: 3MF exports all requested Wall Cover instances as one flat two-color assembly
 

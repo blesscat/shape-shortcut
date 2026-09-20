@@ -368,6 +368,46 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    if (code === 'OPENGRID_LABEL_TAG_QUALITY_INVALID') {
+      return makeError(
+        'meshing',
+        code,
+        diagnostic('diagnostic.labelTagQualityInvalid'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_TAG_TEXT_GLYPH_UNSUPPORTED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelTagGlyphUnsupported'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_TAG_FONT_LOAD_FAILED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelTagFontLoadFailed'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_TAG_ICON_UNKNOWN')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelTagIconUnknown'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_TAG_ICON_GEOMETRY_FAILED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelTagIconGeometryFailed'),
+        true,
+      )
+    }
 
     if (code === 'OPENGRID_DIVIDER_QUALITY_INVALID') {
       return makeError(

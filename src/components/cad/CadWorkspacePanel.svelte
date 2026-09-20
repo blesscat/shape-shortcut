@@ -67,7 +67,8 @@
     if (
       modelId === 'opengrid' ||
       modelId === 'opengrid-pillar' ||
-      modelId === 'opengrid-wall-cover'
+      modelId === 'opengrid-wall-cover' ||
+      modelId === 'opengrid-label-tag'
     ) {
       return true
     }
@@ -117,7 +118,7 @@
         {t('cad.action.stl')}
       </button>
     {/if}
-    {#if modelId === 'opengrid-wall-cover'}
+    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-tag'}
       <button
         class={ACTION_BUTTON_CLASS}
         type="button"
@@ -139,6 +140,14 @@
       data-testid="opengrid-wall-cover-three-mf-note"
     >
       {t('cad.wallCover.threeMfNote')}
+    </p>
+  {/if}
+  {#if modelId === 'opengrid-label-tag'}
+    <p
+      class="m-0 text-sm leading-6 text-muted-foreground"
+      data-testid="opengrid-label-tag-three-mf-note"
+    >
+      {t('cad.labelTag.threeMfNote')}
     </p>
   {/if}
 </div>

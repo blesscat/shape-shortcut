@@ -23,7 +23,7 @@ export type MeshSnapshot = {
 }
 
 export type ModelPartMeshSnapshot = {
-  name: 'body' | 'text'
+  name: 'body' | 'text' | 'icon'
   mesh: MeshSnapshot
 }
 
@@ -445,7 +445,7 @@ function isPartMeshes(value: unknown): value is ModelPartMeshSnapshot[] {
   for (const item of value) {
     if (
       !isRecord(item) ||
-      (item.name !== 'body' && item.name !== 'text') ||
+      (item.name !== 'body' && item.name !== 'text' && item.name !== 'icon') ||
       names.has(item.name) ||
       !isMesh(item.mesh)
     ) {
@@ -512,6 +512,8 @@ const CAD_ERROR_CODES: readonly CadErrorCode[] = [
   'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',
   'OPENGRID_SNAP_QUALITY_INVALID',
   'OPENGRID_WALL_COVER_QUALITY_INVALID',
+  'OPENGRID_LABEL_TAG_QUALITY_INVALID',
+  'LABEL_TAG_ACCENT_INVALID',
   'OPENGRID_DIVIDER_QUALITY_INVALID',
   'MODEL_BUILD_FAILED',
   'MODEL_ASSET_INVALID',

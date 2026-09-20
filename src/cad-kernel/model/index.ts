@@ -45,6 +45,11 @@ import {
   buildOpenGridWallCover,
   buildOpenGridWallCoverWithFlatText,
 } from '../components/opengrid-wall-cover/builder'
+import {
+  buildOpenGridLabelTag,
+  buildOpenGridLabelTagWithParts,
+} from '../components/opengrid-label-tag/builder'
+import { isOpenGridLabelTagParameters } from '../../cad-contract/units'
 import { buildOpenGridSnapRemover } from '../components/opengrid-snap-remover/builder'
 import { buildPillar } from '../components/opengrid-pillar/builder'
 import { buildOpenGridOpenShelf } from '../components/opengrid-open-shelf/builder'
@@ -269,6 +274,19 @@ async function buildOpenGridWallCoverModel(
     isGenerationCurrent: context.isGenerationCurrent,
     booleanOperations: context.booleanOperations,
     reportProgress: context.reportProgress,
+  })
+}
+
+async function buildOpenGridLabelTagModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<Shape3D> {
+  if (!isOpenGridLabelTagParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
+  }
+  return buildOpenGridLabelTag(parameters, {
+    yieldToEventLoop: context.yieldToEventLoop,
+    isGenerationCurrent: context.isGenerationCurrent,
   })
 }
 
@@ -567,6 +585,11 @@ export const opengridDividerKernelDefinition: KernelModelDefinition = {
   build: buildOpenGridDividerModel,
 }
 
+export const opengridLabelTagKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-tag',
+  build: buildOpenGridLabelTagModel,
+}
+
 export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   boxKernelDefinition,
   modularGridBaseKernelDefinition,
@@ -584,6 +607,7 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridWallCoverKernelDefinition,
   openGridSnapRemoverKernelDefinition,
   opengridDividerKernelDefinition,
+  opengridLabelTagKernelDefinition,
 ]
 
 export function getKernelModelDefinition(
@@ -624,6 +648,16 @@ export async function buildModelBRepWithParts(
       isGenerationCurrent: context.isGenerationCurrent,
       booleanOperations: context.booleanOperations,
       reportProgress: context.reportProgress,
+    })
+  }
+
+  if (modelId === 'opengrid-label-tag') {
+    if (!isOpenGridLabelTagParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
+    }
+    return buildOpenGridLabelTagWithParts(parameters, {
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
     })
   }
 

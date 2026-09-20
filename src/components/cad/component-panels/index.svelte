@@ -21,6 +21,7 @@
   import OpenGridOpenConnectShelfComponentPanel from './opengrid-openconnect-shelf/OpenGridOpenConnectShelfComponentPanel.svelte'
   import OpenGridOpenConnectOrganizerComponentPanel from './opengrid-openconnect-organizer/OpenGridOpenConnectOrganizerComponentPanel.svelte'
   import OpenGridWallCoverComponentPanel from './opengrid-wall-cover/OpenGridWallCoverComponentPanel.svelte'
+  import OpenGridLabelTagComponentPanel from './opengrid-label-tag/OpenGridLabelTagComponentPanel.svelte'
   import type { ComponentPanelProps } from './types'
 
   type Props = ComponentPanelProps & {
@@ -146,6 +147,13 @@
   />
 {:else if modelId === 'opengrid-wall-cover'}
   <OpenGridWallCoverComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-tag'}
+  <OpenGridLabelTagComponentPanel
     {locale}
     {rawParameters}
     {fieldErrors}

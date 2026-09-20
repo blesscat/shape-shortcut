@@ -147,7 +147,7 @@ export function validateModelPartMeshes(
   const names = new Set<string>()
   for (const part of partMeshes) {
     if (
-      (part.name !== 'body' && part.name !== 'text') ||
+      (part.name !== 'body' && part.name !== 'text' && part.name !== 'icon') ||
       names.has(part.name) ||
       !validateMeshSnapshot(part.mesh)
     ) {
@@ -156,5 +156,5 @@ export function validateModelPartMeshes(
     names.add(part.name)
   }
   if (!requireBodyAndText) return partMeshes.length > 0
-  return names.has('body') && names.has('text')
+  return names.has('body') && (names.has('text') || names.has('icon'))
 }

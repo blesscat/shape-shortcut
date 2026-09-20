@@ -2,13 +2,76 @@ import type { Shape3D } from 'replicad'
 import {
   isValidThreeMfPackage,
   THREE_MF_BUILD_TRANSFORM,
+  THREE_MF_WALL_COVER_EXPECTATION,
+  type ThreeMfPackageExpectation,
 } from '../../cad-contract/three-mf'
 import { PROTOTYPE_CONFIGURATION } from '../../cad-contract/units'
 import { meshBRep, type MeshData } from '../mesh'
 
 export type ThreeMfShapePart = {
-  name: 'body' | 'text'
+  name: 'body' | 'text' | 'icon'
   shape: Shape3D
+}
+
+export type ThreeMfPackageMeta = {
+  modelSettingsName: string
+  sourceFileName: string
+  platerName: string
+  baseMaterialName: string
+  baseMaterialColor: string
+  accentMaterialName: string
+  accentMaterialColor: string
+  accentPartName: string
+}
+
+export const THREE_MF_WALL_COVER_META: ThreeMfPackageMeta = {
+  modelSettingsName: THREE_MF_WALL_COVER_EXPECTATION.modelSettingsName,
+  sourceFileName: THREE_MF_WALL_COVER_EXPECTATION.sourceFileName,
+  platerName: THREE_MF_WALL_COVER_EXPECTATION.platerName,
+  baseMaterialName: THREE_MF_WALL_COVER_EXPECTATION.baseMaterialName,
+  baseMaterialColor: THREE_MF_WALL_COVER_EXPECTATION.baseMaterialColor,
+  accentMaterialName: THREE_MF_WALL_COVER_EXPECTATION.accentMaterialName,
+  accentMaterialColor: THREE_MF_WALL_COVER_EXPECTATION.accentMaterialColor,
+  accentPartName: THREE_MF_WALL_COVER_EXPECTATION.accentPartName,
+}
+
+/**
+ * Per-model 3MF metadata. Label Tag's source file name embeds the generation
+ * parameters, so it is derived from the export file name.
+ */
+export function threeMfMetaFor(
+  modelId: 'opengrid-wall-cover' | 'opengrid-label-tag',
+  fileName: string,
+): ThreeMfPackageMeta {
+  if (modelId === 'opengrid-label-tag') {
+    return {
+      modelSettingsName: 'opengrid-label-tag',
+      sourceFileName: fileName,
+      platerName: 'OpenGrid Label Tag',
+      baseMaterialName: 'Label Tag Body',
+      baseMaterialColor: '#657080',
+      accentMaterialName: 'Label Tag Icon',
+      accentMaterialColor: '#F4C542',
+      accentPartName: 'icon',
+    }
+  }
+  return THREE_MF_WALL_COVER_META
+}
+
+export function threeMfExpectationFor(
+  meta: ThreeMfPackageMeta,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: meta.baseMaterialName,
+    baseMaterialColor: meta.baseMaterialColor,
+    accentMaterialName: meta.accentMaterialName,
+    accentMaterialColor: meta.accentMaterialColor,
+    accentPartName: meta.accentPartName,
+    modelSettingsName: meta.modelSettingsName,
+    sourceFileName: meta.sourceFileName,
+    platerName: meta.platerName,
+    filamentColors: [meta.baseMaterialColor, meta.accentMaterialColor],
+  }
 }
 
 type ZipEntry = {
@@ -17,14 +80,6 @@ type ZipEntry = {
 }
 
 const TEXT_ENCODER = new TextEncoder()
-const BASE_MATERIAL = {
-  name: 'Wall Cover Body',
-  color: '#657080',
-}
-const TEXT_MATERIAL = {
-  name: 'Wall Cover Text',
-  color: '#F4C542',
-}
 const PROJECT_SETTINGS_PATH = 'Metadata/project_settings.config'
 const MODEL_SETTINGS_PATH = 'Metadata/model_settings.config'
 const OBJECT_MODEL_PATH = '3D/Objects/object_1.model'
@@ -97,6 +152,7 @@ function meshXml(mesh: MeshData): string {
 
 function objectModelXml(
   parts: readonly { name: string; mesh: MeshData }[],
+  meta: ThreeMfPackageMeta,
 ): string {
   const objects = parts
     .map((part, index) => {
@@ -110,8 +166,8 @@ function objectModelXml(
   <metadata name="BambuStudio:3mfVersion">1</metadata>
   <resources>
     <basematerials id="1">
-      <base name="${BASE_MATERIAL.name}" displaycolor="${BASE_MATERIAL.color}" />
-      <base name="${TEXT_MATERIAL.name}" displaycolor="${TEXT_MATERIAL.color}" />
+      <base name="${xmlEscape(meta.baseMaterialName)}" displaycolor="${meta.baseMaterialColor}" />
+      <base name="${xmlEscape(meta.accentMaterialName)}" displaycolor="${meta.accentMaterialColor}" />
     </basematerials>
     ${objects}
   </resources>
@@ -147,10 +203,10 @@ function contentTypesXml(): string {
 </Types>`
 }
 
-function projectSettingsJson(): string {
+function projectSettingsJson(meta: ThreeMfPackageMeta): string {
   return `{
   "extruder_type": ["Direct Drive"],
-  "filament_colour": ["${BASE_MATERIAL.color}", "${TEXT_MATERIAL.color}"],
+  "filament_colour": ["${meta.baseMaterialColor}", "${meta.accentMaterialColor}"],
   "filament_flow_ratio": ["1", "1"],
   "filament_map": ["1", "1"],
   "filament_settings_id": ["Bambu PLA Basic @BBL A1", "Bambu PLA Basic @BBL A1"],
@@ -177,19 +233,20 @@ function projectSettingsJson(): string {
 
 function modelSettingsXml(
   parts: readonly { name: string; mesh: MeshData }[],
+  meta: ThreeMfPackageMeta,
 ): string {
   const bodyFaceCount = parts[0]!.mesh.indices.length / 3
-  const textFaceCount = parts[1]!.mesh.indices.length / 3
+  const accentFaceCount = parts[1]!.mesh.indices.length / 3
   return `<?xml version="1.0" encoding="UTF-8"?>
 <config>
   <object id="3">
-    <metadata key="name" value="opengrid-wall-cover" />
+    <metadata key="name" value="${xmlEscape(meta.modelSettingsName)}" />
     <metadata key="extruder" value="1" />
-    <metadata face_count="${bodyFaceCount + textFaceCount}" />
+    <metadata face_count="${bodyFaceCount + accentFaceCount}" />
     <part id="1" subtype="normal_part" uuid="${BODY_PART_UUID}">
       <metadata key="name" value="body" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="opengrid-wall-cover.3mf" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFileName)}" />
       <metadata key="source_object_id" value="0" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
@@ -199,21 +256,21 @@ function modelSettingsXml(
       <mesh_stat face_count="${bodyFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
     </part>
     <part id="2" subtype="normal_part" uuid="${TEXT_PART_UUID}">
-      <metadata key="name" value="text" />
+      <metadata key="name" value="${xmlEscape(meta.accentPartName)}" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="opengrid-wall-cover.3mf" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFileName)}" />
       <metadata key="source_object_id" value="1" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
       <metadata key="source_offset_y" value="0" />
       <metadata key="source_offset_z" value="0" />
       <metadata key="extruder" value="2" />
-      <mesh_stat face_count="${textFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
+      <mesh_stat face_count="${accentFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
     </part>
   </object>
   <plate>
     <metadata key="plater_id" value="1" />
-    <metadata key="plater_name" value="OpenGrid Wall Cover" />
+    <metadata key="plater_name" value="${xmlEscape(meta.platerName)}" />
     <metadata key="locked" value="false" />
     <metadata key="filament_map_mode" value="Auto For Flush" />
     <metadata key="filament_maps" value="1 2" />
@@ -346,15 +403,21 @@ function zipStore(entries: readonly ZipEntry[]): ArrayBuffer {
 
 export async function exportThreeMfBytes(
   parts: readonly ThreeMfShapePart[],
-  options = {
+  options: {
+    tolerance: number
+    angularTolerance: number
+  } = {
     tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
     angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
   },
+  meta: ThreeMfPackageMeta = THREE_MF_WALL_COVER_META,
 ): Promise<ArrayBuffer> {
   if (
     parts.length !== 2 ||
     parts[0]?.name !== 'body' ||
-    parts[1]?.name !== 'text'
+    (parts[1]?.name !== 'text' && parts[1]?.name !== 'icon') ||
+    (meta.accentPartName !== 'text' && meta.accentPartName !== 'icon') ||
+    parts[1]?.name !== meta.accentPartName
   ) {
     throw new Error('THREEMF_PARTS_INVALID')
   }
@@ -364,7 +427,7 @@ export async function exportThreeMfBytes(
     mesh: meshBRep(part.shape, options),
   }))
   const model = TEXT_ENCODER.encode(modelXml())
-  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes))
+  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes, meta))
   const entries: ZipEntry[] = [
     {
       name: '[Content_Types].xml',
@@ -382,11 +445,11 @@ export async function exportThreeMfBytes(
     { name: OBJECT_MODEL_PATH, bytes: objectModel },
     {
       name: PROJECT_SETTINGS_PATH,
-      bytes: TEXT_ENCODER.encode(projectSettingsJson()),
+      bytes: TEXT_ENCODER.encode(projectSettingsJson(meta)),
     },
     {
       name: MODEL_SETTINGS_PATH,
-      bytes: TEXT_ENCODER.encode(modelSettingsXml(meshes)),
+      bytes: TEXT_ENCODER.encode(modelSettingsXml(meshes, meta)),
     },
   ]
   const bytes = zipStore(entries)
@@ -394,6 +457,9 @@ export async function exportThreeMfBytes(
   return bytes
 }
 
-export function isThreeMfPackage(bytes: ArrayBuffer): boolean {
-  return isValidThreeMfPackage(bytes)
+export function isThreeMfPackage(
+  bytes: ArrayBuffer,
+  expectation: ThreeMfPackageExpectation = THREE_MF_WALL_COVER_EXPECTATION,
+): boolean {
+  return isValidThreeMfPackage(bytes, expectation)
 }

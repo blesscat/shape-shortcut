@@ -9,6 +9,7 @@ import {
 } from '../cad-contract/messages'
 import {
   boundsForOpenGridWallCover,
+  boundsForOpenGridLabelTag,
   isHswCellParameters,
   isOpenGridDividerModelParameters,
   isOpenGridOpenConnectShelfParameters,
@@ -17,6 +18,7 @@ import {
   isOpenGridOrganizerBoxParameters,
   isOpenGridParameters,
   isOpenGridSnapParameters,
+  isOpenGridLabelTagParameters,
   isPillarParameters,
   normalizeOpenGridDividerParameters,
   normalizeOpenGridParameters,
@@ -47,6 +49,7 @@ import { assertOpenGridOrganizerBoxGeometry } from '../cad-kernel/components/ope
 import { assertOpenGridShapeQuality } from '../cad-kernel/components/opengrid/quality'
 import { assertPillarShapeQuality } from '../cad-kernel/components/opengrid-pillar/quality'
 import { assertOpenGridWallCoverShapeQuality } from '../cad-kernel/components/opengrid-wall-cover/quality'
+import { assertOpenGridLabelTagShapeQuality } from '../cad-kernel/components/opengrid-label-tag/quality'
 import {
   assertOpenGridSnapOpenConnectShapeQuality,
   assertOpenGridSnapShapeQuality,
@@ -147,6 +150,16 @@ export async function generateCadCandidate(
     }
     generationParameters = validation.value.parameters
   }
+  if (command.modelId === 'opengrid-label-tag') {
+    const validation = validateModelParameters(
+      command.modelId,
+      command.parameters,
+    )
+    if (!validation.valid) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
+    }
+    generationParameters = validation.value.parameters
+  }
   const hswProgress =
     command.modelId === 'hsw-cell' && isHswCellParameters(command.parameters)
       ? {
@@ -220,11 +233,13 @@ export async function generateCadCandidate(
       buildContext.getOpenGridHalfCellPrototype = (key, factory) =>
         context.assets.getOpenGridHalfCellPrototype(key, factory)
     }
-    const usesWallCoverParts = command.modelId === 'opengrid-wall-cover'
+    const usesParts =
+      command.modelId === 'opengrid-wall-cover' ||
+      command.modelId === 'opengrid-label-tag'
     const buildResult: KernelModelBuildResult = await timing.measure(
       'build',
       async () => {
-        if (usesWallCoverParts) {
+        if (usesParts) {
           return buildModelBRepWithParts(
             command.modelId,
             generationParameters,
@@ -358,6 +373,30 @@ export async function generateCadCandidate(
       )
     }
 
+    if (command.modelId === 'opengrid-label-tag') {
+      if (!isOpenGridLabelTagParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
+      }
+      const bodyPart = nativeParts?.find((part) => part.name === 'body')
+      const iconPart = nativeParts?.find((part) => part.name === 'icon')
+      if (!bodyPart || !iconPart) {
+        throw new Error('OPENGRID_LABEL_TAG_PARTS_INVALID')
+      }
+      const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+      const iconMesh = meshBRep(iconPart.shape, command.previewConfig)
+      nativePartMeshes = [
+        { name: 'body', mesh: bodyMesh },
+        { name: 'icon', mesh: iconMesh },
+      ]
+      mesh.bounds = boundsForOpenGridLabelTag(generationParameters)
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelTagShapeQuality(
+          nativeParts ?? [],
+          generationParameters,
+        ),
+      )
+    }
+
     if (command.modelId === 'opengrid-divider') {
       if (!isOpenGridDividerModelParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
@@ -480,7 +519,7 @@ export async function generateCadCandidate(
       serializeMesh(mesh),
     )
     partMeshSnapshots = candidate.partMeshes?.map((part) => ({
-      name: part.name as 'body' | 'text',
+      name: part.name as 'body' | 'text' | 'icon',
       mesh: serializeMesh(part.mesh),
     }))
     candidate.previewTiming = timing.snapshot()
