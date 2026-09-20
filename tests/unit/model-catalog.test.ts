@@ -786,8 +786,6 @@ describe('CAD component catalog', () => {
       'down',
       'height',
       'wallThickness',
-      'targetBoxGridsX',
-      'targetBoxGridsY',
       'boxFitWallGrids',
       'endClearance',
       'pegDiameterIncrement',
@@ -833,8 +831,6 @@ describe('CAD component catalog', () => {
       height: 20,
       wallThickness: 2,
       alignmentMode: 'free',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
       boxFitWallGrids: 4.5,
       endClearance: 0.15,
       pegLengthMode: 'snap',
@@ -842,12 +838,10 @@ describe('CAD component catalog', () => {
       honeycombMode: false,
     })
     expect(definition?.exportFileName(definition.defaultParameters)).toBe(
-      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' +
-        'free-g4.5x4.5-c0.15-psnap-i0.step',
+      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' + 'free-c0.15-psnap-i0.step',
     )
     expect(definition?.stlFileName(definition.defaultParameters)).toBe(
-      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' +
-        'free-g4.5x4.5-c0.15-psnap-i0.stl',
+      'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' + 'free-c0.15-psnap-i0.stl',
     )
     expect(cadPathForModel('opengrid-divider')).toBe('/cad/opengrid-divider')
     expect(modelIdForCadPath('/cad/opengrid-divider/')).toBe('opengrid-divider')

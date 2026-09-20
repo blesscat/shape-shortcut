@@ -76,8 +76,6 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'height',
   'wallThickness',
   'alignmentMode',
-  'targetBoxGridsX',
-  'targetBoxGridsY',
   'boxFitWallGrids',
   'endClearance',
   'pegLengthMode',
@@ -210,9 +208,7 @@ function usesHalfStepInput(modelId: ModelId, key: ModelParameterKey): boolean {
       key === 'right' ||
       key === 'up' ||
       key === 'down' ||
-      key === 'boxFitWallGrids' ||
-      key === 'targetBoxGridsX' ||
-      key === 'targetBoxGridsY'
+      key === 'boxFitWallGrids'
     )
   }
   if (modelId === 'opengrid-openconnect-shelf') {
@@ -384,11 +380,8 @@ function parseOpenGridDividerRawParameters(raw: RawParameters):
     return invalid('alignmentMode')
   }
   parsed.alignmentMode = alignmentMode
-  for (const key of ['targetBoxGridsX', 'targetBoxGridsY'] as const) {
-    const value = parseHalfStepInput(raw[key] ?? String(defaults[key]))
-    if (value === null) return invalid(key)
-    parsed[key] = value
-  }
+  // Snapshots saved before the wall length existed may still carry the retired
+  // targetBoxGridsX/Y keys; the raw parse simply no longer reads them.
   if (raw.boxFitWallGrids === undefined) {
     // Snapshots saved before box-fit carried its wall length in the
     // directional arm counts; migrate the longer axis sum, otherwise fall
@@ -1130,7 +1123,11 @@ export function parseRawParameters(
   const legacyAliases =
     modelId === 'opengrid-stackable-cylinder'
       ? (['diameter', 'thinBottomMode'] as const)
-      : []
+      : modelId === 'opengrid-divider'
+        ? // Retired target box grid counts must keep parsing so legacy
+          // snapshots migrate to the wall-grid length instead of rejecting.
+          (['targetBoxGridsX', 'targetBoxGridsY'] as const)
+        : []
   const unexpectedKey = Object.keys(raw).find(
     (key) =>
       !keys.includes(key as ModelParameterKey) &&

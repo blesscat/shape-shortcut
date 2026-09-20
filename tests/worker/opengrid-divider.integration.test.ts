@@ -46,10 +46,6 @@ const WASM_PATH =
 
 const DIVIDER_ALIGNMENT_DEFAULTS = {
   alignmentMode: 'free',
-  targetBoxGridsX:
-    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsX,
-  targetBoxGridsY:
-    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsY,
   boxFitWallGrids:
     OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.boxFitWallGrids,
   endClearance: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.endClearance,
@@ -69,8 +65,6 @@ function fullDividerParameters(
       | 'height'
       | 'wallThickness'
       | 'alignmentMode'
-      | 'targetBoxGridsX'
-      | 'targetBoxGridsY'
       | 'boxFitWallGrids'
       | 'endClearance'
       | 'pegLengthMode'
@@ -999,8 +993,6 @@ describe('OpenGrid divider CAD kernel integration', () => {
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
       boxFitWallGrids: 4.5,
       endClearance: 0.15,
     })
@@ -1049,8 +1041,6 @@ describe('OpenGrid divider CAD kernel integration', () => {
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
-      targetBoxGridsX: 5,
-      targetBoxGridsY: 5,
       boxFitWallGrids: 5,
       endClearance: 0.15,
     })

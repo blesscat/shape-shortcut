@@ -16,6 +16,9 @@ export function displayParameterLabel(
   if (field.labelFormat === 'axis') {
     return field.axis
   }
+  if (field.labelFormat === 'label') {
+    return label
+  }
 
   return `${label}（${field.axis}）`
 }

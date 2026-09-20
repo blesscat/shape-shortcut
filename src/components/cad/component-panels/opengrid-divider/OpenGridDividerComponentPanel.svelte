@@ -37,12 +37,7 @@
   const SHARED_FIELDS = SHARED_FIELD_KEYS.map((key) =>
     schema.find((field) => field.key === key)!,
   )
-  const BOX_FIT_FIELD_KEYS = [
-    'boxFitWallGrids',
-    'targetBoxGridsX',
-    'targetBoxGridsY',
-    'endClearance',
-  ] as const
+  const BOX_FIT_FIELD_KEYS = ['boxFitWallGrids', 'endClearance'] as const
   const PEG_FIELD_KEYS = ['pegDiameterIncrement'] as const
 
   const ALIGNMENT_OPTIONS = [
@@ -89,19 +84,7 @@
   // horizontal arm its wall-grid length materializes into.
   let alignmentInfo = $derived(
     openGridDividerAlignmentInfoFor({
-      ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
-      left:
-        alignmentMode === 'box-fit'
-          ? rawNumber('boxFitWallGrids')
-          : rawNumber('left'),
-      right: alignmentMode === 'box-fit' ? 0 : rawNumber('right'),
-      up: alignmentMode === 'box-fit' ? 0 : rawNumber('up'),
-      down: alignmentMode === 'box-fit' ? 0 : rawNumber('down'),
-      alignmentMode: alignmentMode,
-      targetBoxGridsX: rawNumber('targetBoxGridsX'),
-      targetBoxGridsY: rawNumber('targetBoxGridsY'),
       boxFitWallGrids: rawNumber('boxFitWallGrids'),
-      endClearance: rawNumber('endClearance'),
     }),
   )
 
@@ -332,15 +315,7 @@
         <span>
           {translate(
             locale,
-            alignmentInfo.anchorX === 'center'
-              ? 'panel.divider.badgeAnchorCenter'
-              : 'panel.divider.badgeAnchorPlusMinus7',
-          )}
-        </span>
-        <span>
-          {translate(
-            locale,
-            alignmentInfo.anchorY === 'center'
+            alignmentInfo.anchor === 'center'
               ? 'panel.divider.badgeAnchorCenter'
               : 'panel.divider.badgeAnchorPlusMinus7',
           )}
@@ -353,11 +328,6 @@
               : 'panel.divider.badgeCenterPegAbsent',
           )}
         </span>
-        {#each alignmentInfo.transverseIntegerAxes as axis (axis)}
-          <span class="text-muted-foreground">
-            {translate(locale, 'panel.divider.badgeTransverse', { axis })}
-          </span>
-        {/each}
       </div>
     {/if}
 

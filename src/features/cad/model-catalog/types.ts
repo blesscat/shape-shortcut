@@ -34,7 +34,7 @@ export type ParameterField = {
   label: string
   axis: string
   unit: 'mm' | 'degree' | 'grid' | 'count'
-  labelFormat?: 'axis' | 'label-axis'
+  labelFormat?: 'axis' | 'label-axis' | 'label'
   control: 'text' | 'range' | 'range-text'
   defaultValue: number
   min: number

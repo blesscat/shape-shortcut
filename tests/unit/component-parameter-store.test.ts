@@ -717,8 +717,6 @@ describe('component parameter store', () => {
       height: 25,
       wallThickness: 3,
       alignmentMode: 'free',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
       boxFitWallGrids: 4.5,
       endClearance: 0.15,
       pegLengthMode: 'snap',
@@ -1005,8 +1003,6 @@ describe('component parameter store', () => {
       wallThickness:
         OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
       alignmentMode: 'free',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
       boxFitWallGrids: 4.5,
       endClearance: 0.15,
       pegLengthMode: 'snap',

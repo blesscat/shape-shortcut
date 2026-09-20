@@ -593,8 +593,6 @@ describe('CAD workspace validation helpers', () => {
       height: 20,
       wallThickness: 2,
       alignmentMode: alignmentDefaults.alignmentMode,
-      targetBoxGridsX: alignmentDefaults.targetBoxGridsX,
-      targetBoxGridsY: alignmentDefaults.targetBoxGridsY,
       boxFitWallGrids: alignmentDefaults.boxFitWallGrids,
       endClearance: alignmentDefaults.endClearance,
       pegLengthMode: alignmentDefaults.pegLengthMode,
@@ -611,8 +609,6 @@ describe('CAD workspace validation helpers', () => {
       height: '20',
       wallThickness: '2',
       alignmentMode: 'free',
-      targetBoxGridsX: '4.5',
-      targetBoxGridsY: '4.5',
       boxFitWallGrids: '4.5',
       endClearance: '0.15',
       pegLengthMode: 'snap',
@@ -655,7 +651,8 @@ describe('CAD workspace validation helpers', () => {
       },
     })
     // Legacy box-fit snapshots carry the wall length in the arm sums; the raw
-    // parse migrates the longer axis sum into the wall-grid length.
+    // parse migrates the longer axis sum into the wall-grid length. Retired
+    // target box grid keys are tolerated and dropped from the parsed value.
     expect(
       parseRawParameters(
         {
@@ -666,7 +663,9 @@ describe('CAD workspace validation helpers', () => {
           height: '20',
           wallThickness: '2',
           alignmentMode: 'box-fit',
-        },
+          targetBoxGridsX: '5',
+          targetBoxGridsY: '4.5',
+        } as Record<string, string>,
         'opengrid-divider',
       ),
     ).toEqual({
@@ -694,7 +693,7 @@ describe('CAD workspace validation helpers', () => {
           alignmentMode: 'box-fit',
           targetBoxGridsX: '8.5',
           targetBoxGridsY: '8.5',
-        },
+        } as Record<string, string>,
         'opengrid-divider',
       ),
     ).toEqual({
@@ -703,8 +702,6 @@ describe('CAD workspace validation helpers', () => {
         ...parameters,
         honeycombMode: false,
         alignmentMode: 'box-fit',
-        targetBoxGridsX: 8.5,
-        targetBoxGridsY: 8.5,
         left: 8.5,
         right: 0,
         up: 0,

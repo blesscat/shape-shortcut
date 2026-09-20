@@ -157,8 +157,6 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
     for (const key of [
       'wallThickness',
       'alignmentMode',
-      'targetBoxGridsX',
-      'targetBoxGridsY',
       'endClearance',
       'pegLengthMode',
       'pegDiameterIncrement',

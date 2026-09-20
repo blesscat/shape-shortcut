@@ -18,8 +18,6 @@ export type OpenGridDividerParameterKey =
   | 'height'
   | 'wallThickness'
   | 'alignmentMode'
-  | 'targetBoxGridsX'
-  | 'targetBoxGridsY'
   | 'boxFitWallGrids'
   | 'endClearance'
   | 'pegLengthMode'
@@ -34,8 +32,6 @@ export type OpenGridDividerParameters = {
   height: number
   wallThickness: number
   alignmentMode: OpenGridDividerAlignmentMode
-  targetBoxGridsX: number
-  targetBoxGridsY: number
   boxFitWallGrids: number
   endClearance: number
   pegLengthMode: OpenGridDividerPegLengthMode
@@ -44,11 +40,8 @@ export type OpenGridDividerParameters = {
 }
 
 export type OpenGridDividerAlignmentInfo = {
-  anchorX: OpenGridDividerLatticeAnchor
-  anchorY: OpenGridDividerLatticeAnchor
+  anchor: OpenGridDividerLatticeAnchor
   centerPeg: boolean
-  transverseIntegerAxes: ('x' | 'y')[]
-  junctionOnLattice: boolean
 }
 
 export type OpenGridDividerPegPlan = {
@@ -100,8 +93,6 @@ const DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
   'height',
   'wallThickness',
   'alignmentMode',
-  'targetBoxGridsX',
-  'targetBoxGridsY',
   'boxFitWallGrids',
   'endClearance',
   'pegLengthMode',
@@ -167,8 +158,8 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   boxWallStationInset: 1.275,
   alignmentModes: DIVIDER_ALIGNMENT_MODES,
   pegLengthModes: DIVIDER_PEG_LENGTH_MODES,
-  minTargetBoxGrids: 0.5,
-  maxTargetBoxGrids: 17.5,
+  minBoxFitWallGrids: 0.5,
+  maxBoxFitWallGrids: 17.5,
   minEndClearance: 0.1,
   maxEndClearance: 2,
   endClearanceStep: 0.05,
@@ -186,8 +177,6 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
     height: 20,
     wallThickness: 2,
     alignmentMode: 'free',
-    targetBoxGridsX: 4.5,
-    targetBoxGridsY: 4.5,
     boxFitWallGrids: 4.5,
     endClearance: 0.15,
     pegLengthMode: 'snap',
@@ -249,13 +238,13 @@ function isStepValue(value: number, step: number, tolerance = 1e-9): boolean {
   )
 }
 
-function isSafeTargetBoxGrids(value: unknown): value is number {
+function isSafeBoxFitWallGrids(value: unknown): value is number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return false
-  const { minTargetBoxGrids, maxTargetBoxGrids, gridStep } =
+  const { minBoxFitWallGrids, maxBoxFitWallGrids, gridStep } =
     OPENGRID_DIVIDER_CONFIGURATION
   return (
-    value >= minTargetBoxGrids &&
-    value <= maxTargetBoxGrids &&
+    value >= minBoxFitWallGrids &&
+    value <= maxBoxFitWallGrids &&
     isStepValue(value, gridStep)
   )
 }
@@ -312,12 +301,10 @@ export function openGridDividerBaseWidthFor(
   return Math.max(wallWidth, effectivePegDiameter)
 }
 
-export function openGridDividerLatticeStationsFor(
-  targetGrids: number,
-): number[] {
+export function openGridDividerLatticeStationsFor(wallGrids: number): number[] {
   const { gridPitch } = OPENGRID_DIVIDER_CONFIGURATION
-  const anchor = Number.isInteger(targetGrids) ? gridPitch / 4 : 0
-  const limit = (targetGrids * gridPitch) / 2
+  const anchor = Number.isInteger(wallGrids) ? gridPitch / 4 : 0
+  const limit = (wallGrids * gridPitch) / 2
   const stations: number[] = []
   if (anchor === 0) stations.push(0)
   for (
@@ -383,39 +370,19 @@ function singleArmCenterExtensionFor(
 export function openGridDividerBoxFitPegCentersFor(
   parameters: OpenGridDividerParameters,
 ): OpenGridDividerPoint2D[] {
-  const horizontalActive = parameters.left > 0 || parameters.right > 0
-  const verticalActive = parameters.up > 0 || parameters.down > 0
-  if (!horizontalActive && !verticalActive) return []
   const EPSILON = 1e-6
   const horizontal = openGridDividerArmStationsFor(parameters, 'x')
-  const vertical = openGridDividerArmStationsFor(parameters, 'y')
   const planCenterX = (horizontal.start + horizontal.end) / 2
-  const planCenterY = (vertical.start + vertical.end) / 2
   const centers = new Map<string, OpenGridDividerPoint2D>()
-  if (horizontalActive) {
-    for (const station of openGridDividerLatticeStationsFor(
-      parameters.targetBoxGridsX,
-    )) {
-      const localX = station + planCenterX
-      if (
-        localX > horizontal.start + EPSILON &&
-        localX < horizontal.end - EPSILON
-      ) {
-        centers.set(`${localX},0`, [localX, 0])
-      }
-    }
-  }
-  if (verticalActive) {
-    for (const station of openGridDividerLatticeStationsFor(
-      parameters.targetBoxGridsY,
-    )) {
-      const localY = station + planCenterY
-      if (
-        localY > vertical.start + EPSILON &&
-        localY < vertical.end - EPSILON
-      ) {
-        centers.set(`0,${localY}`, [0, localY])
-      }
+  for (const station of openGridDividerLatticeStationsFor(
+    parameters.boxFitWallGrids,
+  )) {
+    const localX = station + planCenterX
+    if (
+      localX > horizontal.start + EPSILON &&
+      localX < horizontal.end - EPSILON
+    ) {
+      centers.set(`${localX},0`, [localX, 0])
     }
   }
   return [...centers.values()].sort(
@@ -441,46 +408,18 @@ export function openGridDividerPegPlanFor(
 }
 
 export function openGridDividerAlignmentInfoFor(
-  parameters: OpenGridDividerParameters,
+  parameters: Pick<OpenGridDividerParameters, 'boxFitWallGrids'>,
 ): OpenGridDividerAlignmentInfo {
-  const anchorFor = (targetGrids: number): OpenGridDividerLatticeAnchor =>
-    Number.isInteger(targetGrids) ? 'plus-minus-7' : 'center'
-  const stationsX = new Set(
-    openGridDividerLatticeStationsFor(parameters.targetBoxGridsX),
+  const anchor: OpenGridDividerLatticeAnchor = Number.isInteger(
+    parameters.boxFitWallGrids,
   )
-  const stationsY = new Set(
-    openGridDividerLatticeStationsFor(parameters.targetBoxGridsY),
-  )
-  // Raw panel input can hold all-zero arm counts before validation rejects
-  // the snapshot; report a neutral alignment state instead of throwing.
-  if (countActiveDirections(parameters) < 1) {
-    return {
-      anchorX: anchorFor(parameters.targetBoxGridsX),
-      anchorY: anchorFor(parameters.targetBoxGridsY),
-      centerPeg: stationsX.has(0) && stationsY.has(0),
-      transverseIntegerAxes: [],
-      junctionOnLattice: false,
-    }
-  }
-  const horizontal = openGridDividerArmStationsFor(parameters, 'x')
-  const vertical = openGridDividerArmStationsFor(parameters, 'y')
-  const junctionX = -((horizontal.start + horizontal.end) / 2)
-  const junctionY = -((vertical.start + vertical.end) / 2)
-  const transverseIntegerAxes: ('x' | 'y')[] = []
-  if ((parameters.left > 0 || parameters.right > 0) && !stationsY.has(0)) {
-    // A horizontal wall's centerline must sit on a Y hole column.
-    transverseIntegerAxes.push('y')
-  }
-  if ((parameters.up > 0 || parameters.down > 0) && !stationsX.has(0)) {
-    // A vertical wall's centerline must sit on an X hole column.
-    transverseIntegerAxes.push('x')
-  }
+    ? 'plus-minus-7'
+    : 'center'
   return {
-    anchorX: anchorFor(parameters.targetBoxGridsX),
-    anchorY: anchorFor(parameters.targetBoxGridsY),
-    centerPeg: stationsX.has(0) && stationsY.has(0),
-    transverseIntegerAxes,
-    junctionOnLattice: stationsX.has(junctionX) && stationsY.has(junctionY),
+    anchor,
+    centerPeg: openGridDividerLatticeStationsFor(
+      parameters.boxFitWallGrids,
+    ).includes(0),
   }
 }
 
@@ -619,6 +558,8 @@ const REMOVED_DIVIDER_PARAMETER_KEYS: readonly string[] = [
   'pegDiameter',
   'pegOffsetX',
   'pegOffsetY',
+  'targetBoxGridsX',
+  'targetBoxGridsY',
 ]
 
 function hasAcceptableKeys(value: Record<string, unknown>): boolean {
@@ -643,8 +584,6 @@ function withAlignmentDefaults(
   }
   for (const key of [
     'alignmentMode',
-    'targetBoxGridsX',
-    'targetBoxGridsY',
     'endClearance',
     'pegLengthMode',
     'pegDiameterIncrement',
@@ -656,7 +595,9 @@ function withAlignmentDefaults(
   if (!Object.prototype.hasOwnProperty.call(merged, 'boxFitWallGrids')) {
     // Snapshots saved before box-fit used a single wall-length parameter kept
     // the wall in the directional arm counts; carry that length over in box-fit
-    // mode and fall back to the default length otherwise.
+    // mode and fall back to the default length otherwise. Snapshots saved
+    // before the wall length existed may still carry the retired target box
+    // grid counts, which are dropped with the other removed keys.
     merged.boxFitWallGrids =
       merged.alignmentMode === 'box-fit'
         ? Math.max(
@@ -771,19 +712,7 @@ export function validateOpenGridDividerParameters(
       messageId: 'validation.invalid',
     })
   }
-  if (!isSafeTargetBoxGrids(candidateRecord.targetBoxGridsX)) {
-    issues.push({
-      field: 'targetBoxGridsX',
-      messageId: 'validation.invalid',
-    })
-  }
-  if (!isSafeTargetBoxGrids(candidateRecord.targetBoxGridsY)) {
-    issues.push({
-      field: 'targetBoxGridsY',
-      messageId: 'validation.invalid',
-    })
-  }
-  if (!isSafeTargetBoxGrids(candidateRecord.boxFitWallGrids)) {
+  if (!isSafeBoxFitWallGrids(candidateRecord.boxFitWallGrids)) {
     issues.push({
       field: 'boxFitWallGrids',
       messageId: 'validation.invalid',
@@ -833,22 +762,14 @@ export function validateOpenGridDividerParameters(
   )
   const alignmentFieldsAreValid = [
     'alignmentMode',
-    'targetBoxGridsX',
-    'targetBoxGridsY',
     'boxFitWallGrids',
     'endClearance',
   ].every((field) => !issues.some((issue) => issue.field === field))
   if (isBoxFit) {
     // Box-fit ignores the frozen arm counts, so its checks must not depend on
     // countsAreValid: the wall length can exceed the 10-grid arm cap while
-    // still being a legal wall value that has to obey its target box.
+    // still being a legal wall value.
     if (alignmentFieldsAreValid) {
-      if (boxFitWallGrids > (candidateRecord.targetBoxGridsX as number)) {
-        issues.push({
-          field: 'boxFitWallGrids',
-          messageId: 'validation.boxFitWallExceedsTarget',
-        })
-      }
       if (issues.length === 0) {
         const plan = openGridDividerPlanBoundsFor(candidate)
         if (
@@ -895,8 +816,6 @@ export function validateOpenGridDividerParameters(
       height: value.height as number,
       wallThickness: value.wallThickness as number,
       alignmentMode: alignmentMode as OpenGridDividerAlignmentMode,
-      targetBoxGridsX: candidateRecord.targetBoxGridsX as number,
-      targetBoxGridsY: candidateRecord.targetBoxGridsY as number,
       boxFitWallGrids,
       endClearance: candidateRecord.endClearance as number,
       pegLengthMode:
@@ -972,7 +891,6 @@ function openGridDividerFileNameSuffix(
 ): string {
   return (
     `-a${parameters.alignmentMode}` +
-    `-g${parameters.targetBoxGridsX}x${parameters.targetBoxGridsY}` +
     `-c${parameters.endClearance}` +
     `-p${parameters.pegLengthMode}` +
     `-i${parameters.pegDiameterIncrement}`
