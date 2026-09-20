@@ -78,6 +78,7 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'alignmentMode',
   'targetBoxGridsX',
   'targetBoxGridsY',
+  'boxFitWallGrids',
   'endClearance',
   'pegLengthMode',
   'pegDiameterIncrement',
@@ -204,7 +205,15 @@ function usesHalfStepInput(modelId: ModelId, key: ModelParameterKey): boolean {
     return key === 'x' || key === 'y'
   }
   if (modelId === 'opengrid-divider') {
-    return key === 'left' || key === 'right' || key === 'up' || key === 'down'
+    return (
+      key === 'left' ||
+      key === 'right' ||
+      key === 'up' ||
+      key === 'down' ||
+      key === 'boxFitWallGrids' ||
+      key === 'targetBoxGridsX' ||
+      key === 'targetBoxGridsY'
+    )
   }
   if (modelId === 'opengrid-openconnect-shelf') {
     return key === 'angle'
@@ -379,6 +388,22 @@ function parseOpenGridDividerRawParameters(raw: RawParameters):
     const value = parseHalfStepInput(raw[key] ?? String(defaults[key]))
     if (value === null) return invalid(key)
     parsed[key] = value
+  }
+  if (raw.boxFitWallGrids === undefined) {
+    // Snapshots saved before box-fit carried its wall length in the
+    // directional arm counts; migrate the longer axis sum, otherwise fall
+    // back to the definition default.
+    parsed.boxFitWallGrids =
+      alignmentMode === 'box-fit'
+        ? Math.max(
+            (parsed.left as number) + (parsed.right as number),
+            (parsed.up as number) + (parsed.down as number),
+          )
+        : defaults.boxFitWallGrids
+  } else {
+    const value = parseHalfStepInput(raw.boxFitWallGrids)
+    if (value === null) return invalid('boxFitWallGrids')
+    parsed.boxFitWallGrids = value
   }
   const endClearance = parseFiniteDecimalInput(
     raw.endClearance ?? String(defaults.endClearance),

@@ -6,18 +6,18 @@
 
 ### Requirement: 獨立的分隔牆參數契約
 
-The system MUST expose a runtime-validated component with stable `modelId=opengrid-divider`. Its normalized parameters MUST include non-negative `left`, `right`, `up`, and `down` arm counts that are multiples of 0.5 grid, plus an integer `height` in millimetres. `height` MUST be in the inclusive range 2–500 mm. The normalized parameters MUST also include an integer `wallThickness` from 1 through 5 mm and a boolean `honeycombMode`. The normalized parameters MUST additionally include an `alignmentMode` of `free` or `box-fit`; `targetBoxGridsX` and `targetBoxGridsY` counts that MUST each be a positive multiple of 0.5 grids no greater than 17.5 grids; an `endClearance` from 0.1 through 2.0 mm in 0.05 mm steps; a `pegLengthMode` of `snap`, `thin-shell`, or `stackable`; and a `pegDiameterIncrement` from −1 through 1 mm in 0.1 mm steps. The locating peg diameter MUST stay the fixed 4.9 mm nominal plus the selected `pegDiameterIncrement`. `targetBoxGridsX`, `targetBoxGridsY`, and `endClearance` MUST be range-validated in both alignment modes and MUST influence placement only when `alignmentMode=box-fit`. One full divider grid MUST be 28 mm, one half-grid MUST be 14 mm, and the divider grid definition MUST resolve from the shared official OpenGrid grid contract rather than defining a separate pitch. The divider's planar footprint MUST continue to use its existing 500 mm safety limit independently of the height range. Every directional arm count MUST be no greater than 10 grids, while the combined planar envelope MUST still be checked independently against the 500 mm limit. The default snapshot MUST be `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, `wallThickness=2`, `alignmentMode=free`, `targetBoxGridsX=4.5`, `targetBoxGridsY=4.5`, `endClearance=0.15`, `pegLengthMode=snap`, `pegDiameterIncrement=0`, and `honeycombMode=false`. Validation MUST accept snapshots without `honeycombMode` and normalize them to `honeycombMode=false`; when the current key set is presented, a non-boolean `honeycombMode` MUST fail field-specific validation.
+The system MUST expose a runtime-validated component with stable `modelId=opengrid-divider`. Its normalized parameters MUST include non-negative `left`, `right`, `up`, and `down` arm counts that are multiples of 0.5 grid, plus an integer `height` in millimetres. `height` MUST be in the inclusive range 2–500 mm. The normalized parameters MUST also include an integer `wallThickness` from 1 through 5 mm and a boolean `honeycombMode`. The normalized parameters MUST additionally include an `alignmentMode` of `free` or `box-fit`; `targetBoxGridsX` and `targetBoxGridsY` counts that MUST each be a positive multiple of 0.5 grids no greater than 17.5 grids; a `boxFitWallGrids` wall length that MUST be a positive multiple of 0.5 grids no greater than 17.5 grids; an `endClearance` from 0.1 through 2.0 mm in 0.05 mm steps; a `pegLengthMode` of `snap`, `thin-shell`, or `stackable`; and a `pegDiameterIncrement` from −1 through 1 mm in 0.1 mm steps. The locating peg diameter MUST stay the fixed 4.9 mm nominal plus the selected `pegDiameterIncrement`. `targetBoxGridsX`, `targetBoxGridsY`, `boxFitWallGrids`, and `endClearance` MUST be range-validated in both alignment modes and MUST influence placement only when `alignmentMode=box-fit`, where `boxFitWallGrids` MUST additionally satisfy `boxFitWallGrids ≤ targetBoxGridsX`. One full divider grid MUST be 28 mm, one half-grid MUST be 14 mm, and the divider grid definition MUST resolve from the shared official OpenGrid grid contract rather than defining a separate pitch. The divider's planar footprint MUST continue to use its existing 500 mm safety limit independently of the height range. Every directional arm count MUST be no greater than 10 grids, while the combined planar envelope MUST still be checked independently against the 500 mm limit; directional arm counts MUST be range-validated in `free` alignment mode and MUST be ignored by validation in `box-fit` alignment mode so they cannot block acceptance there. The default snapshot MUST be `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, `wallThickness=2`, `alignmentMode=free`, `targetBoxGridsX=4.5`, `targetBoxGridsY=4.5`, `boxFitWallGrids=4.5`, `endClearance=0.15`, `pegLengthMode=snap`, `pegDiameterIncrement=0`, and `honeycombMode=false`. Validation MUST accept snapshots without `honeycombMode` and normalize them to `honeycombMode=false`; when the current key set is presented, a non-boolean `honeycombMode` MUST fail field-specific validation. Validation MUST accept snapshots without `boxFitWallGrids`: in `box-fit` mode the value MUST normalize to the greater of the horizontal and vertical directional sums, and in `free` mode it MUST normalize to `4.5`.
 
 #### Scenario: 合法分隔牆參數
 
-- **WHEN** `left`、`right`、`up`、`down` are non-negative 0.5-grid multiples with at least one non-zero direction, and `height` is an integer from 2 through 500 mm with a planar footprint within 500 mm, and `wallThickness` is an integer from 1 through 5 mm, and the alignment, peg length, peg diameter, and peg offset fields satisfy their declared ranges, and `honeycombMode` is a boolean or omitted
+- **WHEN** `left`、`right`、`up`、`down` are non-negative 0.5-grid multiples with at least one non-zero direction, and `height` is an integer from 2 through 500 mm with a planar footprint within 500 mm, and `wallThickness` is an integer from 1 through 5 mm, and the alignment, wall-grid, peg length, peg diameter, and peg offset fields satisfy their declared ranges, and `honeycombMode` is a boolean or omitted
 - **THEN** the component MUST accept the normalized snapshot
 - **AND** the generated arm lengths MUST use 28 mm per configured full grid unit and 14 mm per half-grid unit
 - **AND** the snapshot MUST remain independent from `modelId=opengrid`
 
 #### Scenario: 不支援的形狀被拒絕
 
-- **WHEN** all four directions are zero, or any directional value is not a 0.5-grid multiple, negative, non-finite, greater than 10 grids, or outside the supported height, planar footprint, or `wallThickness` range, or `honeycombMode` is present but not boolean
+- **WHEN** in `free` alignment mode all four directions are zero, or in `free` alignment mode any directional value is not a 0.5-grid multiple, negative, non-finite, or greater than 10 grids, or `boxFitWallGrids` is not a positive 0.5-grid multiple or is greater than 17.5 grids, or a value is outside the supported height, planar footprint, or `wallThickness` range, or `honeycombMode` is present but not boolean
 - **THEN** validation MUST fail with field-specific diagnostics
 - **AND** the system MUST NOT send the snapshot for CAD generation or export
 
@@ -53,6 +53,24 @@ The system MUST expose a runtime-validated component with stable `modelId=opengr
 - **WHEN** `targetBoxGridsX` or `targetBoxGridsY` is absent, zero, not a 0.5-grid multiple, or greater than 17.5 grids, or `endClearance` is outside 0.1–2.0 mm or not a 0.05 mm step
 - **THEN** validation MUST reject the snapshot with field-specific diagnostics regardless of `alignmentMode`
 - **AND** legacy snapshots without these keys MUST still be accepted with the definition defaults filled in
+
+#### Scenario: 盒內對位牆長範圍
+
+- **WHEN** `boxFitWallGrids` is zero, not a 0.5-grid multiple, or greater than 17.5 grids
+- **THEN** validation MUST reject the snapshot with a field-specific diagnostic for `boxFitWallGrids` regardless of `alignmentMode`
+
+#### Scenario: 盒內對位牆長受目標格數約束
+
+- **WHEN** `alignmentMode=box-fit`, `boxFitWallGrids=5`, and `targetBoxGridsX=4.5`
+- **THEN** validation MUST reject the snapshot with a field-specific diagnostic on `boxFitWallGrids`
+- **AND** no CAD generation or export MAY be dispatched for the snapshot
+
+#### Scenario: 缺少牆長欄位的既有快照正規化
+
+- **WHEN** a saved `free` snapshot contains no `boxFitWallGrids`
+- **THEN** validation MUST accept it and normalize `boxFitWallGrids` to `4.5`
+- **WHEN** a saved `box-fit` snapshot contains no `boxFitWallGrids`
+- **THEN** validation MUST normalize `boxFitWallGrids` to the greater of the horizontal and vertical directional sums
 
 #### Scenario: 缺少省料模式欄位的既有快照仍有效
 
@@ -129,9 +147,10 @@ The generated body MUST be a continuous connected divider whose base support has
 - **WHEN** the four arm counts are not symmetric
 - **THEN** the relative lengths and directions around the central junction MUST match the input counts after applying the same active-end retraction
 - **AND** the generator MUST NOT silently recenter the junction independently of the generated shape
+
 ### Requirement: 單臂中心定位柱上方延續牆體
 
-In `free` alignment mode the generated divider MUST, when exactly one of `left`, `right`, `up`, or `down` is non-zero, extend its complete profiled wall from the central arm axis 2.5 mm toward the inactive side. This extension MUST include the 5 mm base support, any 45-degree transition, and the selected upper wall, so the central 5 mm locating peg has wall directly above its center rather than only on the active side. The active arm endpoint MUST remain at the existing retracted station, and the result MUST remain one connected solid. In `box-fit` alignment mode the single-arm wall MUST instead span between the retracted stations of both nominal grid ends without the 2.5 mm inactive-side extension, placing the central junction at the retracted inactive end where no junction peg is emitted.
+In `free` alignment mode the generated divider MUST, when exactly one of `left`, `right`, `up`, or `down` is non-zero, extend its complete profiled wall from the central arm axis 2.5 mm toward the inactive side. This extension MUST include the 5 mm base support, any 45-degree transition, and the selected upper wall, so the central 5 mm locating peg has wall directly above its center rather than only on the active side. The active arm endpoint MUST remain at the existing retracted station, and the result MUST remain one connected solid. In `box-fit` alignment mode the wall is always a single horizontal arm with `left=boxFitWallGrids` and `right=up=down=0`, so the wall MUST span between the retracted stations of both nominal grid ends without the 2.5 mm inactive-side extension, placing the central junction at the retracted inactive end where no junction peg is emitted.
 
 #### Scenario: 四個方向的單臂中心牆體
 
@@ -142,7 +161,7 @@ In `free` alignment mode the generated divider MUST, when exactly one of `left`,
 
 #### Scenario: 盒內對位單臂貼牆
 
-- **WHEN** a valid divider in `box-fit` alignment mode uses `right=4.5`, `targetBoxGridsX=4.5`, and `endClearance=0.15`
+- **WHEN** a valid divider in `box-fit` alignment mode uses `boxFitWallGrids=4.5`, `targetBoxGridsX=4.5`, and `endClearance=0.15`
 - **THEN** the wall MUST span 123.15 mm centered on the target box center with both ends retracted 1.425 mm from their nominal grid stations
 - **AND** no 2.5 mm inactive-side extension MUST be added
 - **AND** the wall MUST remain one connected solid
@@ -152,50 +171,56 @@ In `free` alignment mode the generated divider MUST, when exactly one of `left`,
 - **WHEN** two or more directional counts are non-zero
 - **THEN** the central junction MUST use the existing multi-arm wall geometry
 - **AND** no single-arm-only 2.5 mm extension MAY be added to an inactive side
+
 ### Requirement: 盒內對位模式
 
-When `alignmentMode=box-fit`, the generator MUST derive peg placement and wall stationing from `targetBoxGridsX` and `targetBoxGridsY` instead of the central-junction anchor. Box-fit alignment MUST support only single-arm and straight dividers; L, T, and cross snapshots MUST be rejected with a field diagnostic in box-fit mode while remaining valid in free mode. Each axis MUST derive a 28 mm peg lattice anchored at the nominal box bottom hole column nearest that axis's box center: for a half-integer grid count the anchor MUST be the center column so stations are multiples of 28 mm, and for an integer grid count the anchor MUST be the ±7 columns so stations satisfy |station| ≡ 7 (mod 28). Horizontal-arm pegs MUST sit at X lattice stations strictly inside the horizontal wall span with Y equal to the arm centerline; vertical-arm pegs MUST sit at Y lattice stations strictly inside the vertical wall span with X equal to the arm centerline; shared coordinates MUST be emitted once; and a junction peg MUST be emitted only when the junction point lies on a lattice station of every axis it depends on. Each axis wall span MUST be the directional sum in grids minus (1.275 mm plus `endClearance`) at both nominal grid stations, centered on that axis's box center; for straight dividers the junction offset is (L−R)×14 mm in X and (U−D)×14 mm in Y, and for single-arm dividers the junction sits at the retracted inactive end. The snapshot MUST be invalid when an axis directional sum exceeds its target grid count. For these supported shapes, centering the exported envelope in the target box along the wall axis and placing the transverse centerline on a transverse hole column MUST place every emitted peg on a nominal bottom hole column and leave the selected `endClearance` between each wall end and the box inner wall.
+When `alignmentMode=box-fit`, the generator MUST derive peg placement and wall stationing from the `boxFitWallGrids` wall length together with `targetBoxGridsX` and `targetBoxGridsY` instead of the central-junction anchor. Box-fit MUST materialize the wall as a single horizontal arm with `left=boxFitWallGrids` and `right=up=down=0`; the directional arm counts MUST be ignored by box-fit validation and MUST NOT block acceptance, and they MUST remain preserved unchanged so switching back to `free` mode restores the user's arm values. The straight-arm diagnostic MUST NOT be applied in box-fit mode. The X axis MUST derive a 28 mm peg lattice anchored at the nominal box bottom hole column nearest the X box center: for a half-integer `targetBoxGridsX` the anchor MUST be the center column so stations are multiples of 28 mm, and for an integer `targetBoxGridsX` the anchor MUST be the ±7 columns so stations satisfy |station| ≡ 7 (mod 28). Pegs MUST sit at X lattice stations strictly inside the horizontal wall span with Y equal to the wall centerline. The wall span MUST be the `boxFitWallGrids` grid length minus (1.275 mm plus `endClearance`) at both nominal grid stations, centered on the X box center, with the central junction sitting at the retracted inactive end and no junction peg emitted there. The snapshot MUST be invalid when `boxFitWallGrids` exceeds `targetBoxGridsX`. Centering the exported envelope in the target box along X and placing the transverse centerline on a transverse hole column MUST place every emitted peg on a nominal bottom hole column and leave the selected `endClearance` between each wall end and the box inner wall.
 
 #### Scenario: 半整數格盒中心錨
 
-- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=4.5`, `targetBoxGridsY=4.5`, `left=2`, and `right=2.5`
-- **THEN** the emitted peg stations MUST land on 0, ±28, and ±56 relative to the envelope center so every peg sits on a nominal bottom hole column
-- **AND** the junction MUST sit 7 mm off the box center, so no peg is emitted at the junction itself while the alignment info reports the center lattice anchor and center hole
+- **WHEN** a valid divider in `box-fit` mode uses `boxFitWallGrids=4.5`, `targetBoxGridsX=4.5`, and `targetBoxGridsY=4.5`
+- **THEN** the emitted peg X stations MUST land on 0, ±28, and ±56 relative to the envelope center so every peg sits on a nominal bottom hole column
+- **AND** the junction MUST sit at the retracted inactive wall end, so no junction peg is emitted while mid-wall lattice pegs remain
 - **AND** the badge MUST state the center anchor and that a center hole column exists
 
 #### Scenario: 整數格盒 ±7 錨
 
-- **WHEN** a valid divider in `box-fit` mode uses `targetBoxGridsX=5`, `targetBoxGridsY=5`, `left=2.5`, and `right=2.5`
+- **WHEN** a valid divider in `box-fit` mode uses `boxFitWallGrids=5`, `targetBoxGridsX=5`, and `targetBoxGridsY=5`
 - **THEN** the horizontal peg X stations MUST be −63, −35, −7, +7, +35, and +63 relative to the envelope center
 - **AND** no peg MUST be emitted at station 0 because the integer grid box has no center column
 
 #### Scenario: 橫向整數格的中心線指引
 
-- **WHEN** `targetBoxGridsX=4.5` and `targetBoxGridsY=5` for a horizontal straight divider
+- **WHEN** `targetBoxGridsX=4.5` and `targetBoxGridsY=5` for a box-fit divider
 - **THEN** the wall centerline at Y=0 MUST NOT coincide with a Y hole column because the Y axis is integer-grid
 - **AND** the workspace badge MUST state that the divider centerline must be placed on a Y-axis ±7 hole column instead of the box center row
 
 #### Scenario: 盒內對位單臂無接點柱
 
-- **WHEN** a valid divider in `box-fit` mode uses `right=4.5` with matching `targetBoxGridsX`
+- **WHEN** a valid divider in `box-fit` mode uses `boxFitWallGrids=4.5` with a matching `targetBoxGridsX`
 - **THEN** the junction MUST sit at the retracted inactive wall end
 - **AND** no junction peg MUST be emitted while mid-wall lattice pegs remain
 
-#### Scenario: 盒內對位僅支援單臂與一字型
-
-- **WHEN** `alignmentMode=box-fit` and the active directions form an L, T, or cross shape
-- **THEN** validation MUST reject the snapshot with the straight-arm diagnostic
-- **AND** the same directional counts MUST remain accepted when `alignmentMode=free`
-
 #### Scenario: 超過目標格數必須拒絕
 
-- **WHEN** `alignmentMode=box-fit`, `targetBoxGridsX=4.5`, and `left=3` with `right=2`
-- **THEN** validation MUST reject the snapshot with a directional-sum diagnostic
+- **WHEN** `alignmentMode=box-fit`, `boxFitWallGrids=5`, and `targetBoxGridsX=4.5`
+- **THEN** validation MUST reject the snapshot with a field-specific diagnostic on `boxFitWallGrids`
 - **AND** no CAD generation or export MAY be dispatched for the snapshot
+
+#### Scenario: 盒內對位忽略方向臂
+
+- **WHEN** `alignmentMode=box-fit` and the preserved directional counts form an L, T, or cross shape
+- **THEN** validation MUST accept the snapshot based on `boxFitWallGrids` and MUST NOT apply a straight-arm diagnostic
+- **AND** the directional counts MUST remain preserved unchanged and MUST NOT influence the generated geometry
+
+#### Scenario: 切換模式保留四臂
+
+- **WHEN** the user switches the alignment mode from `free` to `box-fit` and back to `free`
+- **THEN** the `left`, `right`, `up`, and `down` values MUST be identical to the values before the switch
 
 #### Scenario: 對位保證
 
-- **WHEN** a valid box-fit single-arm or straight divider is exported, centered along its wall axis in the box, and placed with its transverse centerline on a transverse hole column
+- **WHEN** a valid box-fit divider is exported, centered along X in the box, and placed with its transverse centerline on a transverse hole column
 - **THEN** every emitted peg MUST land on a nominal bottom hole column of the box
 - **AND** each wall end MUST keep the selected `endClearance` to the box inner wall
 
@@ -239,6 +264,7 @@ The generator MUST automatically add shared OpenGrid locating pegs with the fixe
 - **WHEN** `pegDiameterIncrement` is non-zero
 - **THEN** every peg MUST grow or shrink around its computed lattice center without moving that center
 - **AND** the alignment lattice itself MUST remain anchored by the alignment mode rules
+
 ### Requirement: 頂部圓角
 
 The generator MUST round the upper wall perimeter with a nominal 1 mm fillet. The fillet MUST apply to the wall top edges only; the bottom wall edge MUST remain sharp while each locating peg MUST use the shared 0.2 mm bottom perimeter chamfer. Inputs that cannot accommodate the required fillet or peg chamfer MUST fail validation or generation with a diagnosable error rather than producing a partial shape.
@@ -353,22 +379,26 @@ The divider component MUST be documented and identified as an OpenGrid accessory
 
 - **WHEN** the divider is generated in `free` alignment mode
 - **THEN** documentation and UI MUST NOT claim peg-to-hole interchangeability with a specific box base
+
 ### Requirement: OpenGrid 分隔器 CAD workspace
 
-The system MUST register `opengrid-divider` as an independent model definition and MUST route `/cad/opengrid-divider` to that definition. The route MUST expose the divider's `left`, `right`, `up`, `down`, `height`, and `wallThickness` controls plus the alignment and peg controls: an alignment-mode selector with `free` and `box-fit`, target box grid inputs for X and Y shown in `box-fit` mode, an end clearance input shown in `box-fit` mode, a peg length selector with the three `pegLengthMode` options labelled with their millimetre depths, and a peg diameter increment input. Each directional control MUST accept values from 0 through 10 grids in 0.5-grid steps. The height text input MUST accept 2–500 mm and its slider MUST range from 2–200 mm. In `box-fit` mode the workspace MUST display a read-only alignment badge derived from the target grid counts stating each axis anchor column (center for half-integer grids, ±7 for integer grids), whether a center peg exists, and the required transverse centerline placement when an axis is integer-grid; it MUST warn when an axis grid count is integer so no center hole exists, MUST reject an axis directional sum exceeding its target grid count with a field-specific diagnostic, and MUST reject L, T, and cross shapes in box-fit mode with the straight-arm diagnostic while keeping them available in free mode. It MUST NOT show the repeated technical paragraph describing the official grid, height, slider, or footprint limits. It MUST NOT show the official OpenGrid Full/Lite/Heavy, connector, or screw controls.
+The system MUST register `opengrid-divider` as an independent model definition and MUST route `/cad/opengrid-divider` to that definition. The route MUST expose an alignment-mode selector with `free` and `box-fit` as the first control group after the material-saving toggle, and the peg controls: a peg length selector with the three `pegLengthMode` options labelled with their millimetre depths, and a peg diameter increment input. In `free` mode the route MUST additionally expose the divider's `left`, `right`, `up`, and `down` directional controls accepting values from 0 through 10 grids in 0.5-grid steps. The height text input MUST accept 2–500 mm and its slider MUST range from 2–200 mm, and the wall-thickness control MUST range from 1 through 5 mm; both MUST stay visible in both alignment modes. In `box-fit` mode the route MUST hide the four directional controls and MUST instead expose a wall-grid-length input with 0.5-grid steps from 0.5 through 17.5 grids, target box grid inputs for X and Y, and an end clearance input. In `box-fit` mode the workspace MUST display a read-only alignment badge derived from the wall grid length and the target grid counts stating each axis anchor column (center for half-integer grids, ±7 for integer grids), whether a center peg exists, and the required transverse centerline placement when an axis is integer-grid; it MUST warn when an axis grid count is integer so no center hole exists, and MUST reject a `boxFitWallGrids` exceeding `targetBoxGridsX` with a field-specific diagnostic. Selecting `box-fit` MUST NOT alter the directional counts, MUST NOT require them to pass validation, and MUST NOT surface a straight-arm diagnostic. It MUST NOT show the repeated technical paragraph describing the official grid, height, slider, or footprint limits. It MUST NOT show the official OpenGrid Full/Lite/Heavy, connector, or screw controls.
 
 #### Scenario: 直接開啟分隔器 route
 
 - **WHEN** a user opens `/cad/opengrid-divider`
 - **THEN** the page MUST resolve the route to `modelId=opengrid-divider`
-- **AND** the first generation MUST use valid saved divider parameters or the divider definition defaults, including `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, `wallThickness=2`, `alignmentMode=free`, `pegLengthMode=snap`, and `pegDiameterIncrement=0`
+- **AND** the first generation MUST use valid saved divider parameters or the divider definition defaults, including `left=1.5`, `right=1.5`, `up=0`, `down=0`, `height=20`, `wallThickness=2`, `alignmentMode=free`, `boxFitWallGrids=4.5`, `pegLengthMode=snap`, and `pegDiameterIncrement=0`
 - **AND** the Worker MUST dispatch the request to the divider builder
 
 #### Scenario: 分隔器控制面板
 
 - **WHEN** the divider workspace is rendered
-- **THEN** it MUST display four directional grid-count controls with minimum 0, maximum 10, and step 0.5, a height text input with maximum 500 mm and a height slider with maximum 200 mm, and a wall-thickness control with values from 1 through 5 mm
-- **AND** it MUST display the alignment mode selector, the peg length selector with three labelled depths, and the peg diameter increment input
+- **THEN** it MUST display the alignment mode selector as the first control group after the material-saving toggle
+- **AND** in `free` mode it MUST display four directional grid-count controls with minimum 0, maximum 10, and step 0.5, a height text input with maximum 500 mm and a height slider with maximum 200 mm, and a wall-thickness control with values from 1 through 5 mm
+- **AND** in `box-fit` mode the four directional controls MUST be hidden and a wall-grid-length input with 0.5-grid steps from 0.5 through 17.5 grids MUST be displayed alongside the target box grid inputs and the end clearance input
+- **AND** the height and wall-thickness controls MUST remain visible in both alignment modes
+- **AND** it MUST display the peg length selector with three labelled depths and the peg diameter increment input
 - **AND** the thickness control MUST identify 2 mm as the default
 - **AND** it MUST NOT display a separate technical summary for the official 28 mm/14 mm footprint, shape, plane dimensions, chamfer, locating pegs, or total Z bounds
 - **AND** it MUST NOT display the repeated official-grid/height-limit paragraph
@@ -376,14 +406,20 @@ The system MUST register `opengrid-divider` as an independent model definition a
 
 #### Scenario: 盒內對位徽章與警告
 
-- **WHEN** the user selects `box-fit` with the default straight divider and enters X and Y target grid counts of 4.5
+- **WHEN** the user selects `box-fit` with the default wall grid length and enters X and Y target grid counts of 4.5
 - **THEN** the alignment badge MUST state the center anchor on both axes and that a center hole column with a peg on it exists
 - **WHEN** the user enters X and Y target grid counts of 5
 - **THEN** the alignment badge MUST state the ±7 anchor on both axes and warn that the box center has no hole so no center peg will be emitted
-- **WHEN** the horizontal directional sum exceeds `targetBoxGridsX`
+- **WHEN** the user enters a `boxFitWallGrids` exceeding `targetBoxGridsX`
 - **THEN** the workspace MUST show a field-specific validation error and MUST send `model.invalidate` instead of `model.generate`
-- **WHEN** the user raises an arm in box-fit mode so the shape becomes an L
-- **THEN** the workspace MUST show the straight-arm diagnostic and MUST NOT send the snapshot for generation
+
+#### Scenario: 切換對位模式不產生直臂診斷
+
+- **WHEN** the user selects `box-fit` while the preserved directional counts form an L, T, or cross shape
+- **THEN** the directional controls MUST be hidden, the wall MUST generate from the wall grid length, and no straight-arm diagnostic MAY appear
+- **WHEN** the user switches back to `free`
+- **THEN** the directional controls MUST reappear with the preserved counts unchanged
+
 ### Requirement: 分隔器輸入生命週期
 
 The divider workspace MUST use the existing typed generation, debounce, latest-wins, invalidation, candidate, commit, stale-preview, and export gates for its component-specific parameters, including `wallThickness`. The workspace raw panel-state parse MUST carry the boolean material-saving flag into the typed snapshot: a raw `honeycombMode` of `'true'` or `'false'` MUST parse to the corresponding boolean in the `model.generate` snapshot, and the parse MUST NOT silently normalize a presented `honeycombMode` key to `false`.

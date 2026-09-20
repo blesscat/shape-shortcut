@@ -28,6 +28,7 @@ const DEFAULT_ALIGNMENT_FIELDS = {
   alignmentMode: 'free',
   targetBoxGridsX: 4.5,
   targetBoxGridsY: 4.5,
+  boxFitWallGrids: 4.5,
   endClearance: 0.15,
   pegLengthMode: 'snap',
   pegDiameterIncrement: 0,
@@ -527,6 +528,9 @@ describe('OpenGrid divider contract', () => {
 describe('OpenGrid divider box-fit alignment', () => {
   const defaultAlignment = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters
 
+  const roundPegCenters = (centers: [number, number][]): [number, number][] =>
+    centers.map(([x, y]) => [Number(x.toFixed(10)), y] as [number, number])
+
   it('anchors half-integer grids at the center column and integers at ±7', () => {
     expect(openGridDividerLatticeStationsFor(4.5)).toEqual([
       -56, -28, 0, 28, 56,
@@ -539,6 +543,9 @@ describe('OpenGrid divider box-fit alignment', () => {
   })
 
   it('lands straight pegs on box holes for a 4.5 grid box', () => {
+    // A legacy box-fit snapshot expresses the wall through directional arm
+    // counts; validation migrates it to the wall-length parameter and
+    // materializes a single horizontal arm.
     const parameters = normalizeOpenGridDividerParameters({
       left: 2,
       right: 2.5,
@@ -550,15 +557,20 @@ describe('OpenGrid divider box-fit alignment', () => {
       targetBoxGridsX: 4.5,
       targetBoxGridsY: 4.5,
     })
-    // Centers are junction-relative; the junction sits 7 mm off the box
-    // center, so every emitted peg still lands on a nominal hole column
-    // after the envelope is centered.
-    expect(openGridDividerBoxFitPegCentersFor(parameters)).toEqual([
-      [-49, 0],
-      [-21, 0],
-      [7, 0],
-      [35, 0],
-      [63, 0],
+    expect(parameters.boxFitWallGrids).toBe(4.5)
+    expect(parameters.left).toBe(4.5)
+    expect(parameters.right).toBe(0)
+    // Centers are junction-relative; the junction sits at the retracted
+    // inactive end, so every emitted peg still lands on a nominal hole
+    // column after the envelope is centered.
+    expect(
+      roundPegCenters(openGridDividerBoxFitPegCentersFor(parameters)),
+    ).toEqual([
+      [-117.575, 0],
+      [-89.575, 0],
+      [-61.575, 0],
+      [-33.575, 0],
+      [-5.575, 0],
     ])
     const info = openGridDividerAlignmentInfoFor(parameters)
     expect(info.anchorX).toBe('center')
@@ -570,23 +582,27 @@ describe('OpenGrid divider box-fit alignment', () => {
 
   it('anchors integer grid boxes at ±7 without a center peg', () => {
     const parameters = normalizeOpenGridDividerParameters({
-      left: 2.5,
-      right: 2.5,
+      left: 0,
+      right: 0,
       up: 0,
       down: 0,
+      boxFitWallGrids: 5,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
       targetBoxGridsX: 5,
       targetBoxGridsY: 5,
     })
-    expect(openGridDividerBoxFitPegCentersFor(parameters)).toEqual([
-      [-63, 0],
-      [-35, 0],
-      [-7, 0],
-      [7, 0],
-      [35, 0],
-      [63, 0],
+    expect(parameters.left).toBe(5)
+    expect(
+      roundPegCenters(openGridDividerBoxFitPegCentersFor(parameters)),
+    ).toEqual([
+      [-131.575, 0],
+      [-103.575, 0],
+      [-75.575, 0],
+      [-61.575, 0],
+      [-33.575, 0],
+      [-5.575, 0],
     ])
     const info = openGridDividerAlignmentInfoFor(parameters)
     expect(info.anchorX).toBe('plus-minus-7')
@@ -596,9 +612,10 @@ describe('OpenGrid divider box-fit alignment', () => {
   it('keeps a single box-fit arm wall-to-wall without junction peg or stub', () => {
     const parameters = normalizeOpenGridDividerParameters({
       left: 0,
-      right: 4.5,
+      right: 0,
       up: 0,
       down: 0,
+      boxFitWallGrids: 4.5,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
@@ -607,15 +624,17 @@ describe('OpenGrid divider box-fit alignment', () => {
       endClearance: 0.15,
     })
     const stations = openGridDividerArmStationsFor(parameters, 'x')
-    expect(stations.start).toBe(0)
-    expect(stations.end).toBeCloseTo(123.15, 10)
-    const centers = openGridDividerBoxFitPegCentersFor(parameters)
+    expect(stations.start).toBeCloseTo(-123.15, 10)
+    expect(stations.end).toBe(0)
+    const centers = roundPegCenters(
+      openGridDividerBoxFitPegCentersFor(parameters),
+    )
     expect(centers).toEqual([
-      [-56 + 61.575, 0],
-      [-28 + 61.575, 0],
-      [0 + 61.575, 0],
-      [28 + 61.575, 0],
-      [56 + 61.575, 0],
+      [-117.575, 0],
+      [-89.575, 0],
+      [-61.575, 0],
+      [-33.575, 0],
+      [-5.575, 0],
     ])
     expect(openGridDividerAlignmentInfoFor(parameters).junctionOnLattice).toBe(
       false,
@@ -625,10 +644,11 @@ describe('OpenGrid divider box-fit alignment', () => {
 
   it('warns when the transverse axis is integer grid', () => {
     const parameters = normalizeOpenGridDividerParameters({
-      left: 2,
-      right: 2.5,
+      left: 0,
+      right: 0,
       up: 0,
       down: 0,
+      boxFitWallGrids: 4.5,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
@@ -639,48 +659,48 @@ describe('OpenGrid divider box-fit alignment', () => {
     expect(info.transverseIntegerAxes).toEqual(['y'])
   })
 
-  it('rejects L, T, and cross shapes only in box-fit mode', () => {
+  it('ignores directional arm counts in box-fit mode while preserving them', () => {
     const base = {
-      left: 2,
-      up: 2,
+      left: 0,
+      right: 0,
+      up: 0,
       down: 0,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
       targetBoxGridsX: 4.5,
       targetBoxGridsY: 4.5,
+      boxFitWallGrids: 4.5,
     }
-    const rejected = validateOpenGridDividerParameters({
+    // Frozen L-shaped free-mode counts must not block box-fit acceptance.
+    const lShape = validateOpenGridDividerParameters({
       ...base,
-      right: 0,
+      left: 2,
+      up: 2,
     })
-    expect(rejected.valid).toBe(false)
-    expect(rejected.valid ? [] : rejected.issues).toContainEqual({
-      field: 'parameters',
-      messageId: 'validation.boxFitRequiresStraightArm',
-    })
+    expect(lShape.valid).toBe(true)
+    expect(
+      validateOpenGridDividerParameters({ ...base, left: 99, down: 3 }).valid,
+    ).toBe(true)
     expect(
       validateOpenGridDividerParameters({
+        ...base,
         left: 1,
         right: 1,
         up: 1,
         down: 1,
-        height: 20,
-        wallThickness: 2,
-        alignmentMode: 'box-fit',
-        targetBoxGridsX: 4.5,
-        targetBoxGridsY: 4.5,
       }).valid,
-    ).toBe(false)
+    ).toBe(true)
+    // The same frozen counts remain valid free-mode snapshots.
     expect(
       validateOpenGridDividerParameters({
+        height: 20,
+        wallThickness: 2,
+        alignmentMode: 'free',
         left: 2,
         right: 0,
         up: 2,
         down: 0,
-        height: 20,
-        wallThickness: 2,
-        alignmentMode: 'free',
       }).valid,
     ).toBe(true)
   })
@@ -698,6 +718,7 @@ describe('OpenGrid divider box-fit alignment', () => {
       alignmentMode: 'box-fit',
       targetBoxGridsX: 4.5,
       targetBoxGridsY: 4.5,
+      boxFitWallGrids: 4.5,
       endClearance: 0.15,
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
@@ -748,32 +769,87 @@ describe('OpenGrid divider box-fit alignment', () => {
     ).toBe(true)
   })
 
-  it('rejects directional sums beyond the target grids in box-fit only', () => {
+  it('rejects wall lengths beyond the target grids in box-fit only', () => {
     const base = {
-      left: 3,
-      right: 2,
+      left: 0,
+      right: 0,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      alignmentMode: 'box-fit',
+      targetBoxGridsX: 4.5,
+      targetBoxGridsY: 4.5,
+      boxFitWallGrids: 5,
+    }
+    const rejected = validateOpenGridDividerParameters(base)
+    expect(rejected.valid).toBe(false)
+    expect(rejected.valid ? [] : rejected.issues).toContainEqual({
+      field: 'boxFitWallGrids',
+      messageId: 'validation.boxFitWallExceedsTarget',
+    })
+    // The exceed check must not be skipped above the 10-grid arm cap.
+    expect(
+      validateOpenGridDividerParameters({
+        ...base,
+        boxFitWallGrids: 12,
+      }).valid,
+    ).toBe(false)
+    expect(
+      validateOpenGridDividerParameters({
+        ...base,
+        alignmentMode: 'free',
+        left: 3,
+        right: 2,
+      }).valid,
+    ).toBe(true)
+  })
+
+  it('range-validates the box-fit wall grid length in both modes', () => {
+    const base = {
+      left: 1,
+      right: 1,
       up: 0,
       down: 0,
       height: 20,
       wallThickness: 2,
     }
-    const rejected = validateOpenGridDividerParameters({
-      ...base,
-      alignmentMode: 'box-fit',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
-    })
-    expect(rejected.valid).toBe(false)
-    expect(rejected.valid ? [] : rejected.issues).toContainEqual({
-      field: 'targetBoxGridsX',
-      messageId: 'validation.axisSumExceedsTarget',
-    })
-    expect(
-      validateOpenGridDividerParameters({
-        ...base,
-        alignmentMode: 'free',
-      }).valid,
-    ).toBe(true)
+    for (const alignmentMode of ['free', 'box-fit'] as const) {
+      expect(
+        validateOpenGridDividerParameters({
+          ...base,
+          alignmentMode,
+          targetBoxGridsX: 17.5,
+          targetBoxGridsY: 4.5,
+          boxFitWallGrids: 17.5,
+        }).valid,
+        alignmentMode,
+      ).toBe(true)
+      expect(
+        validateOpenGridDividerParameters({
+          ...base,
+          alignmentMode,
+          boxFitWallGrids: 0,
+        }).valid,
+        alignmentMode,
+      ).toBe(false)
+      expect(
+        validateOpenGridDividerParameters({
+          ...base,
+          alignmentMode,
+          boxFitWallGrids: 4.25,
+        }).valid,
+        alignmentMode,
+      ).toBe(false)
+      expect(
+        validateOpenGridDividerParameters({
+          ...base,
+          alignmentMode,
+          boxFitWallGrids: 18,
+        }).valid,
+        alignmentMode,
+      ).toBe(false)
+    }
   })
 
   it('upgrades legacy snapshots with alignment defaults and validates new ranges', () => {
@@ -787,8 +863,19 @@ describe('OpenGrid divider box-fit alignment', () => {
     }
     const normalized = normalizeOpenGridDividerParameters(legacy)
     expect(normalized.alignmentMode).toBe('free')
+    expect(normalized.boxFitWallGrids).toBe(4.5)
     expect(normalized.pegDiameterIncrement).toBe(0)
     expect(normalized.pegLengthMode).toBe('snap')
+
+    // A legacy box-fit snapshot migrates the wall length from the directional
+    // sums and materializes a single horizontal arm.
+    const migrated = normalizeOpenGridDividerParameters({
+      ...legacy,
+      alignmentMode: 'box-fit',
+    })
+    expect(migrated.boxFitWallGrids).toBe(3)
+    expect(migrated.left).toBe(3)
+    expect(migrated.right).toBe(0)
 
     expect(
       validateOpenGridDividerParameters({

@@ -425,6 +425,7 @@ export const zhHantMessages = {
   'parameter.alignmentMode': '對位模式',
   'parameter.targetBoxGridsX': '目標盒格數（X）',
   'parameter.targetBoxGridsY': '目標盒格數（Y）',
+  'parameter.boxFitWallGrids': '牆總格數',
   'parameter.endClearance': '端部間隙',
   'parameter.pegLengthMode': '定位柱向下長度',
   'parameter.rightArm': '右臂',
@@ -536,9 +537,8 @@ export const zhHantMessages = {
   'diagnostic.meshInvalid': '預覽模型資料無效，Worker 將重新啟動。',
   'diagnostic.staleGeneration': '這次建模已被較新的輸入取代。',
   'validation.invalid': '{field} 輸入無效，請檢查參數後重試。',
-  'validation.axisSumExceedsTarget':
-    '{field} 不足：方向格數總和超過目標盒格數。',
-  'validation.boxFitRequiresStraightArm': '盒內對位僅支援單臂與一字型分隔牆。',
+  'validation.boxFitWallExceedsTarget':
+    '{field} 超過目標盒格數（X），請縮短牆長或加大目標格數。',
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
   'validation.parameter': '參數',
@@ -1283,6 +1283,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.alignmentMode': 'Alignment mode',
   'parameter.targetBoxGridsX': 'Target box grids (X)',
   'parameter.targetBoxGridsY': 'Target box grids (Y)',
+  'parameter.boxFitWallGrids': 'Wall grid length',
   'parameter.endClearance': 'End clearance',
   'parameter.pegLengthMode': 'Peg downward length',
   'parameter.rightArm': 'Right arm',
@@ -1403,10 +1404,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'diagnostic.staleGeneration': 'This build was superseded by newer input.',
   'validation.invalid':
     '{field} is invalid. Check the parameter and try again.',
-  'validation.axisSumExceedsTarget':
-    '{field} is too small: the directional grid sum exceeds the target box grid count.',
-  'validation.boxFitRequiresStraightArm':
-    'Box-fit alignment supports single-arm and straight dividers only.',
+  'validation.boxFitWallExceedsTarget':
+    '{field} exceeds the target box grids (X). Shorten the wall or raise the target grid count.',
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
   'validation.wallCoverTextTooLong': '{field} cannot exceed {max} characters.',
   'validation.parameter': 'Parameter',

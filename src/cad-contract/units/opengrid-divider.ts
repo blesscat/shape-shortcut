@@ -20,6 +20,7 @@ export type OpenGridDividerParameterKey =
   | 'alignmentMode'
   | 'targetBoxGridsX'
   | 'targetBoxGridsY'
+  | 'boxFitWallGrids'
   | 'endClearance'
   | 'pegLengthMode'
   | 'pegDiameterIncrement'
@@ -35,6 +36,7 @@ export type OpenGridDividerParameters = {
   alignmentMode: OpenGridDividerAlignmentMode
   targetBoxGridsX: number
   targetBoxGridsY: number
+  boxFitWallGrids: number
   endClearance: number
   pegLengthMode: OpenGridDividerPegLengthMode
   pegDiameterIncrement: number
@@ -100,6 +102,7 @@ const DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
   'alignmentMode',
   'targetBoxGridsX',
   'targetBoxGridsY',
+  'boxFitWallGrids',
   'endClearance',
   'pegLengthMode',
   'pegDiameterIncrement',
@@ -185,6 +188,7 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
     alignmentMode: 'free',
     targetBoxGridsX: 4.5,
     targetBoxGridsY: 4.5,
+    boxFitWallGrids: 4.5,
     endClearance: 0.15,
     pegLengthMode: 'snap',
     pegDiameterIncrement: 0,
@@ -649,7 +653,25 @@ function withAlignmentDefaults(
       merged[key] = defaults[key]
     }
   }
+  if (!Object.prototype.hasOwnProperty.call(merged, 'boxFitWallGrids')) {
+    // Snapshots saved before box-fit used a single wall-length parameter kept
+    // the wall in the directional arm counts; carry that length over in box-fit
+    // mode and fall back to the default length otherwise.
+    merged.boxFitWallGrids =
+      merged.alignmentMode === 'box-fit'
+        ? Math.max(
+            sumDirection(merged.left, merged.right),
+            sumDirection(merged.up, merged.down),
+          )
+        : defaults.boxFitWallGrids
+  }
   return merged
+}
+
+function sumDirection(first: unknown, second: unknown): number {
+  const firstCount = typeof first === 'number' ? first : 0
+  const secondCount = typeof second === 'number' ? second : 0
+  return firstCount + secondCount
 }
 
 export function openGridDividerHoneycombMinHeightFor(
@@ -700,13 +722,28 @@ export function validateOpenGridDividerParameters(
     })
   }
 
-  for (const field of ['left', 'right', 'up', 'down'] as const) {
-    const count = value[field]
-    if (!isSafeCount(count)) {
-      issues.push({
-        field,
-        messageId: 'validation.invalid',
-      })
+  // A defaults-merged record always carries boxFitWallGrids, so derive the
+  // mode before field checks: box-fit ignores the directional arm counts
+  // entirely instead of letting stale free-mode values block acceptance.
+  const candidateRecord = hasAcceptableKeys(value)
+    ? withAlignmentDefaults(value)
+    : value
+  const alignmentMode = candidateRecord.alignmentMode
+  const isBoxFit =
+    alignmentMode === 'box-fit' &&
+    DIVIDER_ALIGNMENT_MODES.includes(
+      alignmentMode as OpenGridDividerAlignmentMode,
+    )
+
+  if (!isBoxFit) {
+    for (const field of ['left', 'right', 'up', 'down'] as const) {
+      const count = value[field]
+      if (!isSafeCount(count)) {
+        issues.push({
+          field,
+          messageId: 'validation.invalid',
+        })
+      }
     }
   }
 
@@ -724,10 +761,6 @@ export function validateOpenGridDividerParameters(
     })
   }
 
-  const candidateRecord = hasAcceptableKeys(value)
-    ? withAlignmentDefaults(value)
-    : value
-  const alignmentMode = candidateRecord.alignmentMode
   if (
     !DIVIDER_ALIGNMENT_MODES.includes(
       alignmentMode as OpenGridDividerAlignmentMode,
@@ -747,6 +780,12 @@ export function validateOpenGridDividerParameters(
   if (!isSafeTargetBoxGrids(candidateRecord.targetBoxGridsY)) {
     issues.push({
       field: 'targetBoxGridsY',
+      messageId: 'validation.invalid',
+    })
+  }
+  if (!isSafeTargetBoxGrids(candidateRecord.boxFitWallGrids)) {
+    issues.push({
+      field: 'boxFitWallGrids',
       messageId: 'validation.invalid',
     })
   }
@@ -779,32 +818,58 @@ export function validateOpenGridDividerParameters(
     })
   }
 
+  const boxFitWallGrids = candidateRecord.boxFitWallGrids as number
+  const candidate = {
+    left: isBoxFit ? boxFitWallGrids : (value.left as number),
+    right: isBoxFit ? 0 : (value.right as number),
+    up: isBoxFit ? 0 : (value.up as number),
+    down: isBoxFit ? 0 : (value.down as number),
+    alignmentMode: alignmentMode as OpenGridDividerAlignmentMode,
+    endClearance: candidateRecord.endClearance as number,
+    pegDiameterIncrement: candidateRecord.pegDiameterIncrement as number,
+  }
   const countsAreValid = (['left', 'right', 'up', 'down'] as const).every(
-    (field) => isSafeCount(value[field]),
+    (field) => isSafeCount(candidate[field]),
   )
   const alignmentFieldsAreValid = [
     'alignmentMode',
     'targetBoxGridsX',
     'targetBoxGridsY',
+    'boxFitWallGrids',
     'endClearance',
   ].every((field) => !issues.some((issue) => issue.field === field))
-  if (countsAreValid && alignmentFieldsAreValid) {
-    const candidate = {
-      left: value.left as number,
-      right: value.right as number,
-      up: value.up as number,
-      down: value.down as number,
-      alignmentMode:
-        candidateRecord.alignmentMode as OpenGridDividerAlignmentMode,
-      endClearance: candidateRecord.endClearance as number,
-      pegDiameterIncrement: candidateRecord.pegDiameterIncrement as number,
+  if (isBoxFit) {
+    // Box-fit ignores the frozen arm counts, so its checks must not depend on
+    // countsAreValid: the wall length can exceed the 10-grid arm cap while
+    // still being a legal wall value that has to obey its target box.
+    if (alignmentFieldsAreValid) {
+      if (boxFitWallGrids > (candidateRecord.targetBoxGridsX as number)) {
+        issues.push({
+          field: 'boxFitWallGrids',
+          messageId: 'validation.boxFitWallExceedsTarget',
+        })
+      }
+      if (issues.length === 0) {
+        const plan = openGridDividerPlanBoundsFor(candidate)
+        if (
+          plan.maxX - plan.minX > OPENGRID_DIVIDER_CONFIGURATION.maxDimension ||
+          plan.maxY - plan.minY > OPENGRID_DIVIDER_CONFIGURATION.maxDimension
+        ) {
+          issues.push({
+            field: 'parameters',
+            messageId: 'validation.invalid',
+          })
+        }
+      }
     }
+  } else if (countsAreValid && alignmentFieldsAreValid) {
     if (countActiveDirections(candidate) < 1) {
       issues.push({
         field: 'parameters',
         messageId: 'validation.invalid',
       })
-    } else {
+    }
+    if (issues.length === 0) {
       const plan = openGridDividerPlanBoundsFor(candidate)
       if (
         plan.maxX - plan.minX > OPENGRID_DIVIDER_CONFIGURATION.maxDimension ||
@@ -815,29 +880,6 @@ export function validateOpenGridDividerParameters(
           messageId: 'validation.invalid',
         })
       }
-      if (candidate.alignmentMode === 'box-fit') {
-        const shape = classifyOpenGridDividerShape(candidate)
-        if (shape !== 'single' && shape !== 'straight') {
-          issues.push({
-            field: 'parameters',
-            messageId: 'validation.boxFitRequiresStraightArm',
-          })
-        }
-        const horizontalSum = candidate.left + candidate.right
-        const verticalSum = candidate.up + candidate.down
-        if (horizontalSum > (candidateRecord.targetBoxGridsX as number)) {
-          issues.push({
-            field: 'targetBoxGridsX',
-            messageId: 'validation.axisSumExceedsTarget',
-          })
-        }
-        if (verticalSum > (candidateRecord.targetBoxGridsY as number)) {
-          issues.push({
-            field: 'targetBoxGridsY',
-            messageId: 'validation.axisSumExceedsTarget',
-          })
-        }
-      }
     }
   }
 
@@ -846,16 +888,16 @@ export function validateOpenGridDividerParameters(
   return {
     valid: true,
     value: {
-      left: value.left as number,
-      right: value.right as number,
-      up: value.up as number,
-      down: value.down as number,
+      left: candidate.left,
+      right: candidate.right,
+      up: candidate.up,
+      down: candidate.down,
       height: value.height as number,
       wallThickness: value.wallThickness as number,
-      alignmentMode:
-        candidateRecord.alignmentMode as OpenGridDividerAlignmentMode,
+      alignmentMode: alignmentMode as OpenGridDividerAlignmentMode,
       targetBoxGridsX: candidateRecord.targetBoxGridsX as number,
       targetBoxGridsY: candidateRecord.targetBoxGridsY as number,
+      boxFitWallGrids,
       endClearance: candidateRecord.endClearance as number,
       pegLengthMode:
         candidateRecord.pegLengthMode as OpenGridDividerPegLengthMode,

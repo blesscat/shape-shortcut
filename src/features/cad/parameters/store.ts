@@ -152,6 +152,8 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
   }
   if (modelId === 'opengrid-divider' && isRecord(value)) {
     const merged = { ...value }
+    // boxFitWallGrids is deliberately absent: the divider contract fills it
+    // with the legacy arm-sum migration when it is missing.
     for (const key of [
       'wallThickness',
       'alignmentMode',

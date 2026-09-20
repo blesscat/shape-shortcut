@@ -50,6 +50,8 @@ const DIVIDER_ALIGNMENT_DEFAULTS = {
     OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsX,
   targetBoxGridsY:
     OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsY,
+  boxFitWallGrids:
+    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.boxFitWallGrids,
   endClearance: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.endClearance,
   pegLengthMode: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.pegLengthMode,
   pegDiameterIncrement:
@@ -69,6 +71,7 @@ function fullDividerParameters(
       | 'alignmentMode'
       | 'targetBoxGridsX'
       | 'targetBoxGridsY'
+      | 'boxFitWallGrids'
       | 'endClearance'
       | 'pegLengthMode'
       | 'pegDiameterIncrement'
@@ -987,10 +990,10 @@ describe('OpenGrid divider CAD kernel integration', () => {
     }
   }, 180_000)
 
-  it('builds a box-fit single arm that spans the box with pegs on hole columns', async () => {
+  it('builds a box-fit wall that spans the box with pegs on hole columns', async () => {
     const parameters = fullDividerParameters({
-      left: 0,
-      right: 4.5,
+      left: 4.5,
+      right: 0,
       up: 0,
       down: 0,
       height: 20,
@@ -998,6 +1001,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       alignmentMode: 'box-fit',
       targetBoxGridsX: 4.5,
       targetBoxGridsY: 4.5,
+      boxFitWallGrids: 4.5,
       endClearance: 0.15,
     })
     const shape = await buildOpenGridDivider(parameters)
@@ -1018,7 +1022,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       // Five pegs at box hole columns 0, ±28, ±56 (junction-relative).
       const pegPlan = openGridDividerPegPlanFor(parameters)
       expect(pegPlan.centers).toHaveLength(5)
-      const centerX = (0 + 123.15) / 2
+      const centerX = (-123.15 + 0) / 2
       for (const [rawX, rawY] of pegPlan.centers) {
         const probe = makeCylinder(pegPlan.diameter / 2 - 0.1, 0.2, [
           rawX - centerX,
@@ -1036,24 +1040,25 @@ describe('OpenGrid divider CAD kernel integration', () => {
     }
   }, 180_000)
 
-  it('builds a box-fit straight divider whose pegs land on box hole columns', async () => {
+  it('builds an integer-grid box-fit wall whose pegs land on the ±7 columns', async () => {
     const parameters = fullDividerParameters({
-      left: 2,
-      right: 2.5,
+      left: 5,
+      right: 0,
       up: 0,
       down: 0,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
+      targetBoxGridsX: 5,
+      targetBoxGridsY: 5,
+      boxFitWallGrids: 5,
       endClearance: 0.15,
     })
     const shape = await buildOpenGridDivider(parameters)
     try {
       const bounds = boundsOf(shape)
-      expect(bounds[0][0]).toBeCloseTo(-61.575, 2)
-      expect(bounds[1][0]).toBeCloseTo(61.575, 2)
+      expect(bounds[0][0]).toBeCloseTo(-68.575, 2)
+      expect(bounds[1][0]).toBeCloseTo(68.575, 2)
 
       const quality = inspectOpenGridDividerShapeQuality(
         shape,
@@ -1063,10 +1068,14 @@ describe('OpenGrid divider CAD kernel integration', () => {
       expect(quality.passed, quality.failures.join(';')).toBe(true)
 
       const pegPlan = openGridDividerPegPlanFor(parameters)
-      expect(pegPlan.centers).toHaveLength(5)
-      // Box coordinates after centering: junction offset is +7 mm.
-      const boxColumns = pegPlan.centers.map(([x]) => x - 7)
-      expect(boxColumns.sort((a, b) => a - b)).toEqual([-56, -28, 0, 28, 56])
+      expect(pegPlan.centers).toHaveLength(6)
+      // Box coordinates after centering: the integer grid box anchors the
+      // lattice at its ±7 hole columns, so station 0 has no hole and no peg.
+      const centerX = (-137.15 + 0) / 2
+      const boxColumns = pegPlan.centers
+        .map(([x]) => Number((x - centerX).toFixed(6)))
+        .sort((a, b) => a - b)
+      expect(boxColumns).toEqual([-63, -35, -7, 7, 35, 63])
     } finally {
       deleteShape(shape)
     }

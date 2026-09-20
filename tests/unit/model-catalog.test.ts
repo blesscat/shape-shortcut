@@ -788,6 +788,7 @@ describe('CAD component catalog', () => {
       'wallThickness',
       'targetBoxGridsX',
       'targetBoxGridsY',
+      'boxFitWallGrids',
       'endClearance',
       'pegDiameterIncrement',
     ])
@@ -834,6 +835,7 @@ describe('CAD component catalog', () => {
       alignmentMode: 'free',
       targetBoxGridsX: 4.5,
       targetBoxGridsY: 4.5,
+      boxFitWallGrids: 4.5,
       endClearance: 0.15,
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,

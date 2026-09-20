@@ -106,6 +106,18 @@ const OPENGRID_DIVIDER_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
     step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
   },
   {
+    key: 'boxFitWallGrids',
+    label: 'parameter.boxFitWallGrids',
+    axis: 'X',
+    unit: 'grid',
+    control: 'range-text',
+    defaultValue:
+      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.boxFitWallGrids,
+    min: OPENGRID_DIVIDER_CONFIGURATION.minTargetBoxGrids,
+    max: OPENGRID_DIVIDER_CONFIGURATION.maxTargetBoxGrids,
+    step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
+  },
+  {
     key: 'endClearance',
     label: 'parameter.endClearance',
     axis: 'Z',
