@@ -1,6 +1,7 @@
 import {
   isWorkerEvent,
   PROTOCOL_VERSION,
+  transferablesForEvent,
   type ModelPartMeshSnapshot,
   type WorkerCommand,
   type WorkerEvent,
@@ -268,21 +269,7 @@ export class CadWorkerLifecycle {
       this.lifetime.abortRevision(revision.modelRevision)
       throw error
     }
-    const transferables: Transferable[] = []
-    if (readyMesh) {
-      transferables.push(
-        readyMesh.positions,
-        readyMesh.normals,
-        readyMesh.indices,
-      )
-    }
-    for (const part of readyPartMeshes ?? []) {
-      transferables.push(
-        part.mesh.positions,
-        part.mesh.normals,
-        part.mesh.indices,
-      )
-    }
+    const transferables: Transferable[] = transferablesForEvent(readyEvent)
     this.emit(readyEvent, transferables)
   }
 

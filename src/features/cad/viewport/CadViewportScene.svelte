@@ -4,6 +4,7 @@
     Bounds,
     Gizmo,
     OrbitControls,
+    interactivity,
     type GizmoOptions,
   } from '@threlte/extras'
   import { Color } from 'three'
@@ -28,6 +29,7 @@
   import type { CadViewportTheme } from './theme'
   import type { CadViewportPresentation } from './presentation'
   import type { ViewportGeometryTiming } from './geometry-timing'
+  import type { FaceHoverState } from './face-hover'
   import type { Locale } from '../../../i18n'
 
   type Props = {
@@ -39,6 +41,7 @@
     theme: CadViewportTheme
     presentation: CadViewportPresentation
     onPreparationTiming?: (timing: ViewportGeometryTiming) => void
+    onFaceHover?: (hover: FaceHoverState | null) => void
   }
 
   function boundsMarginFor(presentation: CadViewportPresentation): number {
@@ -60,7 +63,16 @@
     theme,
     presentation,
     onPreparationTiming,
+    onFaceHover,
   }: Props = $props()
+
+  let enableFaceHover = $derived(
+    presentation === 'workspace' && onFaceHover !== undefined,
+  )
+
+  if (presentation === 'workspace') {
+    interactivity()
+  }
 
   function isPartName(name: string): name is CadViewportPartName {
     return name === 'body' || name === 'text'
@@ -139,11 +151,19 @@
             {theme}
             materialColor={colorForCadViewportPart(part.name)}
             {onPreparationTiming}
+            {enableFaceHover}
+            {onFaceHover}
           />
         {/if}
       {/each}
     {:else}
-      <ModelMesh {mesh} {theme} {onPreparationTiming} />
+      <ModelMesh
+        {mesh}
+        {theme}
+        {onPreparationTiming}
+        {enableFaceHover}
+        {onFaceHover}
+      />
     {/if}
     {#if presentation === 'workspace'}
       <DimensionAnnotations {locale} {mesh} {parameters} {theme} />

@@ -3,6 +3,7 @@ import { PreviewTimingRecorder } from '../cad-contract/preview-timing'
 import {
   isWorkerEvent,
   PROTOCOL_VERSION,
+  transferablesForEvent,
   type ModelPartMeshSnapshot,
   type WorkerCommand,
   type WorkerEvent,
@@ -506,17 +507,5 @@ export async function generateCadCandidate(
     unregisterCandidate()
     throw new Error('MESH_INVALID')
   }
-  const candidateTransferables: Transferable[] = [
-    meshSnapshot.positions,
-    meshSnapshot.normals,
-    meshSnapshot.indices,
-  ]
-  for (const part of partMeshSnapshots ?? []) {
-    candidateTransferables.push(
-      part.mesh.positions,
-      part.mesh.normals,
-      part.mesh.indices,
-    )
-  }
-  context.emit(candidateEvent, candidateTransferables)
+  context.emit(candidateEvent, transferablesForEvent(candidateEvent))
 }

@@ -158,3 +158,31 @@ export function validateModelPartMeshes(
   if (!requireBodyAndText) return partMeshes.length > 0
   return names.has('body') && names.has('text')
 }
+
+/**
+ * Decodes the optional per-face triangle ranges from a mesh snapshot. Returns
+ * null when the field is absent, mistyped, or structurally invalid; invalid
+ * ranges are treated as missing so the mesh itself stays valid and only the
+ * viewport face-hover feature degrades.
+ */
+export function readFaceTriangleRanges(mesh: MeshSnapshot): Uint32Array | null {
+  const ranges = mesh.faceTriangleRanges
+  if (ranges === undefined) return null
+  if (!(ranges instanceof ArrayBuffer)) return null
+  try {
+    const decoded = new Uint32Array(ranges)
+    if (decoded.length === 0 || decoded.length % 2 !== 0) return null
+    let previousEnd = -1
+    for (let index = 0; index < decoded.length; index += 2) {
+      const start = decoded[index] as number
+      const count = decoded[index + 1] as number
+      if (count === 0) return null
+      if (start <= previousEnd) return null
+      if (start + count > mesh.triangleCount) return null
+      previousEnd = start + count - 1
+    }
+    return decoded
+  } catch {
+    return null
+  }
+}

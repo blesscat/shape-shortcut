@@ -79,6 +79,7 @@
   --cad-viewport-edge: #1f3b74;
   --cad-viewport-annotation: #8d98a3;
   --cad-viewport-annotation-label: #7f8a95;
+  --cad-viewport-face-highlight: #d97706;
   --cad-viewport-light-sky: #ffffff;
   --cad-viewport-light-ground: #c5cfdf;
   --cad-viewport-light-key: #ffffff;
@@ -131,6 +132,7 @@
     --cad-viewport-edge: #7bd0ff;
     --cad-viewport-annotation: #d9e1f0;
     --cad-viewport-annotation-label: #c8d3e7;
+    --cad-viewport-face-highlight: #fbbf24;
     --cad-viewport-light-sky: #d2e4f6;
     --cad-viewport-light-ground: #4f637f;
     --cad-viewport-light-key: #eaf4ff;
@@ -181,6 +183,7 @@
   --cad-viewport-edge: #7bd0ff;
   --cad-viewport-annotation: #d9e1f0;
   --cad-viewport-annotation-label: #c8d3e7;
+  --cad-viewport-face-highlight: #fbbf24;
   --cad-viewport-light-sky: #d2e4f6;
   --cad-viewport-light-ground: #4f637f;
   --cad-viewport-light-key: #eaf4ff;

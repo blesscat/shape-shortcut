@@ -9,12 +9,22 @@ export type MeshData = {
   indices: Uint32Array
   bounds: BoxBounds
   triangleCount: number
+  /**
+   * Flat pairs of (startTriangle, triangleCount), one pair per B-Rep face in
+   * merge order. Omitted when per-face ranges are unavailable (for example the
+   * lightweight `shape.mesh()` fallback used by test doubles).
+   */
+  faceRanges?: Uint32Array
 }
 
 type FaceMeshData = {
   triangles: number[]
   vertices: number[]
   normals: number[]
+}
+
+type CollectedMeshData = FaceMeshData & {
+  faceRanges: number[]
 }
 
 type TriangulationData = FaceMeshData | null
@@ -72,7 +82,7 @@ function collectFaceMeshData(
   options: MeshOptions,
   meshEachFace: boolean,
   faceCount?: number,
-): FaceMeshData {
+): CollectedMeshData {
   const oc = getOC()
   const explorer = new oc.TopExp_Explorer_2(
     shape.wrapped,
@@ -82,6 +92,7 @@ function collectFaceMeshData(
   const triangles: number[] = []
   const vertices: number[] = []
   const normals: number[] = []
+  const faceRanges: number[] = []
   let index = 0
 
   try {
@@ -106,6 +117,10 @@ function collectFaceMeshData(
           throw new Error(`MESH_FACE_TRIANGULATION_INVALID:${index}:${message}`)
         }
         if (triangulation) {
+          const triangleCount = triangulation.triangles.length / 3
+          if (triangleCount > 0) {
+            faceRanges.push(triangles.length / 3, triangleCount)
+          }
           appendNumbers(triangles, triangulation.triangles)
           appendNumbers(vertices, triangulation.vertices)
           appendNumbers(normals, triangulation.normals)
@@ -131,10 +146,13 @@ function collectFaceMeshData(
     explorer.delete()
   }
 
-  return { triangles, vertices, normals }
+  return { triangles, vertices, normals, faceRanges }
 }
 
-function meshShapeGlobally(shape: Shape3D, options: MeshOptions): FaceMeshData {
+function meshShapeGlobally(
+  shape: Shape3D,
+  options: MeshOptions,
+): CollectedMeshData {
   const oc = getOC()
   const mesher = new oc.BRepMesh_IncrementalMesh_2(
     shape.wrapped,
@@ -299,7 +317,7 @@ export function meshBRep(shape: Shape3D, options: MeshOptions): MeshData {
     } catch {
       // Keep the normal adapter path usable for lightweight test doubles.
     }
-    let mesh: FaceMeshData
+    let mesh: CollectedMeshData | FaceMeshData
     const faceMeshingThreshold =
       options.faceMeshingThreshold ?? MAX_GLOBAL_MESH_FACE_COUNT
     if (faceCount !== null && faceCount > faceMeshingThreshold) {
@@ -312,6 +330,10 @@ export function meshBRep(shape: Shape3D, options: MeshOptions): MeshData {
     const positions = new Float32Array(mesh.vertices)
     const normals = new Float32Array(mesh.normals)
     const indices = new Uint32Array(mesh.triangles)
+    const faceRanges =
+      'faceRanges' in mesh && mesh.faceRanges.length > 0
+        ? new Uint32Array(mesh.faceRanges)
+        : undefined
 
     if (
       positions.length === 0 ||
@@ -332,6 +354,7 @@ export function meshBRep(shape: Shape3D, options: MeshOptions): MeshData {
       indices,
       bounds,
       triangleCount: indices.length / 3,
+      faceRanges,
     }
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('MESH_INVALID:')) {
@@ -352,6 +375,7 @@ export function cloneMesh(mesh: MeshData): MeshData {
       max: [...mesh.bounds.max] as [number, number, number],
     },
     triangleCount: mesh.triangleCount,
+    faceRanges: mesh.faceRanges ? new Uint32Array(mesh.faceRanges) : undefined,
   }
 }
 
@@ -363,5 +387,8 @@ export function serializeMesh(mesh: MeshData): MeshSnapshot {
     indices: copy.indices.buffer as ArrayBuffer,
     bounds: copy.bounds,
     triangleCount: copy.triangleCount,
+    faceTriangleRanges: copy.faceRanges
+      ? (copy.faceRanges.buffer as ArrayBuffer)
+      : undefined,
   }
 }
