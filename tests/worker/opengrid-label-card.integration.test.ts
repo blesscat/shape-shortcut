@@ -329,3 +329,45 @@ it('preserves flat Chinese card material volumes in export meshes', async () => 
     result.qualityShape.delete()
   }
 })
+
+it('exports connected indexed surfaces for flat Chinese cards', async () => {
+  const result = await buildOpenGridLabelCardWithParts(
+    {
+      gridUnits: 4,
+      style: 'flat',
+      icon: 'gear-fill',
+      iconPosition: 'left',
+      text: '中文',
+    },
+    {},
+  )
+  try {
+    const bytes = await exportThreeMfBytes(
+      result.parts,
+      undefined,
+      threeMfMetaFor('opengrid-label-card', 'label.3mf'),
+    )
+    const xml = new TextDecoder().decode(bytes)
+    const meshes = [...xml.matchAll(/<mesh>([\s\S]*?)<\/mesh>/g)]
+    expect(meshes).toHaveLength(2)
+    for (const [, mesh] of meshes) {
+      const edges = new Map<string, number>()
+      for (const triangle of mesh.matchAll(
+        /<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"\/>/g,
+      )) {
+        const ids = triangle.slice(1).map(Number)
+        expect(new Set(ids).size).toBe(3)
+        for (let i = 0; i < 3; i++) {
+          const key = [ids[i], ids[(i + 1) % 3]].sort((a, b) => a - b).join(',')
+          edges.set(key, (edges.get(key) ?? 0) + 1)
+        }
+      }
+      expect(edges.size).toBeGreaterThan(0)
+      expect([...edges.values()].filter((count) => count !== 2)).toEqual([])
+    }
+  } finally {
+    deleteParts(result.parts)
+    result.shape.delete()
+    result.qualityShape.delete()
+  }
+})

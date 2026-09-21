@@ -243,3 +243,11 @@ top in the exported geometry.
 - **WHEN** the committed revision lacks a valid body/text pair, contains invalid text, or contains more than eight generated covers
 - **THEN** the Worker MUST return a structured recoverable export error
 - **AND** it MUST NOT emit export-ready bytes or trigger a download
+
+### Requirement: Exported meshes share boundary vertex indices
+The exporter MUST reuse one vertex index for coordinates that are identical at the serialized precision within each part. Adjacent triangles MUST share indices across CAD face boundaries while retaining their winding, positions, and material assignments. Triangles collapsed by coordinate serialization MUST be rejected rather than emitted with repeated indices.
+
+#### Scenario: Flat label card with Chinese text and icon
+- **WHEN** a flat label card with Chinese text and a gear icon is exported
+- **THEN** every undirected triangle edge in each closed part MUST have two incident triangles using the same vertex indices
+- **AND** the card thickness, text holes, icon holes, and material placement MUST remain unchanged

@@ -199,11 +199,23 @@ function meshXml(mesh: MeshData): string {
   }
   const vertexCount = mesh.positions.length / 3
   const vertices: string[] = []
+  const vertexIndices = new Map<string, number>()
+  const remappedIndices: number[] = []
+  // CAD tessellation duplicates vertices along face boundaries. 3MF needs
+  // adjacent triangles to share indices, not merely equal coordinates.
   for (let index = 0; index < vertexCount; index += 1) {
     const offset = index * 3
-    vertices.push(
-      `<vertex x="${finiteNumber(mesh.positions[offset]!, 'x')}" y="${finiteNumber(mesh.positions[offset + 1]!, 'y')}" z="${finiteNumber(mesh.positions[offset + 2]!, 'z')}"/>`,
-    )
+    const x = finiteNumber(mesh.positions[offset]!, 'x')
+    const y = finiteNumber(mesh.positions[offset + 1]!, 'y')
+    const z = finiteNumber(mesh.positions[offset + 2]!, 'z')
+    const key = `${x},${y},${z}`
+    let sharedIndex = vertexIndices.get(key)
+    if (sharedIndex === undefined) {
+      sharedIndex = vertices.length
+      vertexIndices.set(key, sharedIndex)
+      vertices.push(`<vertex x="${x}" y="${y}" z="${z}"/>`)
+    }
+    remappedIndices.push(sharedIndex)
   }
 
   const triangles: string[] = []
@@ -219,7 +231,13 @@ function meshXml(mesh: MeshData): string {
     ) {
       throw new Error('THREEMF_TRIANGLE_INDEX_INVALID')
     }
-    triangles.push(`<triangle v1="${first}" v2="${second}" v3="${third}"/>`)
+    const v1 = remappedIndices[first]!
+    const v2 = remappedIndices[second]!
+    const v3 = remappedIndices[third]!
+    if (v1 === v2 || v2 === v3 || v3 === v1) {
+      throw new Error('THREEMF_MESH_INVALID')
+    }
+    triangles.push(`<triangle v1="${v1}" v2="${v2}" v3="${v3}"/>`)
   }
 
   if (vertices.length === 0 || triangles.length === 0) {
