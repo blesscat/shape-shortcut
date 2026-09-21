@@ -3,7 +3,9 @@ import {
   modelFileName,
   modelStlFileName,
   openGridWallCoverThreeMfFileName,
+  openGridStackableCylinderThreeMfFileName,
   isOpenGridWallCoverParameters,
+  isOpenGridStackableCylinderParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
 } from '../cad-contract/units'
@@ -133,17 +135,34 @@ export async function exportThreeMfCommand(
       revision.modelId,
       revision.parameters,
     )
-    if (
-      !validation.valid ||
-      revision.modelId !== 'opengrid-wall-cover' ||
-      !isOpenGridWallCoverParameters(validation.value.parameters)
-    ) {
+    if (!validation.valid) {
       throw new Error('THREEMF_METADATA_INVALID')
     }
+
+    let expectedFileName: string
+    let expectedAccentName: 'text' | 'rim'
     if (
-      command.file.name !==
-      openGridWallCoverThreeMfFileName(validation.value.parameters)
+      revision.modelId === 'opengrid-wall-cover' &&
+      isOpenGridWallCoverParameters(validation.value.parameters)
     ) {
+      expectedFileName = openGridWallCoverThreeMfFileName(
+        validation.value.parameters,
+      )
+      expectedAccentName = 'text'
+    } else if (
+      revision.modelId === 'opengrid-stackable-cylinder' &&
+      isOpenGridStackableCylinderParameters(validation.value.parameters) &&
+      validation.value.parameters.topRimEnabled
+    ) {
+      expectedFileName = openGridStackableCylinderThreeMfFileName(
+        validation.value.parameters,
+      )
+      expectedAccentName = 'rim'
+    } else {
+      throw new Error('THREEMF_METADATA_INVALID')
+    }
+
+    if (command.file.name !== expectedFileName) {
       throw new Error('THREEMF_METADATA_INVALID')
     }
     const parts = revision.parts
@@ -151,13 +170,13 @@ export async function exportThreeMfCommand(
       !parts ||
       parts.length !== 2 ||
       parts[0]?.name !== 'body' ||
-      parts[1]?.name !== 'text'
+      parts[1]?.name !== expectedAccentName
     ) {
       throw new Error('THREEMF_PARTS_INVALID')
     }
     const threeMfParts = [
       { name: 'body' as const, shape: parts[0].shape },
-      { name: 'text' as const, shape: parts[1].shape },
+      { name: expectedAccentName, shape: parts[1].shape },
     ]
     context.emit({
       version: PROTOCOL_VERSION,
@@ -171,6 +190,8 @@ export async function exportThreeMfCommand(
     const bytes = await exportThreeMfBytes(threeMfParts, {
       tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
       angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
+      modelName: revision.modelId,
+      sourceFile: command.file.name,
     })
     if (bytes.byteLength === 0 || !isThreeMfPackage(bytes)) {
       throw new Error('THREEMF_EXPORT_FAILED')

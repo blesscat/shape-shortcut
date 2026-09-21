@@ -9,6 +9,7 @@ import {
   openGridStackableCylinderOpeningBottomLengthMaximumFor,
   openGridStackableCylinderOuterHoleIndexFor,
   openGridStackableCylinderStlFileName,
+  openGridStackableCylinderThreeMfFileName,
   OPENGRID_GRID_CONFIGURATION,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
   OPENGRID_STACKABLE_CYLINDER_CONFIGURATION,
@@ -805,5 +806,77 @@ describe('OpenGrid stackable-cylinder contract', () => {
       bottomOuterChamfer: 2,
     })
     expect(OPENGRID_STACKABLE_CYLINDER_CONFIGURATION.bottomHoleDiameter).toBe(5)
+  })
+
+  it('defaults top rim settings to disabled with 2 mm height', () => {
+    expect(OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS.topRimEnabled).toBe(
+      false,
+    )
+    expect(OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS.topRimHeight).toBe(2)
+    const normalized = validateOpenGridStackableCylinderParameters({
+      innerDiameter: 56,
+      height: 20,
+      bottomSeatMode: 'detachable-corner-seat',
+    })
+    expect(normalized).toMatchObject({
+      valid: true,
+      value: {
+        topRimEnabled: false,
+        topRimHeight: 2,
+      },
+    })
+  })
+
+  it('validates and accepts top rim height up to half cylinder height', () => {
+    const valid = parameters({
+      topRimEnabled: true,
+      height: 20,
+      topRimHeight: 10,
+    })
+    expect(validateOpenGridStackableCylinderParameters(valid)).toMatchObject({
+      valid: true,
+      value: {
+        topRimEnabled: true,
+        topRimHeight: 10,
+      },
+    })
+
+    const tooHigh = parameters({
+      topRimEnabled: true,
+      height: 20,
+      topRimHeight: 11,
+    })
+    expect(validateOpenGridStackableCylinderParameters(tooHigh)).toMatchObject({
+      valid: false,
+      issues: [{ field: 'topRimHeight' }],
+    })
+
+    const tooLow = parameters({
+      topRimEnabled: true,
+      height: 20,
+      topRimHeight: 0,
+    })
+    expect(validateOpenGridStackableCylinderParameters(tooLow)).toMatchObject({
+      valid: false,
+      issues: [{ field: 'topRimHeight' }],
+    })
+  })
+
+  it('generates 3MF export filename with rim suffix when top rim is enabled', () => {
+    const enabled = parameters({
+      topRimEnabled: true,
+      topRimHeight: 3,
+    })
+    expect(openGridStackableCylinderThreeMfFileName(enabled)).toContain(
+      '-rim3.3mf',
+    )
+
+    const disabled = parameters({
+      topRimEnabled: false,
+      topRimHeight: 2,
+    })
+    expect(openGridStackableCylinderThreeMfFileName(disabled)).toMatch(
+      /\.3mf$/,
+    )
   })
 })

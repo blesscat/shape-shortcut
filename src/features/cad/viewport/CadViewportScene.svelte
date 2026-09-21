@@ -20,6 +20,7 @@
     CAD_VIEWPORT_GIZMO,
     CAD_VIEWPORT_LIGHTING,
     colorForCadViewportPart,
+    isCadViewportPartName,
     type CadViewportPartName,
   } from './config'
   import {
@@ -72,10 +73,6 @@
 
   if (presentation === 'workspace') {
     interactivity()
-  }
-
-  function isPartName(name: string): name is CadViewportPartName {
-    return name === 'body' || name === 'text'
   }
   let orbitControls = $state<OrbitControlsInstance | undefined>(undefined)
   let viewportGizmo = $state<ViewportGizmoHandle | undefined>(undefined)
@@ -145,7 +142,7 @@
   <Bounds margin={boundsMarginFor(presentation)} animate={false}>
     {#if partMeshes && partMeshes.length > 0}
       {#each partMeshes as part (part.name)}
-        {#if isPartName(part.name)}
+        {#if isCadViewportPartName(part.name)}
           <ModelMesh
             mesh={part.mesh}
             {theme}

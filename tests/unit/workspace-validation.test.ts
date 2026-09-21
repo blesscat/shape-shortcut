@@ -830,6 +830,36 @@ describe('CAD workspace validation helpers', () => {
       valid: true,
       value: parameters,
     })
+
+    const twoColorParameters: OpenGridStackableCylinderParameters = {
+      ...parameters,
+      topRimEnabled: true,
+      topRimHeight: 5,
+    }
+    const twoColorRaw = rawFromParameters(twoColorParameters)
+    expect(twoColorRaw.topRimEnabled).toBe('true')
+    expect(twoColorRaw.topRimHeight).toBe('5')
+    expect(
+      parseRawParameters(twoColorRaw, 'opengrid-stackable-cylinder'),
+    ).toEqual({
+      valid: true,
+      value: twoColorParameters,
+    })
+
+    expect(
+      parseRawParameters(
+        {
+          ...twoColorRaw,
+          topRimHeight: '0',
+        },
+        'opengrid-stackable-cylinder',
+      ),
+    ).toEqual({
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'topRimHeight',
+    })
+
     expect(
       rawFromParameters({
         ...parameters,

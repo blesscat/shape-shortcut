@@ -18,6 +18,7 @@ import {
   isOpenGridOrganizerBoxParameters,
   isOpenGridParameters,
   isOpenGridSnapParameters,
+  isOpenGridStackableCylinderParameters,
   isPillarParameters,
   normalizeOpenGridDividerParameters,
   normalizeOpenGridParameters,
@@ -221,11 +222,16 @@ export async function generateCadCandidate(
       buildContext.getOpenGridHalfCellPrototype = (key, factory) =>
         context.assets.getOpenGridHalfCellPrototype(key, factory)
     }
-    const usesWallCoverParts = command.modelId === 'opengrid-wall-cover'
+    const usesMultipart =
+      command.modelId === 'opengrid-wall-cover' ||
+      (command.modelId === 'opengrid-stackable-cylinder' &&
+        Boolean(
+          (generationParameters as Record<string, unknown>).topRimEnabled,
+        ))
     const buildResult: KernelModelBuildResult = await timing.measure(
       'build',
       async () => {
-        if (usesWallCoverParts) {
+        if (usesMultipart) {
           return buildModelBRepWithParts(
             command.modelId,
             generationParameters,
@@ -359,6 +365,25 @@ export async function generateCadCandidate(
       )
     }
 
+    if (command.modelId === 'opengrid-stackable-cylinder') {
+      if (!isOpenGridStackableCylinderParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder')
+      }
+      if (nativeParts && nativeParts.length > 0) {
+        const bodyPart = nativeParts.find((part) => part.name === 'body')
+        const rimPart = nativeParts.find((part) => part.name === 'rim')
+        if (!bodyPart || !rimPart) {
+          throw new Error('OPENGRID_STACKABLE_CYLINDER_PARTS_INVALID')
+        }
+        const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+        const rimMesh = meshBRep(rimPart.shape, command.previewConfig)
+        nativePartMeshes = [
+          { name: 'body', mesh: bodyMesh },
+          { name: 'rim', mesh: rimMesh },
+        ]
+      }
+    }
+
     if (command.modelId === 'opengrid-divider') {
       if (!isOpenGridDividerModelParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
@@ -481,7 +506,7 @@ export async function generateCadCandidate(
       serializeMesh(mesh),
     )
     partMeshSnapshots = candidate.partMeshes?.map((part) => ({
-      name: part.name as 'body' | 'text',
+      name: part.name as 'body' | 'text' | 'rim',
       mesh: serializeMesh(part.mesh),
     }))
     candidate.previewTiming = timing.snapshot()

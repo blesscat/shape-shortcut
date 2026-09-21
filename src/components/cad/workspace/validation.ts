@@ -66,6 +66,8 @@ export const OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'bottomPlateMode',
   'bottomSeatMode',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
   ...OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
 ]
 export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
@@ -235,7 +237,7 @@ function legacyParameterDefault(
     return 'false'
   }
   if (modelId !== 'opengrid-stackable-cylinder') return undefined
-  if (key === 'bottomPlateMode') return 'false'
+  if (key === 'bottomPlateMode' || key === 'topRimEnabled') return 'false'
   if (key === 'bottomSeatMode') return 'detachable-corner-seat'
   const defaultValue = (
     OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS as Record<string, unknown>
@@ -802,6 +804,14 @@ export function rawFromParameters(
       honeycombMode: String(
         'honeycombMode' in parameters ? parameters.honeycombMode : false,
       ),
+      topRimEnabled: String(
+        'topRimEnabled' in parameters ? parameters.topRimEnabled : false,
+      ),
+      topRimHeight: String(
+        'topRimHeight' in parameters
+          ? parameters.topRimHeight
+          : OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS.topRimHeight,
+      ),
     }
     for (const key of OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS) {
       raw[key] = String(
@@ -1307,7 +1317,8 @@ export function parseRawParameters(
     if (
       key === 'fullBottomHoleGrid' ||
       key === 'bottomPlateMode' ||
-      key === 'honeycombMode'
+      key === 'honeycombMode' ||
+      key === 'topRimEnabled'
     ) {
       const rawValue = raw[key] ?? legacyParameterDefault(modelId, key)
       if (rawValue !== 'true' && rawValue !== 'false') {

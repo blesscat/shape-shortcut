@@ -241,11 +241,16 @@ export class CadWorkerLifecycle {
     let readyMesh: ReturnType<typeof serializeMesh> | undefined
     let readyPartMeshes: ModelPartMeshSnapshot[] | undefined
     try {
-      if (revision.modelId === 'opengrid-wall-cover') {
+      if (
+        revision.modelId === 'opengrid-wall-cover' ||
+        (revision.modelId === 'opengrid-stackable-cylinder' &&
+          'topRimEnabled' in revision.parameters &&
+          revision.parameters.topRimEnabled)
+      ) {
         readyMesh = serializeMesh(revision.mesh)
       }
       readyPartMeshes = revision.partMeshes?.map((part) => ({
-        name: part.name as 'body' | 'text',
+        name: part.name as 'body' | 'text' | 'rim',
         mesh: serializeMesh(part.mesh),
       }))
       const candidateEvent: WorkerEvent = {

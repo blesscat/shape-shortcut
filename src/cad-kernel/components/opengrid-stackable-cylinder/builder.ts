@@ -1,4 +1,5 @@
 import {
+  deserializeShape,
   getOC,
   makeBox,
   makeCylinder,
@@ -8,6 +9,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
+import type { NativeModelPart } from '../../lifetime'
 import {
   boundsForOpenGridStackableCylinder,
   openGridStackableCylinderDerivedGeometryFor,
@@ -138,6 +140,10 @@ function deleteShape(shape: { delete?: () => void } | null | undefined): void {
   } catch {
     // Cleanup must not replace the original geometry error.
   }
+}
+
+function cloneShape(shape: Shape3D): Shape3D {
+  return deserializeShape(shape.serialize()).asShape3D()
 }
 
 function edgeIsNearZ(
@@ -1908,5 +1914,82 @@ export function buildOpenGridStackableCylinder(
   } catch (error) {
     deleteShape(shape)
     throw error
+  }
+}
+
+export type OpenGridStackableCylinderMultipartBuild = {
+  shape: Shape3D
+  qualityShape?: Shape3D
+  parts?: NativeModelPart[]
+}
+
+export function buildOpenGridStackableCylinderWithParts(
+  parameters: OpenGridStackableCylinderParameters,
+  context: OpenGridStackableCylinderBuildContext = {},
+): OpenGridStackableCylinderMultipartBuild {
+  const fullShape = buildOpenGridStackableCylinder(parameters, context)
+  const validation = validateOpenGridStackableCylinderParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('OPENGRID_STACKABLE_CYLINDER_PARAMETERS_INVALID')
+  }
+  const normalizedParameters = validation.value
+
+  if (!normalizedParameters.topRimEnabled) {
+    return {
+      shape: fullShape,
+    }
+  }
+
+  assertGenerationCurrent(context)
+  const splitZ =
+    normalizedParameters.height - normalizedParameters.topRimHeight
+  const derived =
+    openGridStackableCylinderDerivedGeometryFor(normalizedParameters)
+  const cutterRadius = derived.radius + 20
+  const cutterHeight = normalizedParameters.topRimHeight + 20
+
+  let cutterForBody: Shape3D | null = null
+  let cutterForRim: Shape3D | null = null
+  let fullShapeForBody: Shape3D | null = null
+  let fullShapeForRim: Shape3D | null = null
+  let bodyPart: Shape3D | null = null
+  let rimPart: Shape3D | null = null
+
+  try {
+    cutterForBody = makeCylinder(cutterRadius, cutterHeight, [0, 0, splitZ])
+    cutterForRim = makeCylinder(cutterRadius, cutterHeight, [0, 0, splitZ])
+    fullShapeForBody = cloneShape(fullShape)
+    fullShapeForRim = cloneShape(fullShape)
+
+    bodyPart = fullShapeForBody.cut(cutterForBody)
+    rimPart = fullShapeForRim.intersect(cutterForRim)
+
+    if (measureVolume(bodyPart) <= 0.001 || measureVolume(rimPart) <= 0.001) {
+      throw new Error('OPENGRID_STACKABLE_CYLINDER_RIM_PARTITION_FAILED')
+    }
+
+    const completedBodyPart = bodyPart
+    const completedRimPart = rimPart
+    bodyPart = null
+    rimPart = null
+
+    return {
+      shape: fullShape,
+      qualityShape: fullShape,
+      parts: [
+        { name: 'body', shape: completedBodyPart },
+        { name: 'rim', shape: completedRimPart },
+      ],
+    }
+  } catch (error) {
+    deleteShape(bodyPart)
+    deleteShape(rimPart)
+    deleteShape(fullShape)
+    throw error
+  } finally {
+    deleteShape(cutterForBody)
+    deleteShape(cutterForRim)
+    deleteShape(fullShapeForBody)
+    deleteShape(fullShapeForRim)
   }
 }

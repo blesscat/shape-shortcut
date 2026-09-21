@@ -36,7 +36,10 @@ import { buildModularGridBase } from '../components/modular-grid-base/builder'
 import { buildOpenGridBRep } from '../components/opengrid/builder'
 import { buildOpenGridDivider } from '../components/opengrid-divider/builder'
 import { buildOpenGridStackableBoxAsync } from '../components/opengrid-stackable-box/builder'
-import { buildOpenGridStackableCylinder } from '../components/opengrid-stackable-cylinder/builder'
+import {
+  buildOpenGridStackableCylinder,
+  buildOpenGridStackableCylinderWithParts,
+} from '../components/opengrid-stackable-cylinder/builder'
 import {
   buildOpenGridSnap,
   type OpenGridSnapFixedFootprint,
@@ -624,6 +627,42 @@ export async function buildModelBRepWithParts(
       isGenerationCurrent: context.isGenerationCurrent,
       booleanOperations: context.booleanOperations,
       reportProgress: context.reportProgress,
+    })
+  }
+
+  if (modelId === 'opengrid-stackable-cylinder') {
+    if (!isOpenGridStackableCylinderParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder')
+    }
+    const validation = validateOpenGridStackableCylinderParameters(parameters)
+    if (!validation.valid) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder')
+    }
+    let detachableCornerSeatReference: Shape3D | undefined
+    let detachableCornerSeatHolderReference: Shape3D | undefined
+    if (validation.value.bottomSeatMode === 'detachable-corner-seat') {
+      if (!context.getOpenGridDetachableCornerSeatReference) {
+        throw new Error('MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat')
+      }
+      if (!context.getOpenGridDetachableCornerSeatHolderReference) {
+        throw new Error(
+          'MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat-holder',
+        )
+      }
+      ;[detachableCornerSeatReference, detachableCornerSeatHolderReference] =
+        await Promise.all([
+          context.getOpenGridDetachableCornerSeatReference(),
+          context.getOpenGridDetachableCornerSeatHolderReference(),
+        ])
+      if (context.isGenerationCurrent && !context.isGenerationCurrent()) {
+        throw new Error('STALE_GENERATION')
+      }
+    }
+    return buildOpenGridStackableCylinderWithParts(validation.value, {
+      detachableCornerSeatReference,
+      detachableCornerSeatHolderReference,
+      isGenerationCurrent: context.isGenerationCurrent,
+      booleanOperations: context.booleanOperations,
     })
   }
 
