@@ -67,31 +67,39 @@
   </p>
 
   <div class="grid gap-1">
-    <span class="text-sm text-ink">
-      {translate(locale, 'parameter.widthTier')}
-    </span>
-    <div
-      class="flex flex-wrap gap-2"
-      role="radiogroup"
-      aria-label={translate(locale, 'parameter.widthTier')}
-      data-testid="opengrid-label-card-width-tier"
+    <label for="label-card-units" class="text-sm text-ink"
+      >{translate(locale, 'parameter.gridUnits')} · {rawGridUnits}</label
     >
-      {#each OPENGRID_LABEL_WIDTH_TIERS as tier (tier)}
-        <button
-          type="button"
-          class="rounded-lg border px-3 py-1 text-sm"
-          class:border-primary={rawWidthTier === String(tier)}
-          aria-pressed={rawWidthTier === String(tier)}
-          data-testid={`opengrid-label-card-width-${tier}`}
-          onclick={() => handleWidthTierInput(tier)}
-        >
-          {tier}
-        </button>
-      {/each}
-    </div>
-    {#if fieldErrors.widthTier}
-      <span class="text-sm text-error" role="alert"
-        >{formatValidationIssue(locale, fieldErrors.widthTier)}</span
+    <input
+      id="label-card-units"
+      type="range"
+      min={OPENGRID_LABEL_GRID.minUnits}
+      max={OPENGRID_LABEL_GRID.maxUnits}
+      step="1"
+      value={rawGridUnits}
+      data-testid="opengrid-label-card-grid-units"
+      aria-invalid={Boolean(fieldErrors.gridUnits)}
+      aria-describedby={fieldErrors.gridUnits
+        ? 'label-card-units-error'
+        : undefined}
+      class="min-w-0 w-full accent-primary"
+      oninput={(event) => onInputChange('gridUnits', event.currentTarget.value)}
+    />
+    <p
+      class="m-0 text-sm text-muted-foreground"
+      data-testid="label-card-width-summary"
+    >
+      {translate(locale, 'panel.labelCard.unitWidth', {
+        width:
+          Number.isFinite(Number(rawGridUnits)) && rawGridUnits.trim()
+            ? openGridLabelWidthFor(Number(rawGridUnits))
+            : '—',
+        max: OPENGRID_LABEL_GRID.maxUnits,
+      })}
+    </p>
+    {#if fieldErrors.gridUnits}
+      <span id="label-card-units-error" class="text-sm text-error" role="alert"
+        >{formatValidationIssue(locale, fieldErrors.gridUnits)}</span
       >
     {/if}
   </div>
