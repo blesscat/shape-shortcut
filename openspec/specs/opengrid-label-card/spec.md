@@ -141,3 +141,10 @@ The card MUST offer a text-height slider from 4 to 7 mm in 0.5 mm steps, default
 - **WHEN** the user selects 4 mm and None
 - **THEN** generated text MUST be 4 mm high and horizontally centered without an icon
 - **AND** reloading MUST restore both selections
+
+### Requirement: Icon orientation matches the gallery
+SVG icons MUST be converted from downward-positive SVG Y to upward-positive CAD Y so that they appear upright beside readable text in the preview and exports.
+
+#### Scenario: Camera icon orientation
+- **WHEN** the user selects the camera icon
+- **THEN** its raised outline MUST appear at the top and its small indicator MUST appear at the upper left, matching the gallery

@@ -46,10 +46,11 @@ function scaleAndCenterPolygons(
   const scale = targetSize / span
   const offsetX = (minX + maxX) / 2
   const offsetY = (minY + maxY) / 2
+  // SVG Y points down; the card face uses CAD Y pointing up.
   return polygons.map((polygon) =>
     polygon.map(
       ([x, y]) =>
-        [(x - offsetX) * scale, (y - offsetY) * scale] as [number, number],
+        [(x - offsetX) * scale, (offsetY - y) * scale] as [number, number],
     ),
   )
 }

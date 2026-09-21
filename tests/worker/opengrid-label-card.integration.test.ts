@@ -371,3 +371,34 @@ it('exports connected indexed surfaces for flat Chinese cards', async () => {
     result.qualityShape.delete()
   }
 })
+
+it('keeps the camera icon upright with its indicator at upper left', async () => {
+  const { makeLabelCardIconShape } =
+    await import('../../src/cad-kernel/components/opengrid-label-card/icon-shape')
+  const { makeBox, measureVolume } = await import('replicad')
+  const camera = makeLabelCardIconShape('camera', 0.3)
+  try {
+    for (const [x, y, occupied] of [
+      [-2.06, 0.56, true],
+      [-2.06, -0.56, false],
+      [1.6, 2.1, false],
+      [1.6, -2.1, true],
+    ] as const) {
+      const probe = makeBox(
+        [x - 0.04, y - 0.04, 0.05],
+        [x + 0.04, y + 0.04, 0.25],
+      )
+      const intersection = camera.intersect(probe)
+      try {
+        const volume = Math.abs(measureVolume(intersection))
+        if (occupied) expect(volume).toBeGreaterThan(0.001)
+        else expect(volume).toBeLessThan(1e-6)
+      } finally {
+        intersection.delete()
+        probe.delete()
+      }
+    }
+  } finally {
+    camera.delete()
+  }
+})
