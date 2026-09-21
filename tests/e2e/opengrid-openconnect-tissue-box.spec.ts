@@ -27,6 +27,17 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
   await expect(page.getByTestId('tissue-box-help')).toContainText(
     '靠牆兩角為直角',
   )
+  await expect(page.getByTestId('tissue-box-help')).toContainText(
+    '背板上下端與盒頂、盒底齊平',
+  )
+  const z = page.getByRole('textbox', { name: '內尺寸（Z）', exact: true })
+  await z.fill('20')
+  await expect(z).toHaveAttribute('aria-invalid', 'true')
+  await expect(
+    page.getByRole('button', { name: '下載 STEP', exact: true }),
+  ).toBeDisabled()
+  await z.fill('90')
+  await waitForCadReady(page, 90000)
   const mounting = tissueBoxLayout(TISSUE_BOX_DEFAULTS)
   await expect(page.getByTestId('tissue-box-mounting-grid')).toContainText(
     `X ${mounting.columns} 欄 × Y ${mounting.rows} 列`,

@@ -244,14 +244,18 @@ it('keeps a full mounting pad around the socket on the smallest rounded box', as
     ...small,
     x: 40,
     y: 40,
-    z: 20,
+    z: 24,
     outerRadius: 10,
     tiltAngle: 45,
     slotLength: 25,
     slotWidth: 10,
   }
   const shape = await build(p)
-  const probe = inPrintFrame(makeBox([-13.6, 1.9, 13.9], [-13.4, 2.1, 14.1]), p)
+  const rowZ = tissueBoxSlotOrigins(p)[0]![2]
+  const probe = inPrintFrame(
+    makeBox([-13.6, 1.9, rowZ - 0.1], [-13.4, 2.1, rowZ + 0.1]),
+    p,
+  )
   const common = shape.intersect(probe)
   try {
     expect(Math.abs(measureVolume(common))).toBeGreaterThan(0.007)
@@ -375,7 +379,12 @@ it('cuts every socket of a multi-row upright grid with material between rows', a
         cutter.delete()
       }
     }
-    const probe = inPrintFrame(makeBox([-0.1, 1.9, 27.9], [0.1, 2.1, 28.1]), p)
+    const rowHeights = [...new Set(origins.map(([, , z]) => z))]
+    const betweenRows = (rowHeights[0]! + rowHeights[1]!) / 2
+    const probe = inPrintFrame(
+      makeBox([-0.1, 1.9, betweenRows - 0.1], [0.1, 2.1, betweenRows + 0.1]),
+      p,
+    )
     const common = shape.intersect(probe)
     try {
       expect(measureVolume(common)).toBeGreaterThan(0.007)
@@ -430,6 +439,37 @@ it.each([0, 15, 45])(
       }
     } finally {
       faces.forEach((face) => face.delete())
+      shape.delete()
+    }
+  },
+  180000,
+)
+
+it.each([0, 15, 45])(
+  'makes both rear ends coplanar with the box at %s degrees',
+  async (tiltAngle) => {
+    const p = { ...small, tiltAngle }
+    const l = tissueBoxLayout(p)
+    const shape = await build(p)
+    try {
+      const box = shape.boundingBox
+      try {
+        expect(box.bounds[0][2]).toBeCloseTo(0, 6)
+        expect(box.bounds[1][2]).toBeCloseTo(l.height, 6)
+      } finally {
+        box.delete()
+      }
+      // Near both X edges, away from sockets: material reaches the horizontal ends.
+      for (const z of [0.2, l.height - 0.2]) {
+        const backY = (-l.offsetY + z * l.sine) / l.cosine
+        for (const sign of [-1, 1]) {
+          expect(
+            volumeAt(shape, p, [sign * (l.width / 2 - 0.3), backY + 0.4, z]),
+          ).toBeGreaterThan(0.007)
+        }
+      }
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+    } finally {
       shape.delete()
     }
   },

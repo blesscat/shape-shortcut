@@ -114,10 +114,13 @@ function support(p: TissueBoxParameters): Shape3D {
   const overlap = 0.1
   const sketcher = new Sketcher('YZ', [-l.supportWidth / 2, 0, 0])
   const sketch = sketcher
-    .movePointerTo([l.plateThickness - overlap, 0])
+    .movePointerTo([0, l.plateBottom])
     .lineTo([l.offsetY + overlap, (overlap * l.sine) / l.cosine])
-    .lineTo([l.plateThickness + overlap, l.height * l.cosine])
-    .lineTo([l.plateThickness - overlap, l.height * l.cosine])
+    .lineTo([
+      l.plateThickness + overlap,
+      l.height * l.cosine + (overlap * l.sine) / l.cosine,
+    ])
+    .lineTo([0, l.plateTop])
     .close()
   try {
     return sketch.extrude(l.supportWidth)
@@ -291,13 +294,6 @@ export async function buildTissueBox(
     replace(current!.rotate(p.tiltAngle, [0, 0, 0], [1, 0, 0]))
     replace(current!.translate(0, l.offsetY, 0))
     boolean(support(p), 'fuse')
-    boolean(
-      makeBox(
-        [-l.plateWidth / 2, 0, 0],
-        [l.plateWidth / 2, l.plateThickness, l.plateHeight],
-      ),
-      'fuse',
-    )
     await boundary(context)
     const source = context.getLockedSlot
       ? await context.getLockedSlot()

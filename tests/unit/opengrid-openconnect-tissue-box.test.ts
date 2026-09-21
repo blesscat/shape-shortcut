@@ -109,7 +109,9 @@ it('fills both mounting axes without shrinking the rear plate for R', () => {
   expect(new Set(origins.map(([x]) => x)).size).toBe(columns)
   expect(new Set(origins.map(([, , z]) => z)).size).toBe(rows)
   for (let row = 0; row < rows; row++) {
-    const rowPoints = origins.filter(([, , z]) => z === (row + 0.5) * pitch)
+    const rowPoints = origins.filter(
+      ([, , z]) => Math.abs(z - (l.rowBase + (row + 0.5) * pitch)) < 1e-8,
+    )
     expect(rowPoints).toHaveLength(columns)
     expect(rowPoints[0]![0] + rowPoints.at(-1)![0]).toBeCloseTo(0)
   }
@@ -120,8 +122,8 @@ it('fills both mounting axes without shrinking the rear plate for R', () => {
   )
 })
 
-it('retains a full single mounting row on the shortest tilted box', () => {
-  const p = { ...defaults, z: 20, tiltAngle: 45 }
+it('retains a full single mounting row on a short tilted box', () => {
+  const p = { ...defaults, z: 24, tiltAngle: 45 }
   const origins = tissueBoxSlotOrigins(p)
   expect(new Set(origins.map(([, , z]) => z)).size).toBe(1)
 })
@@ -145,3 +147,55 @@ it.each([0, 15, 45])(
       expect(tissueBoxBounds(p)).not.toEqual(tissueBoxInstalledBounds(p))
   },
 )
+
+it.each([0, 15, 45])(
+  'fits full socket cells between flush ends at %s degrees',
+  (tiltAngle) => {
+    const p = { ...defaults, tiltAngle }
+    const l = tissueBoxLayout(p)
+    const half = OPENGRID_GRID_CONFIGURATION.fullPitch / 2
+    for (const [x, , z] of tissueBoxSlotOrigins(p)) {
+      for (const y of [0, l.plateThickness]) {
+        for (const dz of [-half, half]) {
+          const printed = tissueBoxPrintPoint(p, [x, y, z + dz])
+          expect(printed[2]).toBeGreaterThanOrEqual(-1e-8)
+          expect(printed[2]).toBeLessThanOrEqual(l.height + 1e-8)
+        }
+      }
+    }
+    expect(tissueBoxBounds(p).max[2]).toBe(l.height)
+  },
+)
+
+it.each([0, 15, 45])(
+  'rejects a Z too short for one complete flush row at %s degrees',
+  (tiltAngle) => {
+    expect(
+      validateTissueBoxParameters({
+        ...defaults,
+        z: 20,
+        bottomThickness: 1,
+        tiltAngle,
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ field: 'z' })]),
+    })
+  },
+)
+
+it('accepts the first complete row at the height boundary for every supported angle', () => {
+  const pitch = OPENGRID_GRID_CONFIGURATION.fullPitch
+  for (let tiltAngle = 0; tiltAngle <= 45; tiltAngle++) {
+    const base = { ...defaults, tiltAngle }
+    const l = tissueBoxLayout(base)
+    const minimumZ =
+      pitch * l.cosine + l.plateThickness * l.sine - base.bottomThickness
+    expect(validateTissueBoxParameters({ ...base, z: minimumZ }).valid).toBe(
+      true,
+    )
+    expect(
+      validateTissueBoxParameters({ ...base, z: minimumZ - 0.01 }).valid,
+    ).toBe(false)
+  }
+})

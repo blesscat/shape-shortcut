@@ -30,7 +30,7 @@ The holder MUST have four walls, a bottom, and no lid or top covering. Its cavit
 - **THEN** only the two outward front vertical corners MUST follow the selected radius; the two wall-facing rear corners MUST remain square and join a full-width rear support and mounting plate, slot extents MUST follow the dimensions, and the bottom frame MUST stay connected
 
 ### Requirement: Upward tilt with upright OpenConnect mounting
-In the installed wall orientation, at zero degrees the bottom MUST be horizontal. Positive tilt MUST lift the outward front relative to the rear. The integrated locked OpenConnect female interface MUST remain upright on the wall plane and retain its existing mating geometry and 28 mm spacing in both mounting-plane axes. The mounting plane MUST use interface-local X for horizontal columns and Y for vertical rows (installed world Z), distinct from the box local XYZ dimensions. Column and row counts MUST be the full-grid counts fitting the mounting plate width and height, with at least one of each; X columns MUST be centered and row centers MUST start half a pitch above the plate bottom. The panel MUST show the computed X-column and Y-row counts. The support MUST connect the body and interface without covering the cavity, dispensing slot, or crossing the wall plane. The default preview and both STEP/STL exports MUST instead use print orientation: the slotted dispensing bottom MUST be horizontal at Z=0 with its outward normal downward, and no part of the model below Z=0. This rigid orientation change MUST preserve the installed relative upward angle and socket mating geometry. Generated bounds MUST describe the print-oriented output, and both installed and output extents MUST respect the 500 mm limit.
+In the installed wall orientation, at zero degrees the bottom MUST be horizontal. Positive tilt MUST lift the outward front relative to the rear. The integrated locked OpenConnect female interface MUST remain upright on the wall plane and retain its existing mating geometry and 28 mm spacing in both mounting-plane axes. The mounting plane MUST use interface-local X for horizontal columns and Y for vertical rows (installed world Z), distinct from the box local XYZ dimensions. Column and row counts MUST be the full-grid counts fitting the mounting plate width and the common usable height through its full thickness, with at least one of each; X columns MUST be centered and row centers MUST start half a pitch above the lower edge of that common height. Configurations without room for one complete row MUST be rejected with a Z diagnostic and localized guidance to increase internal Z. The panel MUST show the computed X-column and Y-row counts. The support MUST connect the body and interface without covering the cavity, dispensing slot, or crossing the wall plane. The default preview and both STEP/STL exports MUST instead use print orientation: the slotted dispensing bottom MUST be horizontal at Z=0 with its outward normal downward, and no part of the model below Z=0. The full-width rear support and mounting plate MUST have planar lower and upper ends coplanar with the box bottom and top, with no protrusion above the box or raised lower bevel. This rigid orientation change MUST preserve the installed relative upward angle and socket mating geometry. Generated bounds MUST describe the print-oriented output, and both installed and output extents MUST respect the 500 mm limit.
 
 #### Scenario: Positive angle
 - **WHEN** tiltAngle changes from zero to a positive value through 45 degrees
@@ -40,13 +40,22 @@ In the installed wall orientation, at zero degrees the bottom MUST be horizontal
 - **WHEN** the upright plate fits multiple grid columns and rows
 - **THEN** every column-row pair MUST contain a complete locked socket at the shared pitch
 - **AND** varying outerRadius MUST NOT shrink the full-width mounting plate or its column count
-- **AND** a plate shorter than two grid pitches MUST retain one complete row
+- **AND** a usable plate height between one and two grid pitches MUST retain one complete row
 
 #### Scenario: Dispensing bottom faces the print bed
 - **WHEN** a valid box is previewed or exported at any supported upward angle
 - **THEN** its dispensing bottom MUST lie on Z=0 with its exterior normal toward negative Z
 - **AND** the entire body, support and mount MUST remain on or above the print plane
 - **AND** rotating the output back to installed wall orientation MUST restore the requested upward slope and upright socket plane
+
+#### Scenario: Flush rear ends
+- **WHEN** a valid holder is generated at any supported angle
+- **THEN** the rear support and mounting plate MUST reach the same Z=0 and Z=internalZ+bottomThickness planes as the box
+- **AND** complete socket cell envelopes MUST fit between these planes through the plate thickness
+
+#### Scenario: Insufficient mounting height
+- **WHEN** the selected height and angle cannot fit one full socket row while keeping both ends flush
+- **THEN** validation MUST reject the configuration on Z before generation or export
 
 ### Requirement: Protected material-saving mode
 Saving mode MUST cut shared-size hexagonal openings only through the front and two side straight wall regions. The back, bottom frame, slot surround, mounting support, rounded corners, and at least 5 mm wall edge frames MUST remain solid. Cells MUST stay within the protected regions. Small regions with no fitting cells MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and estimated cell count when enabled. Cutting MUST report cell progress and support stale-generation cancellation.

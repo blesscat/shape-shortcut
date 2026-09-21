@@ -58,7 +58,12 @@ export function tissueBoxLayout(p: TissueBoxParameters) {
   const supportWidth = width
   const gridPitch = OPENGRID_GRID_CONFIGURATION.fullPitch
   const plateWidth = Math.max(gridPitch, supportWidth)
-  const plateHeight = Math.max(gridPitch, height * cosine)
+  const offsetY = plateThickness + height * sine
+  const plateBottom = (-offsetY * sine) / cosine
+  const plateTop = (height - offsetY * sine) / cosine
+  // Full-thickness cells fit in the intersection of the two sloped end planes.
+  const rowBase = ((plateThickness - offsetY) * sine) / cosine
+  const plateHeight = plateTop - rowBase
   return {
     width,
     depth,
@@ -68,10 +73,13 @@ export function tissueBoxLayout(p: TissueBoxParameters) {
     plateThickness,
     supportWidth,
     plateWidth,
-    offsetY: plateThickness + height * sine,
+    offsetY,
+    plateBottom,
+    plateTop,
+    rowBase,
     plateHeight,
     columns: Math.max(1, Math.floor(plateWidth / gridPitch)),
-    rows: Math.max(1, Math.floor(plateHeight / gridPitch)),
+    rows: Math.max(0, Math.floor((plateHeight + 1e-9) / gridPitch)),
     innerRadius: Math.max(0, p.outerRadius - p.wallThickness),
   }
 }
@@ -87,11 +95,11 @@ export function tissueBoxPoint(
 export function tissueBoxInstalledBounds(p: TissueBoxParameters) {
   const l = tissueBoxLayout(p)
   return {
-    min: [-l.width / 2, 0, 0] as TissueBoxPoint,
+    min: [-l.width / 2, 0, l.plateBottom] as TissueBoxPoint,
     max: [
       l.width / 2,
       l.offsetY + l.depth * l.cosine,
-      Math.max(l.plateHeight, l.depth * l.sine + l.height * l.cosine),
+      l.depth * l.sine + l.height * l.cosine,
     ] as TissueBoxPoint,
   }
 }
@@ -113,12 +121,8 @@ export function tissueBoxPrintPoint(
 export function tissueBoxBounds(p: TissueBoxParameters) {
   const l = tissueBoxLayout(p)
   return {
-    min: [-l.width / 2, -l.offsetY * l.cosine, 0] as TissueBoxPoint,
-    max: [
-      l.width / 2,
-      l.depth,
-      Math.max(l.height, l.offsetY * l.sine + l.plateHeight * l.cosine),
-    ] as TissueBoxPoint,
+    min: [-l.width / 2, -l.offsetY / l.cosine, 0] as TissueBoxPoint,
+    max: [l.width / 2, l.depth, l.height] as TissueBoxPoint,
   }
 }
 
@@ -131,7 +135,7 @@ export function tissueBoxSlotOrigins(p: TissueBoxParameters): TissueBoxPoint[] {
       origins.push([
         (column - (l.columns - 1) / 2) * pitch,
         0,
-        (row + 0.5) * pitch,
+        l.rowBase + (row + 0.5) * pitch,
       ])
     }
   }
@@ -215,6 +219,7 @@ export function validateTissueBoxParameters(
   if (p.slotLength < p.slotWidth + 2 || p.slotLength > slotLimits.length)
     issue('slotLength')
   if (issues.length) return { valid: false, issues }
+  if (tissueBoxLayout(p).rows < 1) issue('z')
   const envelopes = [tissueBoxBounds(p), tissueBoxInstalledBounds(p)]
   if (
     envelopes.some((bounds) =>
