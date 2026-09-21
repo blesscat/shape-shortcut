@@ -423,8 +423,7 @@ export const zhHantMessages = {
   'parameter.gap': '柱間隙',
   'parameter.leftArm': '左臂',
   'parameter.alignmentMode': '對位模式',
-  'parameter.targetBoxGridsX': '目標盒格數（X）',
-  'parameter.targetBoxGridsY': '目標盒格數（Y）',
+  'parameter.boxFitWallGrids': '牆總格數',
   'parameter.endClearance': '端部間隙',
   'parameter.pegLengthMode': '定位柱向下長度',
   'parameter.rightArm': '右臂',
@@ -540,9 +539,6 @@ export const zhHantMessages = {
   'diagnostic.meshInvalid': '預覽模型資料無效，Worker 將重新啟動。',
   'diagnostic.staleGeneration': '這次建模已被較新的輸入取代。',
   'validation.invalid': '{field} 輸入無效，請檢查參數後重試。',
-  'validation.axisSumExceedsTarget':
-    '{field} 不足：方向格數總和超過目標盒格數。',
-  'validation.boxFitRequiresStraightArm': '盒內對位僅支援單臂與一字型分隔牆。',
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
   'validation.parameter': '參數',
@@ -738,8 +734,6 @@ export const zhHantMessages = {
   'panel.divider.badgeAnchorPlusMinus7': '錨點：±7 孔列',
   'panel.divider.badgeCenterPegPresent': '中心柱：有',
   'panel.divider.badgeCenterPegAbsent': '中心柱：無（此格數盒子中心無孔）',
-  'panel.divider.badgeTransverse':
-    '牆中心線需對齊 {axis} 軸 ±7 孔列，而非盒子正中央',
   'panel.wallCover.summary': '自訂 Wall Cover 文字',
   'panel.wallCover.details':
     '每個字會產生一個獨立的雙色平放 cover；空白會忽略，最多輸入 8 個字。可選擇是否保留移除孔。',
@@ -1286,8 +1280,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.gap': 'Post gap',
   'parameter.leftArm': 'Left arm',
   'parameter.alignmentMode': 'Alignment mode',
-  'parameter.targetBoxGridsX': 'Target box grids (X)',
-  'parameter.targetBoxGridsY': 'Target box grids (Y)',
+  'parameter.boxFitWallGrids': 'Wall grid length',
   'parameter.endClearance': 'End clearance',
   'parameter.pegLengthMode': 'Peg downward length',
   'parameter.rightArm': 'Right arm',
@@ -1412,10 +1405,6 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'diagnostic.staleGeneration': 'This build was superseded by newer input.',
   'validation.invalid':
     '{field} is invalid. Check the parameter and try again.',
-  'validation.axisSumExceedsTarget':
-    '{field} is too small: the directional grid sum exceeds the target box grid count.',
-  'validation.boxFitRequiresStraightArm':
-    'Box-fit alignment supports single-arm and straight dividers only.',
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
   'validation.wallCoverTextTooLong': '{field} cannot exceed {max} characters.',
   'validation.parameter': 'Parameter',
@@ -1622,8 +1611,6 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.divider.badgeCenterPegPresent': 'Center peg: yes',
   'panel.divider.badgeCenterPegAbsent':
     'Center peg: none (this grid count has no center hole)',
-  'panel.divider.badgeTransverse':
-    'The wall centerline must sit on a ±7 hole column of the {axis} axis instead of the box center row',
   'panel.wallCover.summary': 'Custom Wall Cover text',
   'panel.wallCover.details':
     'Each character creates one independent, flat two-color cover. Whitespace is ignored; enter up to 8 characters. Choose whether to keep the remover hole.',

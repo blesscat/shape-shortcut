@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   makeBox,
   makeCylinder,
+  makeCompound,
   measureVolume,
   setOC,
   type Shape3D,
@@ -12,12 +13,15 @@ import {
 import {
   boundsForOpenGridDivider,
   openGridDividerArmEndpointsFor,
+  openGridDividerArmStationsFor,
   openGridDividerPegPlanFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPegLengthFor,
+  openGridDividerLatticeStationsFor,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  OPENGRID_STACKABLE_BOX_CONFIGURATION,
   openGridDividerHoneycombMinHeightFor,
   type OpenGridDividerParameters,
   openGridDividerTransitionHeightFor,
@@ -46,10 +50,8 @@ const WASM_PATH =
 
 const DIVIDER_ALIGNMENT_DEFAULTS = {
   alignmentMode: 'free',
-  targetBoxGridsX:
-    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsX,
-  targetBoxGridsY:
-    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsY,
+  boxFitWallGrids:
+    OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.boxFitWallGrids,
   endClearance: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.endClearance,
   pegLengthMode: OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.pegLengthMode,
   pegDiameterIncrement:
@@ -67,8 +69,7 @@ function fullDividerParameters(
       | 'height'
       | 'wallThickness'
       | 'alignmentMode'
-      | 'targetBoxGridsX'
-      | 'targetBoxGridsY'
+      | 'boxFitWallGrids'
       | 'endClearance'
       | 'pegLengthMode'
       | 'pegDiameterIncrement'
@@ -93,6 +94,135 @@ function pegProbeZFor(parameters: OpenGridDividerParameters): number {
     OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer +
     0.01
   )
+}
+
+// The nominal box bottom from the shared OpenGrid contract: a floor with
+// Ø5.05 holes on the 14 mm grid offset 7 mm from the edges, ringed by walls
+// inset 1.275 mm from the nominal grid stations. This is exactly the pairing
+// the box-fit alignment guarantee promises, so the assembly check below
+// proves the emitted pegs land in real holes with real clearance.
+async function expectBoxFitWallToAssembleWithNominalBox(
+  wallGrids: number,
+): Promise<void> {
+  const GRID = OPENGRID_DIVIDER_CONFIGURATION.gridPitch
+  const INSET = OPENGRID_DIVIDER_CONFIGURATION.boxWallStationInset
+  const HOLE_DIAMETER =
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridHoleDiameter
+  const HOLE_PITCH = OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomHoleGridPitch
+  const HOLE_EDGE_OFFSET =
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomHoleGridEdgeOffset
+  const FLOOR_BOTTOM = -4.1
+  const FLOOR_TOP = -0.1
+  const outerHalf = (wallGrids * GRID) / 2
+
+  const holeCenters: [number, number][] = []
+  for (
+    let x = HOLE_EDGE_OFFSET;
+    x < wallGrids * GRID - HOLE_EDGE_OFFSET + 1e-9;
+    x += HOLE_PITCH
+  ) {
+    for (
+      let y = HOLE_EDGE_OFFSET;
+      y < wallGrids * GRID - HOLE_EDGE_OFFSET + 1e-9;
+      y += HOLE_PITCH
+    ) {
+      holeCenters.push([x - outerHalf, y - outerHalf])
+    }
+  }
+
+  const holeCutters: Shape3D[] = holeCenters.map(([x, y]) =>
+    makeCylinder(HOLE_DIAMETER / 2, FLOOR_TOP - FLOOR_BOTTOM + 0.2, [
+      x,
+      y,
+      FLOOR_BOTTOM - 0.1,
+    ]),
+  )
+  const holeCutterCompound = makeCompound(holeCutters).asShape3D()
+  let base: Shape3D | null = null
+  try {
+    base = makeBox(
+      [-outerHalf, -outerHalf, FLOOR_BOTTOM],
+      [outerHalf, outerHalf, 10],
+    )
+    base = base.cut(
+      makeBox(
+        [-outerHalf + INSET, -outerHalf + INSET, FLOOR_TOP],
+        [outerHalf - INSET, outerHalf - INSET, 10],
+      ),
+    )
+    base = base.cut(holeCutterCompound)
+    expect(measureVolume(base)).toBeGreaterThan(0)
+
+    const parameters = fullDividerParameters({
+      left: wallGrids,
+      right: 0,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      alignmentMode: 'box-fit',
+      boxFitWallGrids: wallGrids,
+      endClearance: 0.15,
+    })
+    const shape = await buildOpenGridDivider(parameters)
+    try {
+      // The transverse centerline must sit on a hole row: half-integer boxes
+      // have a center row, integer boxes force the ±7 row.
+      const rowY = [...new Set(holeCenters.map(([, y]) => y))].sort(
+        (first, second) => Math.abs(first) - Math.abs(second),
+      )[0]
+      const placedShape = rowY === 0 ? shape : shape.translate(0, rowY, 0)
+
+      // Whole-part fit: the placed wall and its pegs must never touch the box.
+      const clash = base.intersect(placedShape)
+      const clashVolume = clash ? measureVolume(clash) : 0
+      clash?.delete()
+      expect(clashVolume).toBeLessThan(1e-6)
+
+      // End clearance: the wall ends sit endClearance inside the inner walls.
+      const wallBounds = boundsOf(placedShape)
+      expect(wallBounds[1][0]).toBeCloseTo(outerHalf - INSET - 0.15, 4)
+      expect(wallBounds[0][0]).toBeCloseTo(-(outerHalf - INSET - 0.15), 4)
+
+      const plan = openGridDividerPlanBoundsFor(parameters)
+      const centerX = (plan.minX + plan.maxX) / 2
+      const pegPlan = openGridDividerPegPlanFor(parameters)
+      const placedStations: number[] = []
+      for (const [rawX, rawY] of pegPlan.centers) {
+        const x = rawX - centerX
+        const y = rawY + rowY
+        // +0 normalizes a toFixed-produced -0 so toEqual matches 0.
+        placedStations.push(Number(x.toFixed(6)) + 0)
+
+        // The peg must pass through a real opening: a probe one hundredth of
+        // a millimetre narrower than the hole must clear the floor there.
+        const openingProbe = makeCylinder(
+          HOLE_DIAMETER / 2 - 0.01,
+          FLOOR_TOP - FLOOR_BOTTOM,
+          [x, y, FLOOR_BOTTOM],
+        )
+        try {
+          const openingClash = base.intersect(openingProbe)
+          const openingClashVolume = openingClash
+            ? measureVolume(openingClash)
+            : 0
+          openingClash?.delete()
+          expect(openingClashVolume).toBeLessThan(1e-6)
+        } finally {
+          openingProbe.delete()
+        }
+      }
+      expect(placedStations.sort((first, second) => first - second)).toEqual(
+        openGridDividerLatticeStationsFor(wallGrids),
+      )
+    } finally {
+      deleteShape(shape)
+    }
+  } finally {
+    base?.delete()
+    // Deleting the compound also releases the registered cutter shapes.
+    holeCutterCompound.delete()
+  }
 }
 
 beforeAll(async () => {
@@ -987,17 +1117,16 @@ describe('OpenGrid divider CAD kernel integration', () => {
     }
   }, 180_000)
 
-  it('builds a box-fit single arm that spans the box with pegs on hole columns', async () => {
+  it('builds a box-fit wall that spans the box with pegs on hole columns', async () => {
     const parameters = fullDividerParameters({
-      left: 0,
-      right: 4.5,
+      left: 4.5,
+      right: 0,
       up: 0,
       down: 0,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
+      boxFitWallGrids: 4.5,
       endClearance: 0.15,
     })
     const shape = await buildOpenGridDivider(parameters)
@@ -1018,7 +1147,7 @@ describe('OpenGrid divider CAD kernel integration', () => {
       // Five pegs at box hole columns 0, ±28, ±56 (junction-relative).
       const pegPlan = openGridDividerPegPlanFor(parameters)
       expect(pegPlan.centers).toHaveLength(5)
-      const centerX = (0 + 123.15) / 2
+      const centerX = (-123.15 + 0) / 2
       for (const [rawX, rawY] of pegPlan.centers) {
         const probe = makeCylinder(pegPlan.diameter / 2 - 0.1, 0.2, [
           rawX - centerX,
@@ -1036,24 +1165,23 @@ describe('OpenGrid divider CAD kernel integration', () => {
     }
   }, 180_000)
 
-  it('builds a box-fit straight divider whose pegs land on box hole columns', async () => {
+  it('builds an integer-grid box-fit wall whose pegs land on the ±7 columns', async () => {
     const parameters = fullDividerParameters({
-      left: 2,
-      right: 2.5,
+      left: 5,
+      right: 0,
       up: 0,
       down: 0,
       height: 20,
       wallThickness: 2,
       alignmentMode: 'box-fit',
-      targetBoxGridsX: 4.5,
-      targetBoxGridsY: 4.5,
+      boxFitWallGrids: 5,
       endClearance: 0.15,
     })
     const shape = await buildOpenGridDivider(parameters)
     try {
       const bounds = boundsOf(shape)
-      expect(bounds[0][0]).toBeCloseTo(-61.575, 2)
-      expect(bounds[1][0]).toBeCloseTo(61.575, 2)
+      expect(bounds[0][0]).toBeCloseTo(-68.575, 2)
+      expect(bounds[1][0]).toBeCloseTo(68.575, 2)
 
       const quality = inspectOpenGridDividerShapeQuality(
         shape,
@@ -1063,10 +1191,76 @@ describe('OpenGrid divider CAD kernel integration', () => {
       expect(quality.passed, quality.failures.join(';')).toBe(true)
 
       const pegPlan = openGridDividerPegPlanFor(parameters)
-      expect(pegPlan.centers).toHaveLength(5)
-      // Box coordinates after centering: junction offset is +7 mm.
-      const boxColumns = pegPlan.centers.map(([x]) => x - 7)
-      expect(boxColumns.sort((a, b) => a - b)).toEqual([-56, -28, 0, 28, 56])
+      expect(pegPlan.centers).toHaveLength(6)
+      // Box coordinates after centering: the integer grid box anchors the
+      // lattice at its ±7 hole columns, so station 0 has no hole and no peg.
+      const centerX = (-137.15 + 0) / 2
+      const boxColumns = pegPlan.centers
+        .map(([x]) => Number((x - centerX).toFixed(6)))
+        .sort((a, b) => a - b)
+      expect(boxColumns).toEqual([-63, -35, -7, 7, 35, 63])
+    } finally {
+      deleteShape(shape)
+    }
+  }, 180_000)
+
+  it('assembles a 4.5 grid box-fit wall into a nominal half-integer box', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(4.5)
+  }, 180_000)
+
+  it('assembles a 6 grid box-fit wall into a nominal integer box on a ±7 hole row', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(6)
+  }, 180_000)
+
+  it('assembles a 0.5 grid box-fit wall into a nominal minimum box', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(0.5)
+  }, 180_000)
+
+  it('builds a 17.5 grid box-fit wall inside the planar limit on the ±7 lattice', async () => {
+    const parameters = fullDividerParameters({
+      left: 17.5,
+      right: 0,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      alignmentMode: 'box-fit',
+      boxFitWallGrids: 17.5,
+      endClearance: 0.15,
+    })
+    const shape = await buildOpenGridDivider(parameters)
+    try {
+      // The maximum wall must stay inside the 500 mm planar limit while
+      // spanning its full retracted length.
+      const span =
+        17.5 * OPENGRID_DIVIDER_CONFIGURATION.gridPitch -
+        2 * (OPENGRID_DIVIDER_CONFIGURATION.boxWallStationInset + 0.15)
+      const bounds = boundsOf(shape)
+      expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(span, 4)
+      expect(Math.abs(bounds[1][0])).toBeLessThan(250)
+
+      const plan = openGridDividerPlanBoundsFor(parameters)
+      const centerX = (plan.minX + plan.maxX) / 2
+      const pegPlan = openGridDividerPegPlanFor(parameters)
+      const stations = pegPlan.centers
+        .map(([x]) => Number((x - centerX).toFixed(6)) + 0)
+        .sort((first, second) => first - second)
+      expect(stations).toEqual(openGridDividerLatticeStationsFor(17.5))
+
+      // Every lattice station must carry real peg material on the solid.
+      const probeZ = pegProbeZFor(parameters)
+      for (const station of stations) {
+        const probe = makeCylinder(pegPlan.diameter / 2 - 0.1, 0.2, [
+          station,
+          0,
+          probeZ,
+        ])
+        try {
+          expect(measureVolume(shape.intersect(probe))).toBeGreaterThan(0)
+        } finally {
+          probe.delete()
+        }
+      }
     } finally {
       deleteShape(shape)
     }

@@ -593,8 +593,7 @@ describe('CAD workspace validation helpers', () => {
       height: 20,
       wallThickness: 2,
       alignmentMode: alignmentDefaults.alignmentMode,
-      targetBoxGridsX: alignmentDefaults.targetBoxGridsX,
-      targetBoxGridsY: alignmentDefaults.targetBoxGridsY,
+      boxFitWallGrids: alignmentDefaults.boxFitWallGrids,
       endClearance: alignmentDefaults.endClearance,
       pegLengthMode: alignmentDefaults.pegLengthMode,
       pegDiameterIncrement: alignmentDefaults.pegDiameterIncrement,
@@ -610,8 +609,7 @@ describe('CAD workspace validation helpers', () => {
       height: '20',
       wallThickness: '2',
       alignmentMode: 'free',
-      targetBoxGridsX: '4.5',
-      targetBoxGridsY: '4.5',
+      boxFitWallGrids: '4.5',
       endClearance: '0.15',
       pegLengthMode: 'snap',
       pegDiameterIncrement: '0',
@@ -651,6 +649,83 @@ describe('CAD workspace validation helpers', () => {
         up: 0,
         down: 0,
       },
+    })
+    // Legacy box-fit snapshots carry the wall length in the arm sums; the raw
+    // parse migrates the longer axis sum into the wall-grid length. Retired
+    // target box grid keys are tolerated and dropped from the parsed value.
+    expect(
+      parseRawParameters(
+        {
+          left: '2',
+          right: '2.5',
+          up: '0',
+          down: '0',
+          height: '20',
+          wallThickness: '2',
+          alignmentMode: 'box-fit',
+          targetBoxGridsX: '5',
+          targetBoxGridsY: '4.5',
+        } as Record<string, string>,
+        'opengrid-divider',
+      ),
+    ).toEqual({
+      valid: true,
+      value: {
+        ...parameters,
+        honeycombMode: false,
+        alignmentMode: 'box-fit',
+        left: 4.5,
+        right: 0,
+        up: 0,
+        down: 0,
+        boxFitWallGrids: 4.5,
+      },
+    })
+    expect(
+      parseRawParameters(
+        {
+          left: '0',
+          right: '0',
+          up: '0',
+          down: '8.5',
+          height: '20',
+          wallThickness: '2',
+          alignmentMode: 'box-fit',
+          targetBoxGridsX: '8.5',
+          targetBoxGridsY: '8.5',
+        } as Record<string, string>,
+        'opengrid-divider',
+      ),
+    ).toEqual({
+      valid: true,
+      value: {
+        ...parameters,
+        honeycombMode: false,
+        alignmentMode: 'box-fit',
+        left: 8.5,
+        right: 0,
+        up: 0,
+        down: 0,
+        boxFitWallGrids: 8.5,
+      },
+    })
+    expect(
+      parseRawParameters(
+        {
+          left: '1',
+          right: '1',
+          up: '0',
+          down: '0',
+          height: '20',
+          wallThickness: '2',
+          boxFitWallGrids: '4.25',
+        },
+        'opengrid-divider',
+      ),
+    ).toEqual({
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'boxFitWallGrids',
     })
     expect(
       parseRawParameters(

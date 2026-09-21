@@ -82,27 +82,16 @@ const OPENGRID_DIVIDER_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
     sliderMax: OPENGRID_DIVIDER_CONFIGURATION.maxWallThickness,
   },
   {
-    key: 'targetBoxGridsX',
-    label: 'parameter.targetBoxGridsX',
+    key: 'boxFitWallGrids',
+    label: 'parameter.boxFitWallGrids',
     axis: 'X',
     unit: 'grid',
+    labelFormat: 'label',
     control: 'range-text',
     defaultValue:
-      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsX,
-    min: OPENGRID_DIVIDER_CONFIGURATION.minTargetBoxGrids,
-    max: OPENGRID_DIVIDER_CONFIGURATION.maxTargetBoxGrids,
-    step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
-  },
-  {
-    key: 'targetBoxGridsY',
-    label: 'parameter.targetBoxGridsY',
-    axis: 'Y',
-    unit: 'grid',
-    control: 'range-text',
-    defaultValue:
-      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.targetBoxGridsY,
-    min: OPENGRID_DIVIDER_CONFIGURATION.minTargetBoxGrids,
-    max: OPENGRID_DIVIDER_CONFIGURATION.maxTargetBoxGrids,
+      OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.boxFitWallGrids,
+    min: OPENGRID_DIVIDER_CONFIGURATION.minBoxFitWallGrids,
+    max: OPENGRID_DIVIDER_CONFIGURATION.maxBoxFitWallGrids,
     step: OPENGRID_DIVIDER_CONFIGURATION.gridStep,
   },
   {

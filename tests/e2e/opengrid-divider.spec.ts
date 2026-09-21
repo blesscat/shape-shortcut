@@ -131,8 +131,7 @@ test('OpenGrid divider exports the committed normalized shape', async ({
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe(
-    'opengrid-divider-l1.5-r1.5-u0-d0-t2-h24-a' +
-      'free-g4.5x4.5-c0.15-psnap-i0.step',
+    'opengrid-divider-l1.5-r1.5-u0-d0-t2-h24-a' + 'free-c0.15-psnap-i0.step',
   )
 })
 
@@ -155,7 +154,7 @@ test('OpenGrid divider rejects a planar footprint above 500 mm', async ({
   await expect(page.getByRole('button', { name: '下載 STL' })).toBeDisabled()
 })
 
-test('OpenGrid divider box-fit shows the alignment badge and diagnostics', async ({
+test('OpenGrid divider box-fit hides the arms, shows the wall length, and keeps counts frozen', async ({
   page,
   browserName,
 }) => {
@@ -163,30 +162,62 @@ test('OpenGrid divider box-fit shows the alignment badge and diagnostics', async
   await page.goto('/cad/opengrid-divider')
   await waitForCadReady(page)
 
+  // The alignment selector is the first control group, above the arms.
+  const alignmentGroup = page.getByRole('radiogroup', {
+    name: '分隔牆對位模式',
+  })
+  const alignmentBox = await alignmentGroup.boundingBox()
+  const leftBox = await page
+    .getByRole('slider', { name: '左臂（X）' })
+    .boundingBox()
+  expect(alignmentBox && leftBox).toBeTruthy()
+  expect(alignmentBox!.y).toBeLessThan(leftBox!.y)
+
   await page.getByTestId('opengrid-divider-alignment-box-fit').check()
+  const wall = page.getByRole('textbox', { name: '牆總格數', exact: true })
+  await expect(wall).toHaveValue('4.5')
+  // The wall grid length sits above the shared height control.
+  const wallBox = await wall.boundingBox()
+  const heightBox = await page
+    .getByRole('textbox', { name: '分隔牆高度（Z）' })
+    .boundingBox()
+  expect(wallBox && heightBox).toBeTruthy()
+  expect(wallBox!.y).toBeLessThan(heightBox!.y)
+  for (const name of ['左臂（X）', '右臂（X）', '上臂（Y）', '下臂（Y）']) {
+    await expect(page.getByRole('slider', { name })).toHaveCount(0)
+  }
+  await expect(page.getByRole('textbox', { name: /目標盒格數/ })).toHaveCount(0)
   await waitForCadReady(page)
   const badge = page.getByTestId('opengrid-divider-alignment-badge')
+  await expect(badge).toContainText('錨點：中心孔列')
   await expect(badge).toContainText('中心柱：有')
 
-  const targetX = page.getByRole('textbox', { name: '目標盒格數（X）' })
-  await targetX.fill('5')
+  await wall.fill('5')
   await waitForCadReady(page)
+  await expect(badge).toContainText('錨點：±7 孔列')
   await expect(badge).toContainText('中心柱：無')
 
-  const left = page.getByRole('slider', { name: '左臂（X）' })
-  const right = page.getByRole('slider', { name: '右臂（X）' })
-  await left.fill('3')
-  await right.fill('2.5')
+  await wall.fill('18')
   await expect(
-    page.locator('[role="alert"]', { hasText: '超過目標盒格數' }).first(),
-  ).toBeVisible()
-
-  await right.fill('1.5')
-  await targetX.fill('4.5')
-  await waitForCadReady(page)
-  await page.getByRole('slider', { name: '上臂（Y）' }).fill('2')
-  await expect(
-    page.getByText('盒內對位僅支援單臂與一字型分隔牆。'),
+    page.locator('[role="alert"]', { hasText: '牆總格數' }).first(),
   ).toBeVisible()
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeDisabled()
+
+  await wall.fill('4.5')
+  await waitForCadReady(page)
+
+  // Switching back to free restores the preserved arm counts untouched.
+  await page.getByTestId('opengrid-divider-alignment-free').check()
+  await expect(page.getByRole('slider', { name: '左臂（X）' })).toHaveValue(
+    '1.5',
+  )
+  await expect(page.getByRole('slider', { name: '右臂（X）' })).toHaveValue(
+    '1.5',
+  )
+  await expect(page.getByRole('slider', { name: '上臂（Y）' })).toHaveValue('0')
+  await expect(page.getByRole('slider', { name: '下臂（Y）' })).toHaveValue('0')
+  await expect(
+    page.getByRole('textbox', { name: '牆總格數', exact: true }),
+  ).toHaveCount(0)
+  await waitForCadReady(page)
 })

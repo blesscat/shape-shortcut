@@ -29,22 +29,16 @@
   }: ComponentPanelProps = $props()
 
   const schema = opengridDividerDefinition.parameterSchema
-  const BASE_FIELD_KEYS = [
-    'left',
-    'right',
-    'up',
-    'down',
-    'height',
-    'wallThickness',
-  ] as const
-  const BASE_FIELDS = BASE_FIELD_KEYS.map((key) =>
+  const ARM_FIELD_KEYS = ['left', 'right', 'up', 'down'] as const
+  const SHARED_FIELD_KEYS = ['height', 'wallThickness'] as const
+  const ARM_FIELDS = ARM_FIELD_KEYS.map((key) =>
     schema.find((field) => field.key === key)!,
   )
-  const BOX_FIT_FIELD_KEYS = [
-    'targetBoxGridsX',
-    'targetBoxGridsY',
-    'endClearance',
-  ] as const
+  const SHARED_FIELDS = SHARED_FIELD_KEYS.map((key) =>
+    schema.find((field) => field.key === key)!,
+  )
+  const BOX_FIT_LEAD_FIELD_KEYS = ['boxFitWallGrids'] as const
+  const BOX_FIT_TRAIL_FIELD_KEYS = ['endClearance'] as const
   const PEG_FIELD_KEYS = ['pegDiameterIncrement'] as const
 
   const ALIGNMENT_OPTIONS = [
@@ -87,17 +81,11 @@
   let alignmentMode = $derived(
     rawParameters.alignmentMode === 'box-fit' ? 'box-fit' : 'free',
   )
+  // Box-fit ignores the frozen directional arm counts: the wall is the single
+  // horizontal arm its wall-grid length materializes into.
   let alignmentInfo = $derived(
     openGridDividerAlignmentInfoFor({
-      ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
-      left: rawNumber('left'),
-      right: rawNumber('right'),
-      up: rawNumber('up'),
-      down: rawNumber('down'),
-      alignmentMode: alignmentMode,
-      targetBoxGridsX: rawNumber('targetBoxGridsX'),
-      targetBoxGridsY: rawNumber('targetBoxGridsY'),
-      endClearance: rawNumber('endClearance'),
+      boxFitWallGrids: rawNumber('boxFitWallGrids'),
     }),
   )
 
@@ -135,6 +123,12 @@
       const value = Number(rawValue)
       if (!Number.isFinite(value)) return null
       candidate[key.key] = value
+    }
+    if (alignmentMode === 'box-fit') {
+      candidate.left = candidate.boxFitWallGrids
+      candidate.right = 0
+      candidate.up = 0
+      candidate.down = 0
     }
     const validation = validateOpenGridDividerParameters(candidate)
     return validation.valid ? validation.value : null
@@ -206,27 +200,6 @@
     {/if}
   {/if}
   <fieldset class="m-0 grid gap-3 border-0 p-0">
-    {#each BASE_FIELDS as field (field.key)}
-      {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
-      <ParameterField
-        {locale}
-        label={displayParameterLabel(field, locale)}
-        unit={unitLabelFor(locale, field.unit)}
-        changed={value !== String(field.defaultValue)}
-        error={fieldErrors[field.key]}
-        errorId={`${field.key}-error`}
-        onRestore={() => onInputChange(field.key, String(field.defaultValue))}
-      >
-        <ParameterControl
-          {locale}
-          {field}
-          {value}
-          error={fieldErrors[field.key]}
-          onChange={(nextValue) => onInputChange(field.key, nextValue)}
-        />
-      </ParameterField>
-    {/each}
-
     <div
       aria-label={translate(locale, 'panel.divider.alignmentAria')}
       class="grid gap-2 rounded-lg border border-border-field p-3"
@@ -266,8 +239,76 @@
       {/if}
     </div>
 
+    {#if alignmentMode !== 'box-fit'}
+      {#each ARM_FIELDS as field (field.key)}
+        {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
+        <ParameterField
+          {locale}
+          label={displayParameterLabel(field, locale)}
+          unit={unitLabelFor(locale, field.unit)}
+          changed={value !== String(field.defaultValue)}
+          error={fieldErrors[field.key]}
+          errorId={`${field.key}-error`}
+          onRestore={() => onInputChange(field.key, String(field.defaultValue))}
+        >
+          <ParameterControl
+            {locale}
+            {field}
+            {value}
+            error={fieldErrors[field.key]}
+            onChange={(nextValue) => onInputChange(field.key, nextValue)}
+          />
+        </ParameterField>
+      {/each}
+    {/if}
+
     {#if alignmentMode === 'box-fit'}
-      {#each BOX_FIT_FIELD_KEYS as key (key)}
+      {#each BOX_FIT_LEAD_FIELD_KEYS as key (key)}
+        {@const field = fieldFor(key)}
+        {@const value = rawParameters[key] ?? String(field.defaultValue)}
+        <ParameterField
+          {locale}
+          label={displayParameterLabel(field, locale)}
+          unit={unitLabelFor(locale, field.unit)}
+          changed={value !== String(field.defaultValue)}
+          error={fieldErrors[key]}
+          errorId={`${key}-error`}
+          onRestore={() => onInputChange(key, String(field.defaultValue))}
+        >
+          <ParameterControl
+            {locale}
+            {field}
+            {value}
+            error={fieldErrors[key]}
+            onChange={(nextValue) => onInputChange(key, nextValue)}
+          />
+        </ParameterField>
+      {/each}
+    {/if}
+
+    {#each SHARED_FIELDS as field (field.key)}
+      {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
+      <ParameterField
+        {locale}
+        label={displayParameterLabel(field, locale)}
+        unit={unitLabelFor(locale, field.unit)}
+        changed={value !== String(field.defaultValue)}
+        error={fieldErrors[field.key]}
+        errorId={`${field.key}-error`}
+        onRestore={() => onInputChange(field.key, String(field.defaultValue))}
+      >
+        <ParameterControl
+          {locale}
+          {field}
+          {value}
+          error={fieldErrors[field.key]}
+          onChange={(nextValue) => onInputChange(field.key, nextValue)}
+        />
+      </ParameterField>
+    {/each}
+
+    {#if alignmentMode === 'box-fit'}
+      {#each BOX_FIT_TRAIL_FIELD_KEYS as key (key)}
         {@const field = fieldFor(key)}
         {@const value = rawParameters[key] ?? String(field.defaultValue)}
         <ParameterField
@@ -299,15 +340,7 @@
         <span>
           {translate(
             locale,
-            alignmentInfo.anchorX === 'center'
-              ? 'panel.divider.badgeAnchorCenter'
-              : 'panel.divider.badgeAnchorPlusMinus7',
-          )}
-        </span>
-        <span>
-          {translate(
-            locale,
-            alignmentInfo.anchorY === 'center'
+            alignmentInfo.anchor === 'center'
               ? 'panel.divider.badgeAnchorCenter'
               : 'panel.divider.badgeAnchorPlusMinus7',
           )}
@@ -320,11 +353,6 @@
               : 'panel.divider.badgeCenterPegAbsent',
           )}
         </span>
-        {#each alignmentInfo.transverseIntegerAxes as axis (axis)}
-          <span class="text-muted-foreground">
-            {translate(locale, 'panel.divider.badgeTransverse', { axis })}
-          </span>
-        {/each}
       </div>
     {/if}
 
