@@ -16,6 +16,12 @@ export const CAD_VIEWPORT_CONFIG = {
 export type CadViewportPartName =
   keyof typeof CAD_VIEWPORT_CONFIG.modelPartColors
 
+export function isCadViewportPartName(
+  name: string,
+): name is CadViewportPartName {
+  return name in CAD_VIEWPORT_CONFIG.modelPartColors
+}
+
 export function colorForCadViewportPart(name: CadViewportPartName): string {
   return CAD_VIEWPORT_CONFIG.modelPartColors[name]
 }
