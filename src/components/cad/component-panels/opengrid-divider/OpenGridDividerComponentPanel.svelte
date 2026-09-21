@@ -37,7 +37,8 @@
   const SHARED_FIELDS = SHARED_FIELD_KEYS.map((key) =>
     schema.find((field) => field.key === key)!,
   )
-  const BOX_FIT_FIELD_KEYS = ['boxFitWallGrids', 'endClearance'] as const
+  const BOX_FIT_LEAD_FIELD_KEYS = ['boxFitWallGrids'] as const
+  const BOX_FIT_TRAIL_FIELD_KEYS = ['endClearance'] as const
   const PEG_FIELD_KEYS = ['pegDiameterIncrement'] as const
 
   const ALIGNMENT_OPTIONS = [
@@ -261,6 +262,30 @@
       {/each}
     {/if}
 
+    {#if alignmentMode === 'box-fit'}
+      {#each BOX_FIT_LEAD_FIELD_KEYS as key (key)}
+        {@const field = fieldFor(key)}
+        {@const value = rawParameters[key] ?? String(field.defaultValue)}
+        <ParameterField
+          {locale}
+          label={displayParameterLabel(field, locale)}
+          unit={unitLabelFor(locale, field.unit)}
+          changed={value !== String(field.defaultValue)}
+          error={fieldErrors[key]}
+          errorId={`${key}-error`}
+          onRestore={() => onInputChange(key, String(field.defaultValue))}
+        >
+          <ParameterControl
+            {locale}
+            {field}
+            {value}
+            error={fieldErrors[key]}
+            onChange={(nextValue) => onInputChange(key, nextValue)}
+          />
+        </ParameterField>
+      {/each}
+    {/if}
+
     {#each SHARED_FIELDS as field (field.key)}
       {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
       <ParameterField
@@ -283,7 +308,7 @@
     {/each}
 
     {#if alignmentMode === 'box-fit'}
-      {#each BOX_FIT_FIELD_KEYS as key (key)}
+      {#each BOX_FIT_TRAIL_FIELD_KEYS as key (key)}
         {@const field = fieldFor(key)}
         {@const value = rawParameters[key] ?? String(field.defaultValue)}
         <ParameterField

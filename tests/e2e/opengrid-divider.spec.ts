@@ -176,6 +176,13 @@ test('OpenGrid divider box-fit hides the arms, shows the wall length, and keeps 
   await page.getByTestId('opengrid-divider-alignment-box-fit').check()
   const wall = page.getByRole('textbox', { name: '牆總格數', exact: true })
   await expect(wall).toHaveValue('4.5')
+  // The wall grid length sits above the shared height control.
+  const wallBox = await wall.boundingBox()
+  const heightBox = await page
+    .getByRole('textbox', { name: '分隔牆高度（Z）' })
+    .boundingBox()
+  expect(wallBox && heightBox).toBeTruthy()
+  expect(wallBox!.y).toBeLessThan(heightBox!.y)
   for (const name of ['左臂（X）', '右臂（X）', '上臂（Y）', '下臂（Y）']) {
     await expect(page.getByRole('slider', { name })).toHaveCount(0)
   }
