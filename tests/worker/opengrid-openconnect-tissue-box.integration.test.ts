@@ -7,7 +7,6 @@ import { makeBox, measureVolume, setOC, type Shape3D } from 'replicad'
 import {
   TISSUE_BOX_DEFAULTS,
   tissueBoxLayout,
-  tissueBoxPoint,
   tissueBoxCells,
   tissueBoxSlotOrigins,
   tissueBoxBounds,
@@ -58,12 +57,17 @@ async function build(p: TissueBoxParameters, extra = {}) {
     source.delete()
   }
 }
+function inPrintFrame(shape: Shape3D, p: TissueBoxParameters): Shape3D {
+  return shape
+    .translate(0, -tissueBoxLayout(p).offsetY, 0)
+    .rotate(-p.tiltAngle, [0, 0, 0], [1, 0, 0])
+}
 function volumeAt(
   shape: Shape3D,
   p: TissueBoxParameters,
   point: [number, number, number],
 ) {
-  const center = tissueBoxPoint(p, point)
+  const center = point
   const probe = makeBox(
     center.map((v) => v - 0.1) as [number, number, number],
     center.map((v) => v + 0.1) as [number, number, number],
@@ -189,7 +193,7 @@ it.each([0, 12.5])(
           -y,
           z,
         ])
-        const turned = cutter.rotate(180, [0, 0, 0], [0, 0, 1])
+        const turned = inPrintFrame(cutter.rotate(180, [0, 0, 0], [0, 0, 1]), p)
         const residual = shape.intersect(turned)
         try {
           expect(Math.abs(measureVolume(residual))).toBeLessThan(0.001)
@@ -247,7 +251,7 @@ it('keeps a full mounting pad around the socket on the smallest rounded box', as
     slotWidth: 10,
   }
   const shape = await build(p)
-  const probe = makeBox([-13.6, 1.9, 13.9], [-13.4, 2.1, 14.1])
+  const probe = inPrintFrame(makeBox([-13.6, 1.9, 13.9], [-13.4, 2.1, 14.1]), p)
   const common = shape.intersect(probe)
   try {
     expect(Math.abs(measureVolume(common))).toBeGreaterThan(0.007)
@@ -273,7 +277,7 @@ it.each([1, 2, 5])(
           [p.x / 2 - TISSUE_BOX_FRAME + 0.02, l.depth / 2, z],
           [0, p.wallThickness + TISSUE_BOX_FRAME - 0.02, z],
         ] as [number, number, number][]) {
-          const center = tissueBoxPoint(p, local)
+          const center = local
           const probe = makeBox(
             center.map((v) => v - 0.005) as [number, number, number],
             center.map((v) => v + 0.005) as [number, number, number],
@@ -288,6 +292,144 @@ it.each([1, 2, 5])(
         }
       }
     } finally {
+      shape.delete()
+    }
+  },
+  180000,
+)
+
+it.each([false, true])(
+  'keeps rear corners square and the rear support flush, saving=%s',
+  async (honeycombMode) => {
+    const p = { ...small, outerRadius: 10, tiltAngle: 30, honeycombMode }
+    const l = tissueBoxLayout(p)
+    const shape = await build(p)
+    try {
+      for (const sign of [-1, 1]) {
+        expect(
+          volumeAt(shape, p, [sign * (l.width / 2 - 0.3), 0.3, l.height / 2]),
+        ).toBeGreaterThan(0.007)
+        expect(
+          volumeAt(shape, p, [
+            sign * (p.x / 2 - 0.3),
+            p.wallThickness + 0.3,
+            l.height / 2,
+          ]),
+        ).toBeLessThan(1e-6)
+        expect(
+          volumeAt(shape, p, [
+            sign * (l.width / 2 - 0.3),
+            l.depth - 0.3,
+            l.height / 2,
+          ]),
+        ).toBeLessThan(1e-6)
+        // External wedge near either outer edge, behind the box's rear wall.
+        const probe = inPrintFrame(
+          makeBox(
+            [sign * (l.width / 2 - 0.3) - 0.1, l.plateThickness + 0.2, 1],
+            [sign * (l.width / 2 - 0.3) + 0.1, l.plateThickness + 0.4, 1.2],
+          ),
+          p,
+        )
+        const common = shape.intersect(probe)
+        try {
+          expect(measureVolume(common)).toBeGreaterThan(0.007)
+        } finally {
+          common.delete()
+          probe.delete()
+        }
+      }
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+    } finally {
+      shape.delete()
+    }
+  },
+  180000,
+)
+
+it('cuts every socket of a multi-row upright grid with material between rows', async () => {
+  const p = { ...small, z: 95, tiltAngle: 30 }
+  const shape = await build(p)
+  const source = await importOpenGridOpenConnectShelfLockedSlot(
+    new Blob([
+      readFileSync(fileURLToPath(openGridOpenConnectShelfLockedSlotAssetUrl)),
+    ]),
+  )
+  try {
+    const origins = tissueBoxSlotOrigins(p)
+    expect(new Set(origins.map(([, , z]) => z)).size).toBeGreaterThan(1)
+    for (const [x, y, z] of origins) {
+      const cutter = inPrintFrame(
+        placeOpenGridOpenConnectShelfLockedSlot(source, [-x, -y, z]).rotate(
+          180,
+          [0, 0, 0],
+          [0, 0, 1],
+        ),
+        p,
+      )
+      const common = shape.intersect(cutter)
+      try {
+        expect(Math.abs(measureVolume(common))).toBeLessThan(0.001)
+      } finally {
+        common.delete()
+        cutter.delete()
+      }
+    }
+    const probe = inPrintFrame(makeBox([-0.1, 1.9, 27.9], [0.1, 2.1, 28.1]), p)
+    const common = shape.intersect(probe)
+    try {
+      expect(measureVolume(common)).toBeGreaterThan(0.007)
+    } finally {
+      common.delete()
+      probe.delete()
+    }
+    expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+  } finally {
+    shape.delete()
+    source.delete()
+  }
+}, 180000)
+
+it.each([0, 15, 45])(
+  'places the entire dispensing bottom on the print plane at %s degrees',
+  async (tiltAngle) => {
+    const p = { ...small, tiltAngle }
+    const shape = await build(p)
+    const l = tissueBoxLayout(p)
+    const faces = shape.faces
+    let foundBottom = false
+    try {
+      for (const face of faces) {
+        const box = face.boundingBox
+        try {
+          const [min, max] = box.bounds
+          if (
+            max[0]! - min[0]! > l.width - 1 &&
+            max[1]! - min[1]! > l.depth - 1 &&
+            Math.abs(min[2]!) < 1e-6 &&
+            Math.abs(max[2]!) < 1e-6
+          ) {
+            const normal = face.normalAt()
+            try {
+              expect(normal.toTuple()[2]).toBeCloseTo(-1, 6)
+            } finally {
+              normal.delete()
+            }
+            foundBottom = true
+          }
+        } finally {
+          box.delete()
+        }
+      }
+      expect(foundBottom).toBe(true)
+      const box = shape.boundingBox
+      try {
+        expect(box.bounds[0][2]).toBeCloseTo(0, 6)
+      } finally {
+        box.delete()
+      }
+    } finally {
+      faces.forEach((face) => face.delete())
       shape.delete()
     }
   },

@@ -1,11 +1,16 @@
+import { OPENGRID_GRID_CONFIGURATION } from '../../src/cad-contract/units/opengrid-grid'
 import { describe, expect, it } from 'vitest'
 import {
   TISSUE_BOX_DEFAULTS as defaults,
   validateTissueBoxParameters,
   tissueBoxLayout,
   tissueBoxPoint,
+  tissueBoxPrintPoint,
+  tissueBoxBounds,
+  tissueBoxInstalledBounds,
   tissueBoxCells,
   tissueBoxFileName,
+  tissueBoxSlotOrigins,
 } from '../../src/cad-contract/units/opengrid-openconnect-tissue-box'
 
 describe('OpenConnect tissue box contract', () => {
@@ -92,3 +97,51 @@ it('reserves material for the rounded dispensing lips at slot limits', () => {
     ]),
   })
 })
+
+it('fills both mounting axes without shrinking the rear plate for R', () => {
+  const l = tissueBoxLayout(defaults)
+  const origins = tissueBoxSlotOrigins(defaults)
+  const pitch = OPENGRID_GRID_CONFIGURATION.fullPitch
+  const columns = Math.floor(l.plateWidth / pitch)
+  const rows = Math.floor(l.plateHeight / pitch)
+  expect(rows).toBeGreaterThan(1)
+  expect(origins).toHaveLength(columns * rows)
+  expect(new Set(origins.map(([x]) => x)).size).toBe(columns)
+  expect(new Set(origins.map(([, , z]) => z)).size).toBe(rows)
+  for (let row = 0; row < rows; row++) {
+    const rowPoints = origins.filter(([, , z]) => z === (row + 0.5) * pitch)
+    expect(rowPoints).toHaveLength(columns)
+    expect(rowPoints[0]![0] + rowPoints.at(-1)![0]).toBeCloseTo(0)
+  }
+  expect(l.plateWidth).toBe(l.width)
+  expect(l.supportWidth).toBe(l.width)
+  expect(tissueBoxLayout({ ...defaults, outerRadius: 20 }).plateWidth).toBe(
+    l.plateWidth,
+  )
+})
+
+it('retains a full single mounting row on the shortest tilted box', () => {
+  const p = { ...defaults, z: 20, tiltAngle: 45 }
+  const origins = tissueBoxSlotOrigins(p)
+  expect(new Set(origins.map(([, , z]) => z)).size).toBe(1)
+})
+
+it.each([0, 15, 45])(
+  'maps installed box corners back to flat print coordinates at %s degrees',
+  (tiltAngle) => {
+    const p = { ...defaults, tiltAngle }
+    const l = tissueBoxLayout(p)
+    for (const point of [
+      [0, 0, 0],
+      [0, l.depth, 0],
+      [l.width / 2, 0, l.height],
+    ] as [number, number, number][]) {
+      const printed = tissueBoxPrintPoint(p, tissueBoxPoint(p, point))
+      for (let axis = 0; axis < 3; axis++)
+        expect(printed[axis]).toBeCloseTo(point[axis]!, 8)
+    }
+    expect(tissueBoxBounds(p).min[2]).toBe(0)
+    if (tiltAngle > 0)
+      expect(tissueBoxBounds(p)).not.toEqual(tissueBoxInstalledBounds(p))
+  },
+)

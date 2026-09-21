@@ -8,9 +8,11 @@ export const zhHantMessages = {
   'models.model.opengrid-openconnect-tissue-box.alt':
     'OpenGrid 向上傾斜的 OpenConnect 掛牆面紙盒',
   'panel.tissueBox.help':
-    '內尺寸：X 沿牆左右、Y 向外、Z 為盒內高度，皆沿盒身量測。面紙包倒放，由頂部補充、底部封閉長槽抽取。正角度抬高前端，接口保持直立。R 為四個外角圓角，內角隨壁厚配合，圓角會占用角落空間。長槽沿 X，長度至少比寬度多 2 mm，距盒內邊緣至少 5 mm。省料只鏤空前面與兩側，上限 3000 格。預設尺寸僅為示例，可依面紙包調整。',
+    '內尺寸：X 沿牆左右、Y 向外、Z 為盒內高度，皆沿盒身量測。面紙包倒放，由頂部補充、底部封閉長槽抽取。預覽與匯出皆讓抽取底面平貼列印平台（Z=0）；掛牆安裝後正角度抬高前端，接口保持直立。R 只作用於遠離牆面的兩個前角，前方內角隨壁厚配合，圓角會占用角落空間；靠牆兩角為直角，與等寬後方支撐銜接。長槽沿 X，長度至少比寬度多 2 mm，距盒內邊緣至少 5 mm。省料只鏤空前面與兩側，上限 3000 格。預設尺寸僅為示例，可依面紙包調整。',
   'cad.attribution.tissueBox.modified':
     '此參數化面紙盒整合經轉向配置的 OpenConnect 鎖定母座，新增向上傾斜支撐、底部抽取槽與省料側壁。',
+  'panel.tissueBox.mountingGrid':
+    'OpenConnect 接口孔陣列：X {columns} 欄 × Y {rows} 列（接口平面的左右／上下；安裝後上下對應 Z）。',
   'parameter.tissueBox.x': '內尺寸',
   'parameter.tissueBox.y': '內尺寸',
   'parameter.tissueBox.z': '內尺寸',
@@ -874,9 +876,11 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'models.model.opengrid-openconnect-tissue-box.alt':
     'OpenGrid upward-tilted OpenConnect wall tissue holder',
   'panel.tissueBox.help':
-    'Internal dimensions: X runs along the wall, Y outward, Z is cavity height; all measured along the box. Load the tissue pack upside down from the open top and dispense through the closed bottom slot. Positive tilt raises the front while the mount stays upright. R rounds the four outer corners; inner corners follow wall thickness and reduce corner space. The X slot must be at least 2 mm longer than its width and leave 5 mm to each internal edge. Saving perforates only front and sides, up to 3000 cells. Defaults are editable examples.',
+    'Internal dimensions: X runs along the wall, Y outward, Z is cavity height; all measured along the box. Load the tissue pack upside down from the open top and dispense through the closed bottom slot. Preview and exports place the dispensing bottom flat on the print bed (Z=0). When installed, positive tilt raises the front while the mount stays upright. R rounds only the two outward front corners, with matching inner front rounding that consumes corner space; wall-facing rear corners are square and join the full-width rear support. The X slot must be at least 2 mm longer than its width and leave 5 mm to each internal edge. Saving perforates only front and sides, up to 3000 cells. Defaults are editable examples.',
   'cad.attribution.tissueBox.modified':
     'This parametric tissue holder integrates the oriented OpenConnect locked socket with upward-tilted support, bottom dispensing slot and optional perforated side walls.',
+  'panel.tissueBox.mountingGrid':
+    'OpenConnect socket grid: X {columns} columns × Y {rows} rows (left/right and up/down on the mounting plane; installed up/down corresponds to Z).',
   'parameter.tissueBox.x': 'Internal size',
   'parameter.tissueBox.y': 'Internal size',
   'parameter.tissueBox.z': 'Internal size',

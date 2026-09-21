@@ -8,6 +8,7 @@
     TISSUE_BOX_DEFAULTS,
     TISSUE_BOX_KEYS,
     tissueBoxCells,
+    tissueBoxLayout,
     validateTissueBoxParameters,
   } from '../../../../cad-contract/units/opengrid-openconnect-tissue-box'
   import { translate } from '../../../../i18n'
@@ -22,7 +23,7 @@
     fieldErrors,
     onInputChange,
   }: ComponentPanelProps = $props()
-  let count = $derived.by(() => {
+  let details = $derived.by(() => {
     const candidate = { ...TISSUE_BOX_DEFAULTS, honeycombMode: false }
     for (const key of TISSUE_BOX_KEYS) {
       if (key === 'honeycombMode') continue
@@ -31,7 +32,10 @@
       candidate[key] = Number(value)
     }
     if (!validateTissueBoxParameters(candidate).valid) return null
-    return tissueBoxCells(candidate).length
+    return {
+      count: tissueBoxCells(candidate).length,
+      layout: tissueBoxLayout(candidate),
+    }
   })
 </script>
 
@@ -42,6 +46,17 @@
   >
     {translate(locale, 'panel.tissueBox.help')}
   </p>
+  {#if details}
+    <p
+      class="m-0 text-sm text-muted-foreground"
+      data-testid="tissue-box-mounting-grid"
+    >
+      {translate(locale, 'panel.tissueBox.mountingGrid', {
+        columns: details.layout.columns,
+        rows: details.layout.rows,
+      })}
+    </p>
+  {/if}
   <fieldset class="m-0 grid gap-3 border-0 p-0">
     {#each tissueBoxDefinition.parameterSchema as field (field.key)}
       {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
@@ -85,6 +100,9 @@
     </p>{/if}
   {#if rawParameters.honeycombMode === 'true'}
     <HoneycombRenderWarning {locale} />
-    {#if count !== null}<HoneycombCellCountEstimate {locale} {count} />{/if}
+    {#if details}<HoneycombCellCountEstimate
+        {locale}
+        count={details.count}
+      />{/if}
   {/if}
 </div>

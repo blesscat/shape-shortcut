@@ -77,13 +77,45 @@ function prism(
     dispose(sketch)
   }
 }
+function frontRoundedPrism(
+  width: number,
+  depth: number,
+  radius: number,
+  z: number,
+  height: number,
+  centerY: number,
+): Shape3D {
+  const frontY = centerY + depth / 2
+  const body = makeBox(
+    [-width / 2, centerY - depth / 2, z],
+    [width / 2, frontY, z + height],
+  )
+  if (radius === 0) return body
+  try {
+    return body.fillet((edge) => {
+      const box = edge.boundingBox
+      try {
+        const [min, max] = box.bounds
+        const atFront =
+          Math.abs(min[1]! - frontY) < 1e-6 && Math.abs(max[1]! - frontY) < 1e-6
+        const vertical = Math.abs(max[2]! - min[2]! - height) < 1e-6
+        return atFront && vertical ? radius : null
+      } finally {
+        box.delete()
+      }
+    })
+  } finally {
+    dispose(body)
+  }
+}
+
 function support(p: TissueBoxParameters): Shape3D {
   const l = tissueBoxLayout(p)
   const overlap = 0.1
   const sketcher = new Sketcher('YZ', [-l.supportWidth / 2, 0, 0])
   const sketch = sketcher
     .movePointerTo([l.plateThickness - overlap, 0])
-    .lineTo([l.offsetY + overlap, 0])
+    .lineTo([l.offsetY + overlap, (overlap * l.sine) / l.cosine])
     .lineTo([l.plateThickness + overlap, l.height * l.cosine])
     .lineTo([l.plateThickness - overlap, l.height * l.cosine])
     .close()
@@ -183,9 +215,23 @@ export async function buildTissueBox(
     }
   }
   try {
-    current = prism(l.width, l.depth, p.outerRadius, 0, l.height, l.depth / 2)
+    current = frontRoundedPrism(
+      l.width,
+      l.depth,
+      p.outerRadius,
+      0,
+      l.height,
+      l.depth / 2,
+    )
     boolean(
-      prism(p.x, p.y, l.innerRadius, p.bottomThickness, p.z + 0.1, l.depth / 2),
+      frontRoundedPrism(
+        p.x,
+        p.y,
+        l.innerRadius,
+        p.bottomThickness,
+        p.z + 0.1,
+        l.depth / 2,
+      ),
       'cut',
     )
     boolean(
@@ -278,6 +324,9 @@ export async function buildTissueBox(
     } finally {
       if (!context.getLockedSlot) dispose(source)
     }
+    // Keep the slotted bottom on the print plane for preview and both exports.
+    replace(current!.translate(0, -l.offsetY, 0))
+    replace(current!.rotate(-p.tiltAngle, [0, 0, 0], [1, 0, 0]))
     const quality = tissueBoxQuality(current!)
     if (!quality.valid || quality.solids !== 1)
       throw new Error('TISSUE_BOX_INVALID_SOLID')

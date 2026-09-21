@@ -1,3 +1,7 @@
+import {
+  TISSUE_BOX_DEFAULTS,
+  tissueBoxLayout,
+} from '../../src/cad-contract/units/opengrid-openconnect-tissue-box'
 import { expect, test } from '@playwright/test'
 import { waitForCadReady, skipHeadlessFirefoxWithoutWebGL } from './helpers'
 
@@ -17,6 +21,16 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
   await page.goto('/zh-Hant/cad/opengrid-openconnect-tissue-box?system=wall')
   await waitForCadReady(page, 90000)
   await expect(page.getByTestId('tissue-box-help')).toContainText('X 沿牆左右')
+  await expect(page.getByTestId('tissue-box-help')).toContainText(
+    '底面平貼列印平台',
+  )
+  await expect(page.getByTestId('tissue-box-help')).toContainText(
+    '靠牆兩角為直角',
+  )
+  const mounting = tissueBoxLayout(TISSUE_BOX_DEFAULTS)
+  await expect(page.getByTestId('tissue-box-mounting-grid')).toContainText(
+    `X ${mounting.columns} 欄 × Y ${mounting.rows} 列`,
+  )
   const x = page.getByRole('textbox', { name: '內尺寸（X）', exact: true })
   await x.fill('230')
   await waitForCadReady(page, 90000)
@@ -56,6 +70,9 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
     .getByRole('textbox', { name: '內尺寸（Z）', exact: true })
     .fill('35')
   await waitForCadReady(page, 90000)
+  await expect(page.getByTestId('tissue-box-mounting-grid')).toContainText(
+    'Y 1 列',
+  )
   const saving = page.getByRole('checkbox', { name: /省料模式/ })
   await saving.check()
   await expect(page.getByText(/省料模式會明顯降低模型渲染速度/)).toBeVisible()

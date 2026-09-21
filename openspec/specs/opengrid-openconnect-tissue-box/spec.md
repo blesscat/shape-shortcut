@@ -19,7 +19,7 @@ The system MUST expose `opengrid-openconnect-tissue-box` at `/cad/opengrid-openc
 - **AND** any derived installed extent above 500 mm or saving configuration exceeding 3000 cells MUST also be rejected
 
 ### Requirement: Open top and bottom dispensing geometry
-The holder MUST have four walls, a bottom, and no lid or top covering. Its cavity MUST have the selected local XYZ extents and an inner corner radius max(0, outerRadius-wallThickness), with UI explanation that rounded corners consume corner space. The bottom MUST contain exactly one centered closed stadium slot along X with the selected total length and width, semicircular ends, and smoothed upper/lower extraction edges. It MUST retain a continuous bottom frame. The pack MUST be described as loaded inverted from the top and dispensed from below.
+The holder MUST have four walls, a bottom, and no lid or top covering. Its cavity MUST have the selected local XYZ extents and an inner front-corner radius max(0, outerRadius-wallThickness) and square inner rear corners, with UI explanation that rounded corners consume corner space. The bottom MUST contain exactly one centered closed stadium slot along X with the selected total length and width, semicircular ends, and smoothed upper/lower extraction edges. It MUST retain a continuous bottom frame. The pack MUST be described as loaded inverted from the top and dispensed from below.
 
 #### Scenario: Inspect loading and dispensing paths
 - **WHEN** a normal-mode holder is generated
@@ -27,14 +27,26 @@ The holder MUST have four walls, a bottom, and no lid or top covering. Its cavit
 
 #### Scenario: Adjust radius and slot
 - **WHEN** outerRadius is zero or a positive valid value, and slot dimensions change
-- **THEN** outer vertical corners MUST follow the selected radius, slot extents MUST follow the dimensions, and the bottom frame MUST stay connected
+- **THEN** only the two outward front vertical corners MUST follow the selected radius; the two wall-facing rear corners MUST remain square and join a full-width rear support and mounting plate, slot extents MUST follow the dimensions, and the bottom frame MUST stay connected
 
 ### Requirement: Upward tilt with upright OpenConnect mounting
-At zero degrees the bottom MUST be horizontal. Positive tilt MUST lift the outward front relative to the rear. The integrated locked OpenConnect female interface MUST remain upright on the wall plane and retain its existing mating geometry and 28 mm spacing. The support MUST connect the body and interface without covering the cavity, dispensing slot, or crossing the wall plane. Generated bounds MUST describe the installed geometry.
+In the installed wall orientation, at zero degrees the bottom MUST be horizontal. Positive tilt MUST lift the outward front relative to the rear. The integrated locked OpenConnect female interface MUST remain upright on the wall plane and retain its existing mating geometry and 28 mm spacing in both mounting-plane axes. The mounting plane MUST use interface-local X for horizontal columns and Y for vertical rows (installed world Z), distinct from the box local XYZ dimensions. Column and row counts MUST be the full-grid counts fitting the mounting plate width and height, with at least one of each; X columns MUST be centered and row centers MUST start half a pitch above the plate bottom. The panel MUST show the computed X-column and Y-row counts. The support MUST connect the body and interface without covering the cavity, dispensing slot, or crossing the wall plane. The default preview and both STEP/STL exports MUST instead use print orientation: the slotted dispensing bottom MUST be horizontal at Z=0 with its outward normal downward, and no part of the model below Z=0. This rigid orientation change MUST preserve the installed relative upward angle and socket mating geometry. Generated bounds MUST describe the print-oriented output, and both installed and output extents MUST respect the 500 mm limit.
 
 #### Scenario: Positive angle
 - **WHEN** tiltAngle changes from zero to a positive value through 45 degrees
-- **THEN** the front bottom MUST be higher than the rear bottom, and mounting sockets MUST remain upright and independent of the tilt
+- **THEN** the front bottom MUST be higher than the rear bottom, and mounting sockets MUST remain upright in the installed wall orientation, independent of the tilt
+
+#### Scenario: Two-dimensional mounting grid
+- **WHEN** the upright plate fits multiple grid columns and rows
+- **THEN** every column-row pair MUST contain a complete locked socket at the shared pitch
+- **AND** varying outerRadius MUST NOT shrink the full-width mounting plate or its column count
+- **AND** a plate shorter than two grid pitches MUST retain one complete row
+
+#### Scenario: Dispensing bottom faces the print bed
+- **WHEN** a valid box is previewed or exported at any supported upward angle
+- **THEN** its dispensing bottom MUST lie on Z=0 with its exterior normal toward negative Z
+- **AND** the entire body, support and mount MUST remain on or above the print plane
+- **AND** rotating the output back to installed wall orientation MUST restore the requested upward slope and upright socket plane
 
 ### Requirement: Protected material-saving mode
 Saving mode MUST cut shared-size hexagonal openings only through the front and two side straight wall regions. The back, bottom frame, slot surround, mounting support, rounded corners, and at least 5 mm wall edge frames MUST remain solid. Cells MUST stay within the protected regions. Small regions with no fitting cells MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and estimated cell count when enabled. Cutting MUST report cell progress and support stale-generation cancellation.
