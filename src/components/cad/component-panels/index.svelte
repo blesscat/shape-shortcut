@@ -22,6 +22,8 @@
   import OpenGridOpenConnectOrganizerComponentPanel from './opengrid-openconnect-organizer/OpenGridOpenConnectOrganizerComponentPanel.svelte'
   import OpenGridWallCoverComponentPanel from './opengrid-wall-cover/OpenGridWallCoverComponentPanel.svelte'
   import OpenGridLabelTagComponentPanel from './opengrid-label-tag/OpenGridLabelTagComponentPanel.svelte'
+  import OpenGridLabelCardComponentPanel from './opengrid-label-card/OpenGridLabelCardComponentPanel.svelte'
+  import OpenGridLabelHolderComponentPanel from './opengrid-label-holder/OpenGridLabelHolderComponentPanel.svelte'
   import type { ComponentPanelProps } from './types'
 
   type Props = ComponentPanelProps & {
@@ -154,6 +156,20 @@
   />
 {:else if modelId === 'opengrid-label-tag'}
   <OpenGridLabelTagComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-card'}
+  <OpenGridLabelCardComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-holder'}
+  <OpenGridLabelHolderComponentPanel
     {locale}
     {rawParameters}
     {fieldErrors}

@@ -9,7 +9,7 @@ import { PROTOTYPE_CONFIGURATION } from '../../cad-contract/units'
 import { meshBRep, type MeshData } from '../mesh'
 
 export type ThreeMfShapePart = {
-  name: 'body' | 'text' | 'icon'
+  name: 'body' | 'text' | 'icon' | 'accent'
   shape: Shape3D
 }
 
@@ -40,7 +40,7 @@ export const THREE_MF_WALL_COVER_META: ThreeMfPackageMeta = {
  * parameters, so it is derived from the export file name.
  */
 export function threeMfMetaFor(
-  modelId: 'opengrid-wall-cover' | 'opengrid-label-tag',
+  modelId: 'opengrid-wall-cover' | 'opengrid-label-tag' | 'opengrid-label-card',
   fileName: string,
 ): ThreeMfPackageMeta {
   if (modelId === 'opengrid-label-tag') {
@@ -53,6 +53,18 @@ export function threeMfMetaFor(
       accentMaterialName: 'Label Tag Icon',
       accentMaterialColor: '#F4C542',
       accentPartName: 'icon',
+    }
+  }
+  if (modelId === 'opengrid-label-card') {
+    return {
+      modelSettingsName: 'opengrid-label-card',
+      sourceFileName: fileName,
+      platerName: 'OpenGrid Label Card',
+      baseMaterialName: 'Label Card Body',
+      baseMaterialColor: '#657080',
+      accentMaterialName: 'Label Card Accent',
+      accentMaterialColor: '#F4C542',
+      accentPartName: 'accent',
     }
   }
   return THREE_MF_WALL_COVER_META
@@ -412,12 +424,14 @@ export async function exportThreeMfBytes(
   },
   meta: ThreeMfPackageMeta = THREE_MF_WALL_COVER_META,
 ): Promise<ArrayBuffer> {
+  const accentNames: readonly string[] = ['text', 'icon', 'accent']
   if (
     parts.length !== 2 ||
     parts[0]?.name !== 'body' ||
-    (parts[1]?.name !== 'text' && parts[1]?.name !== 'icon') ||
-    (meta.accentPartName !== 'text' && meta.accentPartName !== 'icon') ||
-    parts[1]?.name !== meta.accentPartName
+    parts[1] === undefined ||
+    !accentNames.includes(parts[1].name) ||
+    !accentNames.includes(meta.accentPartName) ||
+    parts[1].name !== meta.accentPartName
   ) {
     throw new Error('THREEMF_PARTS_INVALID')
   }

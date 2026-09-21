@@ -4,6 +4,7 @@ import {
   modelFileName,
   modelStlFileName,
   openGridLabelTagThreeMfFileName,
+  openGridLabelCardThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   type ModelId,
   type ModelParameterValues,
@@ -282,6 +283,117 @@ describe('CAD Worker export seam', () => {
         fileName,
       }),
     )
+  })
+
+  it('exports a committed label-card revision as a body/accent 3MF package', async () => {
+    const labelCardParameters = {
+      widthTier: 40,
+      style: 'raised',
+      icon: 'gear-fill',
+    } as const
+    const fileName = openGridLabelCardThreeMfFileName(labelCardParameters)
+    const bodyShape = { delete: vi.fn() }
+    const accentShape = { delete: vi.fn() }
+    const currentRevision = revision('opengrid-label-card', labelCardParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: bodyShape },
+      { name: 'accent', shape: accentShape },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+    const bytes = new Uint8Array([9, 9, 9]).buffer
+    mocks.exportThreeMfBytes.mockResolvedValue(bytes)
+    mocks.isThreeMfPackage.mockReturnValue(true)
+
+    await exportThreeMfCommand(
+      {
+        version: 2,
+        kind: 'export.3mf',
+        requestId: 'label-card-3mf-request',
+        operationId: 'label-card-3mf-operation',
+        modelRevision: currentRevision.modelRevision,
+        workerEpoch: 'epoch-1',
+        file: { name: fileName, mime: 'model/3mf' },
+      },
+      { epoch: 'epoch-1', lifecycle, emit },
+    )
+
+    const [parts, , meta] = mocks.exportThreeMfBytes.mock.calls[0]!
+    expect(parts).toEqual([
+      { name: 'body', shape: bodyShape },
+      { name: 'accent', shape: accentShape },
+    ])
+    expect(meta).toMatchObject({
+      modelSettingsName: 'opengrid-label-card',
+      sourceFileName: fileName,
+      accentPartName: 'accent',
+    })
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'export.ready',
+        format: '3mf',
+        bytes,
+        fileName,
+      }),
+    )
+  })
+
+  it('rejects a label-card 3MF request with a mismatched filename or parts', async () => {
+    const labelCardParameters = {
+      widthTier: 40,
+      style: 'raised',
+      icon: 'gear-fill',
+    } as const
+    const currentRevision = revision('opengrid-label-card', labelCardParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: { delete: vi.fn() } },
+      { name: 'text', shape: { delete: vi.fn() } },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-card-wrong-file-request',
+          operationId: 'label-card-wrong-file-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: { name: 'opengrid-wall-cover.3mf', mime: 'model/3mf' },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_METADATA_INVALID')
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-card-wrong-parts-request',
+          operationId: 'label-card-wrong-parts-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: {
+            name: openGridLabelCardThreeMfFileName(labelCardParameters),
+            mime: 'model/3mf',
+          },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_PARTS_INVALID')
+
+    expect(mocks.exportThreeMfBytes).not.toHaveBeenCalled()
   })
 
   it('rejects a label-tag 3MF request with a mismatched filename or parts', async () => {

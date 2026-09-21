@@ -10,6 +10,8 @@ import {
 import {
   boundsForOpenGridWallCover,
   boundsForOpenGridLabelTag,
+  boundsForOpenGridLabelCard,
+  boundsForOpenGridLabelHolder,
   isHswCellParameters,
   isOpenGridDividerModelParameters,
   isOpenGridOpenConnectShelfParameters,
@@ -19,6 +21,8 @@ import {
   isOpenGridParameters,
   isOpenGridSnapParameters,
   isOpenGridLabelTagParameters,
+  isOpenGridLabelCardParameters,
+  isOpenGridLabelHolderParameters,
   isPillarParameters,
   normalizeOpenGridDividerParameters,
   normalizeOpenGridParameters,
@@ -50,6 +54,8 @@ import { assertOpenGridShapeQuality } from '../cad-kernel/components/opengrid/qu
 import { assertPillarShapeQuality } from '../cad-kernel/components/opengrid-pillar/quality'
 import { assertOpenGridWallCoverShapeQuality } from '../cad-kernel/components/opengrid-wall-cover/quality'
 import { assertOpenGridLabelTagShapeQuality } from '../cad-kernel/components/opengrid-label-tag/quality'
+import { assertOpenGridLabelCardShapeQuality } from '../cad-kernel/components/opengrid-label-card/quality'
+import { assertOpenGridLabelHolderShapeQuality } from '../cad-kernel/components/opengrid-label-holder/quality'
 import {
   assertOpenGridSnapOpenConnectShapeQuality,
   assertOpenGridSnapShapeQuality,
@@ -160,6 +166,19 @@ export async function generateCadCandidate(
     }
     generationParameters = validation.value.parameters
   }
+  if (
+    command.modelId === 'opengrid-label-card' ||
+    command.modelId === 'opengrid-label-holder'
+  ) {
+    const validation = validateModelParameters(
+      command.modelId,
+      command.parameters,
+    )
+    if (!validation.valid) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:' + command.modelId)
+    }
+    generationParameters = validation.value.parameters
+  }
   const hswProgress =
     command.modelId === 'hsw-cell' && isHswCellParameters(command.parameters)
       ? {
@@ -235,7 +254,8 @@ export async function generateCadCandidate(
     }
     const usesParts =
       command.modelId === 'opengrid-wall-cover' ||
-      command.modelId === 'opengrid-label-tag'
+      command.modelId === 'opengrid-label-tag' ||
+      command.modelId === 'opengrid-label-card'
     const buildResult: KernelModelBuildResult = await timing.measure(
       'build',
       async () => {
@@ -397,6 +417,39 @@ export async function generateCadCandidate(
       )
     }
 
+    if (command.modelId === 'opengrid-label-card') {
+      if (!isOpenGridLabelCardParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+      }
+      const bodyPart = nativeParts?.find((part) => part.name === 'body')
+      const accentPart = nativeParts?.find((part) => part.name === 'accent')
+      if (!bodyPart || !accentPart) {
+        throw new Error('OPENGRID_LABEL_CARD_PARTS_INVALID')
+      }
+      const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+      const accentMesh = meshBRep(accentPart.shape, command.previewConfig)
+      nativePartMeshes = [
+        { name: 'body', mesh: bodyMesh },
+        { name: 'accent', mesh: accentMesh },
+      ]
+      mesh.bounds = boundsForOpenGridLabelCard(generationParameters)
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelCardShapeQuality(
+          nativeParts ?? [],
+          generationParameters,
+        ),
+      )
+    }
+
+    if (command.modelId === 'opengrid-label-holder') {
+      if (!isOpenGridLabelHolderParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-holder')
+      }
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelHolderShapeQuality(shape, generationParameters),
+      )
+    }
+
     if (command.modelId === 'opengrid-divider') {
       if (!isOpenGridDividerModelParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
@@ -519,7 +572,7 @@ export async function generateCadCandidate(
       serializeMesh(mesh),
     )
     partMeshSnapshots = candidate.partMeshes?.map((part) => ({
-      name: part.name as 'body' | 'text' | 'icon',
+      name: part.name as 'body' | 'text' | 'icon' | 'accent',
       mesh: serializeMesh(part.mesh),
     }))
     candidate.previewTiming = timing.snapshot()

@@ -6,6 +6,7 @@ export const CAD_VIEWPORT_CONFIG = {
     body: '#4e7cff',
     text: '#f59e0b',
     icon: '#f59e0b',
+    accent: '#f59e0b',
   },
   modelEmissiveIntensity: 0.2,
   edgeThresholdAngle: 20,

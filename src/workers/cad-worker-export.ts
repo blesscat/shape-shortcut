@@ -4,8 +4,10 @@ import {
   modelStlFileName,
   openGridWallCoverThreeMfFileName,
   openGridLabelTagThreeMfFileName,
+  openGridLabelCardThreeMfFileName,
   isOpenGridWallCoverParameters,
   isOpenGridLabelTagParameters,
+  isOpenGridLabelCardParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
   type ModelId,
@@ -27,10 +29,11 @@ import type { EventSink } from './cad-worker-types'
  * carry on the committed revision.
  */
 const THREE_MF_SUPPORTED_MODELS: Partial<
-  Record<ModelId, readonly ['body', 'text' | 'icon']>
+  Record<ModelId, readonly ['body', 'text' | 'icon' | 'accent']>
 > = {
   'opengrid-wall-cover': ['body', 'text'],
   'opengrid-label-tag': ['body', 'icon'],
+  'opengrid-label-card': ['body', 'accent'],
 }
 
 type ExportContext = {
@@ -169,6 +172,14 @@ export async function exportThreeMfCommand(
     ) {
       throw new Error('THREEMF_METADATA_INVALID')
     }
+    if (
+      revision.modelId === 'opengrid-label-card' &&
+      (!isOpenGridLabelCardParameters(validation.value.parameters) ||
+        command.file.name !==
+          openGridLabelCardThreeMfFileName(validation.value.parameters))
+    ) {
+      throw new Error('THREEMF_METADATA_INVALID')
+    }
     const parts = revision.parts
     if (
       !parts ||
@@ -179,13 +190,14 @@ export async function exportThreeMfCommand(
       throw new Error('THREEMF_PARTS_INVALID')
     }
     const meta = threeMfMetaFor(
-      revision.modelId as 'opengrid-wall-cover' | 'opengrid-label-tag',
+      revision.modelId as
+        'opengrid-wall-cover' | 'opengrid-label-tag' | 'opengrid-label-card',
       command.file.name,
     )
     const threeMfParts = [
       { name: 'body' as const, shape: parts[0].shape },
       {
-        name: expectedParts[1] as 'text' | 'icon',
+        name: expectedParts[1] as 'text' | 'icon' | 'accent',
         shape: parts[1].shape,
       },
     ]

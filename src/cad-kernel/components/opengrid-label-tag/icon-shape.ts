@@ -58,7 +58,7 @@ function totalPoints(polygons: readonly PathPolygon[]): number {
   return polygons.reduce((total, polygon) => total + polygon.length, 0)
 }
 
-function extrudePolygon(polygon: PathPolygon): Shape3D {
+function extrudePolygon(polygon: PathPolygon, depth: number): Shape3D {
   const [first, ...rest] = polygon
   if (!first) throw new SvgPathParseError('SVG_PATH_NO_GEOMETRY')
   const sketcher = new BlueprintSketcher([first[0], first[1]])
@@ -69,7 +69,7 @@ function extrudePolygon(polygon: PathPolygon): Shape3D {
   try {
     const sketch = blueprint.sketchOnPlane()
     try {
-      return sketch.extrude(LABEL_TAG_ICON_CONFIGURATION.depth) as Shape3D
+      return sketch.extrude(depth) as Shape3D
     } finally {
       deleteShape(sketch)
     }
@@ -81,13 +81,14 @@ function extrudePolygon(polygon: PathPolygon): Shape3D {
 function extrudeContourGroup(
   outer: PathPolygon,
   holes: readonly PathPolygon[],
+  depth: number,
 ): Shape3D {
   let solid: Shape3D | null = null
   const holeSolids: Shape3D[] = []
   try {
-    solid = extrudePolygon(outer)
+    solid = extrudePolygon(outer, depth)
     for (const hole of holes) {
-      holeSolids.push(extrudePolygon(hole))
+      holeSolids.push(extrudePolygon(hole, depth))
     }
     for (const holeSolid of holeSolids) {
       const result: Shape3D = solid.cut(holeSolid)
@@ -110,7 +111,10 @@ function extrudeContourGroup(
  * into one compound solid. Coordinates are centered on the icon origin with
  * the nominal rendered size.
  */
-export function makeLabelTagIconShape(iconId: string): Shape3D {
+export function makeLabelTagIconShape(
+  iconId: string,
+  depth: number = LABEL_TAG_ICON_CONFIGURATION.depth,
+): Shape3D {
   const icon = LABEL_TAG_ICON_PATHS[iconId]
   if (!icon) throw new Error('LABEL_TAG_ICON_UNKNOWN')
 
@@ -130,7 +134,7 @@ export function makeLabelTagIconShape(iconId: string): Shape3D {
 
     for (const [outer, ...holes] of groupPolygonContours(polygons)) {
       if (!outer) continue
-      pieces.push(extrudeContourGroup(outer, holes))
+      pieces.push(extrudeContourGroup(outer, holes, depth))
     }
     if (pieces.length === 0) throw new Error('LABEL_TAG_ICON_EMPTY')
     if (pieces.length === 1) {

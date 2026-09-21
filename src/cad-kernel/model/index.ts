@@ -49,7 +49,16 @@ import {
   buildOpenGridLabelTag,
   buildOpenGridLabelTagWithParts,
 } from '../components/opengrid-label-tag/builder'
-import { isOpenGridLabelTagParameters } from '../../cad-contract/units'
+import {
+  buildOpenGridLabelCard,
+  buildOpenGridLabelCardWithParts,
+} from '../components/opengrid-label-card/builder'
+import { buildOpenGridLabelHolder } from '../components/opengrid-label-holder/builder'
+import {
+  isOpenGridLabelCardParameters,
+  isOpenGridLabelHolderParameters,
+  isOpenGridLabelTagParameters,
+} from '../../cad-contract/units'
 import { buildOpenGridSnapRemover } from '../components/opengrid-snap-remover/builder'
 import { buildPillar } from '../components/opengrid-pillar/builder'
 import { buildOpenGridOpenShelf } from '../components/opengrid-open-shelf/builder'
@@ -285,6 +294,32 @@ async function buildOpenGridLabelTagModel(
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
   }
   return buildOpenGridLabelTag(parameters, {
+    yieldToEventLoop: context.yieldToEventLoop,
+    isGenerationCurrent: context.isGenerationCurrent,
+  })
+}
+
+async function buildOpenGridLabelCardModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<Shape3D> {
+  if (!isOpenGridLabelCardParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+  }
+  return buildOpenGridLabelCard(parameters, {
+    yieldToEventLoop: context.yieldToEventLoop,
+    isGenerationCurrent: context.isGenerationCurrent,
+  })
+}
+
+async function buildOpenGridLabelHolderModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<Shape3D> {
+  if (!isOpenGridLabelHolderParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-holder')
+  }
+  return buildOpenGridLabelHolder(parameters, {
     yieldToEventLoop: context.yieldToEventLoop,
     isGenerationCurrent: context.isGenerationCurrent,
   })
@@ -590,6 +625,16 @@ export const opengridLabelTagKernelDefinition: KernelModelDefinition = {
   build: buildOpenGridLabelTagModel,
 }
 
+export const opengridLabelCardKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-card',
+  build: buildOpenGridLabelCardModel,
+}
+
+export const opengridLabelHolderKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-holder',
+  build: buildOpenGridLabelHolderModel,
+}
+
 export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   boxKernelDefinition,
   modularGridBaseKernelDefinition,
@@ -608,6 +653,8 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   openGridSnapRemoverKernelDefinition,
   opengridDividerKernelDefinition,
   opengridLabelTagKernelDefinition,
+  opengridLabelCardKernelDefinition,
+  opengridLabelHolderKernelDefinition,
 ]
 
 export function getKernelModelDefinition(
@@ -656,6 +703,16 @@ export async function buildModelBRepWithParts(
       throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
     }
     return buildOpenGridLabelTagWithParts(parameters, {
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
+    })
+  }
+
+  if (modelId === 'opengrid-label-card') {
+    if (!isOpenGridLabelCardParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+    }
+    return buildOpenGridLabelCardWithParts(parameters, {
       yieldToEventLoop: context.yieldToEventLoop,
       isGenerationCurrent: context.isGenerationCurrent,
     })

@@ -7,6 +7,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import {
+  OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_LABEL_TAG_CONFIGURATION,
   normalizeOpenGridLabelTagText,
 } from '../../../cad-contract/units'
@@ -68,12 +69,29 @@ function groupGlyphContours(
   return result
 }
 
-function extrudeBlueprint(blueprint: Blueprint): Shape3D {
+function extrudeBlueprint(
+  blueprint: Blueprint,
+  depth: number = LABEL_TAG_TEXT_CONFIGURATION.depth,
+): Shape3D {
   const sketch = blueprint.sketchOnPlane()
   try {
-    return sketch.extrude(LABEL_TAG_TEXT_CONFIGURATION.depth) as Shape3D
+    return sketch.extrude(depth) as Shape3D
   } finally {
     deleteShape(sketch)
+  }
+}
+
+function extrudeContourGroup(group: GlyphContourGroup, depth: number): Shape3D {
+  let result: Shape3D = extrudeBlueprint(group[0], depth)
+  try {
+    for (const holeBlueprint of group.slice(1)) {
+      const hole = extrudeBlueprint(holeBlueprint, depth)
+      result = cutContourHole(result, hole)
+    }
+    return result
+  } catch (error) {
+    deleteShape(result)
+    throw error
   }
 }
 
@@ -89,24 +107,11 @@ function cutContourHole(source: Shape3D, hole: Shape3D): Shape3D {
   }
 }
 
-function extrudeContourGroup(group: GlyphContourGroup): Shape3D {
-  let result: Shape3D = extrudeBlueprint(group[0])
-  try {
-    for (const holeBlueprint of group.slice(1)) {
-      const hole = extrudeBlueprint(holeBlueprint)
-      result = cutContourHole(result, hole)
-    }
-    return result
-  } catch (error) {
-    deleteShape(result)
-    throw error
-  }
-}
-
 function makeGlyph(
   character: string,
   centerX: number,
   centerY: number,
+  depth: number = LABEL_TAG_TEXT_CONFIGURATION.depth,
 ): Shape3D {
   assertGlyphSupported(character)
   let pieces: Shape3D[] = []
@@ -118,7 +123,7 @@ function makeGlyph(
   try {
     const contourGroups = groupGlyphContours(drawings)
     for (const group of contourGroups) {
-      pieces.push(extrudeContourGroup(group))
+      pieces.push(extrudeContourGroup(group, depth))
     }
     extruded = makeCompound(pieces).asShape3D()
     pieces = []
@@ -156,15 +161,20 @@ function makeGlyph(
 /**
  * Builds the optional label text as accent solids (depth equal to the accent
  * depth, resting on the outward plate face at Z = 0; the builder cuts the
- * matching recess around them).
+ * matching recess around them). `centerY` overrides the default text row
+ * position for the label card layout.
  */
 export async function makeOpenGridLabelTagTextShape(
   text: string,
+  options: { centerY?: number; depth?: number; maxLength?: number } = {},
 ): Promise<Shape3D | null> {
   await loadOpenGridWallCoverFont()
   const letters = Array.from(normalizeOpenGridLabelTagText(text))
   if (letters.length === 0) return null
-  if (letters.length > OPENGRID_LABEL_TAG_CONFIGURATION.maxTextLength) {
+  if (
+    letters.length >
+    (options.maxLength ?? OPENGRID_LABEL_TAG_CONFIGURATION.maxTextLength)
+  ) {
     throw new Error('LABEL_TAG_TEXT_INVALID')
   }
 
@@ -177,7 +187,8 @@ export async function makeOpenGridLabelTagTextShape(
         makeGlyph(
           character,
           index * spacing - totalWidth / 2,
-          LABEL_TAG_TEXT_POSITIONS.textCenterY,
+          options.centerY ?? LABEL_TAG_TEXT_POSITIONS.textCenterY,
+          options.depth ?? LABEL_TAG_TEXT_CONFIGURATION.depth,
         ),
       )
     }

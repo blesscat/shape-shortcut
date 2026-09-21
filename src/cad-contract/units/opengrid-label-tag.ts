@@ -1,9 +1,16 @@
 import type { DiagnosticParams } from '../diagnostics'
+import {
+  OPENGRID_LABEL_ACCENT_DEPTH,
+  OPENGRID_LABEL_CARD_HEIGHT,
+  OPENGRID_LABEL_CARD_INSERTION_THICKNESS,
+  OPENGRID_LABEL_WIDTH_TIERS,
+} from './opengrid-label-shared'
 
 export type OpenGridLabelTagParameterKey =
   'widthTier' | 'gripThickness' | 'icon' | 'text'
 
-export const OPENGRID_LABEL_TAG_WIDTH_TIERS = [20, 30, 40, 60] as const
+/** Shared label-system width tiers; identical to the card/holder tiers. */
+export const OPENGRID_LABEL_TAG_WIDTH_TIERS = OPENGRID_LABEL_WIDTH_TIERS
 
 export type OpenGridLabelTagWidthTier =
   (typeof OPENGRID_LABEL_TAG_WIDTH_TIERS)[number]
@@ -61,8 +68,8 @@ export type OpenGridLabelTagParameters = {
 }
 
 export const OPENGRID_LABEL_TAG_CONFIGURATION = {
-  plateThickness: 0.6,
-  plateHangLength: 10,
+  plateThickness: OPENGRID_LABEL_CARD_INSERTION_THICKNESS,
+  plateHangLength: OPENGRID_LABEL_CARD_HEIGHT,
   maxTextLength: 6,
   gripThicknessMin: 0.8,
   gripThicknessMax: 5,
@@ -75,7 +82,7 @@ export const OPENGRID_LABEL_TAG_CONFIGURATION = {
   defaultGripThickness: 1.2,
   defaultIcon: 'gear-fill',
   defaultText: '' as string,
-  accentDepth: 0.3,
+  accentDepth: OPENGRID_LABEL_ACCENT_DEPTH,
   /** Curated Bootstrap Icons subset (MIT, (c) Bootstrap Authors). */
   iconSource: 'Bootstrap Icons v1 (MIT)',
   defaultParameters: {

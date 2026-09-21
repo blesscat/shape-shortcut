@@ -68,7 +68,9 @@
       modelId === 'opengrid' ||
       modelId === 'opengrid-pillar' ||
       modelId === 'opengrid-wall-cover' ||
-      modelId === 'opengrid-label-tag'
+      modelId === 'opengrid-label-tag' ||
+      modelId === 'opengrid-label-card' ||
+      modelId === 'opengrid-label-holder'
     ) {
       return true
     }
@@ -118,7 +120,7 @@
         {t('cad.action.stl')}
       </button>
     {/if}
-    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-tag'}
+    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-tag' || modelId === 'opengrid-label-card'}
       <button
         class={ACTION_BUTTON_CLASS}
         type="button"
@@ -142,12 +144,18 @@
       {t('cad.wallCover.threeMfNote')}
     </p>
   {/if}
-  {#if modelId === 'opengrid-label-tag'}
+  {#if modelId === 'opengrid-label-tag' || modelId === 'opengrid-label-card'}
     <p
       class="m-0 text-sm leading-6 text-muted-foreground"
-      data-testid="opengrid-label-tag-three-mf-note"
+      data-testid={modelId === 'opengrid-label-card'
+        ? 'opengrid-label-card-three-mf-note'
+        : 'opengrid-label-tag-three-mf-note'}
     >
-      {t('cad.labelTag.threeMfNote')}
+      {t(
+        modelId === 'opengrid-label-card'
+          ? 'cad.labelCard.threeMfNote'
+          : 'cad.labelTag.threeMfNote',
+      )}
     </p>
   {/if}
 </div>

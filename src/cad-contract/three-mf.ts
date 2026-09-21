@@ -69,9 +69,28 @@ export function threeMfExpectationForLabelTag(
  * `opengrid-label-tag` prefix; every other name keeps the historical
  * Wall Cover expectation.
  */
+export function threeMfExpectationForLabelCard(
+  sourceFileName: string,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: 'Label Card Body',
+    baseMaterialColor: '#657080',
+    accentMaterialName: 'Label Card Accent',
+    accentMaterialColor: '#F4C542',
+    accentPartName: 'accent',
+    modelSettingsName: 'opengrid-label-card',
+    sourceFileName,
+    platerName: 'OpenGrid Label Card',
+    filamentColors: ['#657080', '#F4C542'],
+  }
+}
+
 export function threeMfExpectationForFileName(
   fileName: string,
 ): ThreeMfPackageExpectation {
+  if (fileName.startsWith('opengrid-label-card')) {
+    return threeMfExpectationForLabelCard(fileName)
+  }
   if (fileName.startsWith('opengrid-label-tag')) {
     return threeMfExpectationForLabelTag(fileName)
   }

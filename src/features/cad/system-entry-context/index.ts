@@ -5,6 +5,8 @@ import {
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   OPENGRID_WALL_COVER_CONFIGURATION,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
+  OPENGRID_LABEL_HOLDER_CONFIGURATION,
   PILLAR_CONFIGURATION,
   type ModelId,
   type ModelParameterValues,
@@ -53,6 +55,8 @@ export function systemContextForModel(
     modelId === 'opengrid-open-shelf' ||
     modelId === 'opengrid-wall-cover' ||
     modelId === 'opengrid-label-tag' ||
+    modelId === 'opengrid-label-card' ||
+    modelId === 'opengrid-label-holder' ||
     modelId === 'opengrid-openconnect-shelf' ||
     modelId === 'opengrid-openconnect-organizer'
   if (!isOpenGridModel) return undefined
@@ -120,6 +124,12 @@ export function getSystemPreset(
   }
   if (modelId === 'opengrid-label-tag') {
     return { ...OPENGRID_LABEL_TAG_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'opengrid-label-card') {
+    return { ...OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'opengrid-label-holder') {
+    return { ...OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters }
   }
   if (modelId === 'opengrid-pillar' && context === 'desk') {
     return { ...PILLAR_CONFIGURATION.defaultParameters }

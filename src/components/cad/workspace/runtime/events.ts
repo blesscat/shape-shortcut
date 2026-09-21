@@ -320,7 +320,8 @@ export function createWorkerEventHandler(
         const validPartMeshes = validateModelPartMeshes(
           event.partMeshes,
           operation.modelId === 'opengrid-wall-cover' ||
-            operation.modelId === 'opengrid-label-tag',
+            operation.modelId === 'opengrid-label-tag' ||
+            operation.modelId === 'opengrid-label-card',
         )
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const currentOperation = isCurrentModelOperation(
@@ -404,7 +405,8 @@ export function createWorkerEventHandler(
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const requiresParts =
           operation.modelId === 'opengrid-wall-cover' ||
-          operation.modelId === 'opengrid-label-tag'
+          operation.modelId === 'opengrid-label-tag' ||
+          operation.modelId === 'opengrid-label-card'
         const partMeshes = event.partMeshes ?? operation.candidatePartMeshes
         const validPartMeshes = validateModelPartMeshes(
           partMeshes,

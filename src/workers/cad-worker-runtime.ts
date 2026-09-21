@@ -392,6 +392,22 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    if (code === 'OPENGRID_LABEL_CARD_QUALITY_INVALID') {
+      return makeError(
+        'meshing',
+        code,
+        diagnostic('diagnostic.labelCardQualityInvalid'),
+        true,
+      )
+    }
+    if (code === 'OPENGRID_LABEL_HOLDER_QUALITY_INVALID') {
+      return makeError(
+        'meshing',
+        code,
+        diagnostic('diagnostic.labelHolderQualityInvalid'),
+        true,
+      )
+    }
     if (message.includes('LABEL_TAG_ICON_UNKNOWN')) {
       return makeError(
         'building',
