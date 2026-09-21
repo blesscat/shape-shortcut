@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   makeBox,
   makeCylinder,
+  makeCompound,
   measureVolume,
   setOC,
   type Shape3D,
@@ -12,12 +13,15 @@ import {
 import {
   boundsForOpenGridDivider,
   openGridDividerArmEndpointsFor,
+  openGridDividerArmStationsFor,
   openGridDividerPegPlanFor,
   openGridDividerPlanBoundsFor,
   openGridDividerPegLengthFor,
+  openGridDividerLatticeStationsFor,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
   OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION,
+  OPENGRID_STACKABLE_BOX_CONFIGURATION,
   openGridDividerHoneycombMinHeightFor,
   type OpenGridDividerParameters,
   openGridDividerTransitionHeightFor,
@@ -90,6 +94,135 @@ function pegProbeZFor(parameters: OpenGridDividerParameters): number {
     OPENGRID_DIVIDER_CONFIGURATION.pegBottomChamfer +
     0.01
   )
+}
+
+// The nominal box bottom from the shared OpenGrid contract: a floor with
+// Ø5.05 holes on the 14 mm grid offset 7 mm from the edges, ringed by walls
+// inset 1.275 mm from the nominal grid stations. This is exactly the pairing
+// the box-fit alignment guarantee promises, so the assembly check below
+// proves the emitted pegs land in real holes with real clearance.
+async function expectBoxFitWallToAssembleWithNominalBox(
+  wallGrids: number,
+): Promise<void> {
+  const GRID = OPENGRID_DIVIDER_CONFIGURATION.gridPitch
+  const INSET = OPENGRID_DIVIDER_CONFIGURATION.boxWallStationInset
+  const HOLE_DIAMETER =
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomGridHoleDiameter
+  const HOLE_PITCH = OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomHoleGridPitch
+  const HOLE_EDGE_OFFSET =
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomHoleGridEdgeOffset
+  const FLOOR_BOTTOM = -4.1
+  const FLOOR_TOP = -0.1
+  const outerHalf = (wallGrids * GRID) / 2
+
+  const holeCenters: [number, number][] = []
+  for (
+    let x = HOLE_EDGE_OFFSET;
+    x < wallGrids * GRID - HOLE_EDGE_OFFSET + 1e-9;
+    x += HOLE_PITCH
+  ) {
+    for (
+      let y = HOLE_EDGE_OFFSET;
+      y < wallGrids * GRID - HOLE_EDGE_OFFSET + 1e-9;
+      y += HOLE_PITCH
+    ) {
+      holeCenters.push([x - outerHalf, y - outerHalf])
+    }
+  }
+
+  const holeCutters: Shape3D[] = holeCenters.map(([x, y]) =>
+    makeCylinder(HOLE_DIAMETER / 2, FLOOR_TOP - FLOOR_BOTTOM + 0.2, [
+      x,
+      y,
+      FLOOR_BOTTOM - 0.1,
+    ]),
+  )
+  const holeCutterCompound = makeCompound(holeCutters).asShape3D()
+  let base: Shape3D | null = null
+  try {
+    base = makeBox(
+      [-outerHalf, -outerHalf, FLOOR_BOTTOM],
+      [outerHalf, outerHalf, 10],
+    )
+    base = base.cut(
+      makeBox(
+        [-outerHalf + INSET, -outerHalf + INSET, FLOOR_TOP],
+        [outerHalf - INSET, outerHalf - INSET, 10],
+      ),
+    )
+    base = base.cut(holeCutterCompound)
+    expect(measureVolume(base)).toBeGreaterThan(0)
+
+    const parameters = fullDividerParameters({
+      left: wallGrids,
+      right: 0,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      alignmentMode: 'box-fit',
+      boxFitWallGrids: wallGrids,
+      endClearance: 0.15,
+    })
+    const shape = await buildOpenGridDivider(parameters)
+    try {
+      // The transverse centerline must sit on a hole row: half-integer boxes
+      // have a center row, integer boxes force the ±7 row.
+      const rowY = [...new Set(holeCenters.map(([, y]) => y))].sort(
+        (first, second) => Math.abs(first) - Math.abs(second),
+      )[0]
+      const placedShape = rowY === 0 ? shape : shape.translate(0, rowY, 0)
+
+      // Whole-part fit: the placed wall and its pegs must never touch the box.
+      const clash = base.intersect(placedShape)
+      const clashVolume = clash ? measureVolume(clash) : 0
+      clash?.delete()
+      expect(clashVolume).toBeLessThan(1e-6)
+
+      // End clearance: the wall ends sit endClearance inside the inner walls.
+      const wallBounds = boundsOf(placedShape)
+      expect(wallBounds[1][0]).toBeCloseTo(outerHalf - INSET - 0.15, 4)
+      expect(wallBounds[0][0]).toBeCloseTo(-(outerHalf - INSET - 0.15), 4)
+
+      const plan = openGridDividerPlanBoundsFor(parameters)
+      const centerX = (plan.minX + plan.maxX) / 2
+      const pegPlan = openGridDividerPegPlanFor(parameters)
+      const placedStations: number[] = []
+      for (const [rawX, rawY] of pegPlan.centers) {
+        const x = rawX - centerX
+        const y = rawY + rowY
+        // +0 normalizes a toFixed-produced -0 so toEqual matches 0.
+        placedStations.push(Number(x.toFixed(6)) + 0)
+
+        // The peg must pass through a real opening: a probe one hundredth of
+        // a millimetre narrower than the hole must clear the floor there.
+        const openingProbe = makeCylinder(
+          HOLE_DIAMETER / 2 - 0.01,
+          FLOOR_TOP - FLOOR_BOTTOM,
+          [x, y, FLOOR_BOTTOM],
+        )
+        try {
+          const openingClash = base.intersect(openingProbe)
+          const openingClashVolume = openingClash
+            ? measureVolume(openingClash)
+            : 0
+          openingClash?.delete()
+          expect(openingClashVolume).toBeLessThan(1e-6)
+        } finally {
+          openingProbe.delete()
+        }
+      }
+      expect(placedStations.sort((first, second) => first - second)).toEqual(
+        openGridDividerLatticeStationsFor(wallGrids),
+      )
+    } finally {
+      deleteShape(shape)
+    }
+  } finally {
+    base?.delete()
+    // Deleting the compound also releases the registered cutter shapes.
+    holeCutterCompound.delete()
+  }
 }
 
 beforeAll(async () => {
@@ -1069,6 +1202,14 @@ describe('OpenGrid divider CAD kernel integration', () => {
     } finally {
       deleteShape(shape)
     }
+  }, 180_000)
+
+  it('assembles a 4.5 grid box-fit wall into a nominal half-integer box', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(4.5)
+  }, 180_000)
+
+  it('assembles a 6 grid box-fit wall into a nominal integer box on a ±7 hole row', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(6)
   }, 180_000)
 
   it('fuses enlarged pegs into one solid and widens the base with them', async () => {
