@@ -28,7 +28,7 @@ describe('standalone organizer slot test coupon', () => {
       parseRawParameters(rawFromParameters({ gridUnits: 5 }), model.id),
     ).toMatchObject({ valid: true, value: { gridUnits: 5 } })
   })
-  it.each([1, 3, 5, 49])(
+  it.each([1, 3, 5, 10])(
     'keeps the matching %i-unit card width and a build-plate base',
     (gridUnits) => {
       const p = { gridUnits }

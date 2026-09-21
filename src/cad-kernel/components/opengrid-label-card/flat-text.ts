@@ -1,3 +1,4 @@
+import { OPENGRID_LABEL_GRID } from '../../../cad-contract/units/opengrid-label-shared'
 import {
   CompoundBlueprint,
   getFont,
@@ -8,14 +9,13 @@ import {
 } from 'replicad'
 import {
   OPENGRID_LABEL_CARD_CONFIGURATION,
-  OPENGRID_LABEL_TAG_CONFIGURATION,
-  normalizeOpenGridLabelTagText,
+  normalizeOpenGridLabelCardText,
 } from '../../../cad-contract/units'
 import { loadOpenGridWallCoverFont } from '../opengrid-wall-cover/flat-text'
 
-export const LABEL_TAG_TEXT_CONFIGURATION = {
-  depth: OPENGRID_LABEL_TAG_CONFIGURATION.accentDepth,
-  fontSize: 5,
+export const LABEL_CARD_TEXT_CONFIGURATION = {
+  depth: OPENGRID_LABEL_CARD_CONFIGURATION.accentDepth,
+  fontSize: OPENGRID_LABEL_GRID.textFontSize,
   fontFamily: 'Noto Sans CJK TC Bold',
 } as const
 
@@ -28,11 +28,11 @@ function deleteShape(shape: { delete?: () => void } | null | undefined): void {
 }
 
 function assertGlyphSupported(character: string): void {
-  const font = getFont(LABEL_TAG_TEXT_CONFIGURATION.fontFamily)
+  const font = getFont(LABEL_CARD_TEXT_CONFIGURATION.fontFamily)
   const glyph = font?.charToGlyph(character)
-  const glyphPath = glyph?.getPath(0, 0, LABEL_TAG_TEXT_CONFIGURATION.fontSize)
+  const glyphPath = glyph?.getPath(0, 0, LABEL_CARD_TEXT_CONFIGURATION.fontSize)
   if (!glyph || glyph.index === 0 || !glyphPath?.commands.length) {
-    throw new Error('LABEL_TAG_TEXT_GLYPH_UNSUPPORTED')
+    throw new Error('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED')
   }
 }
 
@@ -71,7 +71,7 @@ function groupGlyphContours(
 
 function extrudeBlueprint(
   blueprint: Blueprint,
-  depth: number = LABEL_TAG_TEXT_CONFIGURATION.depth,
+  depth: number = LABEL_CARD_TEXT_CONFIGURATION.depth,
 ): Shape3D {
   const sketch = blueprint.sketchOnPlane()
   try {
@@ -111,14 +111,14 @@ function makeGlyph(
   character: string,
   centerX: number,
   centerY: number,
-  depth: number = LABEL_TAG_TEXT_CONFIGURATION.depth,
+  depth: number = LABEL_CARD_TEXT_CONFIGURATION.depth,
+  fontSize: number = LABEL_CARD_TEXT_CONFIGURATION.fontSize,
 ): Shape3D {
-  assertGlyphSupported(character)
   let pieces: Shape3D[] = []
   let extruded: Shape3D | null = null
   const drawings = textBlueprints(character, {
-    fontSize: LABEL_TAG_TEXT_CONFIGURATION.fontSize,
-    fontFamily: LABEL_TAG_TEXT_CONFIGURATION.fontFamily,
+    fontSize,
+    fontFamily: LABEL_CARD_TEXT_CONFIGURATION.fontFamily,
   })
   try {
     const contourGroups = groupGlyphContours(drawings)
@@ -158,52 +158,31 @@ function makeGlyph(
   }
 }
 
-/**
- * Builds the optional label text as accent solids (depth equal to the accent
- * depth, resting on the outward plate face at Z = 0; the builder cuts the
- * matching recess around them). `centerY` overrides the default text row
- * position for the label card layout.
- */
-export async function makeOpenGridLabelTagTextShape(
+/** Build one horizontal text line at an actual visible height of 7 mm. */
+export async function makeOpenGridLabelCardTextShape(
   text: string,
-  options: { centerY?: number; depth?: number; maxLength?: number } = {},
+  options: { depth?: number; maxLength?: number } = {},
 ): Promise<Shape3D | null> {
   await loadOpenGridWallCoverFont()
-  const letters = Array.from(normalizeOpenGridLabelTagText(text))
-  if (letters.length === 0) return null
+  const normalized = normalizeOpenGridLabelCardText(text)
+  const letters = Array.from(normalized)
+  if (!letters.length) return null
   if (
     letters.length >
-    (options.maxLength ?? OPENGRID_LABEL_TAG_CONFIGURATION.maxTextLength)
-  ) {
-    throw new Error('LABEL_TAG_TEXT_INVALID')
-  }
-
-  const spacing = LABEL_TAG_TEXT_CONFIGURATION.fontSize * 0.72
-  const totalWidth = (letters.length - 1) * spacing
-  const glyphs: Shape3D[] = []
-  try {
-    for (const [index, character] of letters.entries()) {
-      glyphs.push(
-        makeGlyph(
-          character,
-          index * spacing - totalWidth / 2,
-          options.centerY ?? LABEL_TAG_TEXT_POSITIONS.textCenterY,
-          options.depth ?? LABEL_TAG_TEXT_CONFIGURATION.depth,
-        ),
-      )
-    }
-    const result = makeCompound(glyphs).asShape3D()
-    glyphs.length = 0
-    return result
-  } catch (error) {
-    for (const glyph of glyphs) deleteShape(glyph)
-    throw error
-  }
+    (options.maxLength ?? OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength)
+  )
+    throw new Error('LABEL_CARD_TEXT_INVALID')
+  letters.forEach(assertGlyphSupported)
+  const font = getFont(LABEL_CARD_TEXT_CONFIGURATION.fontFamily)
+  const bounds = font.getPath(normalized, 0, 0, 1).getBoundingBox()
+  const visibleHeight = bounds.y2 - bounds.y1
+  if (!(visibleHeight > 0)) throw new Error('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED')
+  const fontSize = OPENGRID_LABEL_GRID.textFontSize / visibleHeight
+  return makeGlyph(
+    normalized,
+    0,
+    0,
+    options.depth ?? LABEL_CARD_TEXT_CONFIGURATION.depth,
+    fontSize,
+  )
 }
-
-/** Accent layout on the plate face (Y along the hang direction). */
-export const LABEL_TAG_TEXT_POSITIONS = {
-  iconCenterYWithText: 6.6,
-  iconCenterYIconOnly: 5,
-  textCenterY: 1.8,
-} as const

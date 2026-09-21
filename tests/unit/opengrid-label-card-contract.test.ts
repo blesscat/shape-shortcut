@@ -10,14 +10,15 @@ import {
   validateModelParameters,
 } from '../../src/cad-contract/units'
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
-import { LABEL_TAG_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-tag/icon-paths'
+import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
 
 describe('OpenGrid Label Card contract', () => {
   it('uses the confirmed v2 defaults', () => {
     expect(OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters).toEqual({
-      widthTier: 40,
+      gridUnits: 4,
       style: 'raised',
+      iconPosition: 'left',
       icon: 'gear-fill',
       text: '',
     })
@@ -26,29 +27,43 @@ describe('OpenGrid Label Card contract', () => {
   it('validates style, tiers, icons, and optional text', () => {
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'raised',
+        iconPosition: 'left',
         icon: 'gear-fill',
       }),
     ).toEqual({
       valid: true,
-      value: { widthTier: 40, style: 'raised', icon: 'gear-fill' },
+      value: {
+        gridUnits: 4,
+        style: 'raised',
+        iconPosition: 'left',
+        icon: 'gear-fill',
+      },
     })
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 20,
+        gridUnits: 6,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'wrench',
         text: ' M3x40 ',
       }),
     ).toEqual({
       valid: true,
-      value: { widthTier: 20, style: 'flat', icon: 'wrench', text: 'M3x40' },
+      value: {
+        gridUnits: 6,
+        style: 'flat',
+        iconPosition: 'left',
+        icon: 'wrench',
+        text: 'M3x40',
+      },
     })
     expect(
       isOpenGridLabelCardParameters({
-        widthTier: 60,
+        gridUnits: 6,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'cpu',
       }),
     ).toBe(true)
@@ -57,17 +72,18 @@ describe('OpenGrid Label Card contract', () => {
   it('rejects invalid parameters per field', () => {
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 50,
+        gridUnits: 50,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'gear-fill',
       }),
     ).toMatchObject({
       valid: false,
-      issues: [{ field: 'widthTier' }],
+      issues: [{ field: 'gridUnits' }],
     })
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'embossed',
         icon: 'gear-fill',
       }),
@@ -79,8 +95,9 @@ describe('OpenGrid Label Card contract', () => {
     })
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'rocket',
       }),
     ).toMatchObject({
@@ -89,8 +106,9 @@ describe('OpenGrid Label Card contract', () => {
     })
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'gear-fill',
         text: '1234567',
       }),
@@ -100,8 +118,9 @@ describe('OpenGrid Label Card contract', () => {
     })
     expect(
       validateOpenGridLabelCardParameters({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'gear-fill',
         gripThickness: 1.2,
       }),
@@ -111,41 +130,50 @@ describe('OpenGrid Label Card contract', () => {
   it('routes through the shared model parameter validation', () => {
     expect(
       validateModelParameters('opengrid-label-card', {
-        widthTier: 30,
+        gridUnits: 3,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'box-seam',
       }),
     ).toEqual({
       valid: true,
       value: {
         modelId: 'opengrid-label-card',
-        parameters: { widthTier: 30, style: 'flat', icon: 'box-seam' },
+        parameters: {
+          gridUnits: 3,
+          style: 'flat',
+          iconPosition: 'left',
+          icon: 'box-seam',
+        },
       },
     })
     expect(
-      validateModelParameters('opengrid-label-card', { widthTier: 12 }),
+      validateModelParameters('opengrid-label-card', { gridUnits: 1.2 }),
     ).toMatchObject({ valid: false })
   })
 
   it('derives style-dependent bounds', () => {
     expect(
       boundsForOpenGridLabelCard({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'flat',
+        iconPosition: 'left',
         icon: 'gear-fill',
       }),
     ).toEqual({ min: [-20, -5, 0], max: [20, 5, 0.6] })
     expect(
       boundsForOpenGridLabelCard({
-        widthTier: 40,
+        gridUnits: 4,
         style: 'raised',
+        iconPosition: 'left',
         icon: 'gear-fill',
       }),
     ).toEqual({ min: [-20, -5, 0], max: [20, 5, 1] })
     expect(
       boundsForOpenGridLabelCard({
-        widthTier: 20,
+        gridUnits: 2,
         style: 'raised',
+        iconPosition: 'left',
         icon: 'gear-fill',
       }),
     ).toEqual({ min: [-10, -5, 0], max: [10, 5, 1] })
@@ -153,28 +181,29 @@ describe('OpenGrid Label Card contract', () => {
 
   it('encodes parameters into stable export file names', () => {
     const parameters = {
-      widthTier: 30,
+      gridUnits: 3,
       style: 'flat',
+      iconPosition: 'left',
       icon: 'wrench',
     } as const
     expect(openGridLabelCardFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench.step',
+      'opengrid-label-card-w30-flat-wrench-left.step',
     )
     expect(openGridLabelCardStlFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench.stl',
+      'opengrid-label-card-w30-flat-wrench-left.stl',
     )
     expect(openGridLabelCardThreeMfFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench.3mf',
+      'opengrid-label-card-w30-flat-wrench-left.3mf',
     )
     expect(
       getModelDefinition('opengrid-label-card')?.threeMfFileName?.(parameters),
-    ).toBe('opengrid-label-card-w30-flat-wrench.3mf')
+    ).toBe('opengrid-label-card-w30-flat-wrench-left.3mf')
   })
 
   it('shares the icon set and width tiers with the label system', () => {
     expect(OPENGRID_LABEL_CARD_ICON_IDS.length).toBeGreaterThanOrEqual(16)
     for (const iconId of OPENGRID_LABEL_CARD_ICON_IDS) {
-      expect(LABEL_TAG_ICON_PATHS[iconId], iconId).toBeDefined()
+      expect(LABEL_CARD_ICON_PATHS[iconId], iconId).toBeDefined()
     }
   })
 })

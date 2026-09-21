@@ -3,10 +3,13 @@
     OPENGRID_LABEL_CARD_CONFIGURATION,
     OPENGRID_LABEL_CARD_ICON_IDS,
     OPENGRID_LABEL_CARD_STYLES,
-    OPENGRID_LABEL_WIDTH_TIERS,
     normalizeOpenGridLabelCardText,
   } from '../../../../cad-contract/units'
-  import { LABEL_TAG_ICON_PATHS } from '../../../../cad-kernel/components/opengrid-label-tag/icon-paths'
+  import {
+    OPENGRID_LABEL_GRID,
+    openGridLabelWidthFor,
+  } from '../../../../cad-contract/units/opengrid-label-shared'
+  import { LABEL_CARD_ICON_PATHS } from '../../../../cad-kernel/components/opengrid-label-card/icon-paths'
   import { translate } from '../../../../i18n'
   import { formatValidationIssue } from '../../../../i18n/diagnostics'
   import ParameterField from '../ParameterField.svelte'
@@ -21,18 +24,14 @@
 
   const config = OPENGRID_LABEL_CARD_CONFIGURATION
 
-  let rawWidthTier = $derived(
-    rawParameters.widthTier ?? String(config.defaultParameters.widthTier),
+  let rawGridUnits = $derived(
+    rawParameters.gridUnits ?? String(config.defaultParameters.gridUnits),
   )
   let rawStyle = $derived(rawParameters.style ?? config.defaultParameters.style)
   let rawIcon = $derived(rawParameters.icon ?? config.defaultParameters.icon)
   let rawText = $derived(rawParameters.text ?? config.defaultText)
   let normalizedText = $derived(normalizeOpenGridLabelCardText(rawText))
   let textLength = $derived(Array.from(normalizedText).length)
-
-  function handleWidthTierInput(tier: number): void {
-    onInputChange('widthTier', String(tier))
-  }
 
   function handleStyleInput(style: string): void {
     onInputChange('style', style)
@@ -45,13 +44,7 @@
   function handleTextInput(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
 
-    const limitedText = Array.from(event.currentTarget.value)
-      .slice(0, config.maxTextLength)
-      .join('')
-    if (event.currentTarget.value !== limitedText) {
-      event.currentTarget.value = limitedText
-    }
-    onInputChange('text', limitedText)
+    onInputChange('text', event.currentTarget.value)
   }
 </script>
 
@@ -105,6 +98,26 @@
   </div>
 
   <div class="grid gap-1">
+    <label for="label-card-icon-position"
+      >{translate(locale, 'panel.labelCard.iconPosition')}</label
+    >
+    <select
+      id="label-card-icon-position"
+      class="rounded-lg border border-border-field bg-panel px-3 py-2"
+      value={rawParameters.iconPosition ?? 'left'}
+      onchange={(event) =>
+        onInputChange('iconPosition', event.currentTarget.value)}
+    >
+      <option value="left"
+        >{translate(locale, 'panel.labelCard.iconPosition.left')}</option
+      >
+      <option value="right"
+        >{translate(locale, 'panel.labelCard.iconPosition.right')}</option
+      >
+    </select>
+  </div>
+
+  <div class="grid gap-1">
     <span class="text-sm text-ink">
       {translate(locale, 'panel.labelCard.style')}
     </span>
@@ -145,7 +158,7 @@
       data-testid="opengrid-label-card-icon-gallery"
     >
       {#each OPENGRID_LABEL_CARD_ICON_IDS as iconId (iconId)}
-        {@const iconPath = LABEL_TAG_ICON_PATHS[iconId]}
+        {@const iconPath = LABEL_CARD_ICON_PATHS[iconId]}
         <button
           type="button"
           class="flex flex-col items-center gap-1 rounded-lg border p-2"
@@ -199,7 +212,6 @@
         autocomplete="off"
         class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
         data-testid="opengrid-label-card-text"
-        maxlength={config.maxTextLength}
         spellcheck="false"
         type="text"
         value={rawText}

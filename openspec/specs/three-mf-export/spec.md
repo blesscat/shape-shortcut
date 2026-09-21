@@ -18,7 +18,6 @@ viewport mesh alone or run CAD export on the main thread. The system MUST
 reject unsupported models or configurations without rim or accent parts with a
 structured recoverable export error. The former `opengrid-snap` `topText=SNAP`
 path MUST not be an export target.
-
 #### Scenario: Successful Wall Cover 3MF export
 
 - **WHEN** the workspace is ready and the user requests 3MF for a committed
@@ -57,7 +56,7 @@ path MUST not be an export target.
 - **AND** the main thread MUST receive one validated `.3mf` download named
   after `opengrid-label-tag`
 
-#### Scenario: Unsupported 3MF export is rejected
+### Scenario: Unsupported 3MF export is rejected
 
 - **WHEN** the user requests 3MF for a revision without supported multipart
   data, including an `opengrid-snap` revision, a supported container or
@@ -146,7 +145,6 @@ response. The contract MUST identify supported multipart dual-color models
 MUST reject unsupported configurations and MUST NOT treat an `opengrid-snap`
 revision as a supported multipart export.
 
-
 #### Scenario: Valid 3MF metadata is accepted
 
 - **WHEN** the main thread receives a 3MF response matching the active
@@ -177,7 +175,6 @@ be correlated to the selected model revision and Worker epoch. The action MUST
 be unavailable for `opengrid-snap` and for any supported model with
 `topRimEnabled=false`. STEP and STL actions MUST remain independent and their
 existing lifecycle behavior MUST remain unchanged.
-
 #### Scenario: 3MF is available for supported models
 
 
@@ -201,7 +198,6 @@ existing lifecycle behavior MUST remain unchanged.
 - **THEN** `下載 3MF` / `Download 3MF` MUST be enabled
 - **AND** selecting it MUST start an `export.3mf` request for that revision
   whose filename names `opengrid-label-tag`
-
 
 ### Requirement: 3MF exports all requested Wall Cover instances as one flat two-color assembly
 

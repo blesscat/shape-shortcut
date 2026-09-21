@@ -368,27 +368,27 @@ export class CadWorkerRuntime {
         true,
       )
     }
-    if (code === 'OPENGRID_LABEL_TAG_QUALITY_INVALID') {
-      return makeError(
-        'meshing',
-        code,
-        diagnostic('diagnostic.labelTagQualityInvalid'),
-        true,
-      )
-    }
-    if (message.includes('LABEL_TAG_TEXT_GLYPH_UNSUPPORTED')) {
+    if (message.includes('LABEL_CARD_TEXT_TOO_WIDE')) {
       return makeError(
         'building',
         code,
-        diagnostic('diagnostic.labelTagGlyphUnsupported'),
+        diagnostic('validation.labelCardTextTooWide'),
         true,
       )
     }
-    if (message.includes('LABEL_TAG_FONT_LOAD_FAILED')) {
+    if (message.includes('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED')) {
       return makeError(
         'building',
         code,
-        diagnostic('diagnostic.labelTagFontLoadFailed'),
+        diagnostic('diagnostic.labelCardGlyphUnsupported'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_CARD_FONT_LOAD_FAILED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelCardFontLoadFailed'),
         true,
       )
     }
@@ -400,27 +400,19 @@ export class CadWorkerRuntime {
         true,
       )
     }
-    if (code === 'OPENGRID_LABEL_HOLDER_QUALITY_INVALID') {
-      return makeError(
-        'meshing',
-        code,
-        diagnostic('diagnostic.labelHolderQualityInvalid'),
-        true,
-      )
-    }
-    if (message.includes('LABEL_TAG_ICON_UNKNOWN')) {
+    if (message.includes('LABEL_CARD_ICON_UNKNOWN')) {
       return makeError(
         'building',
         code,
-        diagnostic('diagnostic.labelTagIconUnknown'),
+        diagnostic('diagnostic.labelCardIconUnknown'),
         true,
       )
     }
-    if (message.includes('LABEL_TAG_ICON_GEOMETRY_FAILED')) {
+    if (message.includes('LABEL_CARD_ICON_GEOMETRY_FAILED')) {
       return makeError(
         'building',
         code,
-        diagnostic('diagnostic.labelTagIconGeometryFailed'),
+        diagnostic('diagnostic.labelCardIconGeometryFailed'),
         true,
       )
     }

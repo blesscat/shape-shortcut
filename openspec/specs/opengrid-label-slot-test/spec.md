@@ -8,7 +8,7 @@ Provide a small independently printable coupon of the organizer's integrated fro
 
 ### Requirement: Independent printable slot coupon
 
-The system MUST expose `opengrid-label-slot-test` in the Wall catalog and at its own localized CAD route, with a display name beginning with `OpenGrid `. Its only parameter MUST be integer `gridUnits` from 1 through 49, defaulting to 3, adjusted through a slider. Each unit MUST represent 10 mm of matching card width. Parameters MUST persist independently of the organizer and other label models. Invalid units and unknown keys MUST be rejected.
+The system MUST expose `opengrid-label-slot-test` in the Wall catalog and at its own localized CAD route, with a display name beginning with `OpenGrid `. Its only parameter MUST be integer `gridUnits` from 1 through 10, defaulting to 3, adjusted through a slider. Each unit MUST represent 10 mm of matching card width. Parameters MUST persist independently of the organizer and other label models. Invalid units and unknown keys MUST be rejected.
 
 #### Scenario: Change and reload the test width
 

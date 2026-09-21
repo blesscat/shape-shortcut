@@ -64,6 +64,7 @@ export function threeMfExpectationForLabelTag(
   }
 }
 
+/** Card package metadata includes the parameter-derived source filename. */
 export function threeMfExpectationForLabelCard(
   sourceFileName: string,
 ): ThreeMfPackageExpectation {

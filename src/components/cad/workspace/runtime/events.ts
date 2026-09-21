@@ -117,24 +117,24 @@ function modelEventMatchesOperation(
   )
 }
 
-function labelTagFieldErrorFor(
+function labelCardFieldErrorFor(
   operation: { kind: string; modelId?: ModelId } | undefined,
   messageId: string,
   params: DiagnosticParams | undefined,
 ): FieldDiagnostic | null {
   if (
     operation?.kind !== 'model' ||
-    operation.modelId !== 'opengrid-label-tag' ||
-    (messageId !== 'diagnostic.labelTagGlyphUnsupported' &&
-      messageId !== 'diagnostic.labelTagFontLoadFailed' &&
-      messageId !== 'diagnostic.labelTagIconUnknown' &&
-      messageId !== 'diagnostic.labelTagIconGeometryFailed')
+    (messageId !== 'validation.labelCardTextTooWide' &&
+      messageId !== 'diagnostic.labelCardGlyphUnsupported' &&
+      messageId !== 'diagnostic.labelCardFontLoadFailed' &&
+      messageId !== 'diagnostic.labelCardIconUnknown' &&
+      messageId !== 'diagnostic.labelCardIconGeometryFailed')
   ) {
     return null
   }
   if (
-    messageId === 'diagnostic.labelTagIconUnknown' ||
-    messageId === 'diagnostic.labelTagIconGeometryFailed'
+    messageId === 'diagnostic.labelCardIconUnknown' ||
+    messageId === 'diagnostic.labelCardIconGeometryFailed'
   ) {
     return {
       field: 'icon',
@@ -320,7 +320,6 @@ export function createWorkerEventHandler(
         const validPartMeshes = validateModelPartMeshes(
           event.partMeshes,
           operation.modelId === 'opengrid-wall-cover' ||
-            operation.modelId === 'opengrid-label-tag' ||
             operation.modelId === 'opengrid-label-card',
         )
         const matchingParameters = modelEventMatchesOperation(operation, event)
@@ -405,7 +404,6 @@ export function createWorkerEventHandler(
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const requiresParts =
           operation.modelId === 'opengrid-wall-cover' ||
-          operation.modelId === 'opengrid-label-tag' ||
           operation.modelId === 'opengrid-label-card'
         const partMeshes = event.partMeshes ?? operation.candidatePartMeshes
         const validPartMeshes = validateModelPartMeshes(
@@ -538,14 +536,14 @@ export function createWorkerEventHandler(
         if (wallCoverFieldError) {
           context.setFieldErrors({ text: wallCoverFieldError })
         }
-        const labelTagFieldError = labelTagFieldErrorFor(
+        const labelCardFieldError = labelCardFieldErrorFor(
           operation,
           event.messageId,
           event.messageParams,
         )
-        if (labelTagFieldError) {
+        if (labelCardFieldError) {
           context.setFieldErrors({
-            [labelTagFieldError.field]: labelTagFieldError,
+            [labelCardFieldError.field]: labelCardFieldError,
           })
         }
         if (event.code === 'ENGINE_INIT_FAILED') {

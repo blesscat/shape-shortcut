@@ -1,11 +1,15 @@
+import {
+  openGridLabelWidthFor,
+  OPENGRID_LABEL_GRID,
+} from '../../../cad-contract/units/opengrid-label-shared'
 import { deserializeShape, makeBox, makeCompound, type Shape3D } from 'replicad'
 import {
   OPENGRID_LABEL_CARD_CONFIGURATION,
   validateOpenGridLabelCardParameters,
   type OpenGridLabelCardParameters,
 } from '../../../cad-contract/units'
-import { makeLabelTagIconShape } from '../opengrid-label-tag/icon-shape'
-import { makeOpenGridLabelTagTextShape } from '../opengrid-label-tag/flat-text'
+import { makeLabelCardIconShape } from '../opengrid-label-card/icon-shape'
+import { makeOpenGridLabelCardTextShape } from '../opengrid-label-card/flat-text'
 
 export type OpenGridLabelCardNativePart = {
   name: 'body' | 'accent'
@@ -17,13 +21,6 @@ export type OpenGridLabelCardMultipartBuild = {
   qualityShape: Shape3D
   parts: OpenGridLabelCardNativePart[]
 }
-
-/** Accent layout on the card face (Y along the card height, centered origin). */
-export const OPENGRID_LABEL_CARD_LAYOUT = {
-  iconCenterYWithText: 1.9,
-  iconCenterYIconOnly: 0,
-  textCenterY: -2.6,
-} as const
 
 function deleteShape(shape: { delete?: () => void } | null | undefined): void {
   try {
@@ -94,7 +91,7 @@ export async function buildOpenGridLabelCardWithParts(
   }
 
   const config = OPENGRID_LABEL_CARD_CONFIGURATION
-  const halfWidth = validation.value.widthTier / 2
+  const halfWidth = openGridLabelWidthFor(validation.value.gridUnits) / 2
   const halfHeight = config.cardHeight / 2
   const plateTop = config.plateThickness
   const raised = validation.value.style === 'raised'
@@ -108,39 +105,55 @@ export async function buildOpenGridLabelCardWithParts(
   try {
     const hasText =
       validation.value.text !== undefined && validation.value.text.length > 0
-    const iconCenterY = hasText
-      ? OPENGRID_LABEL_CARD_LAYOUT.iconCenterYWithText
-      : OPENGRID_LABEL_CARD_LAYOUT.iconCenterYIconOnly
-
     const accentDepth = raised ? config.raisedHeight : config.accentDepth
-    const iconShape = makeLabelTagIconShape(validation.value.icon, accentDepth)
-    let accentZ: number
-    if (raised) {
-      accentZ = plateTop
-    } else {
-      accentZ = plateTop - accentDepth
-    }
-    accent = iconShape.translate(0, iconCenterY, accentZ)
+    const accentZ = raised ? plateTop : plateTop - accentDepth
+    const iconShape = makeLabelCardIconShape(validation.value.icon, accentDepth)
+    accent = iconShape.translate(0, 0, accentZ)
     if (accent !== iconShape) deleteShape(iconShape)
 
     if (hasText) {
-      const textShape = await makeOpenGridLabelTagTextShape(
+      let textShape = await makeOpenGridLabelCardTextShape(
         validation.value.text!,
-        {
-          centerY: OPENGRID_LABEL_CARD_LAYOUT.textCenterY,
-          depth: accentDepth,
-          maxLength: config.maxTextLength,
-        },
+        { depth: accentDepth, maxLength: config.maxTextLength },
       )
       if (textShape) {
-        const translated = textShape.translate(0, 0, accentZ)
-        if (translated !== textShape) deleteShape(textShape)
-        const pieces = makeCompound(
-          [accent, translated].filter(Boolean) as Shape3D[],
-        ).asShape3D()
-        deleteShape(translated)
-        deleteShape(accent)
-        accent = pieces
+        try {
+          const box = textShape.boundingBox
+          let textWidth: number
+          try {
+            textWidth = box.bounds[1][0] - box.bounds[0][0]
+          } finally {
+            box.delete()
+          }
+          const totalWidth =
+            OPENGRID_LABEL_GRID.iconSize +
+            OPENGRID_LABEL_GRID.iconTextGap +
+            textWidth
+          if (
+            totalWidth >
+            2 * (halfWidth - OPENGRID_LABEL_GRID.artworkSideInset)
+          )
+            throw new Error('LABEL_CARD_TEXT_TOO_WIDE')
+          const direction = validation.value.iconPosition === 'right' ? 1 : -1
+          accent = accent.translate(
+            (direction * (textWidth + OPENGRID_LABEL_GRID.iconTextGap)) / 2,
+            0,
+            0,
+          )
+          textShape = textShape.translate(
+            (-direction *
+              (OPENGRID_LABEL_GRID.iconSize +
+                OPENGRID_LABEL_GRID.iconTextGap)) /
+              2,
+            0,
+            accentZ,
+          )
+          const pieces = makeCompound([accent, textShape]).asShape3D()
+          deleteShape(accent)
+          accent = pieces
+        } finally {
+          deleteShape(textShape)
+        }
       }
     }
 

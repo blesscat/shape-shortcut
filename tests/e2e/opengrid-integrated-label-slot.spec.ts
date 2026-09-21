@@ -123,6 +123,20 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     await expect(page.getByTestId('label-card-width-summary')).toContainText(
       '50 mm',
     )
+    const textInput = page.getByRole('textbox', {
+      name: locale === 'en' ? 'Label card text' : '標籤卡文字',
+      exact: true,
+    })
+    await textInput.fill('M3')
+    const iconPosition = page.locator('#label-card-icon-position')
+    await iconPosition.selectOption('right')
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    await page.screenshot({
+      path: `test-results/card-horizontal-${locale}.png`,
+      fullPage: true,
+    })
     const exportButton = page.getByRole('button', {
       name: locale === 'en' ? 'Download 3MF' : '下載 3MF',
       exact: true,
@@ -130,12 +144,17 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     await expect(exportButton).toBeEnabled()
     const pendingDownload = page.waitForEvent('download')
     await exportButton.click()
-    expect((await pendingDownload).suggestedFilename()).toContain('w50')
+    const fileName = (await pendingDownload).suggestedFilename()
+    expect(fileName).toContain('w50')
+    expect(fileName).toContain('-right.3mf')
     await page.reload()
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
     ).toBeEnabled({ timeout: 90_000 })
     await expect(units).toHaveValue('5')
+    await expect(iconPosition).toHaveValue('right')
+    await expect(textInput).toHaveValue('M3')
+    await expect(units).toHaveAttribute('max', '10')
     await units.press('Home')
     await page
       .getByRole('textbox', {

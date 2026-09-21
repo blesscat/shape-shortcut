@@ -4,30 +4,31 @@ import {
   OPENGRID_LABEL_CARD_HEIGHT,
   OPENGRID_LABEL_CARD_INSERTION_THICKNESS,
   OPENGRID_LABEL_CARD_RAISED_HEIGHT,
-  OPENGRID_LABEL_WIDTH_TIERS,
+  OPENGRID_LABEL_GRID,
+  isOpenGridLabelGridUnits,
+  openGridLabelWidthFor,
   isOpenGridLabelWidthTier,
-  type OpenGridLabelWidthTier,
 } from './opengrid-label-shared'
 import {
-  OPENGRID_LABEL_TAG_ICON_IDS,
-  normalizeOpenGridLabelTagText,
-  isOpenGridLabelTagIconId,
-  type OpenGridLabelTagIconId,
-} from './opengrid-label-tag'
+  OPENGRID_LABEL_CARD_ICON_IDS,
+  isOpenGridLabelCardIconId,
+  type OpenGridLabelCardIconId as LabelIconId,
+} from './opengrid-label-icons'
 
 export type OpenGridLabelCardParameterKey =
-  'widthTier' | 'style' | 'icon' | 'text'
+  'gridUnits' | 'style' | 'icon' | 'text' | 'iconPosition'
 
 export const OPENGRID_LABEL_CARD_STYLES = ['flat', 'raised'] as const
 
 export type OpenGridLabelCardStyle = (typeof OPENGRID_LABEL_CARD_STYLES)[number]
 
-export type OpenGridLabelCardIconId = OpenGridLabelTagIconId
+export type OpenGridLabelCardIconId = LabelIconId
 
-export { OPENGRID_LABEL_TAG_ICON_IDS as OPENGRID_LABEL_CARD_ICON_IDS }
+export { OPENGRID_LABEL_CARD_ICON_IDS }
 
 export type OpenGridLabelCardParameters = {
-  widthTier: OpenGridLabelWidthTier
+  gridUnits: number
+  iconPosition: 'left' | 'right'
   style: OpenGridLabelCardStyle
   icon: OpenGridLabelCardIconId
   text?: string
@@ -39,12 +40,13 @@ export const OPENGRID_LABEL_CARD_CONFIGURATION = {
   accentDepth: OPENGRID_LABEL_ACCENT_DEPTH,
   raisedHeight: OPENGRID_LABEL_CARD_RAISED_HEIGHT,
   maxTextLength: 6,
-  defaultWidthTier: 40,
+  defaultGridUnits: 4,
   defaultStyle: 'raised',
   defaultIcon: 'gear-fill',
   defaultText: '' as string,
   defaultParameters: {
-    widthTier: 40,
+    gridUnits: 4,
+    iconPosition: 'left',
     style: 'raised',
     icon: 'gear-fill',
     text: '',
@@ -66,7 +68,7 @@ export function isOpenGridLabelCardStyle(
 }
 
 export function normalizeOpenGridLabelCardText(value: string): string {
-  return normalizeOpenGridLabelTagText(value)
+  return value.normalize('NFC').replace(/\s/gu, '')
 }
 
 export type OpenGridLabelCardValidation =
@@ -109,7 +111,9 @@ export function validateOpenGridLabelCardParameters(
   if (!isRecord(value)) return invalid('parameters')
 
   const keys = Object.keys(value)
-  const knownKeys: OpenGridLabelCardParameterKey[] = [
+  const knownKeys: (OpenGridLabelCardParameterKey | 'widthTier')[] = [
+    'gridUnits',
+    'iconPosition',
     'widthTier',
     'style',
     'icon',
@@ -119,14 +123,24 @@ export function validateOpenGridLabelCardParameters(
     return invalid('parameters')
   }
 
-  const rawWidthTier =
-    value.widthTier ??
-    OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.widthTier
-  if (!isOpenGridLabelWidthTier(rawWidthTier)) {
-    return invalid('widthTier', 'validation.labelCardWidthTierInvalid', {
-      values: OPENGRID_LABEL_WIDTH_TIERS.join('/'),
-    })
+  let gridUnits: unknown = OPENGRID_LABEL_CARD_CONFIGURATION.defaultGridUnits
+  if (Object.hasOwn(value, 'gridUnits')) gridUnits = value.gridUnits
+  if (Object.hasOwn(value, 'widthTier')) {
+    if (
+      Object.hasOwn(value, 'gridUnits') ||
+      !isOpenGridLabelWidthTier(value.widthTier)
+    ) {
+      return invalid('gridUnits', 'validation.labelGridUnitsInvalid')
+    }
+    gridUnits = value.widthTier / OPENGRID_LABEL_GRID.pitch
   }
+  if (!isOpenGridLabelGridUnits(gridUnits)) {
+    return invalid('gridUnits', 'validation.labelGridUnitsInvalid')
+  }
+
+  const iconPosition = value.iconPosition ?? 'left'
+  if (iconPosition !== 'left' && iconPosition !== 'right')
+    return invalid('iconPosition')
 
   const rawStyle =
     value.style ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.style
@@ -136,7 +150,7 @@ export function validateOpenGridLabelCardParameters(
 
   const rawIcon =
     value.icon ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.icon
-  if (!isOpenGridLabelTagIconId(rawIcon)) {
+  if (!isOpenGridLabelCardIconId(rawIcon)) {
     return invalid('icon', 'validation.labelCardIconUnknown')
   }
 
@@ -152,21 +166,37 @@ export function validateOpenGridLabelCardParameters(
     })
   }
 
-  return {
-    valid: true,
-    value: {
-      widthTier: rawWidthTier,
-      style: rawStyle,
-      icon: rawIcon,
-      ...(textLength > 0 ? { text } : {}),
-    },
+  const textWidth =
+    Math.max(0, textLength - 1) * OPENGRID_LABEL_GRID.textSpacing +
+    OPENGRID_LABEL_GRID.textFontSize +
+    OPENGRID_LABEL_GRID.iconSize +
+    OPENGRID_LABEL_GRID.iconTextGap
+  if (
+    textLength > 0 &&
+    textWidth >
+      openGridLabelWidthFor(gridUnits) -
+        2 * OPENGRID_LABEL_GRID.artworkSideInset
+  ) {
+    return invalid('text', 'validation.labelCardTextTooWide')
   }
+  const parameters: OpenGridLabelCardParameters = {
+    gridUnits,
+    iconPosition,
+    style: rawStyle,
+    icon: rawIcon,
+  }
+  if (textLength > 0) parameters.text = text
+  return { valid: true, value: parameters }
 }
 
 export function isOpenGridLabelCardParameters(
   value: unknown,
 ): value is OpenGridLabelCardParameters {
-  return validateOpenGridLabelCardParameters(value).valid
+  return (
+    isRecord(value) &&
+    isOpenGridLabelGridUnits(value.gridUnits) &&
+    validateOpenGridLabelCardParameters(value).valid
+  )
 }
 
 /** Nominal total Z thickness including the style's accent treatment. */
@@ -187,7 +217,7 @@ export function boundsForOpenGridLabelCard(
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
   }
 
-  const width = validation.value.widthTier
+  const width = openGridLabelWidthFor(validation.value.gridUnits)
   const height = OPENGRID_LABEL_CARD_CONFIGURATION.cardHeight
   const thickness = openGridLabelCardThicknessFor(validation.value.style)
   const halfWidth = Number((width / 2).toFixed(6))
@@ -203,7 +233,7 @@ export function boundsForOpenGridLabelCard(
 }
 
 function parameterSuffixFor(parameters: OpenGridLabelCardParameters): string {
-  return `w${parameters.widthTier}-${parameters.style}-${parameters.icon}`
+  return `w${openGridLabelWidthFor(parameters.gridUnits)}-${parameters.style}-${parameters.icon}-${parameters.iconPosition ?? 'left'}`
 }
 
 function fileNameFor(

@@ -1,5 +1,5 @@
 import { BlueprintSketcher, makeCompound, type Shape3D } from 'replicad'
-import { LABEL_TAG_ICON_PATHS } from './icon-paths'
+import { LABEL_CARD_ICON_PATHS } from './icon-paths'
 import {
   groupPolygonContours,
   parseSvgPath,
@@ -7,7 +7,7 @@ import {
   type PathPolygon,
 } from './svg-path'
 
-export const LABEL_TAG_ICON_CONFIGURATION = {
+export const LABEL_CARD_ICON_CONFIGURATION = {
   /** Nominal rendered icon size on the plate face (square bounding box). */
   size: 6,
   depth: 0.3,
@@ -111,12 +111,12 @@ function extrudeContourGroup(
  * into one compound solid. Coordinates are centered on the icon origin with
  * the nominal rendered size.
  */
-export function makeLabelTagIconShape(
+export function makeLabelCardIconShape(
   iconId: string,
-  depth: number = LABEL_TAG_ICON_CONFIGURATION.depth,
+  depth: number = LABEL_CARD_ICON_CONFIGURATION.depth,
 ): Shape3D {
-  const icon = LABEL_TAG_ICON_PATHS[iconId]
-  if (!icon) throw new Error('LABEL_TAG_ICON_UNKNOWN')
+  const icon = LABEL_CARD_ICON_PATHS[iconId]
+  if (!icon) throw new Error('LABEL_CARD_ICON_UNKNOWN')
 
   const pieces: Shape3D[] = []
   try {
@@ -124,19 +124,19 @@ export function makeLabelTagIconShape(
     for (const path of icon.paths) {
       polygons.push(...parseSvgPath(path))
     }
-    if (totalPoints(polygons) > LABEL_TAG_ICON_CONFIGURATION.maxPoints) {
+    if (totalPoints(polygons) > LABEL_CARD_ICON_CONFIGURATION.maxPoints) {
       throw new SvgPathParseError('SVG_PATH_TOO_COMPLEX')
     }
     polygons = scaleAndCenterPolygons(
       polygons,
-      LABEL_TAG_ICON_CONFIGURATION.size,
+      LABEL_CARD_ICON_CONFIGURATION.size,
     )
 
     for (const [outer, ...holes] of groupPolygonContours(polygons)) {
       if (!outer) continue
       pieces.push(extrudeContourGroup(outer, holes, depth))
     }
-    if (pieces.length === 0) throw new Error('LABEL_TAG_ICON_EMPTY')
+    if (pieces.length === 0) throw new Error('LABEL_CARD_ICON_EMPTY')
     if (pieces.length === 1) {
       const single = pieces[0]!
       pieces.length = 0
@@ -149,6 +149,6 @@ export function makeLabelTagIconShape(
     for (const piece of pieces) deleteShape(piece)
     pieces.length = 0
     if (error instanceof SvgPathParseError) throw error
-    throw new Error('LABEL_TAG_ICON_GEOMETRY_FAILED')
+    throw new Error('LABEL_CARD_ICON_GEOMETRY_FAILED')
   }
 }

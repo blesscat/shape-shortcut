@@ -31,11 +31,8 @@ import {
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_WALL_COVER_CONFIGURATION,
   normalizeOpenGridWallCoverText,
-  normalizeOpenGridLabelTagText,
   normalizeOpenGridLabelCardText,
-  OPENGRID_LABEL_TAG_CONFIGURATION,
   OPENGRID_LABEL_CARD_CONFIGURATION,
-  OPENGRID_LABEL_HOLDER_CONFIGURATION,
   normalizeOpenGridLocatingSeatMode,
   type OpenGridOpenShelfParameters,
   type OpenGridOpenConnectShelfParameters,
@@ -51,9 +48,7 @@ import {
   type OpenGridOrganizerBoxParameters,
   type OpenGridOpenConnectOrganizerParameters,
   type OpenGridWallCoverParameters,
-  type OpenGridLabelTagParameters,
   type OpenGridLabelCardParameters,
-  type OpenGridLabelHolderParameters,
   type ScalarModelParameterKey,
   type ValidationIssue,
 } from '../../../cad-contract/units'
@@ -216,16 +211,10 @@ function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
   ) {
     return modelId === 'opengrid-wall-cover' ? ['text', 'openConnect'] : []
   }
-  if (modelId === 'opengrid-label-tag') {
-    return ['widthTier', 'gripThickness', 'icon', 'text']
-  }
   if (modelId === 'opengrid-label-card') {
-    return ['widthTier', 'style', 'icon', 'text']
+    return ['gridUnits', 'style', 'icon', 'text', 'iconPosition']
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
-  if (modelId === 'opengrid-label-holder') {
-    return ['widthTier', 'gripThickness']
-  }
   if (modelId === 'opengrid-divider') return OPENGRID_DIVIDER_PARAMETER_KEYS
   if (modelId === 'opengrid-pillar') return PILLAR_PARAMETER_KEYS
   if (modelId === 'opengrid-open-shelf') {
@@ -905,6 +894,7 @@ export function rawFromParameters(
       widthTier: String(labelCardParameters.widthTier),
       style: labelCardParameters.style,
       icon: labelCardParameters.icon,
+      iconPosition: labelCardParameters.iconPosition ?? 'left',
     }
     if (labelCardParameters.text !== undefined) {
       raw.text = labelCardParameters.text
@@ -914,31 +904,6 @@ export function rawFromParameters(
 
   if ('gridUnits' in parameters)
     return { gridUnits: String(parameters.gridUnits) }
-
-  if (
-    'widthTier' in parameters &&
-    'gripThickness' in parameters &&
-    !('icon' in parameters)
-  ) {
-    const labelHolderParameters = parameters as OpenGridLabelHolderParameters
-    return {
-      widthTier: String(labelHolderParameters.widthTier),
-      gripThickness: String(labelHolderParameters.gripThickness),
-    }
-  }
-
-  if ('widthTier' in parameters) {
-    const labelTagParameters = parameters as OpenGridLabelTagParameters
-    const raw: RawParameters = {
-      widthTier: String(labelTagParameters.widthTier),
-      gripThickness: String(labelTagParameters.gripThickness),
-      icon: labelTagParameters.icon,
-    }
-    if (labelTagParameters.text !== undefined) {
-      raw.text = labelTagParameters.text
-    }
-    return raw
-  }
 
   if ('text' in parameters) {
     const wallCoverParameters = parameters as OpenGridWallCoverParameters
@@ -1309,28 +1274,35 @@ export function parseRawParameters(
     if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
       return { valid: false, messageId: 'validation.invalid' }
     }
-    const rawWidthTier =
-      raw.widthTier ??
-      String(OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.widthTier)
-    const widthTier = parseDimensionInput(rawWidthTier)
-    if (widthTier === null) {
+    const allowedKeys = parameterKeysForModel(modelId)
+    const unexpectedKey = Object.keys(raw).find(
+      (key) => !allowedKeys.includes(key as ModelParameterKey),
+    )
+    if (unexpectedKey) {
+      return { valid: false, messageId: 'validation.invalid' }
+    }
+    const rawGridUnits =
+      raw.gridUnits ??
+      String(OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.gridUnits)
+    const gridUnits = parseDimensionInput(rawGridUnits)
+    if (gridUnits === null) {
       return {
         valid: false,
         messageId: 'validation.invalid',
-        field: 'widthTier',
+        field: 'gridUnits',
       }
     }
     const style =
       raw.style ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.style
     const text = typeof raw.text === 'string' ? raw.text : undefined
-    const normalizedRaw = {
-      widthTier,
+    const normalizedRaw: Record<string, unknown> = {
+      gridUnits,
       style,
-      ...(raw.icon === undefined ? {} : { icon: raw.icon }),
-      ...(text === undefined
-        ? {}
-        : { text: normalizeOpenGridLabelCardText(text) }),
+      iconPosition: raw.iconPosition ?? 'left',
     }
+    if (raw.icon !== undefined) normalizedRaw.icon = raw.icon
+    if (text !== undefined)
+      normalizedRaw.text = normalizeOpenGridLabelCardText(text)
     const validation = validateModelParameters(modelId, normalizedRaw)
     if (!validation.valid) {
       const issue = validation.issues[0]
@@ -1343,96 +1315,6 @@ export function parseRawParameters(
     }
     return { valid: true, value: validation.value.parameters }
   }
-
-  if (modelId === 'opengrid-label-holder') {
-    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
-      return { valid: false, messageId: 'validation.invalid' }
-    }
-    const rawWidthTier =
-      raw.widthTier ??
-      String(OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters.widthTier)
-    const widthTier = parseDimensionInput(rawWidthTier)
-    if (widthTier === null) {
-      return {
-        valid: false,
-        messageId: 'validation.invalid',
-        field: 'widthTier',
-      }
-    }
-    const rawGrip =
-      raw.gripThickness ??
-      String(
-        OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters.gripThickness,
-      )
-    const gripThickness = parseOpenGridSnapDecimalInput(rawGrip)
-    if (gripThickness === null) {
-      return {
-        valid: false,
-        messageId: 'validation.invalid',
-        field: 'gripThickness',
-      }
-    }
-    const validation = validateModelParameters(modelId, {
-      widthTier,
-      gripThickness,
-    })
-    if (!validation.valid) {
-      const issue = validation.issues[0]
-      return {
-        valid: false,
-        messageId: issue?.messageId ?? 'validation.invalid',
-        field: modelParameterFieldFromDiagnostic(issue?.field),
-        ...(issue?.params ? { params: issue.params } : {}),
-      }
-    }
-    return { valid: true, value: validation.value.parameters }
-  }
-
-  if (modelId === 'opengrid-label-tag') {
-    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
-      return { valid: false, messageId: 'validation.invalid' }
-    }
-    const rawWidthTier =
-      raw.widthTier ??
-      String(OPENGRID_LABEL_TAG_CONFIGURATION.defaultParameters.widthTier)
-    const widthTier = parseDimensionInput(rawWidthTier)
-    if (widthTier === null) {
-      return {
-        valid: false,
-        messageId: 'validation.invalid',
-        field: 'widthTier',
-      }
-    }
-    const rawGrip =
-      raw.gripThickness ??
-      String(OPENGRID_LABEL_TAG_CONFIGURATION.defaultParameters.gripThickness)
-    const gripThickness = parseOpenGridSnapDecimalInput(rawGrip)
-    if (gripThickness === null) {
-      return {
-        valid: false,
-        messageId: 'validation.invalid',
-        field: 'gripThickness',
-      }
-    }
-    const text = typeof raw.text === 'string' ? raw.text : undefined
-    const normalizedRaw = {
-      widthTier,
-      gripThickness,
-      ...(raw.icon === undefined ? {} : { icon: raw.icon }),
-      ...(text === undefined
-        ? {}
-        : { text: normalizeOpenGridLabelTagText(text) }),
-    }
-    const validation = validateModelParameters(modelId, normalizedRaw)
-    if (!validation.valid) {
-      const issue = validation.issues[0]
-      return {
-        valid: false,
-        messageId: issue?.messageId ?? 'validation.invalid',
-        field: modelParameterFieldFromDiagnostic(issue?.field),
-        ...(issue?.params ? { params: issue.params } : {}),
-      }
-    }
     return { valid: true, value: validation.value.parameters }
   }
 

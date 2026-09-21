@@ -12,9 +12,7 @@ import {
 } from '../cad-contract/messages'
 import {
   boundsForOpenGridWallCover,
-  boundsForOpenGridLabelTag,
   boundsForOpenGridLabelCard,
-  boundsForOpenGridLabelHolder,
   isHswCellParameters,
   isOpenGridDividerModelParameters,
   isOpenGridOpenConnectShelfParameters,
@@ -24,9 +22,7 @@ import {
   isOpenGridParameters,
   isOpenGridSnapParameters,
   isOpenGridStackableCylinderParameters,
-  isOpenGridLabelTagParameters,
   isOpenGridLabelCardParameters,
-  isOpenGridLabelHolderParameters,
   isPillarParameters,
   normalizeOpenGridDividerParameters,
   normalizeOpenGridParameters,
@@ -57,9 +53,7 @@ import { assertOpenGridOrganizerBoxGeometry } from '../cad-kernel/components/ope
 import { assertOpenGridShapeQuality } from '../cad-kernel/components/opengrid/quality'
 import { assertPillarShapeQuality } from '../cad-kernel/components/opengrid-pillar/quality'
 import { assertOpenGridWallCoverShapeQuality } from '../cad-kernel/components/opengrid-wall-cover/quality'
-import { assertOpenGridLabelTagShapeQuality } from '../cad-kernel/components/opengrid-label-tag/quality'
 import { assertOpenGridLabelCardShapeQuality } from '../cad-kernel/components/opengrid-label-card/quality'
-import { assertOpenGridLabelHolderShapeQuality } from '../cad-kernel/components/opengrid-label-holder/quality'
 import {
   assertOpenGridSnapOpenConnectShapeQuality,
   assertOpenGridSnapShapeQuality,
@@ -160,20 +154,7 @@ export async function generateCadCandidate(
     }
     generationParameters = validation.value.parameters
   }
-  if (command.modelId === 'opengrid-label-tag') {
-    const validation = validateModelParameters(
-      command.modelId,
-      command.parameters,
-    )
-    if (!validation.valid) {
-      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
-    }
-    generationParameters = validation.value.parameters
-  }
-  if (
-    command.modelId === 'opengrid-label-card' ||
-    command.modelId === 'opengrid-label-holder'
-  ) {
+  if (command.modelId === 'opengrid-label-card') {
     const validation = validateModelParameters(
       command.modelId,
       command.parameters,
@@ -258,7 +239,6 @@ export async function generateCadCandidate(
     }
     const usesMultipart =
       command.modelId === 'opengrid-wall-cover' ||
-      command.modelId === 'opengrid-label-tag' ||
       command.modelId === 'opengrid-label-card' ||
       command.modelId === 'opengrid-label-holder' ||
       (command.modelId === 'opengrid-stackable-cylinder' &&
@@ -507,15 +487,6 @@ export async function generateCadCandidate(
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
       timing.measureSync('quality', () =>
         assertOpenGridLabelSlotTestQuality(shape, generationParameters),
-      )
-    }
-
-    if (command.modelId === 'opengrid-label-holder') {
-      if (!isOpenGridLabelHolderParameters(generationParameters)) {
-        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-holder')
-      }
-      timing.measureSync('quality', () =>
-        assertOpenGridLabelHolderShapeQuality(shape, generationParameters),
       )
     }
 

@@ -79,19 +79,9 @@ describe('CAD Worker error mapping', () => {
       'OPENGRID_WALL_COVER_QUALITY_INVALID',
     ],
     [
-      'OPENGRID_LABEL_TAG_QUALITY_INVALID:grip-opening',
-      'model.generate',
-      'OPENGRID_LABEL_TAG_QUALITY_INVALID',
-    ],
-    [
       'OPENGRID_LABEL_CARD_QUALITY_INVALID:accent-recessed',
       'model.generate',
       'OPENGRID_LABEL_CARD_QUALITY_INVALID',
-    ],
-    [
-      'OPENGRID_LABEL_HOLDER_QUALITY_INVALID:pocket-occupied',
-      'model.generate',
-      'OPENGRID_LABEL_HOLDER_QUALITY_INVALID',
     ],
     [
       'OPENGRID_LABEL_CARD_PARTS_INVALID',
@@ -147,12 +137,6 @@ describe('CAD Worker error mapping', () => {
       cadErrorStageFor(
         'model.generate',
         'OPENGRID_LABEL_CARD_QUALITY_INVALID:accent-recessed',
-      ),
-    ).toBe('meshing')
-    expect(
-      cadErrorStageFor(
-        'model.generate',
-        'OPENGRID_LABEL_HOLDER_QUALITY_INVALID:pocket-occupied',
       ),
     ).toBe('meshing')
     expect(

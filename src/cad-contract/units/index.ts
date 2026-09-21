@@ -146,27 +146,6 @@ import type {
   OpenGridWallCoverValidation,
 } from './opengrid-wall-cover'
 import {
-  boundsForOpenGridLabelTag,
-  isOpenGridLabelTagIconId,
-  isOpenGridLabelTagParameters,
-  isOpenGridLabelTagWidthTier,
-  normalizeOpenGridLabelTagText,
-  openGridLabelTagFileName,
-  openGridLabelTagStlFileName,
-  openGridLabelTagThreeMfFileName,
-  OPENGRID_LABEL_TAG_CONFIGURATION,
-  OPENGRID_LABEL_TAG_ICON_IDS,
-  OPENGRID_LABEL_TAG_WIDTH_TIERS,
-  validateOpenGridLabelTagParameters,
-} from './opengrid-label-tag'
-import type {
-  OpenGridLabelTagIconId,
-  OpenGridLabelTagParameterKey,
-  OpenGridLabelTagParameters,
-  OpenGridLabelTagValidation,
-  OpenGridLabelTagWidthTier,
-} from './opengrid-label-tag'
-import {
   boundsForOpenGridLabelCard,
   isOpenGridLabelCardParameters,
   isOpenGridLabelCardStyle,
@@ -184,22 +163,6 @@ import type {
   OpenGridLabelCardStyle,
   OpenGridLabelCardValidation,
 } from './opengrid-label-card'
-import {
-  boundsForOpenGridLabelHolder,
-  isOpenGridLabelHolderParameters,
-  openGridLabelHolderDepthFor,
-  openGridLabelHolderHalfWidthFor,
-  openGridLabelHolderHeightFor,
-  openGridLabelHolderFileName,
-  openGridLabelHolderStlFileName,
-  OPENGRID_LABEL_HOLDER_CONFIGURATION,
-  validateOpenGridLabelHolderParameters,
-} from './opengrid-label-holder'
-import type {
-  OpenGridLabelHolderParameterKey,
-  OpenGridLabelHolderParameters,
-  OpenGridLabelHolderValidation,
-} from './opengrid-label-holder'
 import {
   boundsForOpenGridDivider,
   classifyOpenGridDividerShape,
@@ -531,31 +494,6 @@ export {
   validateOpenGridLabelCardParameters,
 } from './opengrid-label-card'
 export {
-  boundsForOpenGridLabelHolder,
-  isOpenGridLabelHolderParameters,
-  openGridLabelHolderDepthFor,
-  openGridLabelHolderHalfWidthFor,
-  openGridLabelHolderHeightFor,
-  openGridLabelHolderFileName,
-  openGridLabelHolderStlFileName,
-  OPENGRID_LABEL_HOLDER_CONFIGURATION,
-  validateOpenGridLabelHolderParameters,
-} from './opengrid-label-holder'
-export {
-  boundsForOpenGridLabelTag,
-  isOpenGridLabelTagIconId,
-  isOpenGridLabelTagParameters,
-  isOpenGridLabelTagWidthTier,
-  normalizeOpenGridLabelTagText,
-  openGridLabelTagFileName,
-  openGridLabelTagStlFileName,
-  openGridLabelTagThreeMfFileName,
-  OPENGRID_LABEL_TAG_CONFIGURATION,
-  OPENGRID_LABEL_TAG_ICON_IDS,
-  OPENGRID_LABEL_TAG_WIDTH_TIERS,
-  validateOpenGridLabelTagParameters,
-} from './opengrid-label-tag'
-export {
   HALF_CELL_CONFIGURATION,
   halfCellDirectionLabel,
   halfCellExtensionFor,
@@ -621,18 +559,6 @@ export type {
   OpenGridLabelCardStyle,
   OpenGridLabelCardValidation,
 } from './opengrid-label-card'
-export type {
-  OpenGridLabelHolderParameterKey,
-  OpenGridLabelHolderParameters,
-  OpenGridLabelHolderValidation,
-} from './opengrid-label-holder'
-export type {
-  OpenGridLabelTagIconId,
-  OpenGridLabelTagParameterKey,
-  OpenGridLabelTagParameters,
-  OpenGridLabelTagValidation,
-  OpenGridLabelTagWidthTier,
-} from './opengrid-label-tag'
 export type {
   OpenGridStackableBoxParameterKey,
   OpenGridStackableBoxParameters,
@@ -859,9 +785,7 @@ export type ModelParameterKey =
   | TissueBoxParameterKey
   | OpenGridOpenConnectOrganizerParameterKey
   | OpenGridWallCoverParameterKey
-  | OpenGridLabelTagParameterKey
   | OpenGridLabelCardParameterKey
-  | OpenGridLabelHolderParameterKey
 export type ScalarModelParameterKey =
   | DimensionKey
   | GridParameterKey
@@ -886,10 +810,8 @@ export type ModelId =
   | 'opengrid-openconnect-shelf'
   | 'opengrid-openconnect-tissue-box'
   | 'opengrid-openconnect-organizer'
-  | 'opengrid-label-tag'
   | 'opengrid-label-card'
   | 'opengrid-label-slot-test'
-  | 'opengrid-label-holder'
 
 export type BoxParameters = Record<DimensionKey, number>
 export type ModularGridBaseParameters = Record<GridParameterKey, number>
@@ -956,15 +878,10 @@ export type ModelParameters =
       modelId: 'opengrid-openconnect-organizer'
       parameters: OpenGridOpenConnectOrganizerParameters
     }
-  | { modelId: 'opengrid-label-tag'; parameters: OpenGridLabelTagParameters }
   | { modelId: 'opengrid-label-card'; parameters: OpenGridLabelCardParameters }
   | {
       modelId: 'opengrid-label-slot-test'
       parameters: OpenGridLabelSlotTestParameters
-    }
-  | {
-      modelId: 'opengrid-label-holder'
-      parameters: OpenGridLabelHolderParameters
     }
 
 export type ModelParameterValues = ModelParameters['parameters']
@@ -1620,21 +1537,6 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
-  if (modelId === 'opengrid-label-tag') {
-    const validation = validateOpenGridLabelTagParameters(value)
-    if (!validation.valid) {
-      return {
-        valid: false,
-        issues: validation.issues.map((issue) => ({
-          field: issue.field,
-          messageId: issue.messageId,
-          ...(issue.params ? { params: issue.params } : {}),
-        })),
-      }
-    }
-    return { valid: true, value: { modelId, parameters: validation.value } }
-  }
-
   if (modelId === 'opengrid-label-card') {
     const validation = validateOpenGridLabelCardParameters(value)
     if (!validation.valid) {
@@ -1653,21 +1555,6 @@ export function validateModelParameters(
   if (modelId === 'opengrid-label-slot-test') {
     const validation = validateOpenGridLabelSlotTestParameters(value)
     if (!validation.valid) return validation
-    return { valid: true, value: { modelId, parameters: validation.value } }
-  }
-
-  if (modelId === 'opengrid-label-holder') {
-    const validation = validateOpenGridLabelHolderParameters(value)
-    if (!validation.valid) {
-      return {
-        valid: false,
-        issues: validation.issues.map((issue) => ({
-          field: issue.field,
-          messageId: issue.messageId,
-          ...(issue.params ? { params: issue.params } : {}),
-        })),
-      }
-    }
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
@@ -1973,14 +1860,10 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return tissueBoxBounds(model.parameters)
     case 'opengrid-openconnect-organizer':
       return boundsForOpenGridOpenConnectOrganizer(model.parameters)
-    case 'opengrid-label-tag':
-      return boundsForOpenGridLabelTag(model.parameters)
     case 'opengrid-label-card':
       return boundsForOpenGridLabelCard(model.parameters)
     case 'opengrid-label-slot-test':
       return boundsForOpenGridLabelSlotTest(model.parameters)
-    case 'opengrid-label-holder':
-      return boundsForOpenGridLabelHolder(model.parameters)
   }
 }
 
@@ -2020,14 +1903,10 @@ export function modelFileName(model: ModelParameters): string {
       return tissueBoxFileName(model.parameters, 'step')
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerFileName(model.parameters)
-    case 'opengrid-label-tag':
-      return openGridLabelTagFileName(model.parameters)
     case 'opengrid-label-card':
       return openGridLabelCardFileName(model.parameters)
     case 'opengrid-label-slot-test':
       return openGridLabelSlotTestFileName(model.parameters)
-    case 'opengrid-label-holder':
-      return openGridLabelHolderFileName(model.parameters)
   }
 }
 
@@ -2067,13 +1946,9 @@ export function modelStlFileName(model: ModelParameters): string {
       return tissueBoxFileName(model.parameters, 'stl')
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerStlFileName(model.parameters)
-    case 'opengrid-label-tag':
-      return openGridLabelTagStlFileName(model.parameters)
     case 'opengrid-label-card':
       return openGridLabelCardStlFileName(model.parameters)
     case 'opengrid-label-slot-test':
       return openGridLabelSlotTestStlFileName(model.parameters)
-    case 'opengrid-label-holder':
-      return openGridLabelHolderStlFileName(model.parameters)
   }
 }

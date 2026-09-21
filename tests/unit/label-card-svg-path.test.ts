@@ -4,9 +4,9 @@ import {
   parseSvgPath,
   signedArea,
   SvgPathParseError,
-} from '../../src/cad-kernel/components/opengrid-label-tag/svg-path'
+} from '../../src/cad-kernel/components/opengrid-label-card/svg-path'
 
-describe('label tag SVG path parser', () => {
+describe('label card SVG path parser', () => {
   it('parses absolute lines into a closed square polygon', () => {
     const polygons = parseSvgPath('M0 0L4 0L4 4L0 4Z')
     expect(polygons).toHaveLength(1)

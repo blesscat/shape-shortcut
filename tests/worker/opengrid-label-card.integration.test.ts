@@ -59,6 +59,7 @@ describe('OpenGrid Label Card generated geometry', () => {
     const parameters = {
       widthTier: 40,
       style: 'raised',
+      iconPosition: 'left',
       icon: 'gear-fill',
     } as const
     const result = await buildOpenGridLabelCardWithParts(parameters, {})
@@ -84,6 +85,7 @@ describe('OpenGrid Label Card generated geometry', () => {
     const parameters = {
       widthTier: 30,
       style: 'flat',
+      iconPosition: 'left',
       icon: 'wrench',
       text: 'M3',
     } as const
@@ -109,6 +111,7 @@ describe('OpenGrid Label Card generated geometry', () => {
         const parameters = {
           widthTier: 40,
           style: 'flat',
+          iconPosition: 'left',
           icon: iconId,
         } as const
         const result = await buildOpenGridLabelCardWithParts(parameters, {})
@@ -126,6 +129,7 @@ describe('OpenGrid Label Card generated geometry', () => {
     const parameters = {
       widthTier: 40,
       style: 'raised',
+      iconPosition: 'left',
       icon: 'gear-fill',
     } as const
     const result = await buildOpenGridLabelCardWithParts(parameters, {})
@@ -160,3 +164,51 @@ describe('OpenGrid Label Card generated geometry', () => {
     expect(config.raisedHeight).toBe(0.4)
   })
 })
+
+it.each(['left', 'right'] as const)(
+  'places %s icon beside actual 7mm text',
+  async (iconPosition) => {
+    const { makeOpenGridLabelCardTextShape } =
+      await import('../../src/cad-kernel/components/opengrid-label-card/flat-text')
+    const { makeBox, measureVolume } = await import('replicad')
+    const text = await makeOpenGridLabelCardTextShape('田田', { depth: 0.4 })
+    const textBounds = text!.boundingBox
+    try {
+      expect(textBounds.bounds[1][1] - textBounds.bounds[0][1]).toBeCloseTo(
+        7,
+        2,
+      )
+    } finally {
+      textBounds.delete()
+      text!.delete()
+    }
+    const p = {
+      gridUnits: 4,
+      style: 'raised' as const,
+      icon: 'gear-fill' as const,
+      text: '田田',
+      iconPosition,
+    }
+    const built = await buildOpenGridLabelCardWithParts(p, {})
+    try {
+      const accent = built.parts.find((part) => part.name === 'accent')!.shape
+      for (const side of ['left', 'right']) {
+        const minX = side === 'left' ? -12 : 5
+        const probe = makeBox([minX, 3.2, 0.65], [minX + 7, 3.45, 0.95])
+        const intersection = accent.intersect(probe)
+        try {
+          const volume = Math.abs(measureVolume(intersection))
+          if (side === iconPosition) expect(volume).toBeLessThan(1e-5)
+          else expect(volume).toBeGreaterThan(0.01)
+        } finally {
+          intersection.delete()
+          probe.delete()
+        }
+      }
+    } finally {
+      built.shape.delete()
+      built.qualityShape.delete()
+      for (const part of built.parts) part.shape.delete()
+    }
+  },
+)
