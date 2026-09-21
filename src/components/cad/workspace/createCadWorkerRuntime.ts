@@ -1,3 +1,4 @@
+import type { ModelColors } from '../../../cad-contract/model-colors'
 import { normalizeError, type CadError } from '../../../cad-contract/errors'
 import { diagnostic } from '../../../cad-contract/diagnostics'
 import {
@@ -58,7 +59,7 @@ export type CadWorkerRuntime = {
   handleParametersScopeChange: (parameters: CadState['input']) => void
   handleOpenGridParametersChange: (parameters: OpenGridParameters) => void
   handleOpenGridDimensionCalculationInvalid: () => void
-  handleExport: (format?: ExportFormat) => void
+  handleExport: (format?: ExportFormat, colors?: ModelColors) => void
   handleRetry: () => void
   dispose: () => void
 }

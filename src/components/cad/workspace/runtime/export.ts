@@ -1,3 +1,7 @@
+import {
+  DEFAULT_MODEL_COLORS,
+  type ModelColors,
+} from '../../../../cad-contract/model-colors'
 import { normalizeError } from '../../../../cad-contract/errors'
 import { diagnostic } from '../../../../cad-contract/diagnostics'
 import type { ExportReadyEvent } from '../../../../cad-contract/messages'
@@ -19,7 +23,7 @@ import type { RuntimeContext } from './types'
 
 export type ExportHandlers = {
   handleExportReady: (event: ExportReadyEvent) => void
-  handleExport: (format?: ExportFormat) => void
+  handleExport: (format?: ExportFormat, colors?: ModelColors) => void
 }
 
 function validateExportResponse(
@@ -112,7 +116,10 @@ export function createExportHandlers(context: RuntimeContext): ExportHandlers {
     context.dispatch({ type: 'export-end' })
   }
 
-  const handleExport = (format: ExportFormat = 'step') => {
+  const handleExport = (
+    format: ExportFormat = 'step',
+    colors: ModelColors = DEFAULT_MODEL_COLORS,
+  ) => {
     const client = context.refs.client.current
     const model = context.refs.state.current.committed
     const workerEpoch = context.refs.workerEpoch.current
@@ -155,6 +162,7 @@ export function createExportHandlers(context: RuntimeContext): ExportHandlers {
       fileName = threeMfFileName
       requestId = client.send({
         kind: 'export.3mf',
+        colors: { ...colors },
         operationId,
         modelRevision: model.revision,
         workerEpoch,

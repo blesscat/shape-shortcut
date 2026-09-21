@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_COLORS } from '../cad-contract/model-colors'
 import { PROTOCOL_VERSION, type WorkerCommand } from '../cad-contract/messages'
 import {
   modelFileName,
@@ -187,7 +188,10 @@ export async function exportThreeMfCommand(
       workerEpoch: context.epoch,
     })
     emitProgress(context.emit, command, 'exporting', revision.modelRevision)
+    const colors = command.colors ?? DEFAULT_MODEL_COLORS
     const bytes = await exportThreeMfBytes(threeMfParts, {
+      baseColor: colors.primary,
+      accentColor: colors.secondary,
       tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
       angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
       modelName: revision.modelId,

@@ -721,6 +721,7 @@ describe('OpenGrid Snap Worker runtime', () => {
     await runtime.handle({
       ...base,
       requestId: 'wall-cover-3mf-export-request',
+      colors: { primary: '#123456', secondary: '#abcdef' },
       operationId: 'wall-cover-3mf-export-operation',
       kind: 'export.3mf' as const,
       modelRevision: ready!.modelRevision,
@@ -734,6 +735,10 @@ describe('OpenGrid Snap Worker runtime', () => {
     expect(mocks.buildModelBRepWithParts).toHaveBeenCalledOnce()
     expect(mocks.loadOpenGridWallCoverReference).toHaveBeenCalledOnce()
     expect(mocks.exportThreeMfBytes).toHaveBeenCalledOnce()
+    expect(mocks.exportThreeMfBytes).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ baseColor: '#123456', accentColor: '#abcdef' }),
+    )
     expect(
       events.filter(
         (event) =>

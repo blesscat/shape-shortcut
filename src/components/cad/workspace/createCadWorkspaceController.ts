@@ -1,3 +1,4 @@
+import type { ModelColors } from '../../../cad-contract/model-colors'
 import type {
   ModelId,
   ModelParameterKey,
@@ -38,7 +39,7 @@ export type CadWorkspaceController = {
   onOpenGridParametersChange: (parameters: OpenGridParameters) => void
   onOpenGridDimensionCalculationInvalid: () => void
   onRestoreDefaults: () => void
-  onExport: (format?: ExportFormat) => void
+  onExport: (format?: ExportFormat, colors?: ModelColors) => void
   onRetry: () => void
   dispose: () => void
 }

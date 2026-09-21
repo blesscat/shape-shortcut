@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    DEFAULT_MODEL_COLORS,
+    type ModelColors,
+  } from '../../../cad-contract/model-colors'
   import { T, useThrelte } from '@threlte/core'
   import {
     Bounds,
@@ -34,6 +38,7 @@
   import type { Locale } from '../../../i18n'
 
   type Props = {
+    colors?: ModelColors
     locale: Locale
     mesh: MeshSnapshot
     partMeshes?: ModelPartMeshSnapshot[]
@@ -56,6 +61,7 @@
   }
 
   let {
+    colors = DEFAULT_MODEL_COLORS,
     locale,
     mesh,
     partMeshes,
@@ -146,7 +152,7 @@
           <ModelMesh
             mesh={part.mesh}
             {theme}
-            materialColor={colorForCadViewportPart(part.name)}
+            materialColor={colorForCadViewportPart(part.name, colors)}
             {onPreparationTiming}
             {enableFaceHover}
             {onFaceHover}
@@ -156,6 +162,7 @@
     {:else}
       <ModelMesh
         {mesh}
+        materialColor={colors.primary}
         {theme}
         {onPreparationTiming}
         {enableFaceHover}

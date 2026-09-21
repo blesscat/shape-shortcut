@@ -464,3 +464,44 @@ describe('3MF browser download adapter', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('3MF custom palette metadata', () => {
+  const recolor = (value: string) =>
+    value.replaceAll('#657080', '#123abc').replaceAll('#F4C542', '#def456')
+  it('accepts matching arbitrary colors', () => {
+    expect(
+      validateThreeMfPackage(threeMfBytes(recolor, undefined, recolor)),
+    ).toBe(true)
+  })
+  it('accepts equal colors without merging parts', () => {
+    const equal = (value: string) =>
+      value.replaceAll('#657080', '#abcdef').replaceAll('#F4C542', '#abcdef')
+    expect(validateThreeMfPackage(threeMfBytes(equal, undefined, equal))).toBe(
+      true,
+    )
+  })
+  it('compares colors case-insensitively', () => {
+    expect(
+      validateThreeMfPackage(
+        threeMfBytes(recolor, undefined, (value) =>
+          recolor(value).replaceAll('#123abc', '#123ABC'),
+        ),
+      ),
+    ).toBe(true)
+  })
+  it('rejects disagreement even when both sides use formerly allowed colors', () => {
+    expect(
+      validateThreeMfPackage(
+        threeMfBytes(undefined, undefined, (value) =>
+          value.replaceAll('#F4C542', '#f59e0b'),
+        ),
+      ),
+    ).toBe(false)
+  })
+  it('rejects malformed colors', () => {
+    const invalid = (value: string) => value.replaceAll('#657080', '#gggggg')
+    expect(
+      validateThreeMfPackage(threeMfBytes(invalid, undefined, invalid)),
+    ).toBe(false)
+  })
+})
