@@ -84,6 +84,8 @@ function fullDividerParameters(
   return {
     ...DIVIDER_ALIGNMENT_DEFAULTS,
     honeycombMode: false,
+    topRimEnabled: false,
+    topRimHeight: 2,
     ...base,
   }
 }
@@ -368,6 +370,8 @@ describe('OpenGrid divider honeycomb saving mode', () => {
     height: 40,
     wallThickness: 2,
     honeycombMode: true,
+    topRimEnabled: false,
+    topRimHeight: 2,
   }
 
   it('cuts framed voids while staying a single lighter solid', async () => {
@@ -483,6 +487,8 @@ describe('OpenGrid divider honeycomb saving mode', () => {
         height,
         wallThickness,
         honeycombMode: true,
+        topRimEnabled: false,
+        topRimHeight: 2,
       }
       expect(openGridDividerHoneycombCellCountFor(parameters)).toBe(0)
       const shape = await buildOpenGridDivider(parameters)
@@ -511,6 +517,8 @@ describe('OpenGrid divider honeycomb saving mode', () => {
         height: 40,
         wallThickness: 2,
         honeycombMode: true,
+        topRimEnabled: false,
+        topRimHeight: 2,
       },
       {
         ...DIVIDER_ALIGNMENT_DEFAULTS,
@@ -521,6 +529,8 @@ describe('OpenGrid divider honeycomb saving mode', () => {
         height: 20,
         wallThickness: 5,
         honeycombMode: true,
+        topRimEnabled: false,
+        topRimHeight: 2,
       },
     ]
     for (const parameters of cases) {
@@ -572,6 +582,8 @@ describe('OpenGrid divider honeycomb saving mode', () => {
       height: 500,
       wallThickness: 2,
       honeycombMode: true,
+      topRimEnabled: false,
+      topRimHeight: 2,
     }
     const estimated = openGridDividerHoneycombCellCountFor(parameters)
     expect(estimated).toBeGreaterThan(OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS)

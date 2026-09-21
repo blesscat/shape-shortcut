@@ -39,6 +39,8 @@ function parameters(
     topRimMode: 'stacking-rail',
     bottomMode: 'stacking',
     honeycombMode: false,
+    topRimEnabled: false,
+    topRimHeight: 2,
     openingPlusXDepth: 0,
     openingPlusXBottomLength: 1,
     openingPlusXAngle: 90,

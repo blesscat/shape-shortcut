@@ -44,6 +44,8 @@ describe('OpenGrid OpenConnect organizer contract', () => {
       bottomThickness: 1,
       edgeThickness: 1,
       tiltAngle: 15,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     expect(validateOpenGridOpenConnectOrganizerParameters(value)).toEqual({
       valid: true,

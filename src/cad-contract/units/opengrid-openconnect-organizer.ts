@@ -36,6 +36,8 @@ export type OpenGridOpenConnectOrganizerParameterKey =
   | 'bottomThickness'
   | 'edgeThickness'
   | 'tiltAngle'
+  | 'topRimEnabled'
+  | 'topRimHeight'
 
 export type OpenGridOpenConnectOrganizerParameters =
   OpenConnectAlignmentParameters & {
@@ -53,6 +55,8 @@ export type OpenGridOpenConnectOrganizerParameters =
     bottomThickness: number
     edgeThickness: number
     tiltAngle: number
+    topRimEnabled: boolean
+    topRimHeight: number
   }
 
 export type OpenGridOpenConnectOrganizerPoint2D = [number, number]
@@ -144,6 +148,9 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION = {
   defaultBottomThickness: 1,
   defaultEdgeThickness: 1,
   defaultTiltAngle: 15,
+  defaultTopRimEnabled: false,
+  defaultTopRimHeight: 2,
+  minTopRimHeight: 1,
 } as const
 
 export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConnectOrganizerParameters =
@@ -170,6 +177,10 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConn
     edgeThickness:
       OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultEdgeThickness,
     tiltAngle: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTiltAngle,
+    topRimEnabled:
+      OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTopRimEnabled,
+    topRimHeight:
+      OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTopRimHeight,
   }
 
 const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
@@ -187,6 +198,8 @@ const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
   'bottomThickness',
   'edgeThickness',
   'tiltAngle',
+  'topRimEnabled',
+  'topRimHeight',
 ]
 
 const POLYGON_SIDES: Record<
@@ -720,6 +733,24 @@ export function validateOpenGridOpenConnectOrganizerParameters(
   ) {
     issues.push(issue('tiltAngle'))
   }
+  const hasTopRimEnabledField = Object.prototype.hasOwnProperty.call(
+    value,
+    'topRimEnabled',
+  )
+  const hasTopRimHeightField = Object.prototype.hasOwnProperty.call(
+    value,
+    'topRimHeight',
+  )
+  if (hasTopRimEnabledField && typeof value.topRimEnabled !== 'boolean') {
+    issues.push(issue('topRimEnabled'))
+  }
+  if (
+    hasTopRimHeightField &&
+    (typeof value.topRimHeight !== 'number' ||
+      !Number.isSafeInteger(value.topRimHeight))
+  ) {
+    issues.push(issue('topRimHeight'))
+  }
 
   if (issues.length > 0) return { valid: false, issues }
 
@@ -727,10 +758,34 @@ export function validateOpenGridOpenConnectOrganizerParameters(
     ...value,
     ...normalizedOpenConnectAlignment(value as OpenConnectAlignmentParameters),
   } as OpenGridOpenConnectOrganizerParameters
-  if (layoutExceedsWorkspace(parameters)) {
+  const bodyThickness = parameters.holeDepth + parameters.bottomThickness
+  const maximumTopRimHeight = Math.max(
+    configuration.minTopRimHeight,
+    Math.floor(bodyThickness / 2),
+  )
+  const topRimHeight = hasTopRimHeightField
+    ? (value.topRimHeight as number)
+    : configuration.defaultTopRimHeight
+  if (
+    (hasTopRimEnabledField ? value.topRimEnabled : false) === true &&
+    (topRimHeight < configuration.minTopRimHeight ||
+      topRimHeight > maximumTopRimHeight)
+  ) {
+    issues.push(issue('topRimHeight'))
+  }
+  if (issues.length > 0) return { valid: false, issues }
+
+  const normalizedParameters: OpenGridOpenConnectOrganizerParameters = {
+    ...parameters,
+    topRimEnabled: hasTopRimEnabledField
+      ? (value.topRimEnabled as boolean)
+      : configuration.defaultTopRimEnabled,
+    topRimHeight,
+  }
+  if (layoutExceedsWorkspace(normalizedParameters)) {
     return { valid: false, issues: [issue('parameters')] }
   }
-  return { valid: true, value: parameters }
+  return { valid: true, value: normalizedParameters }
 }
 
 export function isOpenGridOpenConnectOrganizerParameters(
@@ -782,4 +837,13 @@ export function openGridOpenConnectOrganizerStlFileName(
     /\.step$/,
     '.stl',
   )
+}
+
+export function openGridOpenConnectOrganizerThreeMfFileName(
+  parameters: OpenGridOpenConnectOrganizerParameters,
+): string | null {
+  if (!parameters.topRimEnabled) return null
+  return openGridOpenConnectOrganizerFileName(parameters)
+    .replace(/\.step$/, '')
+    .concat(`-rim${parameters.topRimHeight}.3mf`)
 }

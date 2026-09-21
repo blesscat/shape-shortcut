@@ -500,3 +500,63 @@ While divider material-saving cutting is in progress, the Worker MUST report cut
 - **WHEN** a divider with `honeycombMode=true` is being generated
 - **THEN** the honeycomb cutting stage MUST report completed and total progress in cells
 - **AND** the panel estimate MUST match the reported total
+
+### Requirement: 雙色頂部飾圈分割
+
+divider MUST 接受獨立的布林參數 `topRimEnabled`（預設 `false`）與整數參數
+`topRimHeight`（預設 `2`，有效範圍 `1..floor(height / 2)`）。即使
+`topRimEnabled` 為 `false`，`topRimHeight` MUST 仍正規化為有效整數；範圍限制
+MUST 在飾圈啟用時強制執行，違反範圍的值 MUST 被以欄位專屬錯誤拒絕，且不得
+觸發 B-Rep 生成。面板 MUST
+提供 `雙色飾圈` 開關，且關閉時隱藏 `topRimHeight` 控制項。飾圈 MUST 僅是
+視覺分割：牆體幾何、定位柱、蜂窩孔、圓角與所有既有品質規則在未切割實體上
+MUST 保持不變。
+
+當 `topRimEnabled` 為 `true` 時，建構管線 MUST 在水平分割面
+$Z = \text{height} - \text{topRimHeight}$ 將最終幾何分割為互補的兩個 part：
+佔據平面以下全部體積的 `body`，以及佔據平面以上全部體積的 `rim`。未切割的
+host shape MUST 作為品質 shape 並滿足所有既有 divider 品質規則。兩個 part
+MUST 是非空的有效 B-Rep 實體，其組合必須重現完整牆體幾何，並在分割邊界兩側
+保留一致的牆體與定位柱輪廓。Worker candidate 與 committed 紀錄 MUST 以
+`body` 與 `rim` 兩個 `partMeshes` 輸出兩個 part。
+
+#### Scenario: 飾圈控制項與預設值
+
+- **WHEN** divider 面板在沒有已持久化飾圈值的情況下初始化
+- **THEN** `topRimEnabled` MUST 預設為 `false` 且 `topRimHeight` MUST 預設
+  為 `2`
+- **AND** `雙色飾圈` 開關 MUST 未勾選且 `topRimHeight` 控制項隱藏
+- **AND** 勾選後 MUST 顯示 `topRimHeight` 控制項，範圍為
+  `1` 到 `floor(height / 2)`
+
+#### Scenario: 飾圈高度邊界驗證
+
+- **WHEN** `topRimEnabled` 為 `true` 且 `topRimHeight` 小於 `1` 或大於
+  `floor(height / 2)`
+- **THEN** 參數驗證 MUST 在 `topRimHeight` 回傳欄位專屬錯誤
+- **AND** 該無效參數組合 MUST NOT 觸發 B-Rep 生成
+
+#### Scenario: 分割產生互補且非空的 parts
+
+- **WHEN** `topRimEnabled` 為 `true` 且 divider 完成建構
+- **THEN** 建構輸出 MUST 包含名稱為 `body` 與 `rim` 的 `parts`
+- **AND** `body` 的包圍盒 $Z$ 最大值 MUST 在容差內等於
+  $\text{height} - \text{topRimHeight}$
+- **AND** `rim` 的包圍盒 $Z$ 最小值 MUST 在容差內等於
+  $\text{height} - \text{topRimHeight}$
+- **AND** `body` 與 `rim` 的體積總和 MUST 在 0.1% 內等於未切割品質 shape
+  的體積
+
+#### Scenario: 飾圈不改變單一實體幾何
+
+- **WHEN** 相同參數分別以 `topRimEnabled=false` 與 `topRimEnabled=true`
+  生成
+- **THEN** 兩次生成的未切割品質 shape 之包圍盒與體積 MUST 在容差內一致
+- **AND** 所有既有 divider 品質閘門 MUST 在兩次生成中皆通過
+
+#### Scenario: 確定性的雙色匯出檔名
+
+- **WHEN** `topRimEnabled` 為 `true`，model definition MUST 回報副檔名前以
+  `-rim<topRimHeight>` 結尾的 3MF 檔名
+- **AND** 當 `topRimEnabled` 為 `false`，model definition MUST 回報無 3MF
+  檔名，且 STL 檔名 MUST 與現有指紋完全一致

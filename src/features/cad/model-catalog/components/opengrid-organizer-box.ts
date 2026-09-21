@@ -4,6 +4,7 @@ import {
   isOpenGridOrganizerBoxParameters,
   openGridOrganizerBoxFileName,
   openGridOrganizerBoxStlFileName,
+  openGridOrganizerBoxThreeMfFileName,
   OPENGRID_ORGANIZER_BOX_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   validateOpenGridOrganizerBoxParameters,
@@ -199,6 +200,15 @@ function exportStlFileName(parameters: ModelParameterValues): string {
   return openGridOrganizerBoxStlFileName(parameters)
 }
 
+function exportThreeMfFileName(
+  parameters: ModelParameterValues,
+): string | null {
+  if (!isOpenGridOrganizerBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-organizer-box')
+  }
+  return openGridOrganizerBoxThreeMfFileName(parameters)
+}
+
 export const opengridOrganizerBoxDefinition: ModelDefinition = {
   id: 'opengrid-organizer-box',
   buildKey: 'opengrid-organizer-box',
@@ -220,4 +230,5 @@ export const opengridOrganizerBoxDefinition: ModelDefinition = {
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName: exportStlFileName,
+  threeMfFileName: exportThreeMfFileName,
 }

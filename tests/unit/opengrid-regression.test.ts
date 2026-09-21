@@ -140,6 +140,8 @@ describe('existing OpenGrid regression contract', () => {
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     store.dispose()
   })

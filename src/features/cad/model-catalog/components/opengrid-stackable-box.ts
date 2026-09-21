@@ -4,6 +4,7 @@ import {
   isOpenGridStackableBoxParameters,
   openGridStackableBoxFileName,
   openGridStackableBoxStlFileName,
+  openGridStackableBoxThreeMfFileName,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   validateOpenGridStackableBoxParameters,
@@ -163,6 +164,15 @@ function exportStlFileName(parameters: ModelParameterValues): string {
   return openGridStackableBoxStlFileName(parameters)
 }
 
+function exportThreeMfFileName(
+  parameters: ModelParameterValues,
+): string | null {
+  if (!isOpenGridStackableBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-box')
+  }
+  return openGridStackableBoxThreeMfFileName(parameters)
+}
+
 export const opengridStackableBoxDefinition: ModelDefinition = {
   id: 'opengrid-stackable-box',
   buildKey: 'opengrid-stackable-box',
@@ -186,4 +196,5 @@ export const opengridStackableBoxDefinition: ModelDefinition = {
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName: exportStlFileName,
+  threeMfFileName: exportThreeMfFileName,
 }

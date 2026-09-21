@@ -454,6 +454,8 @@ describe('CAD workspace validation helpers', () => {
       topRimMode: 'stacking-rail',
       bottomMode: 'stacking',
       honeycombMode: 'false',
+      topRimEnabled: 'false',
+      topRimHeight: '2',
       openingPlusXDepth: '0',
       openingPlusXBottomLength: '1',
       openingPlusXAngle: '90',
@@ -598,6 +600,8 @@ describe('CAD workspace validation helpers', () => {
       pegLengthMode: alignmentDefaults.pegLengthMode,
       pegDiameterIncrement: alignmentDefaults.pegDiameterIncrement,
       honeycombMode: true,
+      topRimEnabled: false,
+      topRimHeight: 2,
     }
     const raw = rawFromParameters(parameters)
 
@@ -614,6 +618,8 @@ describe('CAD workspace validation helpers', () => {
       pegLengthMode: 'snap',
       pegDiameterIncrement: '0',
       honeycombMode: 'true',
+      topRimEnabled: 'false',
+      topRimHeight: '2',
     })
     expect(parseRawParameters(raw, 'opengrid-divider')).toEqual({
       valid: true,

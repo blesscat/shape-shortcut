@@ -76,6 +76,8 @@ describe('OpenGrid divider contract', () => {
       wallThickness: 2,
       ...DEFAULT_ALIGNMENT_FIELDS,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     expect(openGridDividerPlanDimensionsFor(parameters)).toMatchObject({
       wallThickness: 2,
@@ -129,6 +131,8 @@ describe('OpenGrid divider contract', () => {
         OPENGRID_DIVIDER_CONFIGURATION.defaultParameters.wallThickness,
       ...DEFAULT_ALIGNMENT_FIELDS,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     expect(classifyOpenGridDividerShape(parameters)).toBe('straight')
     expect(openGridDividerAxisFor(parameters)).toBe('horizontal')
@@ -413,6 +417,8 @@ describe('OpenGrid divider contract', () => {
         wallThickness: 2,
         ...DEFAULT_ALIGNMENT_FIELDS,
         honeycombMode: false,
+        topRimEnabled: false,
+        topRimHeight: 2,
       },
     })
   })

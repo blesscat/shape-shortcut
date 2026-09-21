@@ -4,6 +4,7 @@ import {
   isOpenGridDividerParameters,
   openGridDividerFileName,
   openGridDividerStlFileName,
+  openGridDividerThreeMfFileName,
   OPENGRID_DIVIDER_CONFIGURATION,
   validateOpenGridDividerParameters,
 } from '../../../../cad-contract/units'
@@ -154,6 +155,15 @@ function exportStlFileName(parameters: ModelParameterValues): string {
   return openGridDividerStlFileName(parameters)
 }
 
+function exportThreeMfFileName(
+  parameters: ModelParameterValues,
+): string | null {
+  if (!isOpenGridDividerParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
+  }
+  return openGridDividerThreeMfFileName(parameters)
+}
+
 export const opengridDividerDefinition: ModelDefinition = {
   id: 'opengrid-divider',
   buildKey: 'opengrid-divider',
@@ -175,4 +185,5 @@ export const opengridDividerDefinition: ModelDefinition = {
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName: exportStlFileName,
+  threeMfFileName: exportThreeMfFileName,
 }

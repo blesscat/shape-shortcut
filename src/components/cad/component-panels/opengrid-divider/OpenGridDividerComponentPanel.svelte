@@ -108,6 +108,10 @@
       ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters,
       alignmentMode,
       honeycombMode: rawParameters.honeycombMode === 'true',
+      topRimEnabled: rawParameters.topRimEnabled === 'true',
+      topRimHeight:
+        rawNumber('topRimHeight') ||
+        OPENGRID_DIVIDER_CONFIGURATION.defaultTopRimHeight,
     }
     if (
       PEG_LENGTH_OPTIONS.some(
@@ -154,6 +158,27 @@
       (savingMode.tooSmall || savingMode.overLimit) &&
       rawParameters.honeycombMode !== 'true',
   )
+
+  const topRimHeightField = $derived.by(() => {
+    const height = rawNumber('height')
+    const max = Math.max(
+      OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight,
+      Math.floor(height / 2),
+    )
+    return {
+      key: 'topRimHeight' as const,
+      label: 'parameter.topRimHeight',
+      axis: 'Z',
+      unit: 'mm',
+      control: 'range-text' as const,
+      defaultValue: OPENGRID_DIVIDER_CONFIGURATION.defaultTopRimHeight,
+      min: OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight,
+      max,
+      step: 1,
+      sliderMin: OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight,
+      sliderMax: max,
+    }
+  })
 </script>
 
 <div class="grid gap-3">
@@ -198,6 +223,42 @@
     {#if savingMode !== null}
       <HoneycombCellCountEstimate count={savingMode.cellCount} {locale} />
     {/if}
+  {/if}
+  <label class="flex items-start gap-2 text-sm">
+    <input
+      class="mt-0.5"
+      type="checkbox"
+      aria-label={translate(locale, 'panel.topRim')}
+      data-testid="opengrid-divider-top-rim-enabled"
+      checked={rawParameters.topRimEnabled === 'true'}
+      onchange={(event) => {
+        if (!(event.currentTarget instanceof HTMLInputElement)) return
+        onInputChange('topRimEnabled', String(event.currentTarget.checked))
+      }}
+    />
+    <span>{translate(locale, 'panel.topRim')}</span>
+  </label>
+  {#if rawParameters.topRimEnabled === 'true'}
+    {@const value =
+      rawParameters.topRimHeight ?? String(topRimHeightField.defaultValue)}
+    <ParameterField
+      {locale}
+      label={displayParameterLabel(topRimHeightField, locale)}
+      unit={unitLabelFor(locale, topRimHeightField.unit)}
+      changed={value !== String(topRimHeightField.defaultValue)}
+      error={fieldErrors.topRimHeight}
+      errorId="topRimHeight-error"
+      onRestore={() =>
+        onInputChange('topRimHeight', String(topRimHeightField.defaultValue))}
+    >
+      <ParameterControl
+        {locale}
+        field={topRimHeightField}
+        {value}
+        error={fieldErrors.topRimHeight}
+        onChange={(nextValue) => onInputChange('topRimHeight', nextValue)}
+      />
+    </ParameterField>
   {/if}
   <fieldset class="m-0 grid gap-3 border-0 p-0">
     <div

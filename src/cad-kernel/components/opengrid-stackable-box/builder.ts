@@ -1,8 +1,10 @@
 import { makeBox, makeCompound, type Shape3D } from 'replicad'
 import {
+  externalOpenGridStackableBoxHeightFor,
   validateOpenGridStackableBoxParameters,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
+import { topRimPartsFor } from '../shared/top-rim-partition'
 import {
   addMountingSockets,
   applyStackingProfile,
@@ -33,6 +35,7 @@ import {
   measureBooleanInScope,
   type BooleanOperationScope,
 } from '../../boolean-progress'
+import type { NativeModelPart } from '../../lifetime'
 
 export type { OpenGridStackableBoxBuildContext } from './shared'
 export type { OpenGridStackableBoxBottomGridSeam } from './geometry'
@@ -495,5 +498,52 @@ function makeHoneycombPanelSlot(panel: Shape3D): Shape3D {
     )
   } finally {
     bounds.delete()
+  }
+}
+
+export type OpenGridStackableBoxMultipartBuild = {
+  shape: Shape3D
+  qualityShape?: Shape3D
+  parts?: NativeModelPart[]
+}
+
+export async function buildOpenGridStackableBoxWithParts(
+  parameters: OpenGridStackableBoxParameters,
+  context: OpenGridStackableBoxBuildContext = {},
+): Promise<OpenGridStackableBoxMultipartBuild> {
+  const validation = validateOpenGridStackableBoxParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('OPENGRID_STACKABLE_BOX_PARAMETERS_INVALID')
+  }
+  const normalizedParameters = validation.value
+  const fullShape = await buildOpenGridStackableBoxAsync(
+    normalizedParameters,
+    context,
+  )
+
+  if (!normalizedParameters.topRimEnabled) {
+    return {
+      shape: fullShape,
+    }
+  }
+
+  assertGenerationCurrent(context)
+  const splitZ =
+    externalOpenGridStackableBoxHeightFor(normalizedParameters) -
+    normalizedParameters.topRimHeight
+
+  try {
+    return {
+      shape: fullShape,
+      qualityShape: fullShape,
+      parts: topRimPartsFor(
+        fullShape,
+        splitZ,
+        'OPENGRID_STACKABLE_BOX_RIM_PARTITION_FAILED',
+      ),
+    }
+  } catch (error) {
+    deleteShape(fullShape)
+    throw error
   }
 }

@@ -52,6 +52,8 @@ export type OpenGridOrganizerBoxParameterKey =
   | 'cornerSeatMode'
   | 'boxMode'
   | 'stackingClearanceHeight'
+  | 'topRimEnabled'
+  | 'topRimHeight'
 
 export type OpenGridOrganizerBoxParameters = {
   holeCountX: number
@@ -70,6 +72,8 @@ export type OpenGridOrganizerBoxParameters = {
   cornerSeatMode: OpenGridLocatingSeatMode
   boxMode: OpenGridOrganizerBoxBoxMode
   stackingClearanceHeight: number
+  topRimEnabled: boolean
+  topRimHeight: number
 }
 
 export type OpenGridOrganizerBoxPoint2D = [number, number]
@@ -183,6 +187,9 @@ export const OPENGRID_ORGANIZER_BOX_CONFIGURATION = {
   maxWallThickness: 100,
   minStackingClearanceHeight: 3.5,
   maxStackingClearanceHeight: 500,
+  defaultTopRimEnabled: false,
+  defaultTopRimHeight: 2,
+  minTopRimHeight: 1,
 } as const
 
 function interfaceFloorDatumFor(
@@ -216,6 +223,8 @@ export const OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS: OpenGridOrganizerBoxPara
     boxMode: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultBoxMode,
     stackingClearanceHeight:
       OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultStackingClearanceHeight,
+    topRimEnabled: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultTopRimEnabled,
+    topRimHeight: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultTopRimHeight,
   }
 
 const POLYGON_SIDES_BY_SHAPE: Record<
@@ -242,6 +251,10 @@ function hasExactKeys(
     Object.keys(value).length === keys.length &&
     keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
   )
+}
+
+function hasOwn(value: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key)
 }
 
 function isShape(value: unknown): value is OpenGridOrganizerBoxShape {
@@ -567,7 +580,13 @@ const CANONICAL_PARAMETER_KEYS: readonly OpenGridOrganizerBoxParameterKey[] = [
   'cornerSeatMode',
   'boxMode',
   'stackingClearanceHeight',
+  'topRimEnabled',
+  'topRimHeight',
 ]
+
+const PRE_RIM_CANONICAL_PARAMETER_KEYS = CANONICAL_PARAMETER_KEYS.filter(
+  (key) => key !== 'topRimEnabled' && key !== 'topRimHeight',
+)
 
 const LEGACY_PARAMETER_KEYS = [
   'holeCountX',
@@ -608,10 +627,30 @@ export function normalizeOpenGridOrganizerBoxParameters(
   value: unknown,
 ): unknown {
   if (!isRecord(value)) return value
-  if (!hasExactKeys(value, LEGACY_PARAMETER_KEYS)) return value
-  if (!isLegacyBottomInterfaceMode(value.bottomInterfaceMode)) return value
+  if (hasExactKeys(value, CANONICAL_PARAMETER_KEYS)) return value
+  if (
+    hasExactKeys(value, PRE_RIM_CANONICAL_PARAMETER_KEYS) &&
+    !hasOwn(value, 'topRimEnabled') &&
+    !hasOwn(value, 'topRimHeight')
+  ) {
+    const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
+    return {
+      ...value,
+      topRimEnabled: configuration.defaultTopRimEnabled,
+      topRimHeight: configuration.defaultTopRimHeight,
+    }
+  }
+  const withoutRimKeys: Record<string, unknown> = { ...value }
+  delete withoutRimKeys.topRimEnabled
+  delete withoutRimKeys.topRimHeight
+  if (
+    !hasExactKeys(withoutRimKeys, LEGACY_PARAMETER_KEYS) ||
+    !isLegacyBottomInterfaceMode(withoutRimKeys.bottomInterfaceMode)
+  ) {
+    return value
+  }
 
-  const { bottomInterfaceMode, ...withoutLegacyMode } = value
+  const { bottomInterfaceMode, ...withoutLegacyMode } = withoutRimKeys
   const modes = modesForLegacyBottomInterface(bottomInterfaceMode)
   const configuration = OPENGRID_ORGANIZER_BOX_CONFIGURATION
   return {
@@ -622,6 +661,8 @@ export function normalizeOpenGridOrganizerBoxParameters(
     holeCornerRadius: configuration.defaultHoleCornerRadius,
     stackingClearanceHeight: configuration.defaultStackingClearanceHeight,
     wallThickness: hydratableWallThicknessFor(modes.boxMode),
+    topRimEnabled: configuration.defaultTopRimEnabled,
+    topRimHeight: configuration.defaultTopRimHeight,
   }
 }
 
@@ -737,6 +778,19 @@ export function validateOpenGridOrganizerBoxParameters(
   if (!isBoxMode(value.boxMode)) {
     issues.push(issue('boxMode'))
   }
+  if (
+    hasOwn(value, 'topRimEnabled') &&
+    typeof value.topRimEnabled !== 'boolean'
+  ) {
+    issues.push(issue('topRimEnabled'))
+  }
+  if (
+    hasOwn(value, 'topRimHeight') &&
+    (!isFiniteNumber(value.topRimHeight) ||
+      !Number.isSafeInteger(value.topRimHeight))
+  ) {
+    issues.push(issue('topRimHeight'))
+  }
 
   if (issues.length > 0) return { valid: false, issues }
 
@@ -754,6 +808,21 @@ export function validateOpenGridOrganizerBoxParameters(
     layoutExceedsWorkspace(parameters)
   ) {
     issues.push(issue('parameters'))
+  }
+  if (issues.length === 0) {
+    const layout = openGridOrganizerBoxLayoutForUnchecked(parameters)
+    const externalTop = layout.stacking?.externalTopZ ?? layout.bodyHeight
+    const maximumTopRimHeight = Math.max(
+      configuration.minTopRimHeight,
+      Math.floor(externalTop / 2),
+    )
+    if (
+      parameters.topRimEnabled === true &&
+      (parameters.topRimHeight < configuration.minTopRimHeight ||
+        parameters.topRimHeight > maximumTopRimHeight)
+    ) {
+      issues.push(issue('topRimHeight'))
+    }
   }
 
   if (issues.length > 0) return { valid: false, issues }
@@ -837,4 +906,14 @@ export function openGridOrganizerBoxStlFileName(
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-organizer-box')
   }
   return `${organizerBoxFileStem(parameters)}.stl`
+}
+
+export function openGridOrganizerBoxThreeMfFileName(
+  parameters: OpenGridOrganizerBoxParameters,
+): string | null {
+  if (!isOpenGridOrganizerBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-organizer-box')
+  }
+  if (!parameters.topRimEnabled) return null
+  return `${organizerBoxFileStem(parameters)}-rim${parameters.topRimHeight}.3mf`
 }

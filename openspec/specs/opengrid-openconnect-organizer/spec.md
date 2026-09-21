@@ -482,3 +482,82 @@ The `opengrid-openconnect-organizer` panel MUST use the shared OpenConnect secti
 - **THEN** the complete grid MUST keep its original pitch and receptacle count
 - **AND** its occupied cells MUST remain inside the rear interface
 - **AND** any spare width or height MUST be allocated according to the selected alignment without resizing the body
+
+### Requirement: Two-color top accent rim shell partitioning
+
+The OpenConnect organizer MUST accept an independent boolean `topRimEnabled`
+(defaulting to `false`) and an integer `topRimHeight` (defaulting to `2`,
+valid range `1..floor(bodyThickness / 2)` where `bodyThickness` is the derived
+cavity depth plus bottom thickness). `topRimHeight` MUST normalize to a valid
+integer even when `topRimEnabled` is `false`; the range bound MUST be enforced
+whenever the rim is enabled, and violated values MUST be rejected with a
+field-specific error that prevents B-Rep generation.
+The panel MUST expose a `雙色飾圈` (`Two-Color Rim`) toggle whose
+`topRimHeight` control stays hidden while the toggle is off. The accent rim
+MUST remain a visual partition only: cavities, locked slots, tilt semantics,
+the installed-envelope contract, and every existing quality rule of the uncut
+solid MUST remain unchanged.
+
+When `topRimEnabled` is `true`, the build pipeline MUST partition the final
+print-orientation geometry at the horizontal split plane
+$Z = \text{bodyThickness} - \text{topRimHeight}$ — the opening plane of the
+flat-lying print model, not the overall shape maximum — into two complementary
+parts: a `body` solid occupying everything below the plane and a `rim` solid
+occupying everything above it. The exported print model MUST keep lying flat
+with its opening plane parallel to the print bed, so the accent band stays
+flush with the print face with uniform width. The uncut host shape MUST serve
+as the quality shape and MUST satisfy all existing organizer quality rules,
+including the print-underside-at-zero gate. Both parts MUST be non-empty valid
+B-Rep solids whose combined compound reproduces the complete container
+geometry. The Worker candidate and committed records MUST emit both parts as
+distinct `partMeshes` assigned to `body` and `rim`.
+
+#### Scenario: Top rim controls and defaults
+
+- **WHEN** the OpenConnect organizer panel initializes without persisted rim
+  values
+- **THEN** `topRimEnabled` MUST default to `false` and `topRimHeight` to `2`
+- **AND** the `雙色飾圈` toggle MUST be unchecked and the `topRimHeight`
+  control MUST be hidden
+- **AND** checking the toggle MUST reveal the `topRimHeight` control bounded
+  from `1` to `floor(bodyThickness / 2)`
+
+#### Scenario: Top rim height bound validation
+
+- **WHEN** `topRimEnabled` is `true` and `topRimHeight` is less than `1` or
+  greater than `floor(bodyThickness / 2)`
+- **THEN** parameter validation MUST fail with a field-specific error on
+  `topRimHeight`
+- **AND** the invalid parameter set MUST NOT trigger B-Rep generation
+
+#### Scenario: Partitioning creates complementary non-empty parts
+
+- **WHEN** `topRimEnabled` is `true` and the organizer is built
+- **THEN** the build output MUST contain `parts` with names `body` and `rim`
+- **AND** the bounding box $Z$ maximum of `body` MUST equal
+  $\text{bodyThickness} - \text{topRimHeight}$ within tolerance at the opening
+  plane
+- **AND** the bounding box $Z$ minimum of `rim` MUST equal
+  $\text{bodyThickness} - \text{topRimHeight}$ within tolerance at the opening
+  plane
+- **AND** the volume sum of `body` and `rim` MUST match the uncut quality
+  shape volume within 0.1%
+
+#### Scenario: Accent band stays flush with the print face
+
+- **WHEN** `topRimEnabled` is `true` and the organizer is exported for
+  printing
+- **THEN** the print model MUST remain flat with its underside at $Z=0$ and
+  its opening plane parallel to the print bed
+- **AND** the rim band MUST span a uniform
+  $\text{topRimHeight}$ measured perpendicular to the print face
+- **AND** the existing print-underside quality gate MUST pass unchanged
+
+#### Scenario: Deterministic two-color export filenames
+
+- **WHEN** `topRimEnabled` is `true`, the model definition MUST report a 3MF
+  filename whose stem ends with `-rim<topRimHeight>` before the `.3mf`
+  extension
+- **AND** when `topRimEnabled` is `false`, the model definition MUST report no
+  3MF filename and the STL filename MUST remain unchanged from its current
+  fingerprint

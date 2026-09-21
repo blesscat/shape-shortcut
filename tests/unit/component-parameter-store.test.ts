@@ -722,6 +722,8 @@ describe('component parameter store', () => {
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     expect(store.get('opengrid-pillar')).toEqual({
       mode: 'detachable-corner-seat',
@@ -1008,6 +1010,8 @@ describe('component parameter store', () => {
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     store.dispose()
 
