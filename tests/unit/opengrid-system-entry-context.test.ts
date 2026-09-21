@@ -168,7 +168,6 @@ describe('OpenGrid system entry context', () => {
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
-      'opengrid-label-tag',
       'opengrid-label-card',
       'opengrid-label-slot-test',
     ])

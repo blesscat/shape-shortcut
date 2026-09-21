@@ -4,7 +4,7 @@ import {
   PROTOCOL_VERSION,
   type WorkerCommand,
 } from '../cad-contract/messages'
-import { diagnostic } from '../cad-contract/diagnostics'
+import { diagnostic, type DiagnosticParams } from '../cad-contract/diagnostics'
 import type {
   CadError,
   CadErrorCode,
@@ -368,11 +368,13 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    let labelTextParams: DiagnosticParams | undefined
+    if (message.endsWith(':textLine2')) labelTextParams = { field: 'textLine2' }
     if (message.includes('LABEL_CARD_TEXT_TOO_WIDE')) {
       return makeError(
         'building',
         code,
-        diagnostic('validation.labelCardTextTooWide'),
+        diagnostic('validation.labelCardTextTooWide', labelTextParams),
         true,
       )
     }
@@ -380,7 +382,7 @@ export class CadWorkerRuntime {
       return makeError(
         'building',
         code,
-        diagnostic('diagnostic.labelCardGlyphUnsupported'),
+        diagnostic('diagnostic.labelCardGlyphUnsupported', labelTextParams),
         true,
       )
     }

@@ -1,4 +1,12 @@
 export type OpenGridLabelCardIconId =
+  | 'drive-slot'
+  | 'drive-phillips'
+  | 'drive-hex'
+  | 'drive-torx'
+  | 'hole-through'
+  | 'hole-threaded'
+  | 'hole-countersink'
+  | 'hole-counterbore'
   | 'none'
   | 'wrench'
   | 'screwdriver'
@@ -24,6 +32,15 @@ export type OpenGridLabelCardIconId =
 export const OPENGRID_LABEL_CARD_ICON_IDS: readonly OpenGridLabelCardIconId[] =
   [
     'none',
+    'drive-slot',
+    'drive-phillips',
+    'drive-hex',
+    'drive-torx',
+    'hole-through',
+    'hole-threaded',
+    'hole-countersink',
+    'hole-counterbore',
+
     'wrench',
     'screwdriver',
     'tools',

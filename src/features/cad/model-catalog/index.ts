@@ -139,7 +139,6 @@ export const modelDefinitions: ReadonlyArray<
   opengridOpenConnectShelfDefinition,
   opengridOpenConnectOrganizerDefinition,
   tissueBoxDefinition,
-  opengridLabelTagDefinition,
   opengridLabelCardDefinition,
   opengridLabelSlotTestDefinition,
 ]

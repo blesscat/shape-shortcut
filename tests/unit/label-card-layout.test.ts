@@ -52,7 +52,7 @@ it('validates adjustable height and reclaims icon space for text-only cards', ()
       value: { textHeight },
     })
   }
-  for (const textHeight of [3.9, 7.1, NaN, Infinity, '4']) {
+  for (const textHeight of [1.9, 7.1, NaN, Infinity, '4']) {
     expect(validateOpenGridLabelCardParameters({ textHeight }).valid).toBe(
       false,
     )
@@ -83,4 +83,63 @@ it('validates adjustable height and reclaims icon space for text-only cards', ()
       icon: 'none',
     }).valid,
   ).toBe(true)
+})
+
+it.each([
+  'drive-slot',
+  'drive-phillips',
+  'drive-hex',
+  'drive-torx',
+  'hole-through',
+  'hole-threaded',
+  'hole-countersink',
+  'hole-counterbore',
+])('accepts the %s fastener symbol', (icon) => {
+  expect(validateOpenGridLabelCardParameters({ icon })).toMatchObject({
+    valid: true,
+    value: { icon },
+  })
+})
+
+it('supports two independently aligned rows and limits their combined text height', () => {
+  expect(validateOpenGridLabelCardParameters({ textHeight: 2 })).toMatchObject({
+    valid: true,
+  })
+  expect(
+    validateOpenGridLabelCardParameters({
+      text: 'M3',
+      textLine2: '10mm',
+      textHeight: 4,
+      textAlignment: 'left',
+      textLine2Alignment: 'right',
+    }),
+  ).toMatchObject({
+    valid: true,
+    value: {
+      text: 'M3',
+      textLine2: '10mm',
+      textHeight: 4,
+      textAlignment: 'left',
+      textLine2Alignment: 'right',
+    },
+  })
+  expect(
+    validateOpenGridLabelCardParameters({
+      text: 'M3',
+      textLine2: '10mm',
+      textHeight: 4.5,
+    }),
+  ).toMatchObject({ valid: false, issues: [{ field: 'textHeight' }] })
+  expect(
+    validateOpenGridLabelCardParameters({
+      textLine2: 'ABCDEFZ',
+      textHeight: 2,
+    }),
+  ).toMatchObject({ valid: false, issues: [{ field: 'textLine2' }] })
+  expect(
+    validateOpenGridLabelCardParameters({ textAlignment: 'top' }).valid,
+  ).toBe(false)
+  expect(
+    validateOpenGridLabelCardParameters({ textLine2Alignment: 'bottom' }).valid,
+  ).toBe(false)
 })

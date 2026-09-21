@@ -181,3 +181,63 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     await expect(units).toHaveValue('1')
   })
 }
+
+for (const locale of ['zh-Hant', 'en'] as const) {
+  test(`${locale}: two rows preserve independent alignment and screw symbols`, async ({
+    page,
+  }) => {
+    test.setTimeout(180_000)
+    await page.goto(`/${locale}/cad/opengrid-label-card?system=wall`)
+    const download = page.getByRole('button', {
+      name: /^(下載 3MF|Download 3MF)$/,
+    })
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-icon-drive-hex').click()
+    await page.getByTestId('opengrid-label-card-text').fill('M3')
+    const height = page.locator('#label-card-text-height')
+    await expect(height).toHaveAttribute('min', '2')
+    await expect(height).toHaveValue('7')
+    await page.getByTestId('opengrid-label-card-textLine2').fill('10mm')
+    await expect(height).toHaveAttribute('max', '4')
+    await expect(height).toHaveValue('4')
+    await page.locator('#label-card-text-alignment').selectOption('left')
+    await page.locator('#label-card-textLine2-alignment').selectOption('right')
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    const pending = page.waitForEvent('download')
+    await download.click()
+    expect((await pending).suggestedFilename()).toContain('drive-hex')
+    await page.reload()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await expect(page.getByTestId('opengrid-label-card-text')).toHaveValue('M3')
+    await expect(page.getByTestId('opengrid-label-card-textLine2')).toHaveValue(
+      '10mm',
+    )
+    await expect(page.locator('#label-card-text-alignment')).toHaveValue('left')
+    await expect(page.locator('#label-card-textLine2-alignment')).toHaveValue(
+      'right',
+    )
+    await expect(height).toHaveValue('4')
+    await expect(
+      page.getByTestId('opengrid-label-card-icon-drive-hex'),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await page.screenshot({
+      path: `test-results/card-two-rows-${locale}.png`,
+      fullPage: true,
+    })
+    await page.getByTestId('opengrid-label-card-icon-hole-counterbore').click()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('')
+    await expect(height).toHaveAttribute('max', '7')
+    await height.fill('2')
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('😀')
+    await expect(
+      page.locator('#opengrid-label-card-textLine2-error'),
+    ).toBeVisible({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('M4')
+    await page.getByTestId('opengrid-label-card-text').fill('')
+    await page.getByTestId('opengrid-label-card-icon-none').click()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await expect(height).toHaveAttribute('max', '7')
+  })
+}

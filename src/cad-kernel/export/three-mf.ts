@@ -13,7 +13,6 @@ import { PROTOTYPE_CONFIGURATION } from '../../cad-contract/units'
 import { meshBRep, type MeshData } from '../mesh'
 
 export type ThreeMfShapePart = {
-export type ThreeMfShapePart = {
   name: 'body' | 'text' | 'rim' | 'icon' | 'accent'
   shape: Shape3D
 }
@@ -119,9 +118,10 @@ export function threeMfMetaFor(
       accentPartName: 'accent',
     }
   }
-  const container = modelId in CONTAINER_THREE_MF_METAS
-    ? CONTAINER_THREE_MF_METAS[modelId as ContainerThreeMfModelId]
-    : undefined
+  const container =
+    modelId in CONTAINER_THREE_MF_METAS
+      ? CONTAINER_THREE_MF_METAS[modelId as ContainerThreeMfModelId]
+      : undefined
   if (container) {
     return {
       modelSettingsName: modelId,
@@ -353,6 +353,9 @@ function modelSettingsXml(
       <metadata key="extruder" value="1" />
       <mesh_stat face_count="${bodyFaceCount}" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0" />
     </part>
+    <part id="2" subtype="normal_part" uuid="${accentPartUuid}">
+      <metadata key="name" value="${xmlEscape(parts[1]!.name)}" />
+      <metadata key="matrix" value="${IDENTITY_MATRIX}" />
       <metadata key="source_file" value="${xmlEscape(meta.sourceFileName)}" />
       <metadata key="source_object_id" value="1" />
       <metadata key="source_volume_id" value="0" />
@@ -499,6 +502,7 @@ function zipStore(entries: readonly ZipEntry[]): ArrayBuffer {
 export async function exportThreeMfBytes(
   parts: readonly ThreeMfShapePart[],
   options: ExportThreeMfOptions = {},
+  metaOverride?: ThreeMfPackageMeta,
 ): Promise<ArrayBuffer> {
   if (
     parts.length !== 2 ||
@@ -521,10 +525,12 @@ export async function exportThreeMfBytes(
           ? 'opengrid-label-card'
           : 'opengrid-wall-cover')
   const sourceFile = options.sourceFile ?? `${modelName}.3mf`
-  const baseMeta = threeMfMetaFor(
-    modelName as Parameters<typeof threeMfMetaFor>[0],
-    sourceFile,
-  )
+  const baseMeta =
+    metaOverride ??
+    threeMfMetaFor(
+      modelName as Parameters<typeof threeMfMetaFor>[0],
+      sourceFile,
+    )
   if (parts[1]?.name !== baseMeta.accentPartName) {
     throw new Error('THREEMF_PARTS_INVALID')
   }

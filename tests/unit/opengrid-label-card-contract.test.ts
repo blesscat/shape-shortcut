@@ -36,6 +36,8 @@ describe('OpenGrid Label Card contract', () => {
     ).toEqual({
       valid: true,
       value: {
+        textAlignment: 'center',
+        textLine2Alignment: 'center',
         textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
         gridUnits: 4,
         style: 'raised',
@@ -54,6 +56,8 @@ describe('OpenGrid Label Card contract', () => {
     ).toEqual({
       valid: true,
       value: {
+        textAlignment: 'center',
+        textLine2Alignment: 'center',
         textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
         gridUnits: 6,
         style: 'flat',
@@ -143,6 +147,8 @@ describe('OpenGrid Label Card contract', () => {
       value: {
         modelId: 'opengrid-label-card',
         parameters: {
+          textAlignment: 'center',
+          textLine2Alignment: 'center',
           textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
           gridUnits: 3,
           style: 'flat',

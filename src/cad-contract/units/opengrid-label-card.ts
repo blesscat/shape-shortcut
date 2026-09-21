@@ -16,7 +16,15 @@ import {
 } from './opengrid-label-icons'
 
 export type OpenGridLabelCardParameterKey =
-  'gridUnits' | 'style' | 'icon' | 'text' | 'iconPosition' | 'textHeight'
+  | 'gridUnits'
+  | 'style'
+  | 'icon'
+  | 'text'
+  | 'iconPosition'
+  | 'textHeight'
+  | 'textLine2'
+  | 'textAlignment'
+  | 'textLine2Alignment'
 
 export const OPENGRID_LABEL_CARD_STYLES = ['flat', 'raised'] as const
 
@@ -26,6 +34,8 @@ export type OpenGridLabelCardIconId = LabelIconId
 
 export { OPENGRID_LABEL_CARD_ICON_IDS }
 
+export type LabelCardTextAlignment = 'left' | 'center' | 'right'
+
 export type OpenGridLabelCardParameters = {
   gridUnits: number
   textHeight?: number
@@ -33,6 +43,9 @@ export type OpenGridLabelCardParameters = {
   style: OpenGridLabelCardStyle
   icon: OpenGridLabelCardIconId
   text?: string
+  textLine2?: string
+  textAlignment?: LabelCardTextAlignment
+  textLine2Alignment?: LabelCardTextAlignment
 }
 
 export const OPENGRID_LABEL_CARD_CONFIGURATION = {
@@ -40,7 +53,8 @@ export const OPENGRID_LABEL_CARD_CONFIGURATION = {
   cardHeight: OPENGRID_LABEL_CARD_HEIGHT,
   accentDepth: OPENGRID_LABEL_ACCENT_DEPTH,
   raisedHeight: OPENGRID_LABEL_CARD_RAISED_HEIGHT,
-  textHeight: { min: 4, max: 7, default: 7, step: 0.5 },
+  textHeight: { min: 2, max: 7, default: 7, step: 0.5, twoRowMax: 4 },
+  textRowGap: 0.5,
   maxTextLength: 6,
   defaultGridUnits: 4,
   defaultStyle: 'raised',
@@ -118,6 +132,9 @@ export function validateOpenGridLabelCardParameters(
     'gridUnits',
     'iconPosition',
     'textHeight',
+    'textLine2',
+    'textAlignment',
+    'textLine2Alignment',
     'widthTier',
     'style',
     'icon',
@@ -168,33 +185,6 @@ export function validateOpenGridLabelCardParameters(
     return invalid('icon', 'validation.labelCardIconUnknown')
   }
 
-  let text = OPENGRID_LABEL_CARD_CONFIGURATION.defaultText
-  if (value.text !== undefined) {
-    if (typeof value.text !== 'string') return invalid('text')
-    text = normalizeOpenGridLabelCardText(value.text)
-  }
-  const textLength = Array.from(text).length
-  if (textLength > OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength) {
-    return invalid('text', 'validation.labelCardTextTooLong', {
-      max: OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength,
-    })
-  }
-
-  const textWidth =
-    (Math.max(0, textLength - 1) * OPENGRID_LABEL_GRID.textSpacing +
-      OPENGRID_LABEL_GRID.textFontSize) *
-      (textHeight / OPENGRID_LABEL_GRID.textFontSize) +
-    (rawIcon === 'none'
-      ? 0
-      : OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap)
-  if (
-    textLength > 0 &&
-    textWidth >
-      openGridLabelWidthFor(gridUnits) -
-        2 * OPENGRID_LABEL_GRID.artworkSideInset
-  ) {
-    return invalid('text', 'validation.labelCardTextTooWide')
-  }
   const parameters: OpenGridLabelCardParameters = {
     gridUnits,
     textHeight,
@@ -202,7 +192,45 @@ export function validateOpenGridLabelCardParameters(
     style: rawStyle,
     icon: rawIcon,
   }
-  if (textLength > 0) parameters.text = text
+  for (const field of ['textAlignment', 'textLine2Alignment'] as const) {
+    const alignment = value[field] ?? 'center'
+    if (alignment !== 'left' && alignment !== 'center' && alignment !== 'right')
+      return invalid(field)
+    parameters[field] = alignment
+  }
+  for (const field of ['text', 'textLine2'] as const) {
+    const rawText = value[field] === undefined ? '' : value[field]
+    if (typeof rawText !== 'string') return invalid(field)
+    const text = normalizeOpenGridLabelCardText(rawText)
+    const textLength = Array.from(text).length
+    if (textLength > OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength) {
+      return invalid(field, 'validation.labelCardTextTooLong', {
+        max: OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength,
+      })
+    }
+    const textWidth =
+      (Math.max(0, textLength - 1) * OPENGRID_LABEL_GRID.textSpacing +
+        OPENGRID_LABEL_GRID.textFontSize) *
+      (textHeight / OPENGRID_LABEL_GRID.textFontSize)
+    let requiredWidth = textWidth
+    if (rawIcon !== 'none')
+      requiredWidth +=
+        OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
+    if (
+      textLength > 0 &&
+      requiredWidth >
+        openGridLabelWidthFor(gridUnits) -
+          2 * OPENGRID_LABEL_GRID.artworkSideInset
+    )
+      return invalid(field, 'validation.labelCardTextTooWide')
+    if (textLength > 0) parameters[field] = text
+  }
+  if (
+    parameters.text &&
+    parameters.textLine2 &&
+    textHeight > OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.twoRowMax
+  )
+    return invalid('textHeight', 'validation.labelCardTwoRowHeight')
   return { valid: true, value: parameters }
 }
 
@@ -236,7 +264,10 @@ export function boundsForOpenGridLabelCard(
 
   const width = openGridLabelWidthFor(validation.value.gridUnits)
   const height = OPENGRID_LABEL_CARD_CONFIGURATION.cardHeight
-  const blank = validation.value.icon === 'none' && !validation.value.text
+  const blank =
+    validation.value.icon === 'none' &&
+    !validation.value.text &&
+    !validation.value.textLine2
   const thickness = blank
     ? OPENGRID_LABEL_CARD_CONFIGURATION.plateThickness
     : openGridLabelCardThicknessFor(validation.value.style)

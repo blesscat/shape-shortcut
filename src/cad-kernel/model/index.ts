@@ -830,17 +830,6 @@ export async function buildModelBRepWithParts(
     })
   }
 
-  if (modelId === 'opengrid-label-tag') {
-    if (!isOpenGridLabelTagParameters(parameters)) {
-      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
-    }
-    return buildOpenGridLabelTagWithParts(parameters, {
-      yieldToEventLoop: context.yieldToEventLoop,
-      isGenerationCurrent: context.isGenerationCurrent,
-    })
-  }
-
-
   if (modelId === 'opengrid-label-card') {
     if (!isOpenGridLabelCardParameters(parameters)) {
       throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
@@ -848,7 +837,6 @@ export async function buildModelBRepWithParts(
     return buildOpenGridLabelCardWithParts(parameters, {
       yieldToEventLoop: context.yieldToEventLoop,
       isGenerationCurrent: context.isGenerationCurrent,
-
     })
   }
 

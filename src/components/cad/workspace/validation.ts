@@ -168,6 +168,8 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] 
     'tiltAngle',
     'topRimEnabled',
     'topRimHeight',
+    'labelSlotEnabled',
+    'labelGridUnits',
   ]
 
 function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
@@ -212,7 +214,17 @@ function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
     return modelId === 'opengrid-wall-cover' ? ['text', 'openConnect'] : []
   }
   if (modelId === 'opengrid-label-card') {
-    return ['gridUnits', 'style', 'icon', 'text', 'iconPosition', 'textHeight']
+    return [
+      'gridUnits',
+      'style',
+      'icon',
+      'text',
+      'iconPosition',
+      'textHeight',
+      'textLine2',
+      'textAlignment',
+      'textLine2Alignment',
+    ]
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
   if (modelId === 'opengrid-divider') return OPENGRID_DIVIDER_PARAMETER_KEYS
@@ -776,7 +788,10 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     (field) =>
       !OPENCONNECT_ALIGNMENT_KEYS.includes(
         field as (typeof OPENCONNECT_ALIGNMENT_KEYS)[number],
-      ) && raw[field] === undefined,
+      ) &&
+      field !== 'labelSlotEnabled' &&
+      field !== 'labelGridUnits' &&
+      raw[field] === undefined,
   )
   if (missingField) return invalid(missingField)
 
@@ -826,6 +841,15 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
   const topRimEnabled = raw.topRimEnabled === 'true'
   const topRimHeight = parseDimensionInput(raw.topRimHeight ?? '')
   if (topRimHeight === null) return invalid('topRimHeight')
+  const labelSlotRaw = raw.labelSlotEnabled ?? 'false'
+  if (labelSlotRaw !== 'true' && labelSlotRaw !== 'false')
+    return invalid('labelSlotEnabled')
+  const labelSlotEnabled = labelSlotRaw === 'true'
+  const labelGridUnits = parseDimensionInput(
+    raw.labelGridUnits ??
+      String(OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits),
+  )
+  if (labelGridUnits === null) return invalid('labelGridUnits')
 
   const horizontalAlignment = raw.openConnectHorizontalAlignment ?? 'center'
   const verticalAlignment = raw.openConnectVerticalAlignment ?? 'top'
@@ -853,6 +877,8 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     tiltAngle,
     topRimEnabled,
     topRimHeight,
+    labelSlotEnabled,
+    labelGridUnits,
   }
   const validation = validateModelParameters(
     'opengrid-openconnect-organizer',
@@ -891,11 +917,14 @@ export function rawFromParameters(
   if ('style' in parameters) {
     const labelCardParameters = parameters as OpenGridLabelCardParameters
     const raw: RawParameters = {
-      widthTier: String(labelCardParameters.widthTier),
+      gridUnits: String(labelCardParameters.gridUnits),
       style: labelCardParameters.style,
       icon: labelCardParameters.icon,
       textHeight: String(labelCardParameters.textHeight ?? 7),
       iconPosition: labelCardParameters.iconPosition ?? 'left',
+      textLine2: labelCardParameters.textLine2 ?? '',
+      textAlignment: labelCardParameters.textAlignment ?? 'center',
+      textLine2Alignment: labelCardParameters.textLine2Alignment ?? 'center',
     }
     if (labelCardParameters.text !== undefined) {
       raw.text = labelCardParameters.text
@@ -979,6 +1008,16 @@ export function rawFromParameters(
         'topRimHeight' in organizerParameters
           ? organizerParameters.topRimHeight
           : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.topRimHeight,
+      ),
+      labelSlotEnabled: String(
+        'labelSlotEnabled' in organizerParameters
+          ? organizerParameters.labelSlotEnabled
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelSlotEnabled,
+      ),
+      labelGridUnits: String(
+        'labelGridUnits' in organizerParameters
+          ? organizerParameters.labelGridUnits
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits,
       ),
     }
   }
@@ -1301,6 +1340,9 @@ export function parseRawParameters(
       style,
       textHeight: Number(raw.textHeight ?? 7),
       iconPosition: raw.iconPosition ?? 'left',
+      textLine2: raw.textLine2 ?? '',
+      textAlignment: raw.textAlignment ?? 'center',
+      textLine2Alignment: raw.textLine2Alignment ?? 'center',
     }
     if (raw.icon !== undefined) normalizedRaw.icon = raw.icon
     if (text !== undefined)
@@ -1315,8 +1357,6 @@ export function parseRawParameters(
         ...(issue?.params ? { params: issue.params } : {}),
       }
     }
-    return { valid: true, value: validation.value.parameters }
-  }
     return { valid: true, value: validation.value.parameters }
   }
 

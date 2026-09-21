@@ -22,7 +22,7 @@ The system MUST register a new independent model with `modelId=opengrid-label-ca
 
 ### Requirement: Label Card parameter contract
 
-The label card MUST expose width in integer `gridUnits` from 1 through 10, with each unit corresponding to 10 mm of actual card width, independently of the OpenGrid mounting pitch. Its other parameter groups MUST remain style `flat` or `raised`, an icon from the shared built-in set, and optional text of at most six characters. The panel MUST offer `iconPosition` as `left` or `right`, defaulting missing legacy values to `left`. Defaults MUST be four units, raised style, the shared default icon and empty text. Validation MUST reject unknown keys, invalid units/icons/styles, overlong text and content wider than the usable face. Legacy snapshots with `widthTier` in {20,30,40,60} MUST normalize to the corresponding unit count; mixed widthTier/gridUnits input MUST be rejected.
+The label card MUST expose width in integer `gridUnits` from 1 through 10, with each unit corresponding to 10 mm of actual card width, independently of the OpenGrid mounting pitch. Its other parameter groups MUST remain style `flat` or `raised`, an icon from the shared built-in set, and up to two optional text rows of at most six characters each. The panel MUST offer `iconPosition` as `left` or `right`, defaulting missing legacy values to `left`. Defaults MUST be four units, raised style, the shared default icon and empty text. Validation MUST reject unknown keys, invalid units/icons/styles, overlong text and content wider than the usable face. Legacy snapshots with `widthTier` in {20,30,40,60} MUST normalize to the corresponding unit count; mixed widthTier/gridUnits input MUST be rejected.
 
 #### Scenario: Default parameters generate on first open
 
@@ -126,7 +126,7 @@ Card accents MUST remain inside the 10 mm card height and leave at least 1 mm cl
 
 ### Requirement: Horizontal artwork with printable text height
 
-With text present, the icon MUST sit to the selected left or right of a single horizontal text line. Text geometry MUST have a user-selected visible height from 4 to 7 mm (default 7 mm) and MUST NOT be reduced to fit a narrow card. The icon and text MUST have clear separation, remain vertically centered, and respect the retaining-rail safety margin. Insufficient width MUST produce a text-width diagnostic. Empty text MUST keep the icon centered.
+With text present, the icon MUST sit to the selected left or right of one or two horizontal text lines. Text geometry MUST have a user-selected visible height from 2 to 7 mm (default 7 mm) and MUST NOT be reduced to fit a narrow card. The icon and text MUST have clear separation, remain vertically centered, and respect the retaining-rail safety margin. Insufficient width MUST produce a text-width diagnostic. Empty text MUST keep the icon centered.
 
 #### Scenario: Switch the icon side
 
@@ -135,7 +135,7 @@ With text present, the icon MUST sit to the selected left or right of a single h
 - **AND** the side choice MUST persist and be included in export filenames
 
 ### Requirement: Adjustable text height and optional icon
-The card MUST offer a text-height slider from 4 to 7 mm in 0.5 mm steps, defaulting legacy saved cards to 7 mm. Width validation MUST account for selected height. The icon gallery MUST offer None; text-only cards MUST center the text and reserve no icon width or icon/text gap. Both parameters MUST persist across reloads. A card with no text and no icon MUST generate a blank plate with STEP/STL export; multipart 3MF export MUST be unavailable for a blank plate.
+The card MUST offer a text-height slider from 2 to 7 mm in 0.5 mm steps, defaulting legacy saved cards to 7 mm. Width validation MUST account for selected height. The icon gallery MUST offer None; text-only cards MUST respect the selected alignment (center by default) and reserve no icon width or icon/text gap. Both parameters MUST persist across reloads. A card with no text and no icon MUST generate a blank plate with STEP/STL export; multipart 3MF export MUST be unavailable for a blank plate.
 
 #### Scenario: Smaller text without icon
 - **WHEN** the user selects 4 mm and None
@@ -148,3 +148,17 @@ SVG icons MUST be converted from downward-positive SVG Y to upward-positive CAD 
 #### Scenario: Camera icon orientation
 - **WHEN** the user selects the camera icon
 - **THEN** its raised outline MUST appear at the top and its small indicator MUST appear at the upper left, matching the gallery
+
+### Requirement: Independently aligned text rows
+The card MUST offer optional upper and lower text inputs, each with left, center, or right alignment. Alignment MUST use the available face width after reserving icon width and gap. Each row MUST accept up to six supported characters. Both rows share the selected visible glyph height; one nonempty row permits 2–7 mm, two nonempty rows permit 2–4 mm each, with a 0.5 mm gap. Adding a second nonempty row MUST reduce a larger current height to 4 mm. The card MUST remain 10 mm high and retain its existing insertion thickness and slot compatibility. Text, alignment, and height MUST persist across reloads. Validation errors MUST identify the affected row.
+
+#### Scenario: Different row alignments
+- **WHEN** the user enters M3 above and 10mm below, with upper left alignment and lower right alignment
+- **THEN** both rows MUST align against the same available text region, remain separated, and preserve these choices after reload and export
+
+### Requirement: Fastener symbol choices
+The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, plus simplified sectional pictograms for through, threaded, countersunk, and counterbored holes. These are identification pictograms, not dimensioned manufacturing profiles. Labels MUST be localized and all symbols MUST support both card styles and multipart export.
+
+#### Scenario: Select a fastener symbol
+- **WHEN** a user chooses a fastener symbol
+- **THEN** the preview and exported card MUST contain the chosen upright geometry with the same spacing rules as existing icons

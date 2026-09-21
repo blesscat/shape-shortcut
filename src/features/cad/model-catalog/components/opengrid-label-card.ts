@@ -47,7 +47,8 @@ function threeMfFileName(parameters: ModelParameterValues): string | null {
   if (!isOpenGridLabelCardParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
   }
-  if (parameters.icon === 'none' && !parameters.text) return null
+  if (parameters.icon === 'none' && !parameters.text && !parameters.textLine2)
+    return null
   return openGridLabelCardThreeMfFileName(parameters)
 }
 

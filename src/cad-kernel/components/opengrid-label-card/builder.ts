@@ -104,72 +104,86 @@ export async function buildOpenGridLabelCardWithParts(
   let accent: Shape3D | null = null
   let quality: Shape3D | null = null
   try {
-    const hasText =
-      validation.value.text !== undefined && validation.value.text.length > 0
+    const rows = [
+      {
+        field: 'text',
+        text: validation.value.text,
+        alignment: validation.value.textAlignment ?? 'center',
+      },
+      {
+        field: 'textLine2',
+        text: validation.value.textLine2,
+        alignment: validation.value.textLine2Alignment ?? 'center',
+      },
+    ].filter((row) => Boolean(row.text))
+    const textHeight = validation.value.textHeight ?? config.textHeight.default
     const accentDepth = raised ? config.raisedHeight : config.accentDepth
     const accentZ = raised ? plateTop : plateTop - accentDepth
     const hasIcon = validation.value.icon !== 'none'
+    const safeHalfWidth = halfWidth - OPENGRID_LABEL_GRID.artworkSideInset
+    let textMinX = -safeHalfWidth
+    let textMaxX = safeHalfWidth
     if (hasIcon) {
+      let iconX = 0
+      if (rows.length > 0) {
+        const iconSpace =
+          OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
+        if (validation.value.iconPosition === 'left') {
+          iconX = -safeHalfWidth + OPENGRID_LABEL_GRID.iconSize / 2
+          textMinX += iconSpace
+        } else {
+          iconX = safeHalfWidth - OPENGRID_LABEL_GRID.iconSize / 2
+          textMaxX -= iconSpace
+        }
+      }
       const iconShape = makeLabelCardIconShape(
         validation.value.icon,
         accentDepth,
       )
-      accent = iconShape.translate(0, 0, accentZ)
+      accent = iconShape.translate(iconX, 0, accentZ)
       if (accent !== iconShape) deleteShape(iconShape)
     }
 
-    if (hasText) {
-      let textShape = await makeOpenGridLabelCardTextShape(
-        validation.value.text!,
-        {
+    for (const [index, row] of rows.entries()) {
+      let textShape: Shape3D | null = null
+      try {
+        textShape = await makeOpenGridLabelCardTextShape(row.text!, {
           depth: accentDepth,
           maxLength: config.maxTextLength,
-          textHeight: validation.value.textHeight,
-        },
-      )
-      if (textShape) {
+          textHeight,
+        })
+      } catch (error) {
+        if (error instanceof Error && row.field === 'textLine2')
+          throw new Error(`${error.message}:textLine2`)
+        throw error
+      }
+      if (!textShape) continue
+      try {
+        const box = textShape.boundingBox
+        let textWidth: number
         try {
-          const box = textShape.boundingBox
-          let textWidth: number
-          try {
-            textWidth = box.bounds[1][0] - box.bounds[0][0]
-          } finally {
-            box.delete()
-          }
-          const totalWidth =
-            (hasIcon
-              ? OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
-              : 0) + textWidth
-          if (
-            totalWidth >
-            2 * (halfWidth - OPENGRID_LABEL_GRID.artworkSideInset)
-          )
-            throw new Error('LABEL_CARD_TEXT_TOO_WIDE')
-          const direction = validation.value.iconPosition === 'right' ? 1 : -1
-          if (accent) {
-            accent = accent.translate(
-              (direction * (textWidth + OPENGRID_LABEL_GRID.iconTextGap)) / 2,
-              0,
-              0,
-            )
-            textShape = textShape.translate(
-              (-direction *
-                (OPENGRID_LABEL_GRID.iconSize +
-                  OPENGRID_LABEL_GRID.iconTextGap)) /
-                2,
-              0,
-              accentZ,
-            )
-            const pieces = makeCompound([accent, textShape]).asShape3D()
-            deleteShape(accent)
-            accent = pieces
-          } else {
-            accent = textShape.translate(0, 0, accentZ)
-            textShape = null
-          }
+          textWidth = box.bounds[1][0] - box.bounds[0][0]
         } finally {
-          deleteShape(textShape)
+          box.delete()
         }
+        if (textWidth > textMaxX - textMinX)
+          throw new Error(`LABEL_CARD_TEXT_TOO_WIDE:${row.field}`)
+        let x = (textMinX + textMaxX) / 2
+        if (row.alignment === 'left') x = textMinX + textWidth / 2
+        if (row.alignment === 'right') x = textMaxX - textWidth / 2
+        const y =
+          ((rows.length - 1) / 2 - index) * (textHeight + config.textRowGap)
+        textShape = textShape.translate(x, y, accentZ)
+        if (accent) {
+          const pieces = makeCompound([accent, textShape]).asShape3D()
+          deleteShape(accent)
+          accent = pieces
+        } else {
+          accent = textShape
+          textShape = null
+        }
+      } finally {
+        deleteShape(textShape)
       }
     }
 

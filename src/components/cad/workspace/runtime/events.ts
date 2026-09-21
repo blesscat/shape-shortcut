@@ -31,7 +31,10 @@ function requiresColoredParts(operation: OperationRecord): boolean {
   if (operation.modelId !== 'opengrid-label-card') return false
   const parameters = operation.parameters
   if (!isOpenGridLabelCardParameters(parameters)) return true
-  return parameters.icon !== 'none' || Boolean(parameters.text)
+  return (
+    parameters.icon !== 'none' ||
+    Boolean(parameters.text || parameters.textLine2)
+  )
 }
 
 type WorkerEventContext = RuntimeContext & {
@@ -153,7 +156,7 @@ function labelCardFieldErrorFor(
     }
   }
   return {
-    field: 'text',
+    field: params?.field === 'textLine2' ? 'textLine2' : 'text',
     messageId,
     ...(params ? { params } : {}),
   }

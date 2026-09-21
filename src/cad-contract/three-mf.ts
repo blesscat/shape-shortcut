@@ -512,10 +512,10 @@ function validObjectModel(
     attribute(accent.attributes, 'type') !== 'model' ||
     (expected
       ? accentPartName !== expected.accentPartName
-      : (accentPartName !== 'text' &&
+      : accentPartName !== 'text' &&
         accentPartName !== 'rim' &&
         accentPartName !== 'icon' &&
-        accentPartName !== 'accent')) ||
+        accentPartName !== 'accent') ||
     attribute(accent.attributes, 'pid') !== '1' ||
     attribute(accent.attributes, 'pindex') !== '1'
   ) {
@@ -738,11 +738,7 @@ function validSettingsObject(
     faceCount !== undefined &&
     nameMetadata !== undefined &&
     (expected
-      ? validSettingsMetadata(
-          nameMetadata,
-          'name',
-          expected.modelSettingsName,
-        )
+      ? validSettingsMetadata(nameMetadata, 'name', expected.modelSettingsName)
       : matchesAnyMetadataValue(
           nameMetadata,
           'name',
@@ -758,10 +754,10 @@ function validSettingsObject(
     validSettingsPart(parts[0]!, '1', 'body', '1', '0') &&
     (expected
       ? validSettingsPart(parts[1]!, '2', expected.accentPartName, '2', '1')
-      : (validSettingsPart(parts[1]!, '2', 'text', '2', '1') ||
+      : validSettingsPart(parts[1]!, '2', 'text', '2', '1') ||
         validSettingsPart(parts[1]!, '2', 'rim', '2', '1') ||
         validSettingsPart(parts[1]!, '2', 'icon', '2', '1') ||
-        validSettingsPart(parts[1]!, '2', 'accent', '2', '1'))) &&
+        validSettingsPart(parts[1]!, '2', 'accent', '2', '1')) &&
     objectFaceCount === bodyFaceCount + textFaceCount &&
     (expectedPartFaceCounts === undefined ||
       (bodyFaceCount === expectedPartFaceCounts[0] &&
@@ -794,13 +790,17 @@ function validSettingsPlate(
   return (
     attribute(plate[1]!, 'id') === null &&
     validSettingsMetadata(metadataFor('plater_id')!, 'plater_id', '1') &&
-    matchesAnyMetadataValue(
-      metadataFor('plater_name')!,
-      'plater_name',
-      (expected
-        ? expected.platerName
-        : THREE_MF_SUPPORTED_PLATE_NAMES),
-    ) &&
+    (expected
+      ? validSettingsMetadata(
+          metadataFor('plater_name')!,
+          'plater_name',
+          expected.platerName,
+        )
+      : matchesAnyMetadataValue(
+          metadataFor('plater_name')!,
+          'plater_name',
+          THREE_MF_SUPPORTED_PLATE_NAMES,
+        )) &&
     validSettingsMetadata(metadataFor('locked')!, 'locked', 'false') &&
     validSettingsMetadata(
       metadataFor('filament_map_mode')!,

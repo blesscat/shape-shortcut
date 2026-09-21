@@ -1,3 +1,7 @@
+import {
+  openGridLabelWidthFor,
+  OPENGRID_LABEL_GRID,
+} from '../../../cad-contract/units/opengrid-label-shared'
 import { getOC, measureVolume, Solid, type Shape3D } from 'replicad'
 import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import {
@@ -76,7 +80,8 @@ export function inspectOpenGridLabelCardShapeQuality(
     body &&
     !accent &&
     validation.value.icon === 'none' &&
-    !validation.value.text
+    !validation.value.text &&
+    !validation.value.textLine2
   ) {
     const bounds = boundsOf(body.shape)
     const volume = measureVolume(body.shape)
@@ -112,8 +117,11 @@ export function inspectOpenGridLabelCardShapeQuality(
   const raised = parameters.style === 'raised'
 
   if (
-    Math.abs(bodyBounds.maxX - bodyBounds.minX - parameters.widthTier) >
-    tolerance
+    Math.abs(
+      bodyBounds.maxX -
+        bodyBounds.minX -
+        openGridLabelWidthFor(parameters.gridUnits),
+    ) > tolerance
   ) {
     failures.push('width-tier-bounds')
   }
@@ -149,6 +157,17 @@ export function inspectOpenGridLabelCardShapeQuality(
     if (accentBounds.minZ < 0 - tolerance) {
       failures.push('accent-protrudes')
     }
+  }
+  const safeHalfWidth =
+    openGridLabelWidthFor(validation.value.gridUnits) / 2 -
+    OPENGRID_LABEL_GRID.artworkSideInset
+  if (
+    accentBounds.minX < -safeHalfWidth - tolerance ||
+    accentBounds.maxX > safeHalfWidth + tolerance ||
+    accentBounds.minY < -config.cardHeight / 2 - tolerance ||
+    accentBounds.maxY > config.cardHeight / 2 + tolerance
+  ) {
+    failures.push('accent-outside-safe-face')
   }
   const accentVolume = measureVolume(accent.shape)
   if (!Number.isFinite(accentVolume) || accentVolume <= 0) {

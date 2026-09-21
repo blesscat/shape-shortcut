@@ -240,7 +240,6 @@ export async function generateCadCandidate(
     const usesMultipart =
       command.modelId === 'opengrid-wall-cover' ||
       command.modelId === 'opengrid-label-card' ||
-      command.modelId === 'opengrid-label-holder' ||
       (command.modelId === 'opengrid-stackable-cylinder' &&
         Boolean(
           (generationParameters as Record<string, unknown>).topRimEnabled,
@@ -434,30 +433,6 @@ export async function generateCadCandidate(
       }
     }
 
-    if (command.modelId === 'opengrid-label-tag') {
-      if (!isOpenGridLabelTagParameters(generationParameters)) {
-        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag')
-      }
-      const bodyPart = nativeParts?.find((part) => part.name === 'body')
-      const iconPart = nativeParts?.find((part) => part.name === 'icon')
-      if (!bodyPart || !iconPart) {
-        throw new Error('OPENGRID_LABEL_TAG_PARTS_INVALID')
-      }
-      const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
-      const iconMesh = meshBRep(iconPart.shape, command.previewConfig)
-      nativePartMeshes = [
-        { name: 'body', mesh: bodyMesh },
-        { name: 'icon', mesh: iconMesh },
-      ]
-      mesh.bounds = boundsForOpenGridLabelTag(generationParameters)
-      timing.measureSync('quality', () =>
-        assertOpenGridLabelTagShapeQuality(
-          nativeParts ?? [],
-          generationParameters,
-        ),
-      )
-    }
-
     if (command.modelId === 'opengrid-label-card') {
       if (!isOpenGridLabelCardParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
@@ -465,7 +440,9 @@ export async function generateCadCandidate(
       const bodyPart = nativeParts?.find((part) => part.name === 'body')
       const accentPart = nativeParts?.find((part) => part.name === 'accent')
       const blankCard =
-        generationParameters.icon === 'none' && !generationParameters.text
+        generationParameters.icon === 'none' &&
+        !generationParameters.text &&
+        !generationParameters.textLine2
       if (!bodyPart || (!accentPart && !blankCard)) {
         throw new Error('OPENGRID_LABEL_CARD_PARTS_INVALID')
       }

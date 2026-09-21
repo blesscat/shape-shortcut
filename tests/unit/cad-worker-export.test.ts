@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkerEvent } from '../../src/cad-contract/messages'
 import {
   modelFileName,
+  OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+  openGridStackableCylinderThreeMfFileName,
   modelStlFileName,
   openGridLabelCardThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
@@ -218,70 +220,6 @@ describe('CAD Worker export seam', () => {
     expect(lifecycle.unpin).toHaveBeenCalledTimes(2)
   })
 
-  it('exports a committed label-tag revision as a body/icon 3MF package', async () => {
-    const labelTagParameters = {
-      widthTier: 40,
-      gripThickness: 1.2,
-      icon: 'gear-fill',
-    } as const
-    const labelTagModel = {
-      modelId: 'opengrid-label-tag' as const,
-      parameters: labelTagParameters,
-    }
-    const fileName = openGridLabelTagThreeMfFileName(labelTagParameters)
-    const bodyShape = { delete: vi.fn() }
-    const iconShape = { delete: vi.fn() }
-    const currentRevision = revision(labelTagModel.modelId, labelTagParameters)
-    ;(currentRevision as { parts?: unknown }).parts = [
-      { name: 'body', shape: bodyShape },
-      { name: 'icon', shape: iconShape },
-    ]
-    const lifecycle = {
-      pin: vi.fn(() => currentRevision),
-      unpin: vi.fn(),
-    }
-    const events: WorkerEvent[] = []
-    const emit: EventSink = (event) => events.push(event)
-    const bytes = new Uint8Array([7, 8, 9]).buffer
-    mocks.exportThreeMfBytes.mockResolvedValue(bytes)
-    mocks.isThreeMfPackage.mockReturnValue(true)
-
-    await exportThreeMfCommand(
-      {
-        version: 2,
-        kind: 'export.3mf',
-        requestId: 'label-tag-3mf-request',
-        operationId: 'label-tag-3mf-operation',
-        modelRevision: currentRevision.modelRevision,
-        workerEpoch: 'epoch-1',
-        file: { name: fileName, mime: 'model/3mf' },
-      },
-      { epoch: 'epoch-1', lifecycle, emit },
-    )
-
-    expect(mocks.exportThreeMfBytes).toHaveBeenCalledOnce()
-    const [parts, , meta] = mocks.exportThreeMfBytes.mock.calls[0]!
-    expect(parts).toEqual([
-      { name: 'body', shape: bodyShape },
-      { name: 'icon', shape: iconShape },
-    ])
-    expect(meta).toMatchObject({
-      modelSettingsName: 'opengrid-label-tag',
-      sourceFileName: fileName,
-      accentPartName: 'icon',
-    })
-    expect(mocks.isThreeMfPackage).toHaveBeenCalledWith(
-      bytes,
-      threeMfExpectationFor(meta),
-    )
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        kind: 'export.ready',
-        format: '3mf',
-        bytes,
-        fileName,
-      }),
-    )
   it('preserves cylinder body/rim metadata and rejects rim-disabled exports', async () => {
     const input = {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -335,11 +273,12 @@ describe('CAD Worker export seam', () => {
       'THREEMF_METADATA_INVALID',
     )
     expect(mocks.exportThreeMfBytes).toHaveBeenCalledOnce()
-    expect(lifecycle.unpin).toHaveBeenCalledTimes(2)  })
+    expect(lifecycle.unpin).toHaveBeenCalledTimes(2)
+  })
 
   it('exports a committed label-card revision as a body/accent 3MF package', async () => {
     const labelCardParameters = {
-      widthTier: 40,
+      gridUnits: 4,
       style: 'raised',
       iconPosition: 'left',
       icon: 'gear-fill',
@@ -397,7 +336,7 @@ describe('CAD Worker export seam', () => {
 
   it('rejects a label-card 3MF request with a mismatched filename or parts', async () => {
     const labelCardParameters = {
-      widthTier: 40,
+      gridUnits: 4,
       style: 'raised',
       iconPosition: 'left',
       icon: 'gear-fill',

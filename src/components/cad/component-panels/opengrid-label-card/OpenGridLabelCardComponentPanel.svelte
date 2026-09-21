@@ -29,9 +29,30 @@
   )
   let rawStyle = $derived(rawParameters.style ?? config.defaultParameters.style)
   let rawIcon = $derived(rawParameters.icon ?? config.defaultParameters.icon)
-  let rawText = $derived(rawParameters.text ?? config.defaultText)
-  let normalizedText = $derived(normalizeOpenGridLabelCardText(rawText))
-  let textLength = $derived(Array.from(normalizedText).length)
+  const rowFields = [
+    {
+      key: 'text',
+      alignment: 'textAlignment',
+      label: 'panel.labelCard.topText',
+      aria: 'panel.labelCard.inputAria',
+    },
+    {
+      key: 'textLine2',
+      alignment: 'textLine2Alignment',
+      label: 'panel.labelCard.bottomText',
+      aria: 'panel.labelCard.bottomText',
+    },
+  ] as const
+  const alignments = ['left', 'center', 'right'] as const
+  let hasTwoRows = $derived(
+    Boolean(
+      normalizeOpenGridLabelCardText(rawParameters.text ?? '') &&
+      normalizeOpenGridLabelCardText(rawParameters.textLine2 ?? ''),
+    ),
+  )
+  let maxTextHeight = $derived(
+    hasTwoRows ? config.textHeight.twoRowMax : config.textHeight.max,
+  )
 
   function handleStyleInput(style: string): void {
     onInputChange('style', style)
@@ -41,10 +62,18 @@
     onInputChange('icon', icon)
   }
 
-  function handleTextInput(event: Event): void {
+  function handleTextInput(field: 'text' | 'textLine2', event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
-
-    onInputChange('text', event.currentTarget.value)
+    const value = event.currentTarget.value
+    const otherField = field === 'text' ? 'textLine2' : 'text'
+    const twoRows =
+      normalizeOpenGridLabelCardText(value) &&
+      normalizeOpenGridLabelCardText(rawParameters[otherField] ?? '')
+    const height = Number(rawParameters.textHeight ?? config.textHeight.default)
+    if (twoRows && height > config.textHeight.twoRowMax) {
+      onInputChange('textHeight', String(config.textHeight.twoRowMax))
+    }
+    onInputChange(field, value)
   }
 </script>
 
@@ -205,52 +234,75 @@
       id="label-card-text-height"
       type="range"
       min={config.textHeight.min}
-      max={config.textHeight.max}
+      max={maxTextHeight}
       step={config.textHeight.step}
       value={rawParameters.textHeight ?? config.textHeight.default}
       class="min-w-0 w-full accent-primary"
       oninput={(event) =>
         onInputChange('textHeight', event.currentTarget.value)}
     />
+    {#if hasTwoRows}<p class="m-0 text-sm text-muted-foreground">
+        {translate(locale, 'panel.labelCard.twoRowHeight')}
+      </p>{/if}
     {#if fieldErrors.textHeight}<span class="text-sm text-error" role="alert"
         >{formatValidationIssue(locale, fieldErrors.textHeight)}</span
       >{/if}
   </div>
 
-  <ParameterField
-    {locale}
-    label={translate(locale, 'parameter.text')}
-    changed={rawText !== config.defaultText}
-    error={fieldErrors.text}
-    errorId="opengrid-label-card-text-error"
-    restoreLabel={translate(locale, 'parameter.text')}
-    onRestore={() => onInputChange('text', config.defaultText)}
-  >
-    <div class="grid gap-1">
-      <input
-        aria-describedby="opengrid-label-card-text-help"
-        aria-invalid={fieldErrors.text ? 'true' : undefined}
-        aria-label={translate(locale, 'panel.labelCard.inputAria')}
-        autocomplete="off"
-        class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
-        data-testid="opengrid-label-card-text"
-        spellcheck="false"
-        type="text"
-        value={rawText}
-        oninput={handleTextInput}
-      />
-      <span
-        aria-live="polite"
-        class="text-right text-sm text-muted-foreground"
-        data-testid="opengrid-label-card-text-count"
-      >
-        {translate(locale, 'panel.labelCard.characterCount', {
-          count: textLength,
-          max: config.maxTextLength,
-        })}
-      </span>
-    </div>
-  </ParameterField>
+  {#each rowFields as row (row.key)}
+    {@const rawText = rawParameters[row.key] ?? ''}
+    {@const textLength = Array.from(
+      normalizeOpenGridLabelCardText(rawText),
+    ).length}
+    <ParameterField
+      {locale}
+      label={translate(locale, row.label)}
+      changed={rawText !== ''}
+      error={fieldErrors[row.key]}
+      errorId={`opengrid-label-card-${row.key}-error`}
+      restoreLabel={translate(locale, row.label)}
+      onRestore={() => onInputChange(row.key, '')}
+    >
+      <div class="grid gap-1">
+        <input
+          aria-describedby="opengrid-label-card-text-help"
+          aria-invalid={fieldErrors[row.key] ? 'true' : undefined}
+          aria-label={translate(locale, row.aria)}
+          autocomplete="off"
+          class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
+          data-testid={`opengrid-label-card-${row.key}`}
+          spellcheck="false"
+          type="text"
+          value={rawText}
+          oninput={(event) => handleTextInput(row.key, event)}
+        />
+        <span
+          aria-live="polite"
+          class="text-right text-sm text-muted-foreground"
+          data-testid={`opengrid-label-card-${row.key}-count`}
+        >
+          {translate(locale, 'panel.labelCard.characterCount', {
+            count: textLength,
+            max: config.maxTextLength,
+          })}
+        </span>
+        <label for={`label-card-${row.key}-alignment`}
+          >{translate(locale, 'panel.labelCard.alignment')}</label
+        >
+        <select
+          id={`label-card-${row.key}-alignment`}
+          value={rawParameters[row.alignment] ?? 'center'}
+          class="rounded-lg border border-border-field bg-panel px-3 py-2"
+          onchange={(event) =>
+            onInputChange(row.alignment, event.currentTarget.value)}
+        >
+          {#each alignments as alignment}<option value={alignment}
+              >{translate(locale, `panel.labelCard.align.${alignment}`)}</option
+            >{/each}
+        </select>
+      </div>
+    </ParameterField>
+  {/each}
 
   <p
     id="opengrid-label-card-text-help"

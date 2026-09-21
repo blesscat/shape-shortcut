@@ -9,7 +9,6 @@ import {
   openGridOrganizerBoxThreeMfFileName,
   openGridDividerThreeMfFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
-  openGridLabelTagThreeMfFileName,
   openGridLabelCardThreeMfFileName,
   isOpenGridWallCoverParameters,
   isOpenGridStackableCylinderParameters,
@@ -17,7 +16,6 @@ import {
   isOpenGridOrganizerBoxParameters,
   isOpenGridDividerParameters,
   isOpenGridOpenConnectOrganizerParameters,
-  isOpenGridLabelTagParameters,
   isOpenGridLabelCardParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
@@ -34,18 +32,6 @@ import {
 import type { CadWorkerLifecycle } from './cad-worker-lifecycle'
 import { emitProgress, id } from './cad-worker-events'
 import type { EventSink } from './cad-worker-types'
-
-/**
- * Models supporting the two-color 3MF export and the part pair they must
- * carry on the committed revision.
- */
-const THREE_MF_SUPPORTED_MODELS: Partial<
-  Record<ModelId, readonly ['body', 'text' | 'icon' | 'accent']>
-> = {
-  'opengrid-wall-cover': ['body', 'text'],
-  'opengrid-label-tag': ['body', 'icon'],
-  'opengrid-label-card': ['body', 'accent'],
-}
 
 type ExportContext = {
   epoch: string
@@ -198,7 +184,7 @@ export async function exportThreeMfCommand(
     }
 
     let expectedFileName: string
-    let expectedAccentName: 'text' | 'rim' | 'icon' | 'accent'
+    let expectedAccentName: 'text' | 'rim' | 'accent'
     if (
       revision.modelId === 'opengrid-wall-cover' &&
       isOpenGridWallCoverParameters(validation.value.parameters)
@@ -207,14 +193,6 @@ export async function exportThreeMfCommand(
         validation.value.parameters,
       )
       expectedAccentName = 'text'
-    } else if (
-      revision.modelId === 'opengrid-label-tag' &&
-      isOpenGridLabelTagParameters(validation.value.parameters)
-    ) {
-      expectedFileName = openGridLabelTagThreeMfFileName(
-        validation.value.parameters,
-      )
-      expectedAccentName = 'icon'
     } else if (
       revision.modelId === 'opengrid-label-card' &&
       isOpenGridLabelCardParameters(validation.value.parameters)
@@ -304,14 +282,18 @@ export async function exportThreeMfCommand(
     })
     emitProgress(context.emit, command, 'exporting', revision.modelRevision)
     const colors = command.colors ?? DEFAULT_MODEL_COLORS
-    const bytes = await exportThreeMfBytes(threeMfParts, {
-      baseColor: colors.primary,
-      accentColor: colors.secondary,
-      tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
-      angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
-      modelName: revision.modelId,
-      sourceFile: command.file.name,
-    })
+    const bytes = await exportThreeMfBytes(
+      threeMfParts,
+      {
+        baseColor: colors.primary,
+        accentColor: colors.secondary,
+        tolerance: PROTOTYPE_CONFIGURATION.stlTolerance,
+        angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
+        modelName: revision.modelId,
+        sourceFile: command.file.name,
+      },
+      meta,
+    )
     if (
       bytes.byteLength === 0 ||
       !isThreeMfPackage(bytes, threeMfExpectationFor(meta))

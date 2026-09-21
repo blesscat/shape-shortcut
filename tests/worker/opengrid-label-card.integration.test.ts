@@ -57,7 +57,7 @@ describe('OpenGrid Label Card generated geometry', () => {
 
   it('builds a raised card within bounds with a protruding flush-based accent', async () => {
     const parameters = {
-      widthTier: 40,
+      gridUnits: 4,
       style: 'raised',
       iconPosition: 'left',
       icon: 'gear-fill',
@@ -83,7 +83,7 @@ describe('OpenGrid Label Card generated geometry', () => {
 
   it('builds a flat card with the accent flush at the plate face', async () => {
     const parameters = {
-      widthTier: 30,
+      gridUnits: 3,
       style: 'flat',
       iconPosition: 'left',
       icon: 'wrench',
@@ -109,7 +109,7 @@ describe('OpenGrid Label Card generated geometry', () => {
     async () => {
       for (const iconId of OPENGRID_LABEL_CARD_ICON_IDS) {
         const parameters = {
-          widthTier: 40,
+          gridUnits: 4,
           style: 'flat',
           iconPosition: 'left',
           icon: iconId,
@@ -127,7 +127,7 @@ describe('OpenGrid Label Card generated geometry', () => {
 
   it('exports a structurally valid label card 3MF package', async () => {
     const parameters = {
-      widthTier: 40,
+      gridUnits: 4,
       style: 'raised',
       iconPosition: 'left',
       icon: 'gear-fill',
@@ -402,3 +402,96 @@ it('keeps the camera icon upright with its indicator at upper left', async () =>
     camera.delete()
   }
 })
+
+it.each([
+  ['left', 'right', 'none', 'left'],
+  ['center', 'left', 'drive-phillips', 'left'],
+  ['right', 'center', 'hole-counterbore', 'right'],
+] as const)(
+  'aligns top %s and bottom %s independently beside %s',
+  async (textAlignment, textLine2Alignment, icon, iconPosition) => {
+    const { makeBox } = await import('replicad')
+    const { OPENGRID_LABEL_GRID, openGridLabelWidthFor } =
+      await import('../../src/cad-contract/units/opengrid-label-shared')
+    const parameters = {
+      gridUnits: 4,
+      style: 'raised',
+      icon,
+      iconPosition,
+      text: '田',
+      textLine2: 'M3',
+      textHeight: 4,
+      textAlignment,
+      textLine2Alignment,
+    } as const
+    const result = await buildOpenGridLabelCardWithParts(parameters, {})
+    try {
+      assertOpenGridLabelCardShapeQuality(result.parts, parameters)
+      const accent = result.parts.find((part) => part.name === 'accent')!.shape
+      const half =
+        openGridLabelWidthFor(parameters.gridUnits) / 2 -
+        OPENGRID_LABEL_GRID.artworkSideInset
+      let left = -half,
+        right = half
+      if (icon !== 'none') {
+        const iconSpace =
+          OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
+        if (iconPosition === 'left') left += iconSpace
+        else right -= iconSpace
+      }
+      for (const [top, alignment] of [
+        [true, textAlignment],
+        [false, textLine2Alignment],
+      ] as const) {
+        const clip = makeBox(
+          [left - 0.001, top ? 0 : -5, 0.6],
+          [right + 0.001, top ? 5 : 0, 1],
+        )
+        const row = accent.intersect(clip)
+        try {
+          const bounds = shapeBounds(row)
+          expect(bounds[1][1] - bounds[0][1]).toBeCloseTo(
+            parameters.textHeight,
+            2,
+          )
+          if (alignment === 'left') expect(bounds[0][0]).toBeCloseTo(left, 2)
+          if (alignment === 'center')
+            expect((bounds[0][0] + bounds[1][0]) / 2).toBeCloseTo(
+              (left + right) / 2,
+              2,
+            )
+          if (alignment === 'right') expect(bounds[1][0]).toBeCloseTo(right, 2)
+          if (top)
+            expect(bounds[0][1]).toBeCloseTo(
+              OPENGRID_LABEL_CARD_CONFIGURATION.textRowGap / 2,
+              2,
+            )
+          else
+            expect(bounds[1][1]).toBeCloseTo(
+              -OPENGRID_LABEL_CARD_CONFIGURATION.textRowGap / 2,
+              2,
+            )
+        } finally {
+          row.delete()
+          clip.delete()
+        }
+      }
+      expect(
+        isThreeMfPackage(
+          await exportThreeMfBytes(
+            result.parts,
+            undefined,
+            threeMfMetaFor('opengrid-label-card', 'rows.3mf'),
+          ),
+          threeMfExpectationFor(
+            threeMfMetaFor('opengrid-label-card', 'rows.3mf'),
+          ),
+        ),
+      ).toBe(true)
+    } finally {
+      deleteParts(result.parts)
+      result.shape.delete()
+      result.qualityShape.delete()
+    }
+  },
+)
