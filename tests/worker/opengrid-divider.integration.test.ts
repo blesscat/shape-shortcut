@@ -1212,6 +1212,60 @@ describe('OpenGrid divider CAD kernel integration', () => {
     await expectBoxFitWallToAssembleWithNominalBox(6)
   }, 180_000)
 
+  it('assembles a 0.5 grid box-fit wall into a nominal minimum box', async () => {
+    await expectBoxFitWallToAssembleWithNominalBox(0.5)
+  }, 180_000)
+
+  it('builds a 17.5 grid box-fit wall inside the planar limit on the ±7 lattice', async () => {
+    const parameters = fullDividerParameters({
+      left: 17.5,
+      right: 0,
+      up: 0,
+      down: 0,
+      height: 20,
+      wallThickness: 2,
+      alignmentMode: 'box-fit',
+      boxFitWallGrids: 17.5,
+      endClearance: 0.15,
+    })
+    const shape = await buildOpenGridDivider(parameters)
+    try {
+      // The maximum wall must stay inside the 500 mm planar limit while
+      // spanning its full retracted length.
+      const span =
+        17.5 * OPENGRID_DIVIDER_CONFIGURATION.gridPitch -
+        2 * (OPENGRID_DIVIDER_CONFIGURATION.boxWallStationInset + 0.15)
+      const bounds = boundsOf(shape)
+      expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(span, 4)
+      expect(Math.abs(bounds[1][0])).toBeLessThan(250)
+
+      const plan = openGridDividerPlanBoundsFor(parameters)
+      const centerX = (plan.minX + plan.maxX) / 2
+      const pegPlan = openGridDividerPegPlanFor(parameters)
+      const stations = pegPlan.centers
+        .map(([x]) => Number((x - centerX).toFixed(6)) + 0)
+        .sort((first, second) => first - second)
+      expect(stations).toEqual(openGridDividerLatticeStationsFor(17.5))
+
+      // Every lattice station must carry real peg material on the solid.
+      const probeZ = pegProbeZFor(parameters)
+      for (const station of stations) {
+        const probe = makeCylinder(pegPlan.diameter / 2 - 0.1, 0.2, [
+          station,
+          0,
+          probeZ,
+        ])
+        try {
+          expect(measureVolume(shape.intersect(probe))).toBeGreaterThan(0)
+        } finally {
+          probe.delete()
+        }
+      }
+    } finally {
+      deleteShape(shape)
+    }
+  }, 180_000)
+
   it('fuses enlarged pegs into one solid and widens the base with them', async () => {
     const parameters = fullDividerParameters({
       left: 1.5,
