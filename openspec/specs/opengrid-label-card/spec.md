@@ -126,10 +126,18 @@ Card accents MUST remain inside the 10 mm card height and leave at least 1 mm cl
 
 ### Requirement: Horizontal artwork with printable text height
 
-With text present, the icon MUST sit to the selected left or right of a single horizontal text line. Text geometry MUST have a visible height of 7 mm and MUST NOT be reduced to fit a narrow card. The icon and text MUST have clear separation, remain vertically centered, and respect the retaining-rail safety margin. Insufficient width MUST produce a text-width diagnostic. Empty text MUST keep the icon centered.
+With text present, the icon MUST sit to the selected left or right of a single horizontal text line. Text geometry MUST have a user-selected visible height from 4 to 7 mm (default 7 mm) and MUST NOT be reduced to fit a narrow card. The icon and text MUST have clear separation, remain vertically centered, and respect the retaining-rail safety margin. Insufficient width MUST produce a text-width diagnostic. Empty text MUST keep the icon centered.
 
 #### Scenario: Switch the icon side
 
 - **WHEN** the user selects left or right for an icon with text
-- **THEN** the icon MUST move to that side without changing the text orientation or 7 mm height
+- **THEN** the icon MUST move to that side without changing the text orientation or selected text height
 - **AND** the side choice MUST persist and be included in export filenames
+
+### Requirement: Adjustable text height and optional icon
+The card MUST offer a text-height slider from 4 to 7 mm in 0.5 mm steps, defaulting legacy saved cards to 7 mm. Width validation MUST account for selected height. The icon gallery MUST offer None; text-only cards MUST center the text and reserve no icon width or icon/text gap. Both parameters MUST persist across reloads. A card with no text and no icon MUST generate a blank plate with STEP/STL export; multipart 3MF export MUST be unavailable for a blank plate.
+
+#### Scenario: Smaller text without icon
+- **WHEN** the user selects 4 mm and None
+- **THEN** generated text MUST be 4 mm high and horizontally centered without an icon
+- **AND** reloading MUST restore both selections

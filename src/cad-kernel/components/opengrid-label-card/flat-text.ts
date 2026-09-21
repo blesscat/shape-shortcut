@@ -158,10 +158,10 @@ function makeGlyph(
   }
 }
 
-/** Build one horizontal text line at an actual visible height of 7 mm. */
+/** Build one horizontal text line at an selected visible height. */
 export async function makeOpenGridLabelCardTextShape(
   text: string,
-  options: { depth?: number; maxLength?: number } = {},
+  options: { depth?: number; maxLength?: number; textHeight?: number } = {},
 ): Promise<Shape3D | null> {
   await loadOpenGridWallCoverFont()
   const normalized = normalizeOpenGridLabelCardText(text)
@@ -177,7 +177,8 @@ export async function makeOpenGridLabelCardTextShape(
   const bounds = font.getPath(normalized, 0, 0, 1).getBoundingBox()
   const visibleHeight = bounds.y2 - bounds.y1
   if (!(visibleHeight > 0)) throw new Error('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED')
-  const fontSize = OPENGRID_LABEL_GRID.textFontSize / visibleHeight
+  const fontSize =
+    (options.textHeight ?? OPENGRID_LABEL_GRID.textFontSize) / visibleHeight
   return makeGlyph(
     normalized,
     0,

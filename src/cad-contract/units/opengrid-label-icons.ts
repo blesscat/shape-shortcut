@@ -1,4 +1,5 @@
 export type OpenGridLabelCardIconId =
+  | 'none'
   | 'wrench'
   | 'screwdriver'
   | 'tools'
@@ -22,6 +23,7 @@ export type OpenGridLabelCardIconId =
 
 export const OPENGRID_LABEL_CARD_ICON_IDS: readonly OpenGridLabelCardIconId[] =
   [
+    'none',
     'wrench',
     'screwdriver',
     'tools',

@@ -11,6 +11,7 @@ import {
 } from '../../../../cad-contract/messages'
 import {
   PROTOTYPE_CONFIGURATION,
+  isOpenGridLabelCardParameters,
   validateModelParameters,
   type ModelId,
   type ModelParameterKey,
@@ -21,8 +22,17 @@ import {
   validateMeshSnapshot,
   validateModelPartMeshes,
 } from '../../../../features/cad/worker-client'
+import type { OperationRecord } from '../types'
 import type { ExportHandlers } from './export'
 import type { ModelGenerationHandlers, RuntimeContext } from './types'
+
+function requiresColoredParts(operation: OperationRecord): boolean {
+  if (operation.modelId === 'opengrid-wall-cover') return true
+  if (operation.modelId !== 'opengrid-label-card') return false
+  const parameters = operation.parameters
+  if (!isOpenGridLabelCardParameters(parameters)) return true
+  return parameters.icon !== 'none' || Boolean(parameters.text)
+}
 
 type WorkerEventContext = RuntimeContext & {
   generation: ModelGenerationHandlers
@@ -319,8 +329,7 @@ export function createWorkerEventHandler(
         const validMesh = validateMeshSnapshot(event.mesh)
         const validPartMeshes = validateModelPartMeshes(
           event.partMeshes,
-          operation.modelId === 'opengrid-wall-cover' ||
-            operation.modelId === 'opengrid-label-card',
+          requiresColoredParts(operation),
         )
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const currentOperation = isCurrentModelOperation(
@@ -402,9 +411,7 @@ export function createWorkerEventHandler(
         }
         const mesh = event.mesh ?? operation.candidateMesh
         const matchingParameters = modelEventMatchesOperation(operation, event)
-        const requiresParts =
-          operation.modelId === 'opengrid-wall-cover' ||
-          operation.modelId === 'opengrid-label-card'
+        const requiresParts = requiresColoredParts(operation)
         const partMeshes = event.partMeshes ?? operation.candidatePartMeshes
         const validPartMeshes = validateModelPartMeshes(
           partMeshes,

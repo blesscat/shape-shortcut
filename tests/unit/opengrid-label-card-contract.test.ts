@@ -21,6 +21,7 @@ describe('OpenGrid Label Card contract', () => {
       iconPosition: 'left',
       icon: 'gear-fill',
       text: '',
+      textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
     })
   })
 
@@ -35,6 +36,7 @@ describe('OpenGrid Label Card contract', () => {
     ).toEqual({
       valid: true,
       value: {
+        textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
         gridUnits: 4,
         style: 'raised',
         iconPosition: 'left',
@@ -52,6 +54,7 @@ describe('OpenGrid Label Card contract', () => {
     ).toEqual({
       valid: true,
       value: {
+        textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
         gridUnits: 6,
         style: 'flat',
         iconPosition: 'left',
@@ -140,6 +143,7 @@ describe('OpenGrid Label Card contract', () => {
       value: {
         modelId: 'opengrid-label-card',
         parameters: {
+          textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
           gridUnits: 3,
           style: 'flat',
           iconPosition: 'left',
@@ -202,7 +206,9 @@ describe('OpenGrid Label Card contract', () => {
 
   it('shares the icon set and width tiers with the label system', () => {
     expect(OPENGRID_LABEL_CARD_ICON_IDS.length).toBeGreaterThanOrEqual(16)
-    for (const iconId of OPENGRID_LABEL_CARD_ICON_IDS) {
+    for (const iconId of OPENGRID_LABEL_CARD_ICON_IDS.filter(
+      (icon) => icon !== 'none',
+    )) {
       expect(LABEL_CARD_ICON_PATHS[iconId], iconId).toBeDefined()
     }
   })

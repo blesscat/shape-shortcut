@@ -103,6 +103,7 @@
     >
     <select
       id="label-card-icon-position"
+      disabled={rawIcon === 'none'}
       class="rounded-lg border border-border-field bg-panel px-3 py-2"
       value={rawParameters.iconPosition ?? 'left'}
       onchange={(event) =>
@@ -193,6 +194,27 @@
         >{formatValidationIssue(locale, fieldErrors.icon)}</span
       >
     {/if}
+  </div>
+
+  <div class="grid gap-1">
+    <label for="label-card-text-height" class="text-sm text-ink"
+      >{translate(locale, 'panel.labelCard.textHeight')} · {rawParameters.textHeight ??
+        config.textHeight.default} mm</label
+    >
+    <input
+      id="label-card-text-height"
+      type="range"
+      min={config.textHeight.min}
+      max={config.textHeight.max}
+      step={config.textHeight.step}
+      value={rawParameters.textHeight ?? config.textHeight.default}
+      class="min-w-0 w-full accent-primary"
+      oninput={(event) =>
+        onInputChange('textHeight', event.currentTarget.value)}
+    />
+    {#if fieldErrors.textHeight}<span class="text-sm text-error" role="alert"
+        >{formatValidationIssue(locale, fieldErrors.textHeight)}</span
+      >{/if}
   </div>
 
   <ParameterField

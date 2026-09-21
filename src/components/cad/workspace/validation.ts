@@ -212,7 +212,7 @@ function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
     return modelId === 'opengrid-wall-cover' ? ['text', 'openConnect'] : []
   }
   if (modelId === 'opengrid-label-card') {
-    return ['gridUnits', 'style', 'icon', 'text', 'iconPosition']
+    return ['gridUnits', 'style', 'icon', 'text', 'iconPosition', 'textHeight']
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
   if (modelId === 'opengrid-divider') return OPENGRID_DIVIDER_PARAMETER_KEYS
@@ -894,6 +894,7 @@ export function rawFromParameters(
       widthTier: String(labelCardParameters.widthTier),
       style: labelCardParameters.style,
       icon: labelCardParameters.icon,
+      textHeight: String(labelCardParameters.textHeight ?? 7),
       iconPosition: labelCardParameters.iconPosition ?? 'left',
     }
     if (labelCardParameters.text !== undefined) {
@@ -1298,6 +1299,7 @@ export function parseRawParameters(
     const normalizedRaw: Record<string, unknown> = {
       gridUnits,
       style,
+      textHeight: Number(raw.textHeight ?? 7),
       iconPosition: raw.iconPosition ?? 'left',
     }
     if (raw.icon !== undefined) normalizedRaw.icon = raw.icon

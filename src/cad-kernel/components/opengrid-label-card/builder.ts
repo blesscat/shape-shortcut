@@ -53,7 +53,8 @@ function cutShape(source: Shape3D, cutter: Shape3D): Shape3D {
   }
 }
 
-function buildQualityShape(body: Shape3D, accent: Shape3D): Shape3D {
+function buildQualityShape(body: Shape3D, accent: Shape3D | null): Shape3D {
+  if (!accent) return cloneShape(body)
   let bodyClone: Shape3D | null = null
   let accentClone: Shape3D | null = null
   try {
@@ -107,14 +108,24 @@ export async function buildOpenGridLabelCardWithParts(
       validation.value.text !== undefined && validation.value.text.length > 0
     const accentDepth = raised ? config.raisedHeight : config.accentDepth
     const accentZ = raised ? plateTop : plateTop - accentDepth
-    const iconShape = makeLabelCardIconShape(validation.value.icon, accentDepth)
-    accent = iconShape.translate(0, 0, accentZ)
-    if (accent !== iconShape) deleteShape(iconShape)
+    const hasIcon = validation.value.icon !== 'none'
+    if (hasIcon) {
+      const iconShape = makeLabelCardIconShape(
+        validation.value.icon,
+        accentDepth,
+      )
+      accent = iconShape.translate(0, 0, accentZ)
+      if (accent !== iconShape) deleteShape(iconShape)
+    }
 
     if (hasText) {
       let textShape = await makeOpenGridLabelCardTextShape(
         validation.value.text!,
-        { depth: accentDepth, maxLength: config.maxTextLength },
+        {
+          depth: accentDepth,
+          maxLength: config.maxTextLength,
+          textHeight: validation.value.textHeight,
+        },
       )
       if (textShape) {
         try {
@@ -126,38 +137,43 @@ export async function buildOpenGridLabelCardWithParts(
             box.delete()
           }
           const totalWidth =
-            OPENGRID_LABEL_GRID.iconSize +
-            OPENGRID_LABEL_GRID.iconTextGap +
-            textWidth
+            (hasIcon
+              ? OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
+              : 0) + textWidth
           if (
             totalWidth >
             2 * (halfWidth - OPENGRID_LABEL_GRID.artworkSideInset)
           )
             throw new Error('LABEL_CARD_TEXT_TOO_WIDE')
           const direction = validation.value.iconPosition === 'right' ? 1 : -1
-          accent = accent.translate(
-            (direction * (textWidth + OPENGRID_LABEL_GRID.iconTextGap)) / 2,
-            0,
-            0,
-          )
-          textShape = textShape.translate(
-            (-direction *
-              (OPENGRID_LABEL_GRID.iconSize +
-                OPENGRID_LABEL_GRID.iconTextGap)) /
-              2,
-            0,
-            accentZ,
-          )
-          const pieces = makeCompound([accent, textShape]).asShape3D()
-          deleteShape(accent)
-          accent = pieces
+          if (accent) {
+            accent = accent.translate(
+              (direction * (textWidth + OPENGRID_LABEL_GRID.iconTextGap)) / 2,
+              0,
+              0,
+            )
+            textShape = textShape.translate(
+              (-direction *
+                (OPENGRID_LABEL_GRID.iconSize +
+                  OPENGRID_LABEL_GRID.iconTextGap)) /
+                2,
+              0,
+              accentZ,
+            )
+            const pieces = makeCompound([accent, textShape]).asShape3D()
+            deleteShape(accent)
+            accent = pieces
+          } else {
+            accent = textShape.translate(0, 0, accentZ)
+            textShape = null
+          }
         } finally {
           deleteShape(textShape)
         }
       }
     }
 
-    if (!raised) {
+    if (!raised && accent) {
       const recessCutter = cloneShape(accent)
       body = cutShape(body, recessCutter)
     }
@@ -173,13 +189,14 @@ export async function buildOpenGridLabelCardWithParts(
     const finalAccent = accent
     body = null
     accent = null
+    const parts: OpenGridLabelCardNativePart[] = [
+      { name: 'body', shape: finalBody },
+    ]
+    if (finalAccent) parts.push({ name: 'accent', shape: finalAccent })
     return {
       shape: preview,
       qualityShape: quality,
-      parts: [
-        { name: 'body', shape: finalBody },
-        { name: 'accent', shape: finalAccent },
-      ],
+      parts,
     }
   } catch (error) {
     deleteShape(body)

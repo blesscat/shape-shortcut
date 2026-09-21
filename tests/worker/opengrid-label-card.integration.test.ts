@@ -45,14 +45,14 @@ function deleteParts(parts: Array<{ name: string; shape: Shape3D }>): void {
   for (const part of parts) part.shape.delete()
 }
 
-describe('OpenGrid Label Card generated geometry', () => {
-  beforeAll(async () => {
-    await initialiseCadKernel(WASM_PATH)
-    await loadOpenGridWallCoverFont(
-      readFileSync(fileURLToPath(OPEN_GRID_WALL_COVER_FONT_URL)),
-    )
-  })
+beforeAll(async () => {
+  await initialiseCadKernel(WASM_PATH)
+  await loadOpenGridWallCoverFont(
+    readFileSync(fileURLToPath(OPEN_GRID_WALL_COVER_FONT_URL)),
+  )
+})
 
+describe('OpenGrid Label Card generated geometry', () => {
   afterAll(() => undefined)
 
   it('builds a raised card within bounds with a protruding flush-based accent', async () => {
@@ -212,3 +212,120 @@ it.each(['left', 'right'] as const)(
     }
   },
 )
+
+it.each([4, 5.5, 7])(
+  'builds centered text-only cards at %s mm height',
+  async (textHeight) => {
+    const parameters = {
+      gridUnits: 4,
+      style: 'flat',
+      icon: 'none',
+      iconPosition: 'right',
+      text: '中文',
+      textHeight,
+    } as const
+    const result = await buildOpenGridLabelCardWithParts(parameters, {})
+    try {
+      const accent = result.parts.find((part) => part.name === 'accent')!
+      const bounds = shapeBounds(accent.shape)
+      expect(bounds[1][1] - bounds[0][1]).toBeCloseTo(textHeight, 2)
+      expect(bounds[1][0] + bounds[0][0]).toBeCloseTo(0, 2)
+      assertOpenGridLabelCardShapeQuality(result.parts, parameters)
+      const meta = threeMfMetaFor('opengrid-label-card', 'test.3mf')
+      expect(
+        isThreeMfPackage(
+          await exportThreeMfBytes(result.parts, undefined, meta),
+          threeMfExpectationFor(meta),
+        ),
+      ).toBe(true)
+    } finally {
+      deleteParts(result.parts)
+      result.shape.delete()
+      result.qualityShape.delete()
+    }
+  },
+)
+it('builds a blank card when both icon and text are absent', async () => {
+  const parameters = {
+    gridUnits: 4,
+    style: 'raised',
+    icon: 'none',
+    iconPosition: 'left',
+  } as const
+  const result = await buildOpenGridLabelCardWithParts(parameters, {})
+  try {
+    expect(result.parts.map((part) => part.name)).toEqual(['body'])
+    assertOpenGridLabelCardShapeQuality(result.parts, parameters)
+  } finally {
+    deleteParts(result.parts)
+    result.shape.delete()
+    result.qualityShape.delete()
+  }
+})
+
+it('preserves flat Chinese card material volumes in export meshes', async () => {
+  const { meshBRep } = await import('../../src/cad-kernel/mesh')
+  const { measureVolume } = await import('replicad')
+  const result = await buildOpenGridLabelCardWithParts(
+    {
+      gridUnits: 4,
+      style: 'flat',
+      icon: 'gear-fill',
+      iconPosition: 'left',
+      text: '中文',
+    },
+    {},
+  )
+  try {
+    for (const part of result.parts) {
+      const mesh = meshBRep(part.shape, {
+        tolerance: 0.1,
+        angularTolerance: 0.5,
+      })
+      let volume = 0
+      for (let i = 0; i < mesh.indices.length; i += 3) {
+        const points = [0, 1, 2].map((j) =>
+          Array.from(
+            mesh.positions.slice(
+              mesh.indices[i + j] * 3,
+              mesh.indices[i + j] * 3 + 3,
+            ),
+          ),
+        )
+        const [a, b, c] = points
+        volume +=
+          (a[0] * (b[1] * c[2] - b[2] * c[1]) +
+            a[1] * (b[2] * c[0] - b[0] * c[2]) +
+            a[2] * (b[0] * c[1] - b[1] * c[0])) /
+          6
+      }
+      expect(volume).toBeCloseTo(measureVolume(part.shape), 1)
+      const edges = new Map<string, number>()
+      const edgeDirections = new Map<string, number>()
+      const pointKey = (index: number) =>
+        Array.from(mesh.positions.slice(index * 3, index * 3 + 3))
+          .map((value) => value.toFixed(5))
+          .join(',')
+      for (let i = 0; i < mesh.indices.length; i += 3) {
+        for (let j = 0; j < 3; j++) {
+          const a = pointKey(mesh.indices[i + j])
+          const b = pointKey(mesh.indices[i + ((j + 1) % 3)])
+          const key = [a, b].sort().join('|')
+          edges.set(key, (edges.get(key) ?? 0) + 1)
+          edgeDirections.set(
+            key,
+            (edgeDirections.get(key) ?? 0) + (a < b ? 1 : -1),
+          )
+        }
+      }
+      expect([...edges.values()].filter((count) => count !== 2)).toEqual([])
+      expect(
+        [...edgeDirections.values()].filter((value) => value !== 0),
+      ).toEqual([])
+    }
+  } finally {
+    deleteParts(result.parts)
+    result.shape.delete()
+    result.qualityShape.delete()
+  }
+})

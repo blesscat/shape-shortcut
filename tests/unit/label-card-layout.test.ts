@@ -44,3 +44,43 @@ it('accepts either icon side, migrates missing side, and reserves room for 7mm t
     validateOpenGridLabelCardParameters({ gridUnits: 1, text: 'M3' }).valid,
   ).toBe(false)
 })
+
+it('validates adjustable height and reclaims icon space for text-only cards', () => {
+  for (const textHeight of [4, 4.5, 7]) {
+    expect(validateOpenGridLabelCardParameters({ textHeight })).toMatchObject({
+      valid: true,
+      value: { textHeight },
+    })
+  }
+  for (const textHeight of [3.9, 7.1, NaN, Infinity, '4']) {
+    expect(validateOpenGridLabelCardParameters({ textHeight }).valid).toBe(
+      false,
+    )
+  }
+  expect(validateOpenGridLabelCardParameters({})).toMatchObject({
+    valid: true,
+    value: { textHeight: 7 },
+  })
+  expect(
+    validateOpenGridLabelCardParameters({
+      gridUnits: 2,
+      text: 'M3',
+      textHeight: 4,
+    }).valid,
+  ).toBe(true)
+  expect(
+    validateOpenGridLabelCardParameters({
+      gridUnits: 2,
+      text: 'M3',
+      textHeight: 7,
+    }).valid,
+  ).toBe(false)
+  expect(
+    validateOpenGridLabelCardParameters({
+      gridUnits: 2,
+      text: 'M3',
+      textHeight: 7,
+      icon: 'none',
+    }).valid,
+  ).toBe(true)
+})

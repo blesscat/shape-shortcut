@@ -464,15 +464,17 @@ export async function generateCadCandidate(
       }
       const bodyPart = nativeParts?.find((part) => part.name === 'body')
       const accentPart = nativeParts?.find((part) => part.name === 'accent')
-      if (!bodyPart || !accentPart) {
+      const blankCard =
+        generationParameters.icon === 'none' && !generationParameters.text
+      if (!bodyPart || (!accentPart && !blankCard)) {
         throw new Error('OPENGRID_LABEL_CARD_PARTS_INVALID')
       }
       const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
-      const accentMesh = meshBRep(accentPart.shape, command.previewConfig)
-      nativePartMeshes = [
-        { name: 'body', mesh: bodyMesh },
-        { name: 'accent', mesh: accentMesh },
-      ]
+      nativePartMeshes = [{ name: 'body', mesh: bodyMesh }]
+      if (accentPart) {
+        const accentMesh = meshBRep(accentPart.shape, command.previewConfig)
+        nativePartMeshes.push({ name: 'accent', mesh: accentMesh })
+      }
       mesh.bounds = boundsForOpenGridLabelCard(generationParameters)
       timing.measureSync('quality', () =>
         assertOpenGridLabelCardShapeQuality(

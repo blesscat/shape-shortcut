@@ -72,6 +72,30 @@ export function inspectOpenGridLabelCardShapeQuality(
   const config = OPENGRID_LABEL_CARD_CONFIGURATION
   const body = parts.find((part) => part.name === 'body')
   const accent = parts.find((part) => part.name === 'accent')
+  if (
+    body &&
+    !accent &&
+    validation.value.icon === 'none' &&
+    !validation.value.text
+  ) {
+    const bounds = boundsOf(body.shape)
+    const volume = measureVolume(body.shape)
+    const expectedVolume =
+      openGridLabelWidthFor(validation.value.gridUnits) *
+      config.cardHeight *
+      config.plateThickness
+    const passed =
+      parts.length === 1 &&
+      Math.abs(volume - expectedVolume) < LABEL_CARD_QUALITY_TOLERANCE &&
+      Math.abs(bounds.maxZ - config.plateThickness) <
+        LABEL_CARD_QUALITY_TOLERANCE
+    return {
+      passed,
+      failures: passed ? [] : ['blank-card-invalid'],
+      solidCount: extractSolidCount(body.shape),
+      volume,
+    }
+  }
   if (!body || !accent) {
     return {
       passed: false,

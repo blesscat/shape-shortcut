@@ -105,6 +105,10 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
     ).toBeEnabled({ timeout: 90_000 })
+    const height = page.locator('#label-card-text-height')
+    await expect(height).toHaveValue('7')
+    await height.fill('4.5')
+    await page.getByTestId('opengrid-label-card-icon-none').click()
     const units = page.getByTestId('opengrid-label-card-grid-units')
     await expect(units).toHaveRole('slider')
     await expect(units).toHaveValue('3')
@@ -129,7 +133,7 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     })
     await textInput.fill('M3')
     const iconPosition = page.locator('#label-card-icon-position')
-    await iconPosition.selectOption('right')
+    await expect(iconPosition).toBeDisabled()
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
     ).toBeEnabled({ timeout: 90_000 })
@@ -146,13 +150,18 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     await exportButton.click()
     const fileName = (await pendingDownload).suggestedFilename()
     expect(fileName).toContain('w50')
-    expect(fileName).toContain('-right.3mf')
+    expect(fileName).toContain('-none-')
+    expect(fileName).toContain('-left.3mf')
     await page.reload()
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
     ).toBeEnabled({ timeout: 90_000 })
     await expect(units).toHaveValue('5')
-    await expect(iconPosition).toHaveValue('right')
+    await expect(iconPosition).toHaveValue('left')
+    await expect(height).toHaveValue('4.5')
+    await expect(
+      page.getByTestId('opengrid-label-card-icon-none'),
+    ).toHaveAttribute('aria-pressed', 'true')
     await expect(textInput).toHaveValue('M3')
     await expect(units).toHaveAttribute('max', '10')
     await units.press('Home')
