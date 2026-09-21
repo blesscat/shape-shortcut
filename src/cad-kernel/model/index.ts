@@ -1,3 +1,5 @@
+import { isTissueBoxParameters } from '../../cad-contract/units/opengrid-openconnect-tissue-box'
+import { buildTissueBox } from '../components/opengrid-openconnect-tissue-box/builder'
 import type { Shape3D } from 'replicad'
 import type { ProgressUnit } from '../../cad-contract/messages'
 import type { BooleanOperationReporter } from '../boolean-progress'
@@ -582,6 +584,19 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridStackableCylinderKernelDefinition,
   opengridOpenShelfKernelDefinition,
   opengridOpenConnectShelfKernelDefinition,
+  {
+    id: 'opengrid-openconnect-tissue-box',
+    build: (parameters, context) => {
+      if (!isTissueBoxParameters(parameters)) throw new Error('INVALID_INPUT')
+      return buildTissueBox(parameters, {
+        getLockedSlot: context.getOpenGridOpenConnectShelfLockedSlot,
+        isGenerationCurrent: context.isGenerationCurrent,
+        yieldToEventLoop: context.yieldToEventLoop,
+        reportProgress: context.reportProgress,
+        booleanOperations: context.booleanOperations,
+      })
+    },
+  },
   opengridOpenConnectOrganizerKernelDefinition,
   opengridSnapKernelDefinition,
   opengridWallCoverKernelDefinition,

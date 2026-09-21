@@ -1,3 +1,4 @@
+import { TISSUE_BOX_DEFAULTS } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
 import type { CadError } from '../../../cad-contract/errors'
 import type {
   MeshSnapshot,
@@ -103,6 +104,8 @@ function defaultParametersForModel(modelId: ModelId): ModelParameterValues {
   if (modelId === 'opengrid-openconnect-shelf') {
     return { ...OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS }
   }
+  if (modelId === 'opengrid-openconnect-tissue-box')
+    return { ...TISSUE_BOX_DEFAULTS }
   if (modelId === 'opengrid-openconnect-organizer') {
     return { ...OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS }
   }
