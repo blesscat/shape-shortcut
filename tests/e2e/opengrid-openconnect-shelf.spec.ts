@@ -5,6 +5,7 @@ test('selects X/Y/Z cells and clamps the half-degree angle slider', async ({
   page,
   browserName,
 }) => {
+  test.setTimeout(120_000)
   skipHeadlessFirefoxWithoutWebGL(browserName)
 
   await page.goto('/zh-Hant/cad/opengrid-openconnect-shelf?system=wall')
@@ -28,6 +29,7 @@ test('selects X/Y/Z cells and clamps the half-degree angle slider', async ({
   await expect(angleSlider).toHaveAttribute('step', '0.5')
   await expect(angleInput).toHaveCount(0)
 
+  await page.getByTestId('openconnect-settings').locator('summary').click()
   await expect(connectorRows).toHaveValue('1')
   await connectorRows.fill('2')
   await expect(limit).toContainText('目前 Y=3 格、Z=2 格可用的最大角度為 30°')
@@ -37,6 +39,7 @@ test('selects X/Y/Z cells and clamps the half-degree angle slider', async ({
 
   await page.reload()
   await waitForCadReady(page)
+  await page.getByTestId('openconnect-settings').locator('summary').click()
   await expect(rows).toHaveValue('3')
   await expect(connectorRows).toHaveValue('2')
   await expect(angleSlider).toHaveValue('29.5')

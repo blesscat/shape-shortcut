@@ -690,3 +690,41 @@ describe('OpenGrid OpenConnect organizer CAD kernel integration', () => {
     expect(slotLoads).toBe(0)
   })
 })
+
+describe('aligned rear receptacles', () => {
+  it.each([
+    ['left', 'top'],
+    ['left', 'bottom'],
+    ['right', 'top'],
+    ['right', 'bottom'],
+    ['center', 'center'],
+  ] as const)(
+    'keeps a shifted %s/%s grid watertight and separated from cavities',
+    async (horizontal, vertical) => {
+      const value = parameters({
+        holeCountX: 3,
+        holeDepth: 65,
+        openConnectHorizontalAlignment: horizontal,
+        openConnectVerticalAlignment: vertical,
+      })
+      const { shape, slot, quality } = await buildAndInspect(value)
+      try {
+        expect(quality.failures).toEqual([])
+        expect(quality.passed).toBe(true)
+        expect(quality.solidCount).toBe(1)
+        const layout = openGridOpenConnectOrganizerLayoutFor(value)
+        expect(quality.slotCount).toBe(
+          layout.connectorColumns * layout.connectorRows,
+        )
+        expect(
+          quality.slotResidualVolumes.every((volume) => volume < 0.01),
+        ).toBe(true)
+        expect(quality.separationSkinCount).toBe(quality.slotCount)
+      } finally {
+        deleteShape(shape)
+        deleteShape(slot)
+      }
+    },
+    120_000,
+  )
+})

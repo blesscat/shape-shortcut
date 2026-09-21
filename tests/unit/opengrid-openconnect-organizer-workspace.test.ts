@@ -1,3 +1,4 @@
+import { OPENCONNECT_ALIGNMENT_DEFAULTS } from '../../src/cad-contract/units/openconnect-alignment'
 import { describe, expect, it } from 'vitest'
 import {
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
@@ -39,7 +40,7 @@ function parameters(
 }
 
 describe('OpenGrid OpenConnect organizer workspace integration', () => {
-  it('round-trips the exact fourteen-field snapshot used for generation', () => {
+  it('round-trips the complete typed snapshot used for generation', () => {
     const value = parameters({
       holeCountX: 3,
       holeCountY: 4,
@@ -59,6 +60,7 @@ describe('OpenGrid OpenConnect organizer workspace integration', () => {
     const raw = rawFromParameters(value)
 
     expect(raw).toEqual({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       holeCountX: '3',
       holeCountY: '4',
       holeSpacingMode: 'independent',

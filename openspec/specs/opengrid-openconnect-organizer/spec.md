@@ -36,7 +36,7 @@ routes, persisted entries, generators, and export names MUST remain unchanged.
 The normalized parameter snapshot MUST contain exactly `holeCountX`,
 `holeCountY`, `holeSpacingMode`, `holeSpacingX`, `holeSpacingY`, `holeShape`,
 `holeDiameter`, `holeWidth`, `holeHeight`, `holeCornerRadius`, `holeDepth`,
-`bottomThickness`, `edgeThickness`, and `tiltAngle`.
+`bottomThickness`, `edgeThickness`, `tiltAngle`, `openConnectHorizontalAlignment`, and `openConnectVerticalAlignment`.
 `holeSpacingMode` MUST be either `linked` or `independent`, and `holeShape`
 MUST be one of `circle`, `triangle`, `square`, `pentagon`, `hexagon`,
 `rectangle`, or `ellipse`.
@@ -53,16 +53,16 @@ whole-degree steps. The defaults MUST be `{ holeCountX: 2,
 holeCountY: 2, holeSpacingMode: 'linked', holeSpacingX: 1, holeSpacingY: 1,
 holeShape: 'circle', holeDiameter: 20, holeWidth: 20, holeHeight: 20,
 holeCornerRadius: 0, holeDepth: 28, bottomThickness: 1,
-edgeThickness: 1, tiltAngle: 15 }`. In linked spacing mode the two canonical
+edgeThickness: 1, tiltAngle: 15, openConnectHorizontalAlignment: 'center', openConnectVerticalAlignment: 'top' }`. In linked spacing mode the two canonical
 spacing values MUST be equal; in independent mode they MAY differ.
 
-The component MUST reject missing or unknown fields, unsupported enum values,
+The component MUST reject missing required geometry fields or unknown fields, unsupported enum values,
 non-finite or out-of-range dimensions, a corner radius outside its allowed
 range, fractional counts, off-step angles, unsafe cavity-to-interface
 collisions, and any derived installed or print-oriented extent above the
 existing 500 mm workspace limit. Invalid input MUST produce a field-specific
 diagnostic and MUST NOT replace the last valid revision, persist, generate, or
-become exportable. A persisted snapshot that predates the new fields MUST fall
+become exportable. A persisted snapshot that predates the required cavity shape fields MUST fall
 back to the defaults through the existing malformed-entry path without a
 per-field migration, and no other component's persisted entry MAY be affected.
 
@@ -100,7 +100,7 @@ per-field migration, and no other component's persisted entry MAY be affected.
 
 #### Scenario: Reject invalid organizer input
 
-- **WHEN** any canonical field is missing, unknown, malformed, out of range,
+- **WHEN** any required geometry field is missing, unknown, malformed, out of range,
   or produces an unsafe or oversized layout
 - **THEN** validation MUST identify the affected field or parameter object
 - **AND** no generation, persistence, or export MUST be accepted for that input
@@ -118,6 +118,7 @@ per-field migration, and no other component's persisted entry MAY be affected.
   or `holeCornerRadius`
 - **THEN** hydration MUST reject it through the existing malformed-entry path
 - **AND** the component MUST fall back to its default snapshot
+
 ### Requirement: Shaped cavities form a centered local matrix
 
 The organizer MUST contain exactly one cavity for every requested X/Y
@@ -307,11 +308,13 @@ height from 28 mm through values below 56 mm MUST retain one receptacle on that
 axis, and the second receptacle MUST first appear at exactly 56 mm.
 
 The interface MUST contain one locked female receptacle in every derived X/Z
-cell. The complete 28 mm-pitch column group MUST be centered horizontally in
-the continuous interface width. The complete row group MUST be aligned to the
-top of the interface: the top row center MUST be 14 mm below its top edge, and
-additional row centers MUST proceed downward at 28 mm pitch. Unused vertical
-height MUST remain below the row group.
+cell. The complete column and row groups MUST follow the selected horizontal
+and vertical alignment in installed front-view coordinates. Each group occupies
+count * 28 mm; its unused span MUST be placed after, split equally around, or
+before the group for start, center, or end alignment respectively. Left is the
+horizontal start and top is the vertical start. Receptacle origins MUST remain
+14 mm inside their cell edges with unchanged 28 mm pitch. Defaults MUST center
+the columns and top-align the rows, leaving unused height below the row group.
 
 Every receptacle MUST preserve the supplied locked OpenConnect negative at its
 authored millimetre scale and asymmetric origin. Only rigid placement MAY be
@@ -353,12 +356,12 @@ wall-facing plate.
 - **WHEN** the continuous body width or interface height crosses from below
   56 mm to exactly 56 mm
 - **THEN** the corresponding OpenConnect count MUST grow from one to two
-- **AND** each additional completed 28 mm span MUST add one centered or
-  top-aligned receptacle on that axis
+- **AND** each additional completed 28 mm span MUST add one receptacle on that axis
+  while the complete group follows the selected alignment
 
 #### Scenario: Center columns and top-align rows
 
-- **WHEN** the body dimensions leave width or height that is not occupied by
+- **WHEN** the default center/top alignment is selected and the body dimensions leave width or height that is not occupied by
   the derived 28 mm connector group
 - **THEN** the column group MUST have equal unused width on its left and right
 - **AND** all unused interface height MUST remain below the row group
@@ -370,6 +373,12 @@ wall-facing plate.
 - **THEN** the complete head MUST fit the authored female negative within CAD
   tolerance
 - **AND** no scaling, mirroring, or shape substitution MAY be required
+
+#### Scenario: Normalize legacy alignment and reject malformed choices
+
+- **WHEN** an otherwise valid snapshot omits either alignment field
+- **THEN** the missing horizontal choice MUST normalize to `center` and the missing vertical choice to `top`, preserving its geometry and other values
+- **AND** explicit unsupported values, including null and empty strings, MUST be rejected for the affected field
 
 ### Requirement: Preview, generation, and exports are deterministic
 
@@ -449,3 +458,27 @@ component and the existing OpenConnect Shelf.
 - **WHEN** production assets for the organizer are enumerated
 - **THEN** the locked female asset MUST have repository-local provenance
 - **AND** no unrelated reference mesh MAY become runtime or golden geometry
+
+### Requirement: Collapsed OpenConnect rear-grid settings
+
+The `opengrid-openconnect-organizer` panel MUST use the shared OpenConnect section, initially collapsed and expandable by pointer or keyboard. It MUST group rear-grid controls and display horizontal alignment choices left/center/right (靠左／置中／靠右) and vertical top/center/bottom (靠上／置中／靠下), using installed front-view directions. The canonical field `openConnectHorizontalAlignment` MUST accept only `left`, `center`, `right`; `openConnectVerticalAlignment` MUST accept only `top`, `center`, `bottom`. Selections MUST persist, round-trip to generation, and restore to center/top on reset. Alignment MUST translate only the complete rear receptacle grid while preserving pitch, count, authored cutter geometry, cell-safe edge clearance and body geometry. Snap, Wall Cover and grid-board settings MUST remain unchanged.
+
+#### Scenario: Expand and edit rear-grid settings
+
+- **WHEN** the user opens the accessory panel
+- **THEN** OpenConnect controls MUST initially be hidden inside a collapsed section
+- **AND** activating its header MUST expose the controls with localized accessible labels
+- **AND** valid selections MUST reach the generated model and survive reload
+
+#### Scenario: Keep choices usable without spare space
+
+- **WHEN** a rear-grid axis occupies its full available span
+- **THEN** all three choices on that axis MUST remain selectable and persistable
+- **AND** those choices MUST yield identical geometry without disabled controls or special no-space messaging
+
+#### Scenario: Preserve rear-grid spacing and safe borders
+
+- **WHEN** any of the nine alignment combinations is selected
+- **THEN** the complete grid MUST keep its original pitch and receptacle count
+- **AND** its occupied cells MUST remain inside the rear interface
+- **AND** any spare width or height MUST be allocated according to the selected alignment without resizing the body

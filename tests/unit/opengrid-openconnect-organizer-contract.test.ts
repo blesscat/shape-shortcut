@@ -1,3 +1,4 @@
+import { OPENCONNECT_ALIGNMENT_DEFAULTS } from '../../src/cad-contract/units/openconnect-alignment'
 import { describe, expect, it } from 'vitest'
 import {
   boundsForOpenGridOpenConnectOrganizer,
@@ -28,6 +29,7 @@ describe('OpenGrid OpenConnect organizer contract', () => {
     const value = parameters()
 
     expect(value).toEqual({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       holeCountX: 2,
       holeCountY: 2,
       holeSpacingMode: 'linked',

@@ -1,3 +1,4 @@
+import { OPENCONNECT_ALIGNMENT_DEFAULTS } from '../../src/cad-contract/units/openconnect-alignment'
 import { describe, expect, it } from 'vitest'
 import {
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
@@ -65,7 +66,7 @@ describe('OpenGrid OpenConnect shelf workspace integration', () => {
     )
   })
 
-  it('round-trips the four exact typed controls', () => {
+  it('round-trips the exact typed controls', () => {
     const value = parameters({
       columns: 4,
       rows: 2,
@@ -75,6 +76,7 @@ describe('OpenGrid OpenConnect shelf workspace integration', () => {
     const raw = rawFromParameters(value)
 
     expect(raw).toEqual({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       columns: '4',
       rows: '2',
       connectorRows: '2',
@@ -126,6 +128,7 @@ describe('OpenGrid OpenConnect shelf workspace integration', () => {
     })
 
     expect(store.get('opengrid-openconnect-shelf')).toEqual({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       columns: 4,
       rows: 2,
       connectorRows: 1,

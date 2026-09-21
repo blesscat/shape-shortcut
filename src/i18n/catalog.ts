@@ -617,6 +617,14 @@ export const zhHantMessages = {
   'common.restore': '復原{label}',
   'common.restoreTitle': '復原為預設值',
   'common.restoreAll': '全部恢復預設',
+  'panel.openConnect.horizontalAlignment': '水平對齊',
+  'panel.openConnect.verticalAlignment': '垂直對齊',
+  'panel.openConnect.align.left': '靠左',
+  'panel.openConnect.align.center': '置中',
+  'panel.openConnect.align.right': '靠右',
+  'panel.openConnect.align.top': '靠上',
+  'panel.openConnect.align.bottom': '靠下',
+
   'common.calculate': '計算格數',
   'common.calculationResult': '計算結果：X {x} mm、Y {y} mm。',
   'panel.gridDimension.title': '用尺寸計算格數',
@@ -646,7 +654,7 @@ export const zhHantMessages = {
   'panel.openConnectShelf.maximumAngle':
     '目前 Y={rows} 格、Z={connectorRows} 格可用的最大角度為 {maximum}°，確保前端至少保留 7 mm 高度。',
   'panel.openConnectOrganizer.description':
-    '不需要底座或轉接件：OpenConnect 母座直接切在整合背面，母座開口面與牆面平行，欄位水平置中、列位垂直置頂。',
+    '不需要底座或轉接件：OpenConnect 母座直接切在整合背面，母座開口面與牆面平行，可在 OpenConnect 設定調整整組背掛格的水平與垂直對齊。',
   'panel.openConnectOrganizer.interfaceSummary': '自動計算掛牆介面',
   'panel.openConnectOrganizer.interfaceValue':
     '{columns} 欄 × {rows} 列 OpenConnect 母座；介面 {width} × {height} mm',
@@ -1516,6 +1524,14 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'common.restore': 'Restore {label}',
   'common.restoreTitle': 'Restore default value',
   'common.restoreAll': 'Restore all defaults',
+  'panel.openConnect.horizontalAlignment': 'Horizontal alignment',
+  'panel.openConnect.verticalAlignment': 'Vertical alignment',
+  'panel.openConnect.align.left': 'Left',
+  'panel.openConnect.align.center': 'Center',
+  'panel.openConnect.align.right': 'Right',
+  'panel.openConnect.align.top': 'Top',
+  'panel.openConnect.align.bottom': 'Bottom',
+
   'common.calculate': 'Calculate cells',
   'common.calculationResult': 'Result: X {x} mm, Y {y} mm.',
   'panel.gridDimension.title': 'Calculate cells from dimensions',
@@ -1545,7 +1561,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.openConnectShelf.maximumAngle':
     'The maximum angle for Y={rows} cells and Z={connectorRows} cells is {maximum}°, preserving at least 7 mm at the front.',
   'panel.openConnectOrganizer.description':
-    'No base or adapter is required: OpenConnect female sockets are cut directly into the integrated rear surface, with opening planes parallel to the wall, columns centered, and rows top-aligned.',
+    'No base or adapter is required: OpenConnect female sockets are cut directly into the integrated rear surface, with opening planes parallel to the wall. Adjust the whole rear grid’s horizontal and vertical alignment in OpenConnect settings.',
   'panel.openConnectOrganizer.interfaceSummary': 'Calculated wall interface',
   'panel.openConnectOrganizer.interfaceValue':
     '{columns} columns × {rows} rows of OpenConnect female sockets; {width} × {height} mm interface',

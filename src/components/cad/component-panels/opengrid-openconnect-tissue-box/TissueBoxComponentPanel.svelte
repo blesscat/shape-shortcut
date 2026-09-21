@@ -6,12 +6,14 @@
   } from '../../../../features/cad/model-catalog'
   import {
     TISSUE_BOX_DEFAULTS,
+    TISSUE_BOX_ALIGNMENT_DEFAULTS,
     TISSUE_BOX_KEYS,
     tissueBoxCells,
     tissueBoxLayout,
     validateTissueBoxParameters,
   } from '../../../../cad-contract/units/opengrid-openconnect-tissue-box'
   import { translate } from '../../../../i18n'
+  import OpenConnectSettings from '../OpenConnectSettings.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
   import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
@@ -26,7 +28,12 @@
   let details = $derived.by(() => {
     const candidate = { ...TISSUE_BOX_DEFAULTS, honeycombMode: false }
     for (const key of TISSUE_BOX_KEYS) {
-      if (key === 'honeycombMode') continue
+      if (
+        key === 'honeycombMode' ||
+        key === 'openConnectHorizontalAlignment' ||
+        key === 'openConnectVerticalAlignment'
+      )
+        continue
       const value = rawParameters[key]
       if (value === undefined || value.trim() === '') return null
       candidate[key] = Number(value)
@@ -46,17 +53,6 @@
   >
     {translate(locale, 'panel.tissueBox.help')}
   </p>
-  {#if details}
-    <p
-      class="m-0 text-sm text-muted-foreground"
-      data-testid="tissue-box-mounting-grid"
-    >
-      {translate(locale, 'panel.tissueBox.mountingGrid', {
-        columns: details.layout.columns,
-        rows: details.layout.rows,
-      })}
-    </p>
-  {/if}
   <fieldset class="m-0 grid gap-3 border-0 p-0">
     {#each tissueBoxDefinition.parameterSchema as field (field.key)}
       {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
@@ -105,4 +101,23 @@
         count={details.count}
       />{/if}
   {/if}
+  <OpenConnectSettings
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+    defaults={TISSUE_BOX_ALIGNMENT_DEFAULTS}
+  >
+    {#if details}
+      <p
+        class="m-0 text-sm text-muted-foreground"
+        data-testid="tissue-box-mounting-grid"
+      >
+        {translate(locale, 'panel.tissueBox.mountingGrid', {
+          columns: details.layout.columns,
+          rows: details.layout.rows,
+        })}
+      </p>
+    {/if}
+  </OpenConnectSettings>
 </div>

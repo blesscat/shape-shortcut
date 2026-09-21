@@ -1,3 +1,12 @@
+import {
+  OPENCONNECT_ALIGNMENT_KEYS,
+  OPENCONNECT_ALIGNMENT_DEFAULTS,
+  openConnectAlignmentIssues,
+  normalizedOpenConnectAlignment,
+  openConnectGridOffsets,
+  type OpenConnectAlignmentKey,
+  type OpenConnectAlignmentParameters,
+} from './openconnect-alignment'
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 
 export type OpenGridOpenConnectOrganizerShape =
@@ -12,6 +21,7 @@ export type OpenGridOpenConnectOrganizerShape =
 export type OpenGridOpenConnectOrganizerSpacingMode = 'linked' | 'independent'
 
 export type OpenGridOpenConnectOrganizerParameterKey =
+  | OpenConnectAlignmentKey
   | 'holeCountX'
   | 'holeCountY'
   | 'holeSpacingMode'
@@ -27,22 +37,23 @@ export type OpenGridOpenConnectOrganizerParameterKey =
   | 'edgeThickness'
   | 'tiltAngle'
 
-export type OpenGridOpenConnectOrganizerParameters = {
-  holeCountX: number
-  holeCountY: number
-  holeSpacingMode: OpenGridOpenConnectOrganizerSpacingMode
-  holeSpacingX: number
-  holeSpacingY: number
-  holeShape: OpenGridOpenConnectOrganizerShape
-  holeDiameter: number
-  holeWidth: number
-  holeHeight: number
-  holeCornerRadius: number
-  holeDepth: number
-  bottomThickness: number
-  edgeThickness: number
-  tiltAngle: number
-}
+export type OpenGridOpenConnectOrganizerParameters =
+  OpenConnectAlignmentParameters & {
+    holeCountX: number
+    holeCountY: number
+    holeSpacingMode: OpenGridOpenConnectOrganizerSpacingMode
+    holeSpacingX: number
+    holeSpacingY: number
+    holeShape: OpenGridOpenConnectOrganizerShape
+    holeDiameter: number
+    holeWidth: number
+    holeHeight: number
+    holeCornerRadius: number
+    holeDepth: number
+    bottomThickness: number
+    edgeThickness: number
+    tiltAngle: number
+  }
 
 export type OpenGridOpenConnectOrganizerPoint2D = [number, number]
 export type OpenGridOpenConnectOrganizerPoint3D = [number, number, number]
@@ -137,6 +148,7 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION = {
 
 export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConnectOrganizerParameters =
   {
+    ...OPENCONNECT_ALIGNMENT_DEFAULTS,
     holeCountX: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleCountX,
     holeCountY: OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultHoleCountY,
     holeSpacingMode:
@@ -199,7 +211,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasExactKeys(value: Record<string, unknown>): boolean {
   return (
-    Object.keys(value).length === PARAMETER_KEYS.length &&
+    Object.keys(value).every((key) =>
+      [...PARAMETER_KEYS, ...OPENCONNECT_ALIGNMENT_KEYS].includes(
+        key as OpenGridOpenConnectOrganizerParameterKey,
+      ),
+    ) &&
     PARAMETER_KEYS.every((key) =>
       Object.prototype.hasOwnProperty.call(value, key),
     )
@@ -405,15 +421,23 @@ export function openGridOpenConnectOrganizerSlotOriginsFor(
 ): OpenGridOpenConnectOrganizerPoint3D[] {
   const layout = openGridOpenConnectOrganizerLayoutFor(parameters)
   const configuration = OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION
+  const offset = openConnectGridOffsets(
+    layout.rearInterfaceWidth,
+    layout.rearInterfaceHeight,
+    layout.connectorColumns,
+    layout.connectorRows,
+    configuration.gridPitch,
+    parameters,
+  )
   return Array.from({ length: layout.connectorRows }, (_, row) =>
     Array.from(
       { length: layout.connectorColumns },
       (_, column) =>
         [
-          (column - (layout.connectorColumns - 1) / 2) *
-            configuration.gridPitch,
+          offset.x + (column + 0.5) * configuration.gridPitch,
           configuration.rearThickness,
-          layout.rearInterfaceHeight - (row + 0.5) * configuration.gridPitch,
+          offset.z +
+            (layout.connectorRows - row - 0.5) * configuration.gridPitch,
         ] as OpenGridOpenConnectOrganizerPoint3D,
     ),
   ).flat()
@@ -589,7 +613,8 @@ export function validateOpenGridOpenConnectOrganizerParameters(
   }
 
   const configuration = OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION
-  const issues: OpenGridOpenConnectOrganizerValidationIssue[] = []
+  const issues: OpenGridOpenConnectOrganizerValidationIssue[] =
+    openConnectAlignmentIssues(value)
   if (!hasExactKeys(value)) issues.push(issue('parameters'))
 
   for (const field of ['holeCountX', 'holeCountY'] as const) {
@@ -698,7 +723,10 @@ export function validateOpenGridOpenConnectOrganizerParameters(
 
   if (issues.length > 0) return { valid: false, issues }
 
-  const parameters = value as OpenGridOpenConnectOrganizerParameters
+  const parameters = {
+    ...value,
+    ...normalizedOpenConnectAlignment(value as OpenConnectAlignmentParameters),
+  } as OpenGridOpenConnectOrganizerParameters
   if (layoutExceedsWorkspace(parameters)) {
     return { valid: false, issues: [issue('parameters')] }
   }

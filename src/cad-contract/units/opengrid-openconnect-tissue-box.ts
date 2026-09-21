@@ -1,7 +1,14 @@
+import {
+  OPENCONNECT_ALIGNMENT_KEYS,
+  openConnectAlignmentIssues,
+  normalizedOpenConnectAlignment,
+  openConnectGridOffsets,
+  type OpenConnectAlignmentParameters,
+} from './openconnect-alignment'
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 import { OPENGRID_HONEYCOMB_CONFIGURATION } from './opengrid-honeycomb'
 
-export type TissueBoxParameters = {
+export type TissueBoxParameters = OpenConnectAlignmentParameters & {
   x: number
   y: number
   z: number
@@ -14,6 +21,10 @@ export type TissueBoxParameters = {
   honeycombMode: boolean
 }
 export type TissueBoxParameterKey = keyof TissueBoxParameters
+export const TISSUE_BOX_ALIGNMENT_DEFAULTS = {
+  openConnectHorizontalAlignment: 'center',
+  openConnectVerticalAlignment: 'bottom',
+} as const
 export const TISSUE_BOX_DEFAULTS: TissueBoxParameters = {
   x: 220,
   y: 120,
@@ -25,6 +36,7 @@ export const TISSUE_BOX_DEFAULTS: TissueBoxParameters = {
   slotLength: 160,
   slotWidth: 35,
   honeycombMode: false,
+  ...TISSUE_BOX_ALIGNMENT_DEFAULTS,
 }
 export const TISSUE_BOX_KEYS = Object.keys(
   TISSUE_BOX_DEFAULTS,
@@ -129,13 +141,32 @@ export function tissueBoxBounds(p: TissueBoxParameters) {
 export function tissueBoxSlotOrigins(p: TissueBoxParameters): TissueBoxPoint[] {
   const l = tissueBoxLayout(p)
   const pitch = OPENGRID_GRID_CONFIGURATION.fullPitch
+  const alignment = normalizedOpenConnectAlignment(
+    p,
+    TISSUE_BOX_ALIGNMENT_DEFAULTS,
+  )
+  // The body faces +Y: front-view left is world +X. Keep the authored socket unmirrored.
+  let horizontal = alignment.openConnectHorizontalAlignment
+  if (horizontal === 'left') horizontal = 'right'
+  else if (horizontal === 'right') horizontal = 'left'
+  const offset = openConnectGridOffsets(
+    l.plateWidth,
+    l.plateHeight,
+    l.columns,
+    l.rows,
+    pitch,
+    {
+      ...alignment,
+      openConnectHorizontalAlignment: horizontal,
+    },
+  )
   const origins: TissueBoxPoint[] = []
   for (let row = 0; row < l.rows; row++) {
     for (let column = 0; column < l.columns; column++) {
       origins.push([
-        (column - (l.columns - 1) / 2) * pitch,
+        offset.x + (column + 0.5) * pitch,
         0,
-        l.rowBase + (row + 0.5) * pitch,
+        l.rowBase + offset.z + (row + 0.5) * pitch,
       ])
     }
   }
@@ -193,18 +224,38 @@ export function validateTissueBoxParameters(
   }
   const raw = value as Record<string, unknown>
   if (
-    Object.keys(raw).length !== TISSUE_BOX_KEYS.length ||
-    TISSUE_BOX_KEYS.some((key) => !Object.hasOwn(raw, key))
+    Object.keys(raw).some(
+      (key) => !TISSUE_BOX_KEYS.includes(key as TissueBoxParameterKey),
+    ) ||
+    TISSUE_BOX_KEYS.some(
+      (key) =>
+        !OPENCONNECT_ALIGNMENT_KEYS.includes(
+          key as (typeof OPENCONNECT_ALIGNMENT_KEYS)[number],
+        ) && !Object.hasOwn(raw, key),
+    )
   )
     issue('parameters')
+  for (const alignmentIssue of openConnectAlignmentIssues(raw))
+    issue(alignmentIssue.field)
   for (const key of TISSUE_BOX_KEYS) {
+    if (
+      key === 'openConnectHorizontalAlignment' ||
+      key === 'openConnectVerticalAlignment'
+    )
+      continue
     if (key === 'honeycombMode') {
       if (typeof raw[key] !== 'boolean') issue(key)
     } else if (typeof raw[key] !== 'number' || !Number.isFinite(raw[key]))
       issue(key)
   }
   if (issues.length) return { valid: false, issues }
-  const p = raw as TissueBoxParameters
+  const p = {
+    ...raw,
+    ...normalizedOpenConnectAlignment(
+      raw as OpenConnectAlignmentParameters,
+      TISSUE_BOX_ALIGNMENT_DEFAULTS,
+    ),
+  } as TissueBoxParameters
   for (const key of ['x', 'y'] as const)
     if (p[key] < 40 || p[key] > 400) issue(key)
   if (p.z < 20 || p.z > 300) issue('z')
@@ -243,6 +294,14 @@ export function tissueBoxFileName(
   p: TissueBoxParameters,
   extension: 'step' | 'stl',
 ): string {
-  const tokens = TISSUE_BOX_KEYS.map((key) => `${key}-${p[key]}`)
+  const normalized = {
+    ...p,
+    ...normalizedOpenConnectAlignment(p, TISSUE_BOX_ALIGNMENT_DEFAULTS),
+  }
+  const tokens = TISSUE_BOX_KEYS.map((key) => {
+    if (key === 'openConnectHorizontalAlignment') return `ha-${normalized[key]}`
+    if (key === 'openConnectVerticalAlignment') return `va-${normalized[key]}`
+    return `${key}-${normalized[key]}`
+  })
   return `opengrid-openconnect-tissue-box-${tokens.join('-')}.${extension}`
 }
