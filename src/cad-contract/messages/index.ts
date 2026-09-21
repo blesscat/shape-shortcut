@@ -20,6 +20,12 @@ export type MeshSnapshot = {
   indices: ArrayBuffer
   bounds: BoxBounds
   triangleCount: number
+  /**
+   * Optional flat pairs of (startTriangle, triangleCount), one pair per B-Rep
+   * face. Absent when the mesh producer cannot provide per-face ranges; the
+   * viewport face-hover feature degrades silently in that case.
+   */
+  faceTriangleRanges?: ArrayBuffer
 }
 
 export type ModelPartMeshSnapshot = {
@@ -723,6 +729,9 @@ export function transferablesForEvent(event: WorkerEvent): Transferable[] {
         event.mesh.normals,
         event.mesh.indices,
       )
+      if (event.mesh.faceTriangleRanges) {
+        transferables.push(event.mesh.faceTriangleRanges)
+      }
     }
     for (const part of event.partMeshes ?? []) {
       transferables.push(
@@ -730,6 +739,9 @@ export function transferablesForEvent(event: WorkerEvent): Transferable[] {
         part.mesh.normals,
         part.mesh.indices,
       )
+      if (part.mesh.faceTriangleRanges) {
+        transferables.push(part.mesh.faceTriangleRanges)
+      }
     }
     return transferables
   }

@@ -1,5 +1,6 @@
 export const nativeCadUnitTests = [
   'tests/unit/hsw-cell-asset.test.ts',
+  'tests/unit/mesh-face-ranges.test.ts',
   'tests/unit/opengrid-honeycomb-bottoms.test.ts',
   'tests/unit/opengrid-honeycomb-box-interface.test.ts',
   'tests/unit/opengrid-honeycomb-builder.test.ts',

@@ -11,6 +11,7 @@ export type CadViewportTheme = {
   edge: string
   annotation: string
   annotationLabel: string
+  faceHighlight: string
   hemisphereSky: string
   hemisphereGround: string
   keyLight: string
@@ -25,6 +26,7 @@ export const CAD_VIEWPORT_THEME_FALLBACK = {
   edge: '#1f3b74',
   annotation: '#8d98a3',
   annotationLabel: '#7f8a95',
+  faceHighlight: '#f59e0b',
   hemisphereSky: '#ffffff',
   hemisphereGround: '#c5cfdf',
   keyLight: '#ffffff',
@@ -86,6 +88,11 @@ export function resolveCadViewportTheme(
       readToken,
       '--cad-viewport-annotation-label',
       CAD_VIEWPORT_THEME_FALLBACK.annotationLabel,
+    ),
+    faceHighlight: readThemeToken(
+      readToken,
+      '--cad-viewport-face-highlight',
+      CAD_VIEWPORT_THEME_FALLBACK.faceHighlight,
     ),
     hemisphereSky: readThemeToken(
       readToken,

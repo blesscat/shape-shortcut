@@ -438,6 +438,89 @@ The viewport MUST render a restrained edge-line overlay together with every vali
 - **THEN** the viewport MUST NOT render edge lines, dimensions or an orientation indicator for that unavailable model
 - **AND** the existing no-model or validation-error behavior MUST remain intact
 
+### Requirement: Hover face 尺寸量測
+
+在 workspace presentation 下，當指標停留在 committed model 的可見表面上時，viewport MUST 即時辨識指標下的 B-Rep face，並以跟隨游標的 DOM 浮動視窗（tooltip）顯示該 face 佔用的世界座標 X、Y、Z 範圍。顯示值 MUST 固定呈現三個軸、以 mm 為單位、四捨五入至小數兩位；平面面與曲面面 MUST 使用相同的範圍語義，不得對曲面拒絕顯示或顯示不同的語義。Viewport MUST 同時以視覺高亮標示被指到的 face，使數字與面的對應明確。Tooltip MUST 渲染於 3D 場景之外的 DOM 層，跟隨游標移動，且 MUST 不得超出 viewport 邊界。此互動 MUST 僅作用於 committed model revision，並與既有常駐包盒尺寸標註並存，不得移除或取代既有標註。當 mesh 資料缺少 per-face 範圍資訊時，此功能 MUST 靜默停用，不得顯示錯誤或影響既有預覽、標註與 orbit 操作。此功能明確不支援觸控輸入，MUST NOT 因此改變既有觸控行為。
+
+#### Scenario: Hover 平面面顯示佔用範圍
+
+- **Given** workspace 已 committed 一個模型，且 mesh 資料帶有 per-face 範圍資訊
+- **When** 使用者以滑鼠指到模型的軸對齊平面（例如分隔牆底座頂面）
+- **Then** tooltip 必須顯示該面的 X、Y、Z 佔用範圍，數值以 mm 表示且含小數兩位
+- **And** 面的法線方向軸顯示為 `0.00`，三個軸一律同時顯示
+
+#### Scenario: Hover 曲面面使用相同語義
+
+- **Given** workspace 已 committed 一個含圓柱孔或圓角的模型
+- **When** 使用者指到該曲面面
+- **Then** tooltip 必須顯示該面佔用的 X、Y、Z 範圍，格式與平面面一致
+- **And** 不得顯示錯誤訊息或空白 tooltip
+
+#### Scenario: Hover face 高亮對應
+
+- **Given** 指標停在模型的某個面上
+- **When** tooltip 顯示該面的佔用範圍
+- **Then** viewport 必須以可辨識的高亮樣式渲染同一個 face
+- **And** 指標離開模型或移到相鄰面時，高亮必須即時更新或消失
+- **And** 高亮不得改變模型 mesh、bounds 或既有標註的資料內容
+
+#### Scenario: Tooltip 跟隨游標且不溢出 viewport
+
+- **Given** hover 量測作用中
+- **When** 使用者移動游標
+- **Then** tooltip 必須跟隨游標移動且渲染於 3D 場景外的 DOM 層
+- **And** 游標靠近 viewport 邊緣時，tooltip 必須被夾限在 viewport 內，不得造成橫向溢出或遮蔽頁面版面
+
+#### Scenario: Orbit 拖曳期間抑制 hover
+
+- **Given** 使用者正在以 OrbitControls 拖曳旋轉視角
+- **When** 指標在模型表面移動
+- **Then** viewport 不得顯示或更新 hover tooltip 與 face 高亮
+- **And** 拖曳結束後，hover 量測必須恢復正常運作
+
+#### Scenario: 與常駐標註並存
+
+- **Given** workspace 已顯示既有 X、Y、Z 包盒尺寸標註
+- **When** 使用者 hover 模型的任一面
+- **Then** 既有常駐標註必須保持原樣
+- **And** hover tooltip 與高亮僅為附加資訊，不得移除、隱藏或取代常駐標註
+
+#### Scenario: Per-face 資訊缺漏時靜默停用
+
+- **Given** committed mesh 未攜帶 per-face 範圍資訊（例如 fallback meshing 路徑或未來的資料來源）
+- **When** 使用者以滑鼠指到模型
+- **Then** viewport 不得顯示 hover tooltip 或 face 高亮
+- **And** 不得顯示錯誤、不得影響既有預覽、標註、orbit 與下載功能
+
+#### Scenario: 多 part 模型逐面量測
+
+- **Given** workspace 已 committed 含 body 與 text 兩個 part 的模型（如 OpenGrid Wall Cover）
+- **When** 使用者分別指到不同 part 的面
+- **Then** tooltip 必須顯示所指面自身所屬 part 內該面的佔用範圍
+- **And** 不論指到哪個 part，行為與單一 mesh 模型一致
+
+#### Scenario: Hover 對應 committed revision
+
+- **Given** 使用者修改參數產生新的 generation，新的 model revision 尚未 committed
+- **When** 使用者 hover 模型
+- **Then** tooltip 與高亮必須對應畫面上保留的上一個 committed model
+- **And** 新 revision committed 之後，hover 必須對應新 model 的面與範圍
+
+#### Scenario: 無模型或損壞 mesh 不顯示 hover UI
+
+- **Given** workspace 尚無 committed model、mesh validation 失敗，或正在顯示 WebGL/no-model fallback
+- **When** 使用者在 viewport 內移動滑鼠
+- **Then** viewport 不得顯示 hover tooltip 或 face 高亮
+- **And** 既有無模型與錯誤行為必須保持不變
+
+#### Scenario: Per-face 範圍資料的邊界驗證
+
+- **Given** Worker 回傳的 mesh 攜帶選填的 per-face 三角形範圍資訊
+- **When** mesh boundary validation 執行
+- **Then** 該欄位存在時必須通過結構與數值邊界驗證（範圍落在 index buffer 內且不重疊越界），否則視同缺漏
+- **And** 欄位缺漏時既有 mesh 驗證必須照常通過
+- **And** 跨 Worker 傳輸時該欄位必須使用 transferable
+
 ### Requirement: STEP 匯出
 
 The system MUST generate STEP from the selected component's pinned committed model
