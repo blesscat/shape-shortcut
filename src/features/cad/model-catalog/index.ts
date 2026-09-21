@@ -1,3 +1,4 @@
+import { tissueBoxDefinition as rawTissueBoxDefinition } from './components/opengrid-openconnect-tissue-box'
 import type { ModelId } from '../../../cad-contract/units'
 import {
   systemContextQuery,
@@ -83,6 +84,10 @@ export const opengridOpenShelfDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridOpenShelfDefinition)
 export const opengridOpenConnectShelfDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridOpenConnectShelfDefinition)
+export const tissueBoxDefinition = withDerivedDarkPreview(
+  rawTissueBoxDefinition,
+)
+
 export const opengridOpenConnectOrganizerDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridOpenConnectOrganizerDefinition)
 
@@ -126,6 +131,7 @@ export const modelDefinitions: ReadonlyArray<
   opengridOpenShelfDefinition,
   opengridOpenConnectShelfDefinition,
   opengridOpenConnectOrganizerDefinition,
+  tissueBoxDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

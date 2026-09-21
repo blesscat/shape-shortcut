@@ -1,4 +1,12 @@
 import {
+  validateTissueBoxParameters,
+  tissueBoxBounds,
+  tissueBoxFileName,
+  type TissueBoxParameters,
+  type TissueBoxParameterKey,
+} from './opengrid-openconnect-tissue-box'
+export * from './opengrid-openconnect-tissue-box'
+import {
   OPENGRID_CONFIGURATION,
   OPENGRID_PREVIEW_CONFIGURATION,
   boundsForOpenGrid,
@@ -710,6 +718,7 @@ export type ModelParameterKey =
   | PillarParameterKey
   | OpenGridOpenShelfParameterKey
   | OpenGridOpenConnectShelfParameterKey
+  | TissueBoxParameterKey
   | OpenGridOpenConnectOrganizerParameterKey
   | OpenGridWallCoverParameterKey
 export type ScalarModelParameterKey =
@@ -734,6 +743,7 @@ export type ModelId =
   | 'opengrid-pillar'
   | 'opengrid-open-shelf'
   | 'opengrid-openconnect-shelf'
+  | 'opengrid-openconnect-tissue-box'
   | 'opengrid-openconnect-organizer'
 
 export type BoxParameters = Record<DimensionKey, number>
@@ -748,6 +758,10 @@ export type HexagonalColumnParameters = {
 export type OpenGridSnapRemoverParameters = Record<never, never>
 
 export type ModelParameters =
+  | {
+      modelId: 'opengrid-openconnect-tissue-box'
+      parameters: TissueBoxParameters
+    }
   | { modelId: 'box'; parameters: BoxParameters }
   | {
       modelId: 'modular-grid-base'
@@ -1439,6 +1453,12 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'opengrid-openconnect-tissue-box') {
+    const validation = validateTissueBoxParameters(value)
+    if (!validation.valid) return validation
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   if (modelId === 'opengrid-openconnect-organizer') {
     const validation = validateOpenGridOpenConnectOrganizerParameters(value)
     if (!validation.valid) return validation
@@ -1743,6 +1763,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForOpenGridOpenShelf(model.parameters)
     case 'opengrid-openconnect-shelf':
       return boundsForOpenGridOpenConnectShelf(model.parameters)
+    case 'opengrid-openconnect-tissue-box':
+      return tissueBoxBounds(model.parameters)
     case 'opengrid-openconnect-organizer':
       return boundsForOpenGridOpenConnectOrganizer(model.parameters)
   }
@@ -1780,6 +1802,8 @@ export function modelFileName(model: ModelParameters): string {
       return openGridOpenShelfFileName(model.parameters)
     case 'opengrid-openconnect-shelf':
       return openGridOpenConnectShelfFileName(model.parameters)
+    case 'opengrid-openconnect-tissue-box':
+      return tissueBoxFileName(model.parameters, 'step')
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerFileName(model.parameters)
   }
@@ -1817,6 +1841,8 @@ export function modelStlFileName(model: ModelParameters): string {
       return openGridOpenShelfStlFileName(model.parameters)
     case 'opengrid-openconnect-shelf':
       return openGridOpenConnectShelfStlFileName(model.parameters)
+    case 'opengrid-openconnect-tissue-box':
+      return tissueBoxFileName(model.parameters, 'stl')
     case 'opengrid-openconnect-organizer':
       return openGridOpenConnectOrganizerStlFileName(model.parameters)
   }

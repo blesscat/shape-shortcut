@@ -52,11 +52,13 @@ export function systemContextForModel(
     modelId === 'opengrid-open-shelf' ||
     modelId === 'opengrid-wall-cover' ||
     modelId === 'opengrid-openconnect-shelf' ||
+    modelId === 'opengrid-openconnect-tissue-box' ||
     modelId === 'opengrid-openconnect-organizer'
   if (!isOpenGridModel) return undefined
   if (
     (modelId === 'opengrid-wall-cover' ||
       modelId === 'opengrid-openconnect-shelf' ||
+      modelId === 'opengrid-openconnect-tissue-box' ||
       modelId === 'opengrid-openconnect-organizer') &&
     context !== 'wall'
   ) {
@@ -68,6 +70,7 @@ export function systemContextForModel(
     modelId !== 'opengrid-snap' &&
     modelId !== 'opengrid-wall-cover' &&
     modelId !== 'opengrid-openconnect-shelf' &&
+    modelId !== 'opengrid-openconnect-tissue-box' &&
     modelId !== 'opengrid-openconnect-organizer'
   ) {
     return undefined

@@ -471,6 +471,28 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={openConnectOrganizerPath}>{t('docs.wall.organizer.cta')}</a
           >
         </Card>
+        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+          <ModelPreviewPicture
+            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            src="/model-previews/opengrid-openconnect-tissue-box-wall.webp"
+            darkSrc="/model-previews/opengrid-openconnect-tissue-box-wall-dark.webp"
+            width="640"
+            height="400"
+            loading="lazy"
+            alt={t('models.model.opengrid-openconnect-tissue-box.alt')}
+          />
+          <h3 class="m-0 text-xl font-semibold">
+            {t('models.model.opengrid-openconnect-tissue-box.name')}
+          </h3>
+          <p class="m-0 leading-normal text-muted-foreground">
+            {t('panel.tissueBox.help')}
+          </p>
+          <a
+            class="text-foreground underline underline-offset-4"
+            href={`/${locale}/cad/opengrid-openconnect-tissue-box?system=wall`}
+            >{t('models.model.opengrid-openconnect-tissue-box.selection')}</a
+          >
+        </Card>
       </div>
     </section>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TissueBoxComponentPanel from './opengrid-openconnect-tissue-box/TissueBoxComponentPanel.svelte'
   import type {
     ModelId,
     ModelParameterValues,
@@ -132,6 +133,13 @@
   />
 {:else if modelId === 'opengrid-openconnect-shelf'}
   <OpenGridOpenConnectShelfComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-openconnect-tissue-box'}
+  <TissueBoxComponentPanel
     {locale}
     {rawParameters}
     {fieldErrors}

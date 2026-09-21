@@ -138,12 +138,38 @@ const OPENGRID_ATTRIBUTION_BY_MODEL_ID = {
     ],
     modificationKey: 'cad.attribution.openConnectOrganizer.modified',
   },
+  'opengrid-openconnect-tissue-box': {
+    summaryKey: 'cad.attribution.openConnectShelf.summary',
+    creditsKey: 'cad.attribution.openConnectShelf.credits',
+    authors: [
+      DAVID_D_AUTHOR,
+      {
+        label: 'mitufy',
+        roleKey: 'cad.attribution.author.openConnectRole',
+        url: OPENCONNECT_AUTHOR_PROFILE_URL,
+      },
+      {
+        label: 'OpenConnect project',
+        roleKey: 'cad.attribution.author.openConnectProjectRole',
+        url: OPENCONNECT_PROJECT_URL,
+      },
+    ],
+    licenses: [
+      ...STANDARD_OPENGRID_LICENSES,
+      {
+        labelKey: 'cad.attribution.openConnectSocketLicense',
+        url: OPENCONNECT_LICENSE_URL,
+      },
+    ],
+    modificationKey: 'cad.attribution.tissueBox.modified',
+  },
 } satisfies Readonly<
   Record<
     | 'opengrid'
     | 'opengrid-snap'
     | 'opengrid-openconnect-shelf'
-    | 'opengrid-openconnect-organizer',
+    | 'opengrid-openconnect-organizer'
+    | 'opengrid-openconnect-tissue-box',
     OpenGridAttribution
   >
 >
@@ -155,6 +181,7 @@ export function getOpenGridAttribution(
     modelId !== 'opengrid' &&
     modelId !== 'opengrid-snap' &&
     modelId !== 'opengrid-openconnect-shelf' &&
+    modelId !== 'opengrid-openconnect-tissue-box' &&
     modelId !== 'opengrid-openconnect-organizer'
   ) {
     return null

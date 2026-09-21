@@ -125,6 +125,7 @@ describe('HSW kernel model registration', () => {
       'opengrid-stackable-cylinder',
       'opengrid-open-shelf',
       'opengrid-openconnect-shelf',
+      'opengrid-openconnect-tissue-box',
       'opengrid-openconnect-organizer',
       'opengrid-snap',
       'opengrid-wall-cover',

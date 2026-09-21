@@ -1,3 +1,4 @@
+import { TISSUE_BOX_KEYS } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { normalizeError, type CadError } from '../../../cad-contract/errors'
 import type {
   DiagnosticDescriptor,
@@ -157,6 +158,7 @@ function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
   if (modelId === 'opengrid-organizer-box') {
     return OPENGRID_ORGANIZER_BOX_PARAMETER_KEYS
   }
+  if (modelId === 'opengrid-openconnect-tissue-box') return TISSUE_BOX_KEYS
   if (modelId === 'opengrid-openconnect-organizer') {
     return OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS
   }
@@ -796,6 +798,12 @@ export function rawFromParameters(
 ): RawParameters {
   if (Object.keys(parameters).length === 0) return {}
 
+  if ('slotLength' in parameters && 'outerRadius' in parameters) {
+    return Object.fromEntries(
+      TISSUE_BOX_KEYS.map((key) => [key, String(parameters[key])]),
+    ) as RawParameters
+  }
+
   if ('text' in parameters) {
     const wallCoverParameters = parameters as OpenGridWallCoverParameters
     return {
@@ -1363,6 +1371,10 @@ export function parseRawParameters(
       legacyParameterDefault(modelId, key) ??
       legacyNumericDefault(modelId, key) ??
       ''
+    if (modelId === 'opengrid-openconnect-tissue-box') {
+      parsed[key] = parseFiniteDecimalInput(rawValue)
+      continue
+    }
     parsed[key] = usesHalfStepInput(modelId, key)
       ? parseHalfStepInput(rawValue)
       : parseDimensionInput(rawValue)
