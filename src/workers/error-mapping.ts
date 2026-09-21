@@ -49,6 +49,9 @@ export function cadErrorCodeFor(
   if (message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID')) {
     return 'OPENGRID_LABEL_CARD_QUALITY_INVALID'
   }
+  if (message.includes('OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID')) {
+    return 'OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID'
+  }
   if (message.includes('OPENGRID_LABEL_HOLDER_QUALITY_INVALID')) {
     return 'OPENGRID_LABEL_HOLDER_QUALITY_INVALID'
   }
@@ -147,6 +150,7 @@ export function cadErrorStageFor(
   }
   if (
     message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID') ||
+    message.includes('OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID') ||
     message.includes('OPENGRID_LABEL_HOLDER_QUALITY_INVALID')
   ) {
     return 'meshing'

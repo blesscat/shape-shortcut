@@ -1,5 +1,7 @@
 import { isTissueBoxParameters } from '../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { buildTissueBox } from '../components/opengrid-openconnect-tissue-box/builder'
+import { buildOpenGridLabelSlotTest } from '../components/opengrid-label-slot-test/builder'
+import { isOpenGridLabelSlotTestParameters } from '../../cad-contract/units/opengrid-label-slot-test'
 import type { Shape3D } from 'replicad'
 import type { ProgressUnit } from '../../cad-contract/messages'
 import type { BooleanOperationReporter } from '../boolean-progress'
@@ -652,6 +654,15 @@ export const opengridLabelHolderKernelDefinition: KernelModelDefinition = {
   build: buildOpenGridLabelHolderModel,
 }
 
+export const opengridLabelSlotTestKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-slot-test',
+  async build(parameters, context) {
+    if (!isOpenGridLabelSlotTestParameters(parameters))
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
+    return buildOpenGridLabelSlotTest(parameters, context)
+  },
+}
+
 export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   boxKernelDefinition,
   modularGridBaseKernelDefinition,
@@ -685,6 +696,7 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridLabelTagKernelDefinition,
   opengridLabelCardKernelDefinition,
   opengridLabelHolderKernelDefinition,
+  opengridLabelSlotTestKernelDefinition,
 ]
 
 export function getKernelModelDefinition(

@@ -222,6 +222,7 @@ function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
   if (modelId === 'opengrid-label-card') {
     return ['widthTier', 'style', 'icon', 'text']
   }
+  if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
   if (modelId === 'opengrid-label-holder') {
     return ['widthTier', 'gripThickness']
   }
@@ -910,6 +911,9 @@ export function rawFromParameters(
     }
     return raw
   }
+
+  if ('gridUnits' in parameters)
+    return { gridUnits: String(parameters.gridUnits) }
 
   if (
     'widthTier' in parameters &&

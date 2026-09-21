@@ -1,3 +1,5 @@
+import { assertOpenGridLabelSlotTestQuality } from '../cad-kernel/components/opengrid-label-slot-test/builder'
+import { isOpenGridLabelSlotTestParameters } from '../cad-contract/units/opengrid-label-slot-test'
 import type { Shape3D } from 'replicad'
 import { PreviewTimingRecorder } from '../cad-contract/preview-timing'
 import {
@@ -497,6 +499,14 @@ export async function generateCadCandidate(
           nativeParts ?? [],
           generationParameters,
         ),
+      )
+    }
+
+    if (command.modelId === 'opengrid-label-slot-test') {
+      if (!isOpenGridLabelSlotTestParameters(generationParameters))
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelSlotTestQuality(shape, generationParameters),
       )
     }
 

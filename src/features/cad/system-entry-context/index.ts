@@ -1,3 +1,4 @@
+import { OPENGRID_LABEL_SLOT_TEST_CONFIGURATION } from '../../../cad-contract/units/opengrid-label-slot-test'
 import {
   OPENGRID_CONFIGURATION,
   OPENGRID_LABEL_TAG_CONFIGURATION,
@@ -57,12 +58,14 @@ export function systemContextForModel(
     modelId === 'opengrid-label-tag' ||
     modelId === 'opengrid-label-card' ||
     modelId === 'opengrid-label-holder' ||
+    modelId === 'opengrid-label-slot-test' ||
     modelId === 'opengrid-openconnect-shelf' ||
     modelId === 'opengrid-openconnect-tissue-box' ||
     modelId === 'opengrid-openconnect-organizer'
   if (!isOpenGridModel) return undefined
   if (
-    (modelId === 'opengrid-wall-cover' ||
+    (modelId === 'opengrid-label-slot-test' ||
+      modelId === 'opengrid-wall-cover' ||
       modelId === 'opengrid-openconnect-shelf' ||
       modelId === 'opengrid-openconnect-tissue-box' ||
       modelId === 'opengrid-openconnect-organizer') &&
@@ -76,6 +79,9 @@ export function systemContextForModel(
     modelId !== 'opengrid-snap' &&
     modelId !== 'opengrid-wall-cover' &&
     modelId !== 'opengrid-label-tag' &&
+    modelId !== 'opengrid-label-card' &&
+    modelId !== 'opengrid-label-holder' &&
+    modelId !== 'opengrid-label-slot-test' &&
     modelId !== 'opengrid-openconnect-shelf' &&
     modelId !== 'opengrid-openconnect-tissue-box' &&
     modelId !== 'opengrid-openconnect-organizer'
@@ -131,6 +137,8 @@ export function getSystemPreset(
   if (modelId === 'opengrid-label-card') {
     return { ...OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters }
   }
+  if (modelId === 'opengrid-label-slot-test')
+    return { ...OPENGRID_LABEL_SLOT_TEST_CONFIGURATION.defaultParameters }
   if (modelId === 'opengrid-label-holder') {
     return { ...OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters }
   }

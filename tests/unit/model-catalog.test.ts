@@ -59,6 +59,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-tag',
       'opengrid-label-card',
       'opengrid-label-holder',
+      'opengrid-label-slot-test',
       'hsw-cell',
     ])
 
@@ -127,6 +128,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-tag',
       'opengrid-label-card',
       'opengrid-label-holder',
+      'opengrid-label-slot-test',
     ])
     expect(groups[0]?.subgroups?.map((subgroup) => subgroup.key)).toEqual([
       'desk',
@@ -212,6 +214,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-tag',
       'opengrid-label-card',
       'opengrid-label-holder',
+      'opengrid-label-slot-test',
     ])
 
     const grid = getModelDefinition('modular-grid-base')

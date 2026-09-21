@@ -1,5 +1,6 @@
 <script lang="ts">
   import TissueBoxComponentPanel from './opengrid-openconnect-tissue-box/TissueBoxComponentPanel.svelte'
+  import OpenGridLabelSlotTestComponentPanel from './opengrid-label-slot-test/OpenGridLabelSlotTestComponentPanel.svelte'
   import type {
     ModelId,
     ModelParameterValues,
@@ -171,6 +172,13 @@
   />
 {:else if modelId === 'opengrid-label-card'}
   <OpenGridLabelCardComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-slot-test'}
+  <OpenGridLabelSlotTestComponentPanel
     {locale}
     {rawParameters}
     {fieldErrors}

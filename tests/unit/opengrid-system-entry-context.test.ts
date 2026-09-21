@@ -173,6 +173,7 @@ describe('OpenGrid system entry context', () => {
       'opengrid-label-tag',
       'opengrid-label-card',
       'opengrid-label-holder',
+      'opengrid-label-slot-test',
     ])
 
     const deskSnap = openGrid?.subgroups?.[0]?.definitions[1]

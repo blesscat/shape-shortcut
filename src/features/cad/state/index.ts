@@ -1,4 +1,5 @@
 import { TISSUE_BOX_DEFAULTS } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
+import { OPENGRID_LABEL_SLOT_TEST_CONFIGURATION } from '../../../cad-contract/units/opengrid-label-slot-test'
 import type { CadError } from '../../../cad-contract/errors'
 import type {
   MeshSnapshot,
@@ -99,6 +100,8 @@ function defaultParametersForModel(modelId: ModelId): ModelParameterValues {
   if (modelId === 'opengrid-label-card') {
     return { ...OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters }
   }
+  if (modelId === 'opengrid-label-slot-test')
+    return { ...OPENGRID_LABEL_SLOT_TEST_CONFIGURATION.defaultParameters }
   if (modelId === 'opengrid-label-holder') {
     return { ...OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters }
   }

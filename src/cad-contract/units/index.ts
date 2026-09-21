@@ -7,6 +7,16 @@ import {
 } from './opengrid-openconnect-tissue-box'
 export * from './opengrid-openconnect-tissue-box'
 import {
+  boundsForOpenGridLabelSlotTest,
+  openGridLabelSlotTestFileName,
+  openGridLabelSlotTestStlFileName,
+} from './opengrid-label-slot-test'
+import {
+  validateOpenGridLabelSlotTestParameters,
+  type OpenGridLabelSlotTestParameters,
+} from './opengrid-label-slot-test'
+export * from './opengrid-label-slot-test'
+import {
   OPENGRID_CONFIGURATION,
   OPENGRID_PREVIEW_CONFIGURATION,
   boundsForOpenGrid,
@@ -878,6 +888,7 @@ export type ModelId =
   | 'opengrid-openconnect-organizer'
   | 'opengrid-label-tag'
   | 'opengrid-label-card'
+  | 'opengrid-label-slot-test'
   | 'opengrid-label-holder'
 
 export type BoxParameters = Record<DimensionKey, number>
@@ -947,6 +958,10 @@ export type ModelParameters =
     }
   | { modelId: 'opengrid-label-tag'; parameters: OpenGridLabelTagParameters }
   | { modelId: 'opengrid-label-card'; parameters: OpenGridLabelCardParameters }
+  | {
+      modelId: 'opengrid-label-slot-test'
+      parameters: OpenGridLabelSlotTestParameters
+    }
   | {
       modelId: 'opengrid-label-holder'
       parameters: OpenGridLabelHolderParameters
@@ -1635,6 +1650,12 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'opengrid-label-slot-test') {
+    const validation = validateOpenGridLabelSlotTestParameters(value)
+    if (!validation.valid) return validation
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   if (modelId === 'opengrid-label-holder') {
     const validation = validateOpenGridLabelHolderParameters(value)
     if (!validation.valid) {
@@ -1956,6 +1977,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForOpenGridLabelTag(model.parameters)
     case 'opengrid-label-card':
       return boundsForOpenGridLabelCard(model.parameters)
+    case 'opengrid-label-slot-test':
+      return boundsForOpenGridLabelSlotTest(model.parameters)
     case 'opengrid-label-holder':
       return boundsForOpenGridLabelHolder(model.parameters)
   }
@@ -2001,6 +2024,8 @@ export function modelFileName(model: ModelParameters): string {
       return openGridLabelTagFileName(model.parameters)
     case 'opengrid-label-card':
       return openGridLabelCardFileName(model.parameters)
+    case 'opengrid-label-slot-test':
+      return openGridLabelSlotTestFileName(model.parameters)
     case 'opengrid-label-holder':
       return openGridLabelHolderFileName(model.parameters)
   }
@@ -2046,6 +2071,8 @@ export function modelStlFileName(model: ModelParameters): string {
       return openGridLabelTagStlFileName(model.parameters)
     case 'opengrid-label-card':
       return openGridLabelCardStlFileName(model.parameters)
+    case 'opengrid-label-slot-test':
+      return openGridLabelSlotTestStlFileName(model.parameters)
     case 'opengrid-label-holder':
       return openGridLabelHolderStlFileName(model.parameters)
   }

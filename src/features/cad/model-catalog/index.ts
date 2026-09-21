@@ -1,4 +1,5 @@
 import { tissueBoxDefinition as rawTissueBoxDefinition } from './components/opengrid-openconnect-tissue-box'
+import { opengridLabelSlotTestDefinition as rawOpengridLabelSlotTestDefinition } from './components/opengrid-label-slot-test'
 import type { ModelId } from '../../../cad-contract/units'
 import {
   systemContextQuery,
@@ -100,6 +101,9 @@ export const opengridLabelCardDefinition: ModelDefinition<ModelPreviewImage> =
 export const opengridLabelHolderDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridLabelHolderDefinition)
 
+export const opengridLabelSlotTestDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawOpengridLabelSlotTestDefinition)
+
 /** Dark variant asset name derived from the light asset name: x.webp → x-dark.webp */
 export function darkPreviewSrcFor(src: string): string {
   return src.replace(/\.webp$/, '-dark.webp')
@@ -144,6 +148,7 @@ export const modelDefinitions: ReadonlyArray<
   opengridLabelTagDefinition,
   opengridLabelCardDefinition,
   opengridLabelHolderDefinition,
+  opengridLabelSlotTestDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

@@ -262,6 +262,16 @@ export const zhHantMessages = {
   'models.model.opengrid-label-tag.description':
     '夾在任何面板邊緣的雙色標籤卡扣；可搭配內建 icon 與選配文字，支援 20/30/40/60 mm 寬度與 0.8–5 mm 夾持厚度。',
   'models.model.opengrid-label-tag.alt': 'OpenGrid 標籤卡扣預覽',
+  'models.model.opengrid-label-slot-test.name':
+    'OpenGrid Label Slot Test (標籤卡槽測試件)',
+  'models.model.opengrid-label-slot-test.selection':
+    'Label Slot Test (卡槽測試件)',
+  'models.model.opengrid-label-slot-test.description':
+    '單獨列印壁掛收納方格的同款上抽式卡槽，以少量材料測試標籤卡間隙。每格 10 mm。',
+  'models.model.opengrid-label-slot-test.alt': 'OpenGrid 標籤卡槽測試件預覽',
+  'panel.labelSlotTest.summary': '標籤卡槽測試件',
+  'panel.labelSlotTest.details':
+    '薄背板與收納方格同款卡槽一體列印，不含夾扣或壁掛接頭。每格 10 mm；搭配相同格數的標籤卡從上方插入。請依預設直立方向列印，以測試導軌與底部斜面；必要時加 brim 增加附著。',
   'models.model.opengrid-label-card.name': 'OpenGrid Label Card (標籤卡)',
   'models.model.opengrid-label-card.selection': 'Label Card (標籤卡)',
   'models.model.opengrid-label-card.description':
@@ -1263,6 +1273,15 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'models.model.opengrid-label-tag.description':
     'A two-color label tag that clips onto any panel edge, with a built-in icon set, optional text, 20/30/40/60 mm widths, and 0.8–5 mm grip thickness.',
   'models.model.opengrid-label-tag.alt': 'OpenGrid Label Tag preview',
+  'models.model.opengrid-label-slot-test.name': 'OpenGrid Label Slot Test',
+  'models.model.opengrid-label-slot-test.selection': 'Label Slot Test',
+  'models.model.opengrid-label-slot-test.description':
+    'Print the organizer’s top-loading label slot on its own to test card clearance with little material. Each unit is 10 mm.',
+  'models.model.opengrid-label-slot-test.alt':
+    'OpenGrid Label Slot Test preview',
+  'panel.labelSlotTest.summary': 'Label slot test coupon',
+  'panel.labelSlotTest.details':
+    'A thin back wall with the organizer’s integrated slot, without clips or wall connectors. Each unit is 10 mm; insert a matching card from above. Print upright in the supplied orientation to test the rails and bottom slope; add a brim if needed for adhesion.',
   'models.model.opengrid-label-card.name': 'OpenGrid Label Card',
   'models.model.opengrid-label-card.selection': 'Label Card',
   'models.model.opengrid-label-card.description':
