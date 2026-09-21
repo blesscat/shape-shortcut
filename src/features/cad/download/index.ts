@@ -1,5 +1,9 @@
 import type { ExportReadyEvent } from '../../../cad-contract/messages'
-import { isValidThreeMfPackage } from '../../../cad-contract/three-mf'
+import {
+  isValidThreeMfPackage,
+  threeMfExpectationForFileName,
+  type ThreeMfPackageExpectation,
+} from '../../../cad-contract/three-mf'
 import {
   diagnostic,
   type DiagnosticDescriptor,
@@ -150,14 +154,22 @@ export function validateThreeMfResponse(
     return { valid: false, message: diagnostic('diagnostic.exportInvalid') }
   }
 
-  if (!validateThreeMfPackage(event.bytes)) {
+  if (!validateThreeMfPackage(event.bytes, expectedFileName)) {
     return { valid: false, message: diagnostic('diagnostic.exportInvalid') }
   }
   return { valid: true }
 }
 
-export function validateThreeMfPackage(bytes: ArrayBuffer): boolean {
-  return isValidThreeMfPackage(bytes)
+export function validateThreeMfPackage(
+  bytes: ArrayBuffer,
+  expectedFileName?: string,
+): boolean {
+  return isValidThreeMfPackage(
+    bytes,
+    expectedFileName
+      ? threeMfExpectationForFileName(expectedFileName)
+      : undefined,
+  )
 }
 
 export function triggerThreeMfDownload(event: ExportReadyEvent): () => void {

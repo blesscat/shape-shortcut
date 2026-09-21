@@ -9,24 +9,43 @@ import {
   openGridOrganizerBoxThreeMfFileName,
   openGridDividerThreeMfFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
+  openGridLabelTagThreeMfFileName,
+  openGridLabelCardThreeMfFileName,
   isOpenGridWallCoverParameters,
   isOpenGridStackableCylinderParameters,
   isOpenGridStackableBoxParameters,
   isOpenGridOrganizerBoxParameters,
   isOpenGridDividerParameters,
   isOpenGridOpenConnectOrganizerParameters,
+  isOpenGridLabelTagParameters,
+  isOpenGridLabelCardParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
+  type ModelId,
 } from '../cad-contract/units'
 import {
   exportStepBytes,
   exportStlBytes,
   exportThreeMfBytes,
   isThreeMfPackage,
+  threeMfExpectationFor,
+  threeMfMetaFor,
 } from '../cad-kernel/export'
 import type { CadWorkerLifecycle } from './cad-worker-lifecycle'
 import { emitProgress, id } from './cad-worker-events'
 import type { EventSink } from './cad-worker-types'
+
+/**
+ * Models supporting the two-color 3MF export and the part pair they must
+ * carry on the committed revision.
+ */
+const THREE_MF_SUPPORTED_MODELS: Partial<
+  Record<ModelId, readonly ['body', 'text' | 'icon' | 'accent']>
+> = {
+  'opengrid-wall-cover': ['body', 'text'],
+  'opengrid-label-tag': ['body', 'icon'],
+  'opengrid-label-card': ['body', 'accent'],
+}
 
 type ExportContext = {
   epoch: string
@@ -179,7 +198,7 @@ export async function exportThreeMfCommand(
     }
 
     let expectedFileName: string
-    let expectedAccentName: 'text' | 'rim'
+    let expectedAccentName: 'text' | 'rim' | 'icon' | 'accent'
     if (
       revision.modelId === 'opengrid-wall-cover' &&
       isOpenGridWallCoverParameters(validation.value.parameters)
@@ -188,6 +207,22 @@ export async function exportThreeMfCommand(
         validation.value.parameters,
       )
       expectedAccentName = 'text'
+    } else if (
+      revision.modelId === 'opengrid-label-tag' &&
+      isOpenGridLabelTagParameters(validation.value.parameters)
+    ) {
+      expectedFileName = openGridLabelTagThreeMfFileName(
+        validation.value.parameters,
+      )
+      expectedAccentName = 'icon'
+    } else if (
+      revision.modelId === 'opengrid-label-card' &&
+      isOpenGridLabelCardParameters(validation.value.parameters)
+    ) {
+      expectedFileName = openGridLabelCardThreeMfFileName(
+        validation.value.parameters,
+      )
+      expectedAccentName = 'accent'
     } else if (
       revision.modelId === 'opengrid-stackable-cylinder' &&
       isOpenGridStackableCylinderParameters(validation.value.parameters) &&
@@ -251,6 +286,10 @@ export async function exportThreeMfCommand(
     ) {
       throw new Error('THREEMF_PARTS_INVALID')
     }
+    const meta = threeMfMetaFor(
+      revision.modelId as Parameters<typeof threeMfMetaFor>[0],
+      command.file.name,
+    )
     const threeMfParts = [
       { name: 'body' as const, shape: parts[0].shape },
       { name: expectedAccentName, shape: parts[1].shape },
@@ -265,10 +304,6 @@ export async function exportThreeMfCommand(
     })
     emitProgress(context.emit, command, 'exporting', revision.modelRevision)
     const colors = command.colors ?? DEFAULT_MODEL_COLORS
-    const containerNaming =
-      revision.modelId in CONTAINER_THREE_MF_NAMING
-        ? CONTAINER_THREE_MF_NAMING[revision.modelId as ContainerThreeMfModelId]
-        : undefined
     const bytes = await exportThreeMfBytes(threeMfParts, {
       baseColor: colors.primary,
       accentColor: colors.secondary,
@@ -276,9 +311,11 @@ export async function exportThreeMfCommand(
       angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
       modelName: revision.modelId,
       sourceFile: command.file.name,
-      ...(containerNaming ?? {}),
     })
-    if (bytes.byteLength === 0 || !isThreeMfPackage(bytes)) {
+    if (
+      bytes.byteLength === 0 ||
+      !isThreeMfPackage(bytes, threeMfExpectationFor(meta))
+    ) {
       throw new Error('THREEMF_EXPORT_FAILED')
     }
     context.emit(

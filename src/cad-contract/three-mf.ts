@@ -16,6 +16,89 @@ const THREE_MF_IDENTITY_TRANSFORM = '1 0 0 0 1 0 0 0 1 0 0 0'
 export const THREE_MF_BUILD_TRANSFORM = '1 0 0 0 1 0 0 0 1 128 128 0'
 const THREE_MF_IDENTITY_MATRIX = '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1'
 
+/**
+ * Per-model expectations for the dual-color 3MF package. The default
+ * expectation describes the historical Wall Cover package so existing
+ * callers keep validating it unchanged.
+ */
+export type ThreeMfPackageExpectation = {
+  baseMaterialName: string
+  baseMaterialColor: string
+  accentMaterialName: string
+  accentMaterialColor: string
+  /** Package-level name of the second part: `text` (Wall Cover) or `icon`. */
+  accentPartName: string
+  /** `name` metadata of the model settings object. */
+  modelSettingsName: string
+  /** `source_file` metadata on both parts. */
+  sourceFileName: string
+  platerName: string
+  filamentColors: readonly [string, string]
+}
+
+export const THREE_MF_WALL_COVER_EXPECTATION: ThreeMfPackageExpectation = {
+  baseMaterialName: 'Wall Cover Body',
+  baseMaterialColor: '#657080',
+  accentMaterialName: 'Wall Cover Text',
+  accentMaterialColor: '#F4C542',
+  accentPartName: 'text',
+  modelSettingsName: 'opengrid-wall-cover',
+  sourceFileName: 'opengrid-wall-cover.3mf',
+  platerName: 'OpenGrid Wall Cover',
+  filamentColors: ['#657080', '#F4C542'],
+}
+
+export function threeMfExpectationForLabelTag(
+  sourceFileName: string,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: 'Label Tag Body',
+    baseMaterialColor: '#657080',
+    accentMaterialName: 'Label Tag Icon',
+    accentMaterialColor: '#F4C542',
+    accentPartName: 'icon',
+    modelSettingsName: 'opengrid-label-tag',
+    sourceFileName,
+    platerName: 'OpenGrid Label Tag',
+    filamentColors: ['#657080', '#F4C542'],
+  }
+}
+
+export function threeMfExpectationForLabelCard(
+  sourceFileName: string,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: 'Label Card Body',
+    baseMaterialColor: '#657080',
+    accentMaterialName: 'Label Card Accent',
+    accentMaterialColor: '#F4C542',
+    accentPartName: 'accent',
+    modelSettingsName: 'opengrid-label-card',
+    sourceFileName,
+    platerName: 'OpenGrid Label Card',
+    filamentColors: ['#657080', '#F4C542'],
+  }
+}
+
+/**
+ * Main-thread download validation expectation derived from the requested
+ * file name. Label Tag / Label Card 3MF file names embed their parameters
+ * under their model prefixes and validate strictly against their own
+ * expectations; every other name falls back to the permissive validation
+ * that accepts any supported dual-color model.
+ */
+export function threeMfExpectationForFileName(
+  fileName: string,
+): ThreeMfPackageExpectation | undefined {
+  if (fileName.startsWith('opengrid-label-card')) {
+    return threeMfExpectationForLabelCard(fileName)
+  }
+  if (fileName.startsWith('opengrid-label-tag')) {
+    return threeMfExpectationForLabelTag(fileName)
+  }
+  return undefined
+}
+
 const REQUIRED_ENTRIES = [
   '[Content_Types].xml',
   '_rels/.rels',
@@ -362,7 +445,10 @@ function validMesh(meshXml: string): boolean {
   return true
 }
 
-function validObjectModel(xml: string): boolean {
+function validObjectModel(
+  xml: string,
+  expected?: ThreeMfPackageExpectation,
+): boolean {
   if (
     !/^<\?xml\b[\s\S]*?\?>\s*<model\b/.test(xml) ||
     (xml.match(/<model\b/g) ?? []).length !== 1 ||
@@ -388,8 +474,11 @@ function validObjectModel(xml: string): boolean {
   const baseColor = attribute(materials[0]!, 'displaycolor')
   const accentName = attribute(materials[1]!, 'name')
   const accentColor = attribute(materials[1]!, 'displaycolor')
+  const allowedNamePairs: readonly (readonly [string, string])[] = expected
+    ? [[expected.baseMaterialName, expected.accentMaterialName]]
+    : THREE_MF_SUPPORTED_MATERIAL_NAME_PAIRS
   const validMaterials =
-    THREE_MF_SUPPORTED_MATERIAL_NAME_PAIRS.some(
+    allowedNamePairs.some(
       ([expectedBaseName, expectedAccentName]) =>
         baseName === expectedBaseName && accentName === expectedAccentName,
     ) &&
@@ -420,7 +509,12 @@ function validObjectModel(xml: string): boolean {
     attribute(body.attributes, 'pid') !== '1' ||
     attribute(body.attributes, 'pindex') !== '0' ||
     attribute(accent.attributes, 'type') !== 'model' ||
-    (accentPartName !== 'text' && accentPartName !== 'rim') ||
+    (expected
+      ? accentPartName !== expected.accentPartName
+      : (accentPartName !== 'text' &&
+        accentPartName !== 'rim' &&
+        accentPartName !== 'icon' &&
+        accentPartName !== 'accent')) ||
     attribute(accent.attributes, 'pid') !== '1' ||
     attribute(accent.attributes, 'pindex') !== '1'
   ) {
@@ -609,6 +703,7 @@ function settingsPartFaceCount(xml: string): number | null {
 
 function validSettingsObject(
   xml: string,
+  expected?: ThreeMfPackageExpectation,
   expectedPartFaceCounts?: readonly [number, number],
 ): boolean {
   const object = xml.match(/^<object\b([^>]*)>([\s\S]*?)<\/object>\s*$/)
@@ -641,11 +736,17 @@ function validSettingsObject(
     attribute(object[1]!, 'id') === '3' &&
     faceCount !== undefined &&
     nameMetadata !== undefined &&
-    matchesAnyMetadataValue(
-      nameMetadata,
-      'name',
-      THREE_MF_SUPPORTED_MODEL_NAMES,
-    ) &&
+    (expected
+      ? validSettingsMetadata(
+          nameMetadata,
+          'name',
+          expected.modelSettingsName,
+        )
+      : matchesAnyMetadataValue(
+          nameMetadata,
+          'name',
+          THREE_MF_SUPPORTED_MODEL_NAMES,
+        )) &&
     extruderMetadata !== undefined &&
     validSettingsMetadata(extruderMetadata, 'extruder', '1') &&
     objectFaceCount !== null &&
@@ -654,8 +755,12 @@ function validSettingsObject(
     bodyFaceCount !== null &&
     textFaceCount !== null &&
     validSettingsPart(parts[0]!, '1', 'body', '1', '0') &&
-    (validSettingsPart(parts[1]!, '2', 'text', '2', '1') ||
-      validSettingsPart(parts[1]!, '2', 'rim', '2', '1')) &&
+    (expected
+      ? validSettingsPart(parts[1]!, '2', expected.accentPartName, '2', '1')
+      : (validSettingsPart(parts[1]!, '2', 'text', '2', '1') ||
+        validSettingsPart(parts[1]!, '2', 'rim', '2', '1') ||
+        validSettingsPart(parts[1]!, '2', 'icon', '2', '1') ||
+        validSettingsPart(parts[1]!, '2', 'accent', '2', '1'))) &&
     objectFaceCount === bodyFaceCount + textFaceCount &&
     (expectedPartFaceCounts === undefined ||
       (bodyFaceCount === expectedPartFaceCounts[0] &&
@@ -663,7 +768,10 @@ function validSettingsObject(
   )
 }
 
-function validSettingsPlate(xml: string): boolean {
+function validSettingsPlate(
+  xml: string,
+  expected?: ThreeMfPackageExpectation,
+): boolean {
   const plate = xml.match(/^<plate\b([^>]*)>([\s\S]*?)<\/plate>\s*$/)
   if (!plate) return false
   const instance = plate[2]!.match(
@@ -688,7 +796,9 @@ function validSettingsPlate(xml: string): boolean {
     matchesAnyMetadataValue(
       metadataFor('plater_name')!,
       'plater_name',
-      THREE_MF_SUPPORTED_PLATE_NAMES,
+      (expected
+        ? expected.platerName
+        : THREE_MF_SUPPORTED_PLATE_NAMES),
     ) &&
     validSettingsMetadata(metadataFor('locked')!, 'locked', 'false') &&
     validSettingsMetadata(
@@ -734,6 +844,7 @@ function validSettingsAssemble(xml: string): boolean {
 
 function validModelSettings(
   xml: string,
+  expected?: ThreeMfPackageExpectation,
   expectedPartFaceCounts?: readonly [number, number],
 ): boolean {
   const root = xml.match(
@@ -758,13 +869,16 @@ function validModelSettings(
   if (remainder !== '') return false
 
   return (
-    validSettingsObject(objects[0]!, expectedPartFaceCounts) &&
-    validSettingsPlate(plates[0]!) &&
+    validSettingsObject(objects[0]!, expected, expectedPartFaceCounts) &&
+    validSettingsPlate(plates[0]!, expected) &&
     validSettingsAssemble(assembles[0]!)
   )
 }
 
-export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
+export function isValidThreeMfPackage(
+  bytes: ArrayBuffer,
+  expectation?: ThreeMfPackageExpectation,
+): boolean {
   const entries = parseZip(bytes)
   if (!entries || entries.size !== REQUIRED_ENTRIES.length) return false
   for (const name of REQUIRED_ENTRIES) {
@@ -778,7 +892,7 @@ export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
   const projectSettings = decodeUtf8(entries.get(REQUIRED_ENTRIES[5]!)!)
   const modelSettings = decodeUtf8(entries.get(REQUIRED_ENTRIES[6]!)!)
   const objectModelIsValid =
-    objectModel !== null && validObjectModel(objectModel)
+    objectModel !== null && validObjectModel(objectModel, expectation)
   const objectModelCounts =
     objectModel !== null ? objectModelFaceCounts(objectModel) : null
   return (
@@ -796,6 +910,6 @@ export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
     objectModelIsValid &&
     objectModelCounts !== null &&
     validProjectSettings(projectSettings, objectModelColors(objectModel)) &&
-    validModelSettings(modelSettings, objectModelCounts)
+    validModelSettings(modelSettings, expectation, objectModelCounts)
   )
 }

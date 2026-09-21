@@ -47,12 +47,18 @@ describe('CAD component catalog', () => {
       'opengrid-stackable-cylinder',
       'opengrid-snap-remover',
       'opengrid-open-shelf',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
       'opengrid',
       'opengrid-snap',
       'opengrid-wall-cover',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
       'hsw-cell',
     ])
 
@@ -109,12 +115,18 @@ describe('CAD component catalog', () => {
       'opengrid-stackable-cylinder',
       'opengrid-snap-remover',
       'opengrid-open-shelf',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
       'opengrid',
       'opengrid-snap',
       'opengrid-wall-cover',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
     ])
     expect(groups[0]?.subgroups?.map((subgroup) => subgroup.key)).toEqual([
       'desk',
@@ -197,6 +209,9 @@ describe('CAD component catalog', () => {
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
     ])
 
     const grid = getModelDefinition('modular-grid-base')

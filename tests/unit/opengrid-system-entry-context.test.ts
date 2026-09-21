@@ -155,6 +155,9 @@ describe('OpenGrid system entry context', () => {
       'opengrid-stackable-cylinder',
       'opengrid-snap-remover',
       'opengrid-open-shelf',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
     ])
     expect(
       openGrid?.subgroups
@@ -167,6 +170,9 @@ describe('OpenGrid system entry context', () => {
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-label-tag',
+      'opengrid-label-card',
+      'opengrid-label-holder',
     ])
 
     const deskSnap = openGrid?.subgroups?.[0]?.definitions[1]

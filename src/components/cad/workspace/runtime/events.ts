@@ -117,6 +117,38 @@ function modelEventMatchesOperation(
   )
 }
 
+function labelTagFieldErrorFor(
+  operation: { kind: string; modelId?: ModelId } | undefined,
+  messageId: string,
+  params: DiagnosticParams | undefined,
+): FieldDiagnostic | null {
+  if (
+    operation?.kind !== 'model' ||
+    operation.modelId !== 'opengrid-label-tag' ||
+    (messageId !== 'diagnostic.labelTagGlyphUnsupported' &&
+      messageId !== 'diagnostic.labelTagFontLoadFailed' &&
+      messageId !== 'diagnostic.labelTagIconUnknown' &&
+      messageId !== 'diagnostic.labelTagIconGeometryFailed')
+  ) {
+    return null
+  }
+  if (
+    messageId === 'diagnostic.labelTagIconUnknown' ||
+    messageId === 'diagnostic.labelTagIconGeometryFailed'
+  ) {
+    return {
+      field: 'icon',
+      messageId,
+      ...(params ? { params } : {}),
+    }
+  }
+  return {
+    field: 'text',
+    messageId,
+    ...(params ? { params } : {}),
+  }
+}
+
 function wallCoverFieldErrorFor(
   operation: { kind: string; modelId?: ModelId } | undefined,
   messageId: string,
@@ -287,7 +319,9 @@ export function createWorkerEventHandler(
         const validMesh = validateMeshSnapshot(event.mesh)
         const validPartMeshes = validateModelPartMeshes(
           event.partMeshes,
-          operation.modelId === 'opengrid-wall-cover',
+          operation.modelId === 'opengrid-wall-cover' ||
+            operation.modelId === 'opengrid-label-tag' ||
+            operation.modelId === 'opengrid-label-card',
         )
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const currentOperation = isCurrentModelOperation(
@@ -369,7 +403,10 @@ export function createWorkerEventHandler(
         }
         const mesh = event.mesh ?? operation.candidateMesh
         const matchingParameters = modelEventMatchesOperation(operation, event)
-        const requiresParts = operation.modelId === 'opengrid-wall-cover'
+        const requiresParts =
+          operation.modelId === 'opengrid-wall-cover' ||
+          operation.modelId === 'opengrid-label-tag' ||
+          operation.modelId === 'opengrid-label-card'
         const partMeshes = event.partMeshes ?? operation.candidatePartMeshes
         const validPartMeshes = validateModelPartMeshes(
           partMeshes,
@@ -500,6 +537,16 @@ export function createWorkerEventHandler(
         )
         if (wallCoverFieldError) {
           context.setFieldErrors({ text: wallCoverFieldError })
+        }
+        const labelTagFieldError = labelTagFieldErrorFor(
+          operation,
+          event.messageId,
+          event.messageParams,
+        )
+        if (labelTagFieldError) {
+          context.setFieldErrors({
+            [labelTagFieldError.field]: labelTagFieldError,
+          })
         }
         if (event.code === 'ENGINE_INIT_FAILED') {
           context.recoverWorker(error)

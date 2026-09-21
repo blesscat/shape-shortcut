@@ -8,6 +8,9 @@ import {
   HEXAGONAL_COLUMN_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_CONFIGURATION,
+  OPENGRID_LABEL_TAG_CONFIGURATION,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
+  OPENGRID_LABEL_HOLDER_CONFIGURATION,
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
@@ -89,6 +92,15 @@ function defaultParametersForModel(modelId: ModelId): ModelParameterValues {
   }
   if (modelId === 'opengrid-wall-cover') {
     return { ...OPENGRID_WALL_COVER_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'opengrid-label-tag') {
+    return { ...OPENGRID_LABEL_TAG_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'opengrid-label-card') {
+    return { ...OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'opengrid-label-holder') {
+    return { ...OPENGRID_LABEL_HOLDER_CONFIGURATION.defaultParameters }
   }
   if (modelId === 'opengrid-snap-remover') return {}
 

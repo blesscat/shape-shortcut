@@ -320,6 +320,45 @@ describe('3MF response validation', () => {
     ).toEqual({ valid: true })
   })
 
+  it('validates label-tag packages against the filename-derived expectation', () => {
+    const fileName = 'opengrid-label-tag-w40-g1.2-gear-fill.3mf'
+    const toLabelTagPackage = (xml: string): string =>
+      xml
+        .replaceAll('opengrid-wall-cover', 'opengrid-label-tag')
+        .replaceAll('OpenGrid Wall Cover', 'OpenGrid Label Tag')
+        .replaceAll('Wall Cover Body', 'Label Tag Body')
+        .replaceAll('Wall Cover Text', 'Label Tag Icon')
+        .replaceAll('value="text"', 'value="icon"')
+        .replaceAll('name="text"', 'name="icon"')
+        .replaceAll(
+          'source_file" value="opengrid-label-tag.3mf"',
+          `source_file" value="${fileName}"`,
+        )
+    const bytes = threeMfBytes(toLabelTagPackage, toLabelTagPackage)
+    expect(validateThreeMfPackage(bytes, fileName)).toBe(true)
+    // The same package must fail the default Wall Cover expectation.
+    expect(validateThreeMfPackage(bytes)).toBe(false)
+    expect(
+      validateThreeMfResponse(
+        threeMfResponse({ bytes, fileName }),
+        'rev-1',
+        'epoch-1',
+        fileName,
+      ),
+    ).toEqual({ valid: true })
+    expect(
+      validateThreeMfResponse(
+        threeMfResponse({ bytes }),
+        'rev-1',
+        'epoch-1',
+        'opengrid-wall-cover.3mf',
+      ),
+    ).toEqual({
+      valid: false,
+      message: { messageId: 'diagnostic.exportInvalid' },
+    })
+  })
+
   it('rejects an invalid package or metadata', () => {
     expect(validateThreeMfPackage(new ArrayBuffer(4))).toBe(false)
     const corrupted = new Uint8Array(threeMfBytes())

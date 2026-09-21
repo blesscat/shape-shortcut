@@ -79,6 +79,26 @@ describe('CAD Worker error mapping', () => {
       'OPENGRID_WALL_COVER_QUALITY_INVALID',
     ],
     [
+      'OPENGRID_LABEL_TAG_QUALITY_INVALID:grip-opening',
+      'model.generate',
+      'OPENGRID_LABEL_TAG_QUALITY_INVALID',
+    ],
+    [
+      'OPENGRID_LABEL_CARD_QUALITY_INVALID:accent-recessed',
+      'model.generate',
+      'OPENGRID_LABEL_CARD_QUALITY_INVALID',
+    ],
+    [
+      'OPENGRID_LABEL_HOLDER_QUALITY_INVALID:pocket-occupied',
+      'model.generate',
+      'OPENGRID_LABEL_HOLDER_QUALITY_INVALID',
+    ],
+    [
+      'OPENGRID_LABEL_CARD_PARTS_INVALID',
+      'model.generate',
+      'OPENGRID_LABEL_CARD_PARTS_INVALID',
+    ],
+    [
       'OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID:opening-profile',
       'model.generate',
       'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',
@@ -121,6 +141,18 @@ describe('CAD Worker error mapping', () => {
       cadErrorStageFor(
         'model.generate',
         'OPENGRID_DIVIDER_QUALITY_INVALID:pegs:missing',
+      ),
+    ).toBe('meshing')
+    expect(
+      cadErrorStageFor(
+        'model.generate',
+        'OPENGRID_LABEL_CARD_QUALITY_INVALID:accent-recessed',
+      ),
+    ).toBe('meshing')
+    expect(
+      cadErrorStageFor(
+        'model.generate',
+        'OPENGRID_LABEL_HOLDER_QUALITY_INVALID:pocket-occupied',
       ),
     ).toBe('meshing')
     expect(

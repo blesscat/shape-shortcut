@@ -3,26 +3,35 @@ import type { WorkerEvent } from '../../src/cad-contract/messages'
 import {
   modelFileName,
   modelStlFileName,
+  openGridLabelTagThreeMfFileName,
+  openGridLabelCardThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   type ModelId,
   type ModelParameterValues,
 } from '../../src/cad-contract/units'
+import { threeMfExpectationFor } from '../../src/cad-kernel/export'
 import type { RevisionRecord } from '../../src/cad-kernel/lifetime'
 import type { EventSink } from '../../src/workers/cad-worker-types'
 
 const mocks = vi.hoisted(() => ({
   exportStepBytes: vi.fn(),
   exportStlBytes: vi.fn(),
+  exportThreeMfBytes: vi.fn(),
+  isThreeMfPackage: vi.fn(),
 }))
 
-vi.mock('../../src/cad-kernel/export', () => ({
+vi.mock('../../src/cad-kernel/export', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../src/cad-kernel/export')>()),
   exportStepBytes: mocks.exportStepBytes,
   exportStlBytes: mocks.exportStlBytes,
+  exportThreeMfBytes: mocks.exportThreeMfBytes,
+  isThreeMfPackage: mocks.isThreeMfPackage,
 }))
 
 import {
   exportStepCommand,
   exportStlCommand,
+  exportThreeMfCommand,
 } from '../../src/workers/cad-worker-export'
 
 const parameters = { width: 20, depth: 30, height: 40 }
@@ -208,5 +217,240 @@ describe('CAD Worker export seam', () => {
       /^opengrid-openconnect-organizer-.*\.stl$/,
     )
     expect(lifecycle.unpin).toHaveBeenCalledTimes(2)
+  })
+
+  it('exports a committed label-tag revision as a body/icon 3MF package', async () => {
+    const labelTagParameters = {
+      widthTier: 40,
+      gripThickness: 1.2,
+      icon: 'gear-fill',
+    } as const
+    const labelTagModel = {
+      modelId: 'opengrid-label-tag' as const,
+      parameters: labelTagParameters,
+    }
+    const fileName = openGridLabelTagThreeMfFileName(labelTagParameters)
+    const bodyShape = { delete: vi.fn() }
+    const iconShape = { delete: vi.fn() }
+    const currentRevision = revision(labelTagModel.modelId, labelTagParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: bodyShape },
+      { name: 'icon', shape: iconShape },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+    const bytes = new Uint8Array([7, 8, 9]).buffer
+    mocks.exportThreeMfBytes.mockResolvedValue(bytes)
+    mocks.isThreeMfPackage.mockReturnValue(true)
+
+    await exportThreeMfCommand(
+      {
+        version: 2,
+        kind: 'export.3mf',
+        requestId: 'label-tag-3mf-request',
+        operationId: 'label-tag-3mf-operation',
+        modelRevision: currentRevision.modelRevision,
+        workerEpoch: 'epoch-1',
+        file: { name: fileName, mime: 'model/3mf' },
+      },
+      { epoch: 'epoch-1', lifecycle, emit },
+    )
+
+    expect(mocks.exportThreeMfBytes).toHaveBeenCalledOnce()
+    const [parts, , meta] = mocks.exportThreeMfBytes.mock.calls[0]!
+    expect(parts).toEqual([
+      { name: 'body', shape: bodyShape },
+      { name: 'icon', shape: iconShape },
+    ])
+    expect(meta).toMatchObject({
+      modelSettingsName: 'opengrid-label-tag',
+      sourceFileName: fileName,
+      accentPartName: 'icon',
+    })
+    expect(mocks.isThreeMfPackage).toHaveBeenCalledWith(
+      bytes,
+      threeMfExpectationFor(meta),
+    )
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'export.ready',
+        format: '3mf',
+        bytes,
+        fileName,
+      }),
+    )
+  })
+
+  it('exports a committed label-card revision as a body/accent 3MF package', async () => {
+    const labelCardParameters = {
+      widthTier: 40,
+      style: 'raised',
+      icon: 'gear-fill',
+    } as const
+    const fileName = openGridLabelCardThreeMfFileName(labelCardParameters)
+    const bodyShape = { delete: vi.fn() }
+    const accentShape = { delete: vi.fn() }
+    const currentRevision = revision('opengrid-label-card', labelCardParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: bodyShape },
+      { name: 'accent', shape: accentShape },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+    const bytes = new Uint8Array([9, 9, 9]).buffer
+    mocks.exportThreeMfBytes.mockResolvedValue(bytes)
+    mocks.isThreeMfPackage.mockReturnValue(true)
+
+    await exportThreeMfCommand(
+      {
+        version: 2,
+        kind: 'export.3mf',
+        requestId: 'label-card-3mf-request',
+        operationId: 'label-card-3mf-operation',
+        modelRevision: currentRevision.modelRevision,
+        workerEpoch: 'epoch-1',
+        file: { name: fileName, mime: 'model/3mf' },
+      },
+      { epoch: 'epoch-1', lifecycle, emit },
+    )
+
+    const [parts, , meta] = mocks.exportThreeMfBytes.mock.calls[0]!
+    expect(parts).toEqual([
+      { name: 'body', shape: bodyShape },
+      { name: 'accent', shape: accentShape },
+    ])
+    expect(meta).toMatchObject({
+      modelSettingsName: 'opengrid-label-card',
+      sourceFileName: fileName,
+      accentPartName: 'accent',
+    })
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: 'export.ready',
+        format: '3mf',
+        bytes,
+        fileName,
+      }),
+    )
+  })
+
+  it('rejects a label-card 3MF request with a mismatched filename or parts', async () => {
+    const labelCardParameters = {
+      widthTier: 40,
+      style: 'raised',
+      icon: 'gear-fill',
+    } as const
+    const currentRevision = revision('opengrid-label-card', labelCardParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: { delete: vi.fn() } },
+      { name: 'text', shape: { delete: vi.fn() } },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-card-wrong-file-request',
+          operationId: 'label-card-wrong-file-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: { name: 'opengrid-wall-cover.3mf', mime: 'model/3mf' },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_METADATA_INVALID')
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-card-wrong-parts-request',
+          operationId: 'label-card-wrong-parts-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: {
+            name: openGridLabelCardThreeMfFileName(labelCardParameters),
+            mime: 'model/3mf',
+          },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_PARTS_INVALID')
+
+    expect(mocks.exportThreeMfBytes).not.toHaveBeenCalled()
+  })
+
+  it('rejects a label-tag 3MF request with a mismatched filename or parts', async () => {
+    const labelTagParameters = {
+      widthTier: 40,
+      gripThickness: 1.2,
+      icon: 'gear-fill',
+    } as const
+    const currentRevision = revision('opengrid-label-tag', labelTagParameters)
+    ;(currentRevision as { parts?: unknown }).parts = [
+      { name: 'body', shape: { delete: vi.fn() } },
+      { name: 'text', shape: { delete: vi.fn() } },
+    ]
+    const lifecycle = {
+      pin: vi.fn(() => currentRevision),
+      unpin: vi.fn(),
+    }
+    const events: WorkerEvent[] = []
+    const emit: EventSink = (event) => events.push(event)
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-tag-wrong-file-request',
+          operationId: 'label-tag-wrong-file-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: {
+            name: 'opengrid-wall-cover.3mf',
+            mime: 'model/3mf',
+          },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_METADATA_INVALID')
+
+    await expect(
+      exportThreeMfCommand(
+        {
+          version: 2,
+          kind: 'export.3mf',
+          requestId: 'label-tag-wrong-parts-request',
+          operationId: 'label-tag-wrong-parts-operation',
+          modelRevision: currentRevision.modelRevision,
+          workerEpoch: 'epoch-1',
+          file: {
+            name: openGridLabelTagThreeMfFileName(labelTagParameters),
+            mime: 'model/3mf',
+          },
+        },
+        { epoch: 'epoch-1', lifecycle, emit },
+      ),
+    ).rejects.toThrow('THREEMF_PARTS_INVALID')
+
+    expect(mocks.exportThreeMfBytes).not.toHaveBeenCalled()
+    expect(events.every((event) => event.kind !== 'export.ready')).toBe(true)
   })
 })

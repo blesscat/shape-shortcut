@@ -26,6 +26,9 @@ export function cadErrorCodeFor(
     message.includes('OPENGRID_SNAP_PARAMETERS_INVALID') ||
     message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-snap') ||
     message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-wall-cover') ||
+    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-label-tag') ||
+    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-label-card') ||
+    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-label-holder') ||
     message.includes('OPENGRID_STACKABLE_CYLINDER_PARAMETERS_INVALID') ||
     message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder') ||
     message.includes('OPENGRID_ORGANIZER_BOX_PARAMETERS_INVALID') ||
@@ -39,6 +42,26 @@ export function cadErrorCodeFor(
   }
   if (message.includes('OPENGRID_WALL_COVER_QUALITY_INVALID')) {
     return 'OPENGRID_WALL_COVER_QUALITY_INVALID'
+  }
+  if (message.includes('OPENGRID_LABEL_TAG_QUALITY_INVALID')) {
+    return 'OPENGRID_LABEL_TAG_QUALITY_INVALID'
+  }
+  if (message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID')) {
+    return 'OPENGRID_LABEL_CARD_QUALITY_INVALID'
+  }
+  if (message.includes('OPENGRID_LABEL_HOLDER_QUALITY_INVALID')) {
+    return 'OPENGRID_LABEL_HOLDER_QUALITY_INVALID'
+  }
+  if (message.includes('OPENGRID_LABEL_CARD_PARTS_INVALID')) {
+    return 'OPENGRID_LABEL_CARD_PARTS_INVALID'
+  }
+  if (
+    message.includes('LABEL_TAG_ICON_UNKNOWN') ||
+    message.includes('LABEL_TAG_ICON_GEOMETRY_FAILED') ||
+    message.includes('LABEL_TAG_TEXT_GLYPH_UNSUPPORTED') ||
+    message.includes('LABEL_TAG_FONT_LOAD_FAILED')
+  ) {
+    return 'LABEL_TAG_ACCENT_INVALID'
   }
   if (
     message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
@@ -117,6 +140,15 @@ export function cadErrorStageFor(
   }
   if (message.includes('OPENGRID_SNAP_QUALITY_INVALID')) return 'meshing'
   if (message.includes('OPENGRID_WALL_COVER_QUALITY_INVALID')) {
+    return 'meshing'
+  }
+  if (message.includes('OPENGRID_LABEL_TAG_QUALITY_INVALID')) {
+    return 'meshing'
+  }
+  if (
+    message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID') ||
+    message.includes('OPENGRID_LABEL_HOLDER_QUALITY_INVALID')
+  ) {
     return 'meshing'
   }
   if (

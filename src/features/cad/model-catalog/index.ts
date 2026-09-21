@@ -21,6 +21,9 @@ import { opengridPillarDefinition as rawOpengridPillarDefinition } from './compo
 import { opengridOpenShelfDefinition as rawOpengridOpenShelfDefinition } from './components/opengrid-open-shelf'
 import { opengridOpenConnectShelfDefinition as rawOpengridOpenConnectShelfDefinition } from './components/opengrid-openconnect-shelf'
 import { opengridOpenConnectOrganizerDefinition as rawOpengridOpenConnectOrganizerDefinition } from './components/opengrid-openconnect-organizer'
+import { opengridLabelTagDefinition as rawOpengridLabelTagDefinition } from './components/opengrid-label-tag'
+import { opengridLabelCardDefinition as rawOpengridLabelCardDefinition } from './components/opengrid-label-card'
+import { opengridLabelHolderDefinition as rawOpengridLabelHolderDefinition } from './components/opengrid-label-holder'
 import type {
   ModelDefinition,
   ModelFamily,
@@ -90,6 +93,12 @@ export const tissueBoxDefinition = withDerivedDarkPreview(
 
 export const opengridOpenConnectOrganizerDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawOpengridOpenConnectOrganizerDefinition)
+export const opengridLabelTagDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawOpengridLabelTagDefinition)
+export const opengridLabelCardDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawOpengridLabelCardDefinition)
+export const opengridLabelHolderDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawOpengridLabelHolderDefinition)
 
 /** Dark variant asset name derived from the light asset name: x.webp → x-dark.webp */
 export function darkPreviewSrcFor(src: string): string {
@@ -132,6 +141,9 @@ export const modelDefinitions: ReadonlyArray<
   opengridOpenConnectShelfDefinition,
   opengridOpenConnectOrganizerDefinition,
   tissueBoxDefinition,
+  opengridLabelTagDefinition,
+  opengridLabelCardDefinition,
+  opengridLabelHolderDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

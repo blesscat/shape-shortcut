@@ -149,7 +149,9 @@ export function validateModelPartMeshes(
     if (
       (part.name !== 'body' &&
         part.name !== 'text' &&
-        part.name !== 'rim') ||
+        part.name !== 'rim' &&
+        part.name !== 'icon' &&
+        part.name !== 'accent') ||
       names.has(part.name) ||
       !validateMeshSnapshot(part.mesh)
     ) {
@@ -158,7 +160,10 @@ export function validateModelPartMeshes(
     names.add(part.name)
   }
   if (!requireBodyAndText) return partMeshes.length > 0
-  return names.has('body') && names.has('text')
+  return (
+    names.has('body') &&
+    (names.has('text') || names.has('icon') || names.has('accent'))
+  )
 }
 
 /**
