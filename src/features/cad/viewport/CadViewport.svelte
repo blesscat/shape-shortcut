@@ -1,4 +1,10 @@
 <script lang="ts">
+  import {
+    DEFAULT_MODEL_COLORS,
+    type ModelColors,
+  } from '../../../cad-contract/model-colors'
+  import ModelColorControls from './ModelColorControls.svelte'
+
   import { onMount } from 'svelte'
   import { Canvas } from '@threlte/core'
   import type {
@@ -27,6 +33,8 @@
   import { translate, type Locale } from '../../../i18n'
 
   type Props = {
+    colors?: ModelColors
+    onColorsChange?: (colors: ModelColors) => void
     locale: Locale
     mesh: MeshSnapshot | null
     partMeshes?: ModelPartMeshSnapshot[]
@@ -39,6 +47,8 @@
   }
 
   let {
+    colors = DEFAULT_MODEL_COLORS,
+    onColorsChange,
     locale,
     mesh,
     partMeshes,
@@ -139,13 +149,19 @@
   data-testid="cad-viewport"
   data-model-revision={modelRevision ?? ''}
   data-presentation={presentation}
-  role="img"
-  aria-label={translate(locale, 'cad.viewport.aria')}
   onpointerleave={() => {
     faceHover = null
   }}
 >
-  <div id="cad-viewport-surface" class="viewport-surface">
+  {#if presentation === 'workspace' && onColorsChange}
+    <ModelColorControls {locale} {colors} onChange={onColorsChange} />
+  {/if}
+  <div
+    id="cad-viewport-surface"
+    class="viewport-surface"
+    role="img"
+    aria-label={translate(locale, 'cad.viewport.aria')}
+  >
     {#if !webglSupported}
       <div
         class="flex h-full items-center justify-center text-muted-foreground"
@@ -164,6 +180,7 @@
           {locale}
           theme={viewportTheme}
           {presentation}
+          colors={presentation === 'thumbnail' ? DEFAULT_MODEL_COLORS : colors}
           onPreparationTiming={reportPreparationTiming}
           onFaceHover={presentation === 'workspace'
             ? handleFaceHover

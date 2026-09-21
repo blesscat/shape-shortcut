@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_COLORS } from '../../src/cad-contract/model-colors'
 import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
@@ -153,8 +154,8 @@ describe('OpenGrid Wall Cover flat text POC', () => {
       expect(threeMfText).toContain('Metadata/project_settings.config')
       expect(threeMfText).toContain('Metadata/model_settings.config')
       expect(threeMfText).toMatch(/"printer_model"\s*:\s*"Bambu Lab A1"/)
-      expect(threeMfText).toMatch(
-        /"filament_colour"\s*:\s*\[\s*"#657080"\s*,\s*"#F4C542"\s*\]/,
+      expect(threeMfText).toContain(
+        `"filament_colour": ["${DEFAULT_MODEL_COLORS.primary}", "${DEFAULT_MODEL_COLORS.secondary}"]`,
       )
       expect(threeMfText).toContain('Wall Cover Body')
       expect(threeMfText).toContain('Wall Cover Text')

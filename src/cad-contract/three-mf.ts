@@ -1,3 +1,4 @@
+import { isModelColor } from './model-colors'
 const THREE_MF_MODEL_NAMESPACE =
   'http://schemas.microsoft.com/3dmanufacturing/core/2015/02'
 const THREE_MF_RELATIONSHIP_TYPE =
@@ -211,7 +212,10 @@ function validContentTypes(xml: string): boolean {
   )
 }
 
-function validProjectSettings(json: string): boolean {
+function validProjectSettings(
+  json: string,
+  expectedColors: readonly string[],
+): boolean {
   let parsed: unknown
   try {
     parsed = JSON.parse(json)
@@ -236,9 +240,13 @@ function validProjectSettings(json: string): boolean {
     settings.printer_technology === 'FFF' &&
     stringArray(settings.nozzle_diameter, ['0.4']) &&
     stringArray(settings.extruder_type, ['Direct Drive']) &&
-    (stringArray(settings.filament_colour, ['#657080', '#F4C542']) ||
-      stringArray(settings.filament_colour, ['#657080', '#f59e0b']) ||
-      stringArray(settings.filament_colour, ['#657080', '#F59E0B'])) &&
+    Array.isArray(settings.filament_colour) &&
+    settings.filament_colour.length === 2 &&
+    settings.filament_colour.every(
+      (color, index) =>
+        isModelColor(color) &&
+        color.toLowerCase() === expectedColors[index]?.toLowerCase(),
+    ) &&
     stringArray(settings.filament_map, ['1', '1']) &&
     stringArray(settings.filament_volume_map, ['0', '0'])
   )
@@ -347,8 +355,8 @@ function validObjectModel(xml: string): boolean {
   const validMaterials =
     ((baseName === 'Wall Cover Body' && accentName === 'Wall Cover Text') ||
       (baseName === 'Cylinder Body' && accentName === 'Cylinder Rim')) &&
-    baseColor === '#657080' &&
-    (accentColor === '#F4C542' || accentColor?.toLowerCase() === '#f59e0b')
+    isModelColor(baseColor) &&
+    isModelColor(accentColor)
   if (!validMaterials) {
     return false
   }
@@ -385,6 +393,12 @@ function validObjectModel(xml: string): boolean {
     /<build\b[^>]*\/\s*>/.test(xml) &&
     (xml.match(/<item\b[^>]*\/\s*>/g) ?? []).length === 0
   )
+}
+
+function objectModelColors(xml: string): string[] {
+  const section = xml.match(/<basematerials\b[^>]*>([\s\S]*?)<\/basematerials>/)
+  const materials = section?.[1]?.match(/<base\b[^>]*\/\s*>/g) ?? []
+  return materials.map((material) => attribute(material, 'displaycolor') ?? '')
 }
 
 function objectModelFaceCounts(xml: string): readonly [number, number] | null {
@@ -749,7 +763,7 @@ export function isValidThreeMfPackage(bytes: ArrayBuffer): boolean {
     validModel(model) &&
     objectModelIsValid &&
     objectModelCounts !== null &&
-    validProjectSettings(projectSettings) &&
+    validProjectSettings(projectSettings, objectModelColors(objectModel)) &&
     validModelSettings(modelSettings, objectModelCounts)
   )
 }

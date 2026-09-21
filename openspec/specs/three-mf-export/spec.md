@@ -46,7 +46,7 @@ The generated 3MF package MUST be a valid ZIP-based 3MF package with a model
 part, package relationships, content types, and a separate object model. Its
 Bambu-compatible model MUST contain one parent object with distinct primary-body
 and secondary-accent (`text` or `rim`) component mesh objects, two
-deterministic material entries, and preserved part coordinates. The parent
+material entries using the shared primary and secondary palette captured at export initiation, and preserved part coordinates. The parent
 object MUST be the only build item; the component parts MUST remain
 independently addressable through `Metadata/model_settings.config`. The package
 MUST use millimetres without a hidden scale; its build item MUST apply the
@@ -62,8 +62,8 @@ part `1` (`body`) to extruder/filament slot `1`, model part `2` (`text` or
 - **WHEN** a generated 3MF package is inspected
 - **THEN** it MUST contain two non-empty mesh objects for the primary body and
   secondary accent
-- **AND** it MUST contain two material entries with different deterministic
-  display colours
+- **AND** it MUST contain two material entries with the selected primary and secondary
+  display colours, using distinct defaults but permitting equal user-selected colours
 - **AND** the accent object MUST be assigned to the accent material while the
   body object MUST be assigned to the base material
 

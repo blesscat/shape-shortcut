@@ -1,3 +1,4 @@
+import { isModelColors, type ModelColors } from '../model-colors'
 import type { CadError, CadErrorCode, CadErrorStage } from '../errors'
 import { isDiagnosticParams, type DiagnosticParams } from '../diagnostics'
 import type { PreviewTiming } from '../preview-timing'
@@ -97,6 +98,7 @@ export type ExportStlCommand = Envelope<'export.stl'> & {
 }
 
 export type ExportThreeMfCommand = Envelope<'export.3mf'> & {
+  colors?: ModelColors
   operationId: string
   modelRevision: string
   workerEpoch: string
@@ -451,9 +453,7 @@ function isPartMeshes(value: unknown): value is ModelPartMeshSnapshot[] {
   for (const item of value) {
     if (
       !isRecord(item) ||
-      (item.name !== 'body' &&
-        item.name !== 'text' &&
-        item.name !== 'rim') ||
+      (item.name !== 'body' && item.name !== 'text' && item.name !== 'rim') ||
       names.has(item.name) ||
       !isMesh(item.mesh)
     ) {
@@ -606,10 +606,13 @@ export function isWorkerCommand(value: unknown): value is WorkerCommand {
         PROTOTYPE_CONFIGURATION.stlMime,
       )
     case 'export.3mf':
-      return isExportCommand(
-        value,
-        PROTOTYPE_CONFIGURATION.threeMfExtension,
-        PROTOTYPE_CONFIGURATION.threeMfMime,
+      return (
+        (value.colors === undefined || isModelColors(value.colors)) &&
+        isExportCommand(
+          value,
+          PROTOTYPE_CONFIGURATION.threeMfExtension,
+          PROTOTYPE_CONFIGURATION.threeMfMime,
+        )
       )
     case 'worker.dispose':
       return true

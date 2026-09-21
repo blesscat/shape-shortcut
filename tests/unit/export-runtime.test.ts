@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_COLORS } from '../../src/cad-contract/model-colors'
 import { describe, expect, it, vi } from 'vitest'
 import { PROTOCOL_VERSION } from '../../src/cad-contract/messages'
 import { createExportHandlers } from '../../src/components/cad/workspace/runtime/export'
@@ -146,6 +147,17 @@ function createContext(
 }
 
 describe('CAD export runtime', () => {
+  it('captures an independent palette at export initiation', () => {
+    const { context, client } = createContext('opengrid-wall-cover')
+    const palette = { primary: '#123456', secondary: '#abcdef' }
+    createExportHandlers(context).handleExport('3mf', palette)
+    palette.primary = '#ffffff'
+    expect(client.send.mock.calls[0]![0].colors).toEqual({
+      primary: '#123456',
+      secondary: '#abcdef',
+    })
+  })
+
   it('sends an STL command with the committed model metadata', () => {
     const { context, refs, client } = createContext()
     const handlers = createExportHandlers(context)
@@ -174,6 +186,7 @@ describe('CAD export runtime', () => {
 
     expect(client.send).toHaveBeenCalledWith({
       kind: 'export.3mf',
+      colors: DEFAULT_MODEL_COLORS,
       operationId: expect.stringMatching(/^export-3mf-/),
       modelRevision: 'revision-1',
       workerEpoch: 'epoch-1',

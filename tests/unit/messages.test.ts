@@ -680,3 +680,32 @@ describe('Worker contract runtime validation', () => {
     ).toBe(true)
   })
 })
+
+describe('3MF palette command validation', () => {
+  const command = {
+    version: PROTOCOL_VERSION,
+    kind: 'export.3mf',
+    requestId: 'request',
+    operationId: 'operation',
+    modelRevision: 'rev',
+    workerEpoch: 'epoch',
+    file: { name: 'model.3mf', mime: 'model/3mf' },
+  }
+  it('accepts omitted or valid palettes', () => {
+    expect(isWorkerCommand(command)).toBe(true)
+    expect(
+      isWorkerCommand({
+        ...command,
+        colors: { primary: '#123456', secondary: '#abcdef' },
+      }),
+    ).toBe(true)
+  })
+  it.each([
+    null,
+    {},
+    { primary: '#fff', secondary: '#000000' },
+    { primary: '#123456', secondary: '<script>' },
+  ])('rejects invalid palette %s', (colors) => {
+    expect(isWorkerCommand({ ...command, colors })).toBe(false)
+  })
+})

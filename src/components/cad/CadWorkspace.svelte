@@ -1,4 +1,10 @@
 <script lang="ts">
+  import {
+    DEFAULT_MODEL_COLORS,
+    type ModelColors,
+  } from '../../cad-contract/model-colors'
+  import { createModelColorStore } from '../../features/cad/model-colors/store'
+
   import { onMount } from 'svelte'
   import type {
     ModelId,
@@ -40,6 +46,8 @@
   }
 
   let { modelId, locale }: Props = $props()
+  let colors = $state<ModelColors>({ ...DEFAULT_MODEL_COLORS })
+  let colorStore: ReturnType<typeof createModelColorStore> | undefined
   let snapshot = $state<CadWorkspaceControllerSnapshot | null>(null)
   let dismissedErrorToastKey = $state<string | null>(null)
   let toastError = $state<CadError | null>(null)
@@ -62,6 +70,10 @@
   }
 
   onMount(() => {
+    colorStore = createModelColorStore()
+    const unsubscribeColors = colorStore.subscribe((next) => {
+      colors = next
+    })
     presentation = viewportPresentationForSearch(window.location.search)
     appearance = viewportAppearanceForSearch(window.location.search)
     systemContext = systemContextForModel(
@@ -78,6 +90,7 @@
     )
 
     return () => {
+      unsubscribeColors()
       controller?.dispose()
       controller = null
       parameterStore?.dispose()
@@ -107,7 +120,7 @@
   }
 
   function handleExport(format: ExportFormat): void {
-    controller?.onExport(format)
+    controller?.onExport(format, colors)
   }
 
   function handleRetry(): void {
@@ -151,6 +164,8 @@
     />
     <CadViewport
       {locale}
+      {colors}
+      onColorsChange={(next) => colorStore?.set(next)}
       mesh={snapshot.state.committed?.mesh ?? null}
       partMeshes={snapshot.state.committed?.partMeshes}
       modelRevision={snapshot.state.committed?.revision ?? null}

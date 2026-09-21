@@ -1,3 +1,7 @@
+import {
+  DEFAULT_MODEL_COLORS,
+  isModelColor,
+} from '../../cad-contract/model-colors'
 import type { Shape3D } from 'replicad'
 import {
   isValidThreeMfPackage,
@@ -29,14 +33,6 @@ type ZipEntry = {
 }
 
 const TEXT_ENCODER = new TextEncoder()
-const BASE_MATERIAL = {
-  name: 'Wall Cover Body',
-  color: '#657080',
-}
-const TEXT_MATERIAL = {
-  name: 'Wall Cover Text',
-  color: '#F4C542',
-}
 const PROJECT_SETTINGS_PATH = 'Metadata/project_settings.config'
 const MODEL_SETTINGS_PATH = 'Metadata/model_settings.config'
 const OBJECT_MODEL_PATH = '3D/Objects/object_1.model'
@@ -398,15 +394,16 @@ export async function exportThreeMfBytes(
   const accentMaterialName =
     options.accentMaterialName ??
     (isCylinder ? 'Cylinder Rim' : 'Wall Cover Text')
-  const baseColor = options.baseColor ?? BASE_MATERIAL.color
-  const accentColor =
-    options.accentColor ?? (isCylinder ? '#f59e0b' : TEXT_MATERIAL.color)
+  const baseColor = options.baseColor ?? DEFAULT_MODEL_COLORS.primary
+  const accentColor = options.accentColor ?? DEFAULT_MODEL_COLORS.secondary
+  if (!isModelColor(baseColor) || !isModelColor(accentColor)) {
+    throw new Error('THREEMF_METADATA_INVALID')
+  }
 
   const meshOptions = {
     tolerance: options.tolerance ?? PROTOTYPE_CONFIGURATION.stlTolerance,
     angularTolerance:
-      options.angularTolerance ??
-      PROTOTYPE_CONFIGURATION.stlAngularTolerance,
+      options.angularTolerance ?? PROTOTYPE_CONFIGURATION.stlAngularTolerance,
   }
 
   const meshes = parts.map((part) => ({

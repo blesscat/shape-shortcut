@@ -1,11 +1,15 @@
+import {
+  DEFAULT_MODEL_COLORS,
+  type ModelColors,
+} from '../../../cad-contract/model-colors'
 import type { ViewportVector } from './coordinates'
 
 export const CAD_VIEWPORT_CONFIG = {
-  modelColor: '#4e7cff',
+  modelColor: DEFAULT_MODEL_COLORS.primary,
   modelPartColors: {
-    body: '#4e7cff',
-    text: '#f59e0b',
-    rim: '#f59e0b',
+    body: DEFAULT_MODEL_COLORS.primary,
+    text: DEFAULT_MODEL_COLORS.secondary,
+    rim: DEFAULT_MODEL_COLORS.secondary,
   },
   modelEmissiveIntensity: 0.2,
   edgeThresholdAngle: 20,
@@ -22,8 +26,11 @@ export function isCadViewportPartName(
   return name in CAD_VIEWPORT_CONFIG.modelPartColors
 }
 
-export function colorForCadViewportPart(name: CadViewportPartName): string {
-  return CAD_VIEWPORT_CONFIG.modelPartColors[name]
+export function colorForCadViewportPart(
+  name: CadViewportPartName,
+  colors: ModelColors = DEFAULT_MODEL_COLORS,
+): string {
+  return name === 'body' ? colors.primary : colors.secondary
 }
 
 export const CAD_VIEWPORT_GIZMO = {

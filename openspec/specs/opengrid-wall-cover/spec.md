@@ -48,7 +48,7 @@ The Wall Cover MUST represent the text as a separate printable solid seated in a
 
 ### Requirement: Wall Cover live preview renders both part colors
 
-When a Wall Cover revision is committed and its body/text parts are available, the CAD workspace preview MUST render the body and text as separate meshes with deterministic distinct base and accent colors. The preview MUST use the same part boundaries and relative placement as the printable revision, and the text MUST remain visually flush with the cover surface.
+When a Wall Cover revision is committed and its body/text parts are available, the CAD workspace preview MUST render the body and text as separate meshes using the shared primary color for the body and secondary color for text. The default colors MUST be distinct; users MAY select equal colors without merging the separate parts. The preview MUST use the same part boundaries and relative placement as the printable revision, and the text MUST remain visually flush with the cover surface.
 
 #### Scenario: Committed cover preview shows two colors
 
