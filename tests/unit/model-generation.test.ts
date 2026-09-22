@@ -1,3 +1,4 @@
+import { OPENCONNECT_ALIGNMENT_DEFAULTS } from '../../src/cad-contract/units/openconnect-alignment'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkerCommandInput } from '../../src/cad-contract/messages'
 import type {
@@ -231,6 +232,38 @@ describe('CAD model generation debounce', () => {
     )
   })
 
+  it.each([
+    'opengrid-openconnect-shelf',
+    'opengrid-openconnect-organizer',
+    'opengrid-openconnect-tissue-box',
+  ] as const)(
+    'sends selected rear-grid alignment to the %s Worker candidate',
+    (modelId) => {
+      const initial = initialCadState(modelId).input
+      const { send, context } = createRuntimeContext(modelId, initial)
+      const handlers = createModelGenerationHandlers(context)
+      handlers.handleInputChange('openConnectHorizontalAlignment', 'left')
+      handlers.handleInputChange('openConnectVerticalAlignment', 'bottom')
+      const parameters = {
+        ...initial,
+        openConnectHorizontalAlignment: 'left',
+        openConnectVerticalAlignment: 'bottom',
+      }
+      expect(context.setPersistedParameters).toHaveBeenLastCalledWith(
+        modelId,
+        parameters,
+      )
+      vi.advanceTimersByTime(500)
+      expect(send).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          kind: 'model.generate',
+          modelId,
+          parameters,
+        }),
+      )
+    },
+  )
+
   it('clamps an OpenConnect shelf angle when a deeper row count lowers its limit', () => {
     const { send, context } = createRuntimeContext(
       'opengrid-openconnect-shelf',
@@ -241,6 +274,7 @@ describe('CAD model generation debounce', () => {
     handlers.handleInputChange('rows', '3')
 
     expect(context.setRawParameters).toHaveBeenCalledWith({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       columns: '3',
       rows: '3',
       connectorRows: '1',
@@ -248,7 +282,13 @@ describe('CAD model generation debounce', () => {
     })
     expect(context.setPersistedParameters).toHaveBeenCalledWith(
       'opengrid-openconnect-shelf',
-      { columns: 3, rows: 3, connectorRows: 1, angle: 14 },
+      {
+        ...OPENCONNECT_ALIGNMENT_DEFAULTS,
+        columns: 3,
+        rows: 3,
+        connectorRows: 1,
+        angle: 14,
+      },
     )
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'input-valid' }),
@@ -258,7 +298,13 @@ describe('CAD model generation debounce', () => {
     expect(send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.generate',
-        parameters: { columns: 3, rows: 3, connectorRows: 1, angle: 14 },
+        parameters: {
+          ...OPENCONNECT_ALIGNMENT_DEFAULTS,
+          columns: 3,
+          rows: 3,
+          connectorRows: 1,
+          angle: 14,
+        },
       }),
     )
   })
@@ -273,6 +319,7 @@ describe('CAD model generation debounce', () => {
     handlers.handleInputChange('connectorRows', '1')
 
     expect(context.setRawParameters).toHaveBeenCalledWith({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       columns: '3',
       rows: '3',
       connectorRows: '1',
@@ -280,14 +327,26 @@ describe('CAD model generation debounce', () => {
     })
     expect(context.setPersistedParameters).toHaveBeenCalledWith(
       'opengrid-openconnect-shelf',
-      { columns: 3, rows: 3, connectorRows: 1, angle: 14 },
+      {
+        ...OPENCONNECT_ALIGNMENT_DEFAULTS,
+        columns: 3,
+        rows: 3,
+        connectorRows: 1,
+        angle: 14,
+      },
     )
 
     vi.advanceTimersByTime(500)
     expect(send).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: 'model.generate',
-        parameters: { columns: 3, rows: 3, connectorRows: 1, angle: 14 },
+        parameters: {
+          ...OPENCONNECT_ALIGNMENT_DEFAULTS,
+          columns: 3,
+          rows: 3,
+          connectorRows: 1,
+          angle: 14,
+        },
       }),
     )
   })
@@ -728,7 +787,7 @@ describe('CAD model generation debounce', () => {
           cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: false,
           topRimMode: 'stacking-rail',
-        bottomMode: 'stacking',
+          bottomMode: 'stacking',
         },
       }),
     )

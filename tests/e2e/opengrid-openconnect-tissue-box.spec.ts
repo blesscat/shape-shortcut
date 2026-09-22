@@ -38,6 +38,7 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
   ).toBeDisabled()
   await z.fill('90')
   await waitForCadReady(page, 90000)
+  await page.getByTestId('openconnect-settings').locator('summary').click()
   const mounting = tissueBoxLayout(TISSUE_BOX_DEFAULTS)
   await expect(page.getByTestId('tissue-box-mounting-grid')).toContainText(
     `X ${mounting.columns} 欄 × Y ${mounting.rows} 列`,
@@ -48,6 +49,7 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
   await page.reload()
   await waitForCadReady(page, 90000)
   await expect(x).toHaveValue('230')
+  await page.getByTestId('openconnect-settings').locator('summary').click()
   const slot = page.getByRole('textbox', {
     name: '抽取槽長度（X）',
     exact: true,

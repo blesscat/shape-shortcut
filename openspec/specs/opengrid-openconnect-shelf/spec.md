@@ -24,7 +24,7 @@ The system MUST register an independent model whose modelId, buildKey, route slu
 
 ### Requirement: Shelf parameters are typed and depth-constrained
 
-The normalized parameter snapshot MUST contain exactly `{ columns, rows, connectorRows, angle }`. `columns`, `rows`, and `connectorRows` MUST be safe integers from 1 through 10, and `angle` MUST be a finite number of degrees aligned to 0.5-degree steps. The defaults MUST be `{ columns: 3, rows: 3, connectorRows: 1, angle: 14 }`. For selected Y and Z counts, the maximum valid angle MUST be `floor(atan(((connectorRows * 28) - 7) / (rows * 28)) * 180 / pi)`, and the valid angle range MUST be from 1 degree through that derived maximum, inclusive. Non-finite values, fractional grid counts, angles outside the 0.5-degree step, missing or unknown fields, and out-of-range values MUST be rejected with a field-specific diagnostic.
+The normalized parameter snapshot MUST contain exactly `{ columns, rows, connectorRows, angle, openConnectHorizontalAlignment, openConnectVerticalAlignment }`. `columns`, `rows`, and `connectorRows` MUST be safe integers from 1 through 10, and `angle` MUST be a finite number of degrees aligned to 0.5-degree steps. The defaults MUST be `{ columns: 3, rows: 3, connectorRows: 1, angle: 14, openConnectHorizontalAlignment: 'center', openConnectVerticalAlignment: 'top' }`. For selected Y and Z counts, the maximum valid angle MUST be `floor(atan(((connectorRows * 28) - 7) / (rows * 28)) * 180 / pi)`, and the valid angle range MUST be from 1 degree through that derived maximum, inclusive. Non-finite values, fractional grid counts, angles outside the 0.5-degree step, missing required dimension fields or unknown fields, and out-of-range values MUST be rejected with a field-specific diagnostic.
 
 #### Scenario: Accept the default snapshot
 
@@ -47,7 +47,7 @@ The normalized parameter snapshot MUST contain exactly `{ columns, rows, connect
 
 #### Scenario: Reject malformed or expanded snapshots
 
-- **WHEN** a snapshot has a missing key, an unknown key, a fractional grid count, an angle outside the 0.5-degree step, a non-finite number, or a value outside its valid range
+- **WHEN** a snapshot has a missing required dimension key, an unknown key, a fractional grid count, an angle outside the 0.5-degree step, a non-finite number, or a value outside its valid range
 - **THEN** validation MUST fail with a diagnostic identifying the affected field or parameter object
 - **AND** no partially normalized value MUST become exportable or persisted
 
@@ -152,7 +152,7 @@ In installed coordinates, the lower edges of the two side ribs, every grid-align
 
 ### Requirement: Workspace lifecycle and persistence are independent
 
-The CAD workspace MUST expose only `columns`, `rows`, `connectorRows`, and `angle` controls for `opengrid-openconnect-shelf`, present the three grid controls as X, Y, and Z sliders, show the current derived maximum angle, and use the existing debounce, latest-wins candidate, commit, mesh, STEP, and STL gates. The angle control MUST be a slider without a free-text input and MUST advance in 0.5-degree steps. When a Y- or Z-count change lowers the derived maximum below the current angle, the workspace MUST atomically clamp the angle to the new maximum before validation, persistence, or generation. Valid typed snapshots MUST persist under the `opengrid-openconnect-shelf` key independently of all other models. A valid legacy three-control snapshot MUST hydrate with `connectorRows=1`. Missing or malformed persisted data MUST fall back to the new defaults; invalid current input MUST leave the last committed valid model visible as stale and MUST disable new exports.
+The CAD workspace MUST expose `columns`, `rows`, `connectorRows`, `angle`, and the two OpenConnect alignment controls for `opengrid-openconnect-shelf`, present the three grid controls as X, Y, and Z sliders with the Z connector-row slider inside the OpenConnect section, show the current derived maximum angle, and use the existing debounce, latest-wins candidate, commit, mesh, STEP, and STL gates. The angle control MUST be a slider without a free-text input and MUST advance in 0.5-degree steps. When a Y- or Z-count change lowers the derived maximum below the current angle, the workspace MUST atomically clamp the angle to the new maximum before validation, persistence, or generation. Valid typed snapshots MUST persist under the `opengrid-openconnect-shelf` key independently of all other models. A valid legacy three-control snapshot MUST hydrate with `connectorRows=1`. Missing or malformed persisted data MUST fall back to the new defaults; invalid current input MUST leave the last committed valid model visible as stale and MUST disable new exports.
 
 #### Scenario: Initialize the dedicated route
 
@@ -185,6 +185,12 @@ The CAD workspace MUST expose only `columns`, `rows`, `connectorRows`, and `angl
 - **WHEN** the user enters an invalid row, column, or angle value
 - **THEN** the workspace MUST show a diagnosable field error and invalidate the pending candidate
 - **AND** the prior committed mesh MAY remain visible as stale while STEP and STL export for the invalid candidate remain disabled
+
+#### Scenario: Normalize legacy alignment and reject malformed choices
+
+- **WHEN** an otherwise valid snapshot omits either alignment field
+- **THEN** the missing horizontal choice MUST normalize to `center` and the missing vertical choice to `top`, preserving its geometry and other values
+- **AND** explicit unsupported values, including null and empty strings, MUST be rejected for the affected field
 
 ### Requirement: Bounds and exports are deterministic
 
@@ -223,3 +229,27 @@ The component workspace MUST present attribution for David D's OpenGrid design a
 - **WHEN** production assets for `opengrid-openconnect-shelf` are enumerated
 - **THEN** the locked-slot STEP and its provenance documentation MAY be included
 - **AND** the supplied Gridfinity STL MUST NOT be loaded, bundled, or used as the authoritative generated shape
+
+### Requirement: Collapsed OpenConnect rear-grid settings
+
+The `opengrid-openconnect-shelf` panel MUST use the shared OpenConnect section, initially collapsed and expandable by pointer or keyboard. It MUST group rear-grid controls and display horizontal alignment choices left/center/right (靠左／置中／靠右) and vertical top/center/bottom (靠上／置中／靠下), using installed front-view directions. The canonical field `openConnectHorizontalAlignment` MUST accept only `left`, `center`, `right`; `openConnectVerticalAlignment` MUST accept only `top`, `center`, `bottom`. Selections MUST persist, round-trip to generation, and restore to center/top on reset. Alignment MUST translate only the complete rear receptacle grid while preserving pitch, count, authored cutter geometry, cell-safe edge clearance and body geometry. Snap, Wall Cover and grid-board settings MUST remain unchanged.
+
+#### Scenario: Expand and edit rear-grid settings
+
+- **WHEN** the user opens the accessory panel
+- **THEN** OpenConnect controls MUST initially be hidden inside a collapsed section
+- **AND** activating its header MUST expose the controls with localized accessible labels
+- **AND** valid selections MUST reach the generated model and survive reload
+
+#### Scenario: Keep choices usable without spare space
+
+- **WHEN** a rear-grid axis occupies its full available span
+- **THEN** all three choices on that axis MUST remain selectable and persistable
+- **AND** those choices MUST yield identical geometry without disabled controls or special no-space messaging
+
+#### Scenario: Preserve rear-grid spacing and safe borders
+
+- **WHEN** any of the nine alignment combinations is selected
+- **THEN** the complete grid MUST keep its original pitch and receptacle count
+- **AND** its occupied cells MUST remain inside the rear interface
+- **AND** any spare width or height MUST be allocated according to the selected alignment without resizing the body

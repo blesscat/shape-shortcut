@@ -15,6 +15,7 @@
   } from '../../../../features/cad/model-catalog'
   import { formatValidationIssue } from '../../../../i18n/diagnostics'
   import { translate } from '../../../../i18n'
+  import OpenConnectSettings from '../OpenConnectSettings.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
   import type { ComponentPanelProps } from '../types'
@@ -398,26 +399,28 @@
     />
   </ParameterField>
 
-  <div
-    class="rounded-lg border border-border-field bg-panel-muted px-3 py-2 text-sm"
-    data-testid="opengrid-openconnect-organizer-interface-summary"
-  >
-    <span class="font-[650]">
-      {translate(locale, 'panel.openConnectOrganizer.interfaceSummary')}
-    </span>
-    {#if layout}
-      <span class="ml-2">
-        {translate(locale, 'panel.openConnectOrganizer.interfaceValue', {
-          columns: layout.connectorColumns,
-          rows: layout.connectorRows,
-          width: layout.rearInterfaceWidth.toFixed(2),
-          height: layout.rearInterfaceHeight.toFixed(2),
-        })}
+  <OpenConnectSettings {locale} {rawParameters} {fieldErrors} {onInputChange}>
+    <div
+      class="rounded-lg border border-border-field bg-panel-muted px-3 py-2 text-sm"
+      data-testid="opengrid-openconnect-organizer-interface-summary"
+    >
+      <span class="font-[650]">
+        {translate(locale, 'panel.openConnectOrganizer.interfaceSummary')}
       </span>
-    {:else}
-      <span class="ml-2 text-muted-foreground">
-        {translate(locale, 'panel.openConnectOrganizer.interfaceInvalid')}
-      </span>
-    {/if}
-  </div>
+      {#if layout}
+        <span class="ml-2">
+          {translate(locale, 'panel.openConnectOrganizer.interfaceValue', {
+            columns: layout.connectorColumns,
+            rows: layout.connectorRows,
+            width: layout.rearInterfaceWidth.toFixed(2),
+            height: layout.rearInterfaceHeight.toFixed(2),
+          })}
+        </span>
+      {:else}
+        <span class="ml-2 text-muted-foreground">
+          {translate(locale, 'panel.openConnectOrganizer.interfaceInvalid')}
+        </span>
+      {/if}
+    </div>
+  </OpenConnectSettings>
 </fieldset>

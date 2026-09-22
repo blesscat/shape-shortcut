@@ -1,3 +1,4 @@
+import type { OpenConnectAlignmentKey } from '../../../../cad-contract/units/openconnect-alignment'
 import {
   TISSUE_BOX_DEFAULTS,
   isTissueBoxParameters,
@@ -10,7 +11,10 @@ import type { ModelParameterValues } from '../../../../cad-contract/units'
 import type { ModelDefinition, ParameterField } from '../types'
 
 function field(
-  key: Exclude<keyof TissueBoxParameters, 'honeycombMode'>,
+  key: Exclude<
+    keyof TissueBoxParameters,
+    'honeycombMode' | OpenConnectAlignmentKey
+  >,
   min: number,
   max: number,
   axis: string,

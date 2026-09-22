@@ -71,7 +71,10 @@ describe('OpenConnect tissue box contract', () => {
   it('distinguishes every geometry parameter in export names', () => {
     const original = tissueBoxFileName(defaults, 'step')
     for (const [key, value] of Object.entries(defaults)) {
-      const next = typeof value === 'boolean' ? !value : value + 1
+      let next: string | number | boolean
+      if (typeof value === 'boolean') next = !value
+      else if (typeof value === 'number') next = value + 1
+      else next = key === 'openConnectHorizontalAlignment' ? 'left' : 'top'
       expect(tissueBoxFileName({ ...defaults, [key]: next }, 'step')).not.toBe(
         original,
       )
@@ -198,4 +201,24 @@ it('accepts the first complete row at the height boundary for every supported an
       validateTissueBoxParameters({ ...base, z: minimumZ - 0.01 }).valid,
     ).toBe(false)
   }
+})
+
+it('keeps alignment filenames usable for decimal dimensions and normalizes legacy names', () => {
+  const p = {
+    ...defaults,
+    x: 220.125,
+    y: 120.125,
+    z: 90.125,
+    outerRadius: 5.125,
+    wallThickness: 2.125,
+    bottomThickness: 2.125,
+    slotLength: 160.125,
+    slotWidth: 35.125,
+  }
+  expect(validateTissueBoxParameters(p).valid).toBe(true)
+  expect(tissueBoxFileName(p, 'step').length).toBeLessThan(256)
+  const legacy = { ...p }
+  delete legacy.openConnectHorizontalAlignment
+  delete legacy.openConnectVerticalAlignment
+  expect(tissueBoxFileName(legacy, 'step')).toBe(tissueBoxFileName(p, 'step'))
 })

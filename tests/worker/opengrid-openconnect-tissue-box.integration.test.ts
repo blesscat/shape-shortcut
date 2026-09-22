@@ -475,3 +475,61 @@ it.each([0, 15, 45])(
   },
   180000,
 )
+
+it.each([
+  ['left', 'top'],
+  ['left', 'bottom'],
+  ['right', 'top'],
+  ['right', 'bottom'],
+  ['center', 'center'],
+] as const)(
+  'keeps %s/%s aligned tissue sockets inside a valid body',
+  async (horizontal, vertical) => {
+    const p = {
+      ...small,
+      x: 73,
+      z: 67,
+      tiltAngle: 45,
+      openConnectHorizontalAlignment: horizontal,
+      openConnectVerticalAlignment: vertical,
+    }
+    const shape = await build(p)
+    const source = await importOpenGridOpenConnectShelfLockedSlot(
+      new Blob([
+        readFileSync(fileURLToPath(openGridOpenConnectShelfLockedSlotAssetUrl)),
+      ]),
+    )
+    try {
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+      for (const [x, y, z] of tissueBoxSlotOrigins(p)) {
+        const cutter = placeOpenGridOpenConnectShelfLockedSlot(source, [
+          -x,
+          -y,
+          z,
+        ])
+        const turned = inPrintFrame(cutter.rotate(180, [0, 0, 0], [0, 0, 1]), p)
+        const residual = shape.intersect(turned)
+        try {
+          expect(Math.abs(measureVolume(residual))).toBeLessThan(0.001)
+        } finally {
+          residual.delete()
+          turned.delete()
+        }
+      }
+      const bounds = shape.boundingBox
+      try {
+        const expected = tissueBoxBounds(p)
+        for (let axis = 0; axis < 3; axis++) {
+          expect(bounds.bounds[0][axis]).toBeCloseTo(expected.min[axis]!, 3)
+          expect(bounds.bounds[1][axis]).toBeCloseTo(expected.max[axis]!, 3)
+        }
+      } finally {
+        bounds.delete()
+      }
+    } finally {
+      shape.delete()
+      source.delete()
+    }
+  },
+  120_000,
+)

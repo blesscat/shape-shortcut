@@ -1,3 +1,4 @@
+import { OPENCONNECT_ALIGNMENT_DEFAULTS } from '../../src/cad-contract/units/openconnect-alignment'
 import { describe, expect, it } from 'vitest'
 import {
   boundsForModel,
@@ -26,10 +27,11 @@ function parameters(
 }
 
 describe('OpenGrid OpenConnect shelf contract', () => {
-  it('accepts the four typed default controls', () => {
+  it('accepts the typed default controls', () => {
     const value = parameters()
 
     expect(value).toEqual({
+      ...OPENCONNECT_ALIGNMENT_DEFAULTS,
       columns: 3,
       rows: 3,
       connectorRows: 1,

@@ -74,6 +74,7 @@ test('OpenConnect organizer is Wall-only and starts from the canonical snapshot'
   await expect(tilt).toHaveValue('15')
   await expect(tilt).toHaveAttribute('step', '1')
   await expect(page.getByText(/收納孔開口上方會朝使用者移動/)).toBeVisible()
+  await page.getByTestId('openconnect-settings').locator('summary').click()
   await expect(
     page.getByTestId('opengrid-openconnect-organizer-interface-summary'),
   ).toContainText('1 欄 × 1 列 OpenConnect 母座')

@@ -1,4 +1,13 @@
-import { TISSUE_BOX_KEYS } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
+import {
+  TISSUE_BOX_KEYS,
+  TISSUE_BOX_ALIGNMENT_DEFAULTS,
+} from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
+import {
+  OPENCONNECT_ALIGNMENT_KEYS,
+  normalizedOpenConnectAlignment,
+  isOpenConnectHorizontalAlignment,
+  isOpenConnectVerticalAlignment,
+} from '../../../cad-contract/units/openconnect-alignment'
 import { normalizeError, type CadError } from '../../../cad-contract/errors'
 import type {
   DiagnosticDescriptor,
@@ -106,6 +115,7 @@ export const OPENGRID_OPEN_SHELF_PARAMETER_KEYS: ModelParameterKey[] = [
   'honeycombMode',
 ]
 export const OPENGRID_OPENCONNECT_SHELF_PARAMETER_KEYS: ModelParameterKey[] = [
+  ...OPENCONNECT_ALIGNMENT_KEYS,
   'columns',
   'rows',
   'connectorRows',
@@ -131,6 +141,7 @@ export const OPENGRID_ORGANIZER_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
 ]
 export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] =
   [
+    ...OPENCONNECT_ALIGNMENT_KEYS,
     'holeCountX',
     'holeCountY',
     'holeSpacingMode',
@@ -713,7 +724,10 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     field,
   })
   const missingField = OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS.find(
-    (field) => raw[field] === undefined,
+    (field) =>
+      !OPENCONNECT_ALIGNMENT_KEYS.includes(
+        field as (typeof OPENCONNECT_ALIGNMENT_KEYS)[number],
+      ) && raw[field] === undefined,
   )
   if (missingField) return invalid(missingField)
 
@@ -761,7 +775,16 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
   const tiltAngle = parseFiniteDecimalInput(raw.tiltAngle ?? '')
   if (tiltAngle === null) return invalid('tiltAngle')
 
+  const horizontalAlignment = raw.openConnectHorizontalAlignment ?? 'center'
+  const verticalAlignment = raw.openConnectVerticalAlignment ?? 'top'
+  if (!isOpenConnectHorizontalAlignment(horizontalAlignment))
+    return invalid('openConnectHorizontalAlignment')
+  if (!isOpenConnectVerticalAlignment(verticalAlignment))
+    return invalid('openConnectVerticalAlignment')
+
   const parameters: OpenGridOpenConnectOrganizerParameters = {
+    openConnectHorizontalAlignment: horizontalAlignment,
+    openConnectVerticalAlignment: verticalAlignment,
     holeCountX,
     holeCountY,
     holeSpacingMode,
@@ -799,8 +822,15 @@ export function rawFromParameters(
   if (Object.keys(parameters).length === 0) return {}
 
   if ('slotLength' in parameters && 'outerRadius' in parameters) {
+    const normalized = {
+      ...parameters,
+      ...normalizedOpenConnectAlignment(
+        parameters,
+        TISSUE_BOX_ALIGNMENT_DEFAULTS,
+      ),
+    }
     return Object.fromEntries(
-      TISSUE_BOX_KEYS.map((key) => [key, String(parameters[key])]),
+      TISSUE_BOX_KEYS.map((key) => [key, String(normalized[key])]),
     ) as RawParameters
   }
 
@@ -853,6 +883,7 @@ export function rawFromParameters(
     const organizerParameters =
       parameters as OpenGridOpenConnectOrganizerParameters
     return {
+      ...normalizedOpenConnectAlignment(organizerParameters),
       holeCountX: String(organizerParameters.holeCountX),
       holeCountY: String(organizerParameters.holeCountY),
       holeSpacingMode: organizerParameters.holeSpacingMode,
@@ -937,6 +968,7 @@ export function rawFromParameters(
   ) {
     const shelfParameters = parameters as OpenGridOpenConnectShelfParameters
     return {
+      ...normalizedOpenConnectAlignment(shelfParameters),
       columns: String(shelfParameters.columns),
       rows: String(shelfParameters.rows),
       connectorRows: String(shelfParameters.connectorRows),
@@ -1326,6 +1358,17 @@ export function parseRawParameters(
       const seatMode = parseSeatModeRawParameter(raw[key], key)
       if (!seatMode.valid) return seatMode
       parsed[key] = seatMode.value
+      continue
+    }
+    if (
+      key === 'openConnectHorizontalAlignment' ||
+      key === 'openConnectVerticalAlignment'
+    ) {
+      let fallback: string =
+        key === 'openConnectHorizontalAlignment' ? 'center' : 'top'
+      if (modelId === 'opengrid-openconnect-tissue-box')
+        fallback = TISSUE_BOX_ALIGNMENT_DEFAULTS[key]
+      parsed[key] = raw[key] ?? fallback
       continue
     }
     if (key === 'topRimMode' || key === 'bottomMode') {

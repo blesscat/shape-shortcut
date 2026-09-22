@@ -1,14 +1,24 @@
+import {
+  OPENCONNECT_ALIGNMENT_KEYS,
+  OPENCONNECT_ALIGNMENT_DEFAULTS,
+  openConnectAlignmentIssues,
+  normalizedOpenConnectAlignment,
+  openConnectGridOffsets,
+  type OpenConnectAlignmentKey,
+  type OpenConnectAlignmentParameters,
+} from './openconnect-alignment'
 import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 
 export type OpenGridOpenConnectShelfParameterKey =
-  'columns' | 'rows' | 'connectorRows' | 'angle'
+  OpenConnectAlignmentKey | 'columns' | 'rows' | 'connectorRows' | 'angle'
 
-export type OpenGridOpenConnectShelfParameters = {
-  columns: number
-  rows: number
-  connectorRows: number
-  angle: number
-}
+export type OpenGridOpenConnectShelfParameters =
+  OpenConnectAlignmentParameters & {
+    columns: number
+    rows: number
+    connectorRows: number
+    angle: number
+  }
 
 export type OpenGridOpenConnectShelfPoint3D = [number, number, number]
 
@@ -39,6 +49,7 @@ export const OPENGRID_OPENCONNECT_SHELF_CONFIGURATION = {
 } as const
 
 export const OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS = {
+  ...OPENCONNECT_ALIGNMENT_DEFAULTS,
   columns: OPENGRID_OPENCONNECT_SHELF_CONFIGURATION.defaultColumns,
   rows: OPENGRID_OPENCONNECT_SHELF_CONFIGURATION.defaultRows,
   connectorRows: OPENGRID_OPENCONNECT_SHELF_CONFIGURATION.defaultConnectorRows,
@@ -58,7 +69,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasExactKeys(value: Record<string, unknown>): boolean {
   return (
-    Object.keys(value).length === PARAMETER_KEYS.length &&
+    Object.keys(value).every((key) =>
+      [...PARAMETER_KEYS, ...OPENCONNECT_ALIGNMENT_KEYS].includes(
+        key as OpenGridOpenConnectShelfParameterKey,
+      ),
+    ) &&
     PARAMETER_KEYS.every((key) =>
       Object.prototype.hasOwnProperty.call(value, key),
     )
@@ -147,17 +162,26 @@ export function openGridOpenConnectShelfSlotOriginsFor(
   parameters: Pick<
     OpenGridOpenConnectShelfParameters,
     'columns' | 'connectorRows'
-  >,
+  > &
+    OpenConnectAlignmentParameters,
 ): OpenGridOpenConnectShelfPoint3D[] {
   const configuration = OPENGRID_OPENCONNECT_SHELF_CONFIGURATION
+  const offset = openConnectGridOffsets(
+    parameters.columns * configuration.gridPitch,
+    parameters.connectorRows * configuration.gridPitch,
+    parameters.columns,
+    parameters.connectorRows,
+    configuration.gridPitch,
+    parameters,
+  )
   return Array.from({ length: parameters.connectorRows }, (_, connectorRow) =>
     Array.from(
       { length: parameters.columns },
       (_, column) =>
         [
-          (column - (parameters.columns - 1) / 2) * configuration.gridPitch,
+          offset.x + (column + 0.5) * configuration.gridPitch,
           configuration.rearThickness,
-          (connectorRow + 0.5) * configuration.gridPitch,
+          offset.z + (connectorRow + 0.5) * configuration.gridPitch,
         ] as OpenGridOpenConnectShelfPoint3D,
     ),
   ).flat()
@@ -230,7 +254,8 @@ export function validateOpenGridOpenConnectShelfParameters(
   }
 
   const configuration = OPENGRID_OPENCONNECT_SHELF_CONFIGURATION
-  const issues: OpenGridOpenConnectShelfValidationIssue[] = []
+  const issues: OpenGridOpenConnectShelfValidationIssue[] =
+    openConnectAlignmentIssues(value)
   if (!hasExactKeys(value)) {
     issues.push({ field: 'parameters', messageId: 'validation.invalid' })
   }
@@ -311,6 +336,9 @@ export function validateOpenGridOpenConnectShelfParameters(
   return {
     valid: true,
     value: {
+      ...normalizedOpenConnectAlignment(
+        value as OpenConnectAlignmentParameters,
+      ),
       columns: value.columns as number,
       rows: value.rows as number,
       connectorRows: value.connectorRows as number,
