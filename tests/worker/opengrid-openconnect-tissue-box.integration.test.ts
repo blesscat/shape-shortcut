@@ -121,7 +121,7 @@ describe('tissue box real geometry', () => {
     },
     180000,
   )
-  it('removes only front/side honeycomb and reports all cells', async () => {
+  it('removes wall and bottom honeycomb and reports all cells', async () => {
     const progress: any[] = []
     const solid = await build(small)
     const p = { ...small, honeycombMode: true }
@@ -132,7 +132,10 @@ describe('tissue box real geometry', () => {
       expect(tissueBoxQuality(saved)).toEqual({ valid: true, solids: 1 })
       expect(measureVolume(saved)).toBeLessThan(measureVolume(solid))
       const l = tissueBoxLayout(p)
-      for (const cell of tissueBoxCells(p)) {
+      const cells = tissueBoxCells(p)
+      const bottomCells = cells.filter((cell) => cell.wall === 'bottom')
+      expect(bottomCells.length).toBeGreaterThan(0)
+      for (const cell of cells) {
         let point: [number, number, number] = [
           cell.u - l.width / 2,
           l.depth - p.wallThickness / 2,
@@ -142,21 +145,70 @@ describe('tissue box real geometry', () => {
           point = [-l.width / 2 + p.wallThickness / 2, cell.u, cell.v]
         if (cell.wall === 'right')
           point = [l.width / 2 - p.wallThickness / 2, cell.u, cell.v]
+        if (cell.wall === 'bottom')
+          point = [cell.u, cell.v, p.bottomThickness / 2]
         expect(volumeAt(saved, p, point)).toBeLessThan(1e-6)
+      }
+      // Disabling saving keeps the bottom fully solid where holes would be.
+      for (const cell of [bottomCells[0]!, bottomCells.at(-1)!]) {
+        expect(
+          volumeAt(solid, p, [cell.u, cell.v, p.bottomThickness / 2]),
+        ).toBeGreaterThan(0.007)
       }
       expect(
         volumeAt(saved, p, [0, p.wallThickness / 2, l.height / 2]),
       ).toBeGreaterThan(0.007)
       expect(progress).toContainEqual(
         expect.objectContaining({
-          completed: tissueBoxCells(p).length,
-          total: tissueBoxCells(p).length,
+          completed: cells.length,
+          total: cells.length,
           unit: 'cells',
         }),
       )
     } finally {
       solid.delete()
       saved.delete()
+    }
+  }, 180000)
+  it('keeps bottom openings off rounded corners and the slot ring with saving on', async () => {
+    const p = {
+      ...small,
+      x: 120,
+      y: 80,
+      outerRadius: 20,
+      honeycombMode: true,
+    }
+    const shape = await build(p)
+    try {
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+      const l = tissueBoxLayout(p)
+      const bottomCells = tissueBoxCells(p).filter(
+        (cell) => cell.wall === 'bottom',
+      )
+      expect(bottomCells.length).toBeGreaterThan(0)
+      // One admitted opening passes through the full bottom thickness.
+      const sample = bottomCells[0]!
+      for (const z of [0.02, p.bottomThickness - 0.02])
+        expect(volumeAt(shape, p, [sample.u, sample.v, z])).toBeLessThan(1e-6)
+      // The 2 mm ring hugging the slot and both rounded corner arcs stay solid.
+      expect(
+        volumeAt(shape, p, [
+          0,
+          l.depth / 2 + p.slotWidth / 2 + 1,
+          p.bottomThickness / 2,
+        ]),
+      ).toBeGreaterThan(0.007)
+      for (const sign of [-1, 1]) {
+        expect(
+          volumeAt(shape, p, [
+            sign * (l.width / 2 - p.outerRadius / 2),
+            l.depth - p.outerRadius / 2,
+            p.bottomThickness / 2,
+          ]),
+        ).toBeGreaterThan(0.007)
+      }
+    } finally {
+      shape.delete()
     }
   }, 180000)
   it('rejects stale generation before building', async () => {

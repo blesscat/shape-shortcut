@@ -132,6 +132,26 @@ function support(p: TissueBoxParameters): Shape3D {
 function hexCutter(p: TissueBoxParameters, cell: TissueBoxCell): Shape3D {
   const l = tissueBoxLayout(p)
   const radius = OPENGRID_HONEYCOMB_CONFIGURATION.cellRadius
+  if (cell.wall === 'bottom') {
+    // Bottom cells carry plan coordinates: u is centered X, v runs 0..depth.
+    const sketcher = new Sketcher('XY', [cell.u, cell.v, -0.1])
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.PI / 6 + (i * Math.PI) / 3
+      const point: [number, number] = [
+        radius * Math.cos(angle),
+        radius * Math.sin(angle),
+      ]
+      if (i === 0) sketcher.movePointerTo(point)
+      else sketcher.lineTo(point)
+    }
+    const sketch = sketcher.close()
+    try {
+      return sketch.extrude(p.bottomThickness + 0.2)
+    } finally {
+      dispose(sketch)
+      dispose(sketcher)
+    }
+  }
   let origin: [number, number, number] = [
     cell.u - l.width / 2,
     l.depth - p.wallThickness - 0.1,

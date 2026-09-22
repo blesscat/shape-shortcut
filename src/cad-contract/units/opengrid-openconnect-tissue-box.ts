@@ -45,7 +45,7 @@ export const TISSUE_BOX_MAX_CELLS = 3000
 export const TISSUE_BOX_FRAME = 5
 export type TissueBoxPoint = [number, number, number]
 export type TissueBoxCell = {
-  wall: 'front' | 'left' | 'right'
+  wall: 'front' | 'left' | 'right' | 'bottom'
   u: number
   v: number
 }
@@ -177,24 +177,76 @@ export function tissueBoxCells(p: TissueBoxParameters): TissueBoxCell[] {
   const l = tissueBoxLayout(p)
   const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
   const radius = lattice.cellRadius
-  const margin = Math.max(p.outerRadius, p.wallThickness) + TISSUE_BOX_FRAME
+  const sideFrame = lattice.sideFrame
+  const bottomFrame = lattice.bottomFrame
+  // Rounded front corners recede the outer surface, so cells keep the full
+  // radius plus the side frame away from those ends; square ends use the frame.
+  const cornerFrame = p.outerRadius + sideFrame
   const cells: TissueBoxCell[] = []
   for (const wall of ['front', 'left', 'right'] as const) {
     const span = wall === 'front' ? l.width : l.depth
+    const lowFrame = wall === 'front' ? cornerFrame : sideFrame
     let row = 0
     for (
-      let v = p.bottomThickness + TISSUE_BOX_FRAME + radius;
-      v <= l.height - TISSUE_BOX_FRAME - radius;
+      let v = p.bottomThickness + sideFrame + radius;
+      v <= l.height - sideFrame - radius;
       v += lattice.rowPitch, row++
     ) {
       const offset = ((row % 2) * lattice.anchorPitch) / 2
       for (
-        let u = margin + radius + offset;
-        u <= span - margin - radius;
+        let u = lowFrame + radius + offset;
+        u <= span - cornerFrame - radius;
         u += lattice.anchorPitch
       ) {
         cells.push({ wall, u, v })
       }
+    }
+  }
+  // Bottom cells are plan coordinates: u is centered X, v runs 0..depth.
+  const slotCoreHalf = Math.max(0, p.slotLength / 2 - p.slotWidth / 2)
+  const slotClearance =
+    p.slotWidth / 2 +
+    radius +
+    OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
+  // The two front corners of the bottom plate are rounded by outerRadius.
+  // Cells whose circumcircle reaches a corner arc must fit inside that arc
+  // inset by the bottom frame, so no opening breaks the rounded surface.
+  const cornerCenterY = l.depth - p.outerRadius
+  const arcLimit = p.outerRadius - bottomFrame - radius
+  let row = 0
+  for (
+    let v = bottomFrame + radius;
+    v <= l.depth - bottomFrame - radius;
+    v += lattice.rowPitch, row++
+  ) {
+    const offset = ((row % 2) * lattice.anchorPitch) / 2
+    for (
+      let u = -l.width / 2 + bottomFrame + radius + offset;
+      u <= l.width / 2 - bottomFrame - radius;
+      u += lattice.anchorPitch
+    ) {
+      const distance = Math.hypot(
+        Math.max(0, Math.abs(u) - slotCoreHalf),
+        Math.abs(v - l.depth / 2),
+      )
+      if (distance < slotClearance) continue
+      if (p.outerRadius > 0 && v + radius > cornerCenterY) {
+        let clearOfCorners = true
+        for (const sign of [-1, 1]) {
+          const cornerCenterX = sign * (l.width / 2 - p.outerRadius)
+          const reachesCorner =
+            sign === 1 ? u + radius > cornerCenterX : u - radius < cornerCenterX
+          if (
+            reachesCorner &&
+            Math.hypot(u - cornerCenterX, v - cornerCenterY) > arcLimit
+          ) {
+            clearOfCorners = false
+            break
+          }
+        }
+        if (!clearOfCorners) continue
+      }
+      cells.push({ wall: 'bottom', u, v })
     }
   }
   return cells

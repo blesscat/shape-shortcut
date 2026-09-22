@@ -58,12 +58,32 @@ In the installed wall orientation, at zero degrees the bottom MUST be horizontal
 - **THEN** validation MUST reject the configuration on Z before generation or export
 
 ### Requirement: Protected material-saving mode
-Saving mode MUST cut shared-size hexagonal openings only through the front and two side straight wall regions. The back, bottom frame, slot surround, mounting support, rounded corners, and at least 5 mm wall edge frames MUST remain solid. Cells MUST stay within the protected regions. Small regions with no fitting cells MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and estimated cell count when enabled. Cutting MUST report cell progress and support stale-generation cancellation.
+Saving mode MUST cut shared-size hexagonal openings through the front and two side wall regions and, when enabled, through the bottom plate, using the same shared OpenGrid honeycomb lattice for walls and bottom. Wall openings MUST keep at least a 3.5 mm frame from wall edges, and openings near the two rounded front corners MUST keep enough corner clearance that no opening breaks through the rounded corner surfaces. Bottom openings MUST pass completely through the bottom thickness so the lattice is visible from both bottom faces, MUST keep at least a 5 mm frame from the outer bottom perimeter, and MUST leave a continuous 2 mm safety ring of solid material around the dispensing slot perimeter. The back wall, rear support, mounting plate, rounded corner regions outside the corner clearance rule, wall edge frames, bottom frame, and slot safety ring MUST remain solid. Any region too small for a complete cell MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and an estimated cell count covering walls and bottom when enabled, and the 3000-cell ceiling MUST bound that combined estimate. Cutting MUST report cell progress and support stale-generation cancellation.
 
 #### Scenario: Toggle saving
 - **WHEN** saving is enabled on a box with room for cells
 - **THEN** its volume MUST decrease while it remains a single valid connected solid with the same exterior bounds, cavity, and dispensing slot
-- **AND** disabling saving MUST restore solid walls
+- **AND** disabling saving MUST restore solid walls and a fully solid bottom
+
+#### Scenario: Bottom openings clear the dispensing slot
+- **WHEN** saving mode cuts the bottom of a valid box
+- **THEN** every bottom opening MUST lie entirely outside the 2 mm ring surrounding the slot perimeter
+- **AND** the slot surround MUST remain connected to the solid outer bottom frame
+- **AND** no bottom opening MAY remove the slot lip smoothing or merge openings with the slot
+
+#### Scenario: Bottom openings pass through the floor
+- **WHEN** saving mode cuts the bottom of a valid box
+- **THEN** each admitted bottom opening MUST be open through the entire bottom thickness and visible from both the interior and exterior bottom faces
+
+#### Scenario: Rounded front corners stay solid
+- **WHEN** a box with a positive outerRadius is generated with saving mode
+- **THEN** no hexagonal opening MAY break through the two rounded front corner surfaces
+- **AND** wall cells adjacent to the rounded corners MUST respect the corner clearance while remaining wall cells use the shared side frame
+
+#### Scenario: Rear mount stays solid
+- **WHEN** saving mode is enabled on any valid box
+- **THEN** the rear wall, rear support, and mounting plate MUST contain no saving openings
+- **AND** the estimated cell count shown by the UI MUST include both wall and bottom cells and stay within the 3000-cell ceiling
 
 ### Requirement: Preview and export integration
 The component MUST participate in the existing generation, latest-wins, commit, stale-preview and export lifecycle. STEP and binary STL MUST be nonempty and generated from the committed B-Rep, with deterministic filenames distinguishing every geometry parameter. The catalog MUST include a representative preview and localized English/Traditional Chinese controls and help.
