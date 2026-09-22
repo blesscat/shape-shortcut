@@ -4,6 +4,7 @@ import {
   isOpenGridOpenConnectOrganizerParameters,
   openGridOpenConnectOrganizerFileName,
   openGridOpenConnectOrganizerStlFileName,
+  openGridOpenConnectOrganizerThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   validateOpenGridOpenConnectOrganizerParameters,
@@ -210,4 +211,6 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
     openGridOpenConnectOrganizerFileName(requireParameters(parameters)),
   stlFileName: (parameters) =>
     openGridOpenConnectOrganizerStlFileName(requireParameters(parameters)),
+  threeMfFileName: (parameters) =>
+    openGridOpenConnectOrganizerThreeMfFileName(requireParameters(parameters)),
 }

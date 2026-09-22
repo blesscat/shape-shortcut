@@ -6,12 +6,15 @@
 
 ### Requirement: 3MF is generated from the committed multipart revision
 
-For a committed `opengrid-wall-cover` revision or an `opengrid-stackable-cylinder`
-revision with `topRimEnabled=true`, the system MUST generate 3MF bytes inside the
-CAD Worker from the pinned multipart B-Rep parts. It MUST NOT reconstruct the
-package from the viewport mesh alone or run CAD export on the main thread. The
-system MUST reject unsupported models or cylinder configurations without rim
-parts with a structured recoverable export error. The former `opengrid-snap`
+For a committed `opengrid-wall-cover` revision, an
+`opengrid-stackable-cylinder` revision with `topRimEnabled=true`, or a
+committed `opengrid-stackable-box`, `opengrid-organizer-box`,
+`opengrid-divider`, or `opengrid-openconnect-organizer` revision with
+`topRimEnabled=true`, the system MUST generate 3MF bytes inside the CAD Worker
+from the pinned multipart B-Rep parts. It MUST NOT reconstruct the package
+from the viewport mesh alone or run CAD export on the main thread. The system
+MUST reject unsupported models or configurations without rim parts with a
+structured recoverable export error. The former `opengrid-snap`
 `topText=SNAP` path MUST not be an export target.
 
 #### Scenario: Successful Wall Cover 3MF export
@@ -32,11 +35,21 @@ parts with a structured recoverable export error. The former `opengrid-snap`
   object with their relative placement preserved
 - **AND** the main thread MUST receive one validated `.3mf` download
 
+#### Scenario: Successful container 3MF export with accent rim
+
+- **WHEN** the workspace is ready and the user requests 3MF for a committed
+  `opengrid-stackable-box`, `opengrid-organizer-box`, `opengrid-divider`, or
+  `opengrid-openconnect-organizer` revision with `topRimEnabled=true`
+- **THEN** the Worker MUST pin that revision before writing the package
+- **AND** the package MUST be non-empty and contain a body object and a rim
+  object with their relative placement preserved
+- **AND** the main thread MUST receive one validated `.3mf` download
+
 #### Scenario: Unsupported 3MF export is rejected
 
 - **WHEN** the user requests 3MF for a revision without supported multipart
-  data, including an `opengrid-snap` revision or a cylinder with
-  `topRimEnabled=false`
+  data, including an `opengrid-snap` revision or a supported container or
+  cylinder revision with `topRimEnabled=false`
 - **THEN** the Worker MUST emit a structured recoverable 3MF export error
 - **AND** it MUST NOT emit export-ready bytes or trigger a download
 
@@ -108,8 +121,10 @@ revision, `format: 3mf`, a `.3mf` filename, `model/3mf` MIME, and non-empty
 ArrayBuffer bytes. Runtime validation MUST reject unknown, mismatched, empty,
 stale, or malformed 3MF metadata and MUST NOT trigger a download for a rejected
 response. The contract MUST identify supported multipart models
-(`opengrid-wall-cover` or `opengrid-stackable-cylinder` with `topRimEnabled=true`)
-when export is requested and MUST reject unsupported configurations.
+(`opengrid-wall-cover`, `opengrid-stackable-cylinder` with `topRimEnabled=true`,
+or `opengrid-stackable-box` / `opengrid-organizer-box` / `opengrid-divider` /
+`opengrid-openconnect-organizer` with `topRimEnabled=true`) when export is
+requested and MUST reject unsupported configurations.
 
 #### Scenario: Valid 3MF metadata is accepted
 
@@ -131,24 +146,26 @@ when export is requested and MUST reject unsupported configurations.
 ### Requirement: 3MF download follows existing model lifecycle gates
 
 The 3MF action MUST be enabled only for the latest successfully committed
-supported revision (`opengrid-wall-cover` or `opengrid-stackable-cylinder` with
+supported revision (`opengrid-wall-cover`, `opengrid-stackable-cylinder` with
+`topRimEnabled=true`, or `opengrid-stackable-box` / `opengrid-organizer-box` /
+`opengrid-divider` / `opengrid-openconnect-organizer` with
 `topRimEnabled=true`) while the workspace is ready, not stale, and not already
 exporting. The request MUST be correlated to the selected model revision and
-Worker epoch. The action MUST be unavailable for `opengrid-snap` or cylinders
-with `topRimEnabled=false`. STEP and STL actions MUST remain independent and
-their existing lifecycle behavior MUST remain unchanged.
+Worker epoch. The action MUST be unavailable for `opengrid-snap` and for any
+supported model with `topRimEnabled=false`. STEP and STL actions MUST remain
+independent and their existing lifecycle behavior MUST remain unchanged.
 
 #### Scenario: 3MF is available for supported models
 
-- **WHEN** the committed revision is `opengrid-wall-cover` or
-  `opengrid-stackable-cylinder` with `topRimEnabled=true`
+- **WHEN** the committed revision is `opengrid-wall-cover`, a cylinder with
+  `topRimEnabled=true`, or a container model with `topRimEnabled=true`
 - **THEN** `下載 3MF` / `Download 3MF` MUST be enabled
 - **AND** selecting it MUST start an `export.3mf` request for that revision
 
 #### Scenario: 3MF is disabled outside supported models
 
-- **WHEN** the committed revision is `opengrid-snap` or a cylinder with
-  `topRimEnabled=false`
+- **WHEN** the committed revision is `opengrid-snap` or any supported model
+  with `topRimEnabled=false`
 - **THEN** the 3MF action MUST be disabled
 - **AND** the Worker MUST NOT receive an `export.3mf` request
 

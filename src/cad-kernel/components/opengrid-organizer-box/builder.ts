@@ -14,11 +14,14 @@ import {
   openGridOrganizerBoxLayoutFor,
   openGridOrganizerBoxDetachableSocketPosesFor,
   openGridOrganizerBoxPolygonPointsFor,
+  validateOpenGridOrganizerBoxParameters,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   type OpenGridOrganizerBoxParameters,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
+import { topRimPartsFor } from '../shared/top-rim-partition'
+import type { NativeModelPart } from '../../lifetime'
 import {
   addMountingSockets,
   applyStackingProfile,
@@ -492,6 +495,50 @@ export function buildOpenGridOrganizerBox(
     return shape
   } catch (error) {
     deleteShape(shape)
+    throw error
+  }
+}
+
+export type OpenGridOrganizerBoxMultipartBuild = {
+  shape: Shape3D
+  qualityShape?: Shape3D
+  parts?: NativeModelPart[]
+}
+
+export function buildOpenGridOrganizerBoxWithParts(
+  parameters: OpenGridOrganizerBoxParameters,
+  context: OpenGridOrganizerBoxBuildContext = {},
+): OpenGridOrganizerBoxMultipartBuild {
+  const validation = validateOpenGridOrganizerBoxParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('OPENGRID_ORGANIZER_BOX_PARAMETERS_INVALID')
+  }
+  const normalizedParameters = validation.value
+  const fullShape = buildOpenGridOrganizerBox(normalizedParameters, context)
+
+  if (!normalizedParameters.topRimEnabled) {
+    return {
+      shape: fullShape,
+    }
+  }
+
+  assertGenerationCurrent(context)
+  const layout = openGridOrganizerBoxLayoutFor(normalizedParameters)
+  const externalTop = layout.stacking?.externalTopZ ?? layout.bodyHeight
+  const splitZ = externalTop - normalizedParameters.topRimHeight
+
+  try {
+    return {
+      shape: fullShape,
+      qualityShape: fullShape,
+      parts: topRimPartsFor(
+        fullShape,
+        splitZ,
+        'OPENGRID_ORGANIZER_BOX_RIM_PARTITION_FAILED',
+      ),
+    }
+  } catch (error) {
+    deleteShape(fullShape)
     throw error
   }
 }

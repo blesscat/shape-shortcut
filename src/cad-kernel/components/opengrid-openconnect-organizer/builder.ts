@@ -22,6 +22,8 @@ import {
   validateOpenGridOpenConnectOrganizerParameters,
   type OpenGridOpenConnectOrganizerParameters,
 } from '../../../cad-contract/units'
+import { topRimPartsFor } from '../shared/top-rim-partition'
+import type { NativeModelPart } from '../../lifetime'
 import {
   measureBooleanInScope,
   type BooleanOperationReporter,
@@ -600,5 +602,54 @@ export async function buildOpenGridOpenConnectOrganizer(
     return result
   } finally {
     deleteShape(current)
+  }
+}
+
+export type OpenGridOpenConnectOrganizerMultipartBuild = {
+  shape: Shape3D
+  qualityShape?: Shape3D
+  parts?: NativeModelPart[]
+}
+
+export async function buildOpenGridOpenConnectOrganizerWithParts(
+  parameters: OpenGridOpenConnectOrganizerParameters,
+  context: OpenGridOpenConnectOrganizerBuildContext = {},
+): Promise<OpenGridOpenConnectOrganizerMultipartBuild> {
+  const validation = validateOpenGridOpenConnectOrganizerParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('OPENGRID_OPENCONNECT_ORGANIZER_PARAMETERS_INVALID')
+  }
+  const normalizedParameters = validation.value
+  const fullShape = await buildOpenGridOpenConnectOrganizer(
+    normalizedParameters,
+    context,
+  )
+
+  if (!normalizedParameters.topRimEnabled) {
+    return {
+      shape: fullShape,
+    }
+  }
+
+  assertGenerationCurrent(context)
+  // The final solid is in the flat print frame, so the band is measured down
+  // from the opening plane (the cavity deck), not from the shape maximum:
+  // the rear-interface flange can stand higher than the opening plane.
+  const layout = openGridOpenConnectOrganizerLayoutFor(normalizedParameters)
+  const splitZ = layout.bodyThickness - normalizedParameters.topRimHeight
+
+  try {
+    return {
+      shape: fullShape,
+      qualityShape: fullShape,
+      parts: topRimPartsFor(
+        fullShape,
+        splitZ,
+        'OPENGRID_OPENCONNECT_ORGANIZER_RIM_PARTITION_FAILED',
+      ),
+    }
+  } catch (error) {
+    deleteShape(fullShape)
+    throw error
   }
 }

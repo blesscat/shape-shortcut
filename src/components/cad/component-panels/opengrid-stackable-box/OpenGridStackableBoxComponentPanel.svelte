@@ -5,6 +5,7 @@
     unitLabelFor,
   } from '../../../../features/cad/model-catalog'
   import {
+    externalOpenGridStackableBoxHeightFor,
     openGridStackableBoxOpeningBottomLengthMaximumFor,
     validateOpenGridStackableBoxParameters,
     OPENGRID_STACKABLE_BOX_CONFIGURATION,
@@ -265,6 +266,10 @@
       topRimMode: topRimModeForRawParameters(),
       bottomMode: bottomModeForRawParameters(),
       honeycombMode: rawParameters.honeycombMode === 'true',
+      topRimEnabled: rawParameters.topRimEnabled === 'true',
+      topRimHeight:
+        rawNumberFor('topRimHeight') ??
+        OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
       ...openingValues,
     }
   }
@@ -325,6 +330,31 @@
       return [{ ...displayedField, max: maximum, sliderMax: maximum }]
     })
   }
+
+  const topRimHeightField = $derived.by((): ParameterFieldDefinition => {
+    const parameters = parametersForRange()
+    const externalTop = parameters
+      ? externalOpenGridStackableBoxHeightFor(parameters)
+      : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHeight +
+        OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight
+    const max = Math.max(
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
+      Math.floor(externalTop / 2),
+    )
+    return {
+      key: 'topRimHeight',
+      label: 'parameter.topRimHeight',
+      axis: 'Z',
+      unit: 'mm',
+      control: 'range-text',
+      defaultValue: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
+      min: OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
+      max,
+      step: 1,
+      sliderMin: OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
+      sliderMax: max,
+    }
+  })
 </script>
 
 <fieldset class="m-0 grid gap-3 border-0 p-0">
@@ -521,6 +551,42 @@
     <span class="text-sm text-error" id="bottomMode-error" role="alert"
       >{formatValidationIssue(locale, fieldErrors.bottomMode)}</span
     >
+  {/if}
+  <label class="flex items-start gap-2 text-sm">
+    <input
+      class="mt-0.5"
+      type="checkbox"
+      aria-label={translate(locale, 'panel.topRim')}
+      data-testid="opengrid-stackable-box-top-rim-enabled"
+      checked={rawParameters.topRimEnabled === 'true'}
+      onchange={(event) => {
+        if (!(event.currentTarget instanceof HTMLInputElement)) return
+        onInputChange('topRimEnabled', String(event.currentTarget.checked))
+      }}
+    />
+    <span>{translate(locale, 'panel.topRim')}</span>
+  </label>
+  {#if rawParameters.topRimEnabled === 'true'}
+    {@const value =
+      rawParameters.topRimHeight ?? String(topRimHeightField.defaultValue)}
+    <ParameterField
+      {locale}
+      label={displayParameterLabel(topRimHeightField, locale)}
+      unit={unitLabelFor(locale, topRimHeightField.unit)}
+      changed={value !== String(topRimHeightField.defaultValue)}
+      error={fieldErrors.topRimHeight}
+      errorId="topRimHeight-error"
+      onRestore={() =>
+        onInputChange('topRimHeight', String(topRimHeightField.defaultValue))}
+    >
+      <ParameterControl
+        {locale}
+        field={topRimHeightField}
+        {value}
+        error={fieldErrors.topRimHeight}
+        onChange={(nextValue) => onInputChange('topRimHeight', nextValue)}
+      />
+    </ParameterField>
   {/if}
   {#each opengridStackableBoxDefinition.parameterSchema.slice(0, 3) as field (field.key)}
     {@const value = rawParameters[field.key] ?? String(field.defaultValue)}

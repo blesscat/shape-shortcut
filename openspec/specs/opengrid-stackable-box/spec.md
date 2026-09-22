@@ -802,3 +802,77 @@ defaults MUST remain valid.
 - **WHEN** thin-shell, open-bottom, half-cell or locating-seat configurations are generated
 - **THEN** their existing solid and socket contracts MUST remain valid
 - **AND** board-fit claims MUST be restricted to combinations supported by geometric verification
+
+### Requirement: Two-color top accent rim shell partitioning
+
+The stackable box MUST accept an independent boolean `topRimEnabled`
+(defaulting to `false`) and an integer `topRimHeight` (defaulting to `2`,
+valid range `1..floor(externalTop / 2)` where `externalTop` is the derived
+external height `bottomDatumZ + height + railHeight` for the selected
+`topRimMode`/`bottomMode`). `topRimHeight` MUST normalize to a valid integer
+even when `topRimEnabled` is `false`; the range bound MUST be enforced
+whenever the rim is enabled, and violated values MUST be rejected with a
+field-specific error that prevents B-Rep generation. The panel MUST expose a `雙色飾圈` (`Two-Color Rim`) toggle
+whose `topRimHeight` control stays hidden while the toggle is off. The accent
+rim MUST remain a visual partition only: with the rim enabled, the external
+envelope, stacking interface, openings, honeycomb cells, and every existing
+quality rule of the uncut solid MUST remain unchanged.
+
+When `topRimEnabled` is `true`, the build pipeline MUST partition the final
+geometry at the horizontal split plane $Z = \text{externalTop} -
+\text{topRimHeight}$
+into two complementary parts: a `body` solid occupying
+$Z \in [0, \text{externalTop} - \text{topRimHeight}]$ and a `rim` solid
+occupying $Z \in [\text{externalTop} - \text{topRimHeight}, \text{externalTop}]$.
+The uncut host
+shape MUST serve as the quality shape and MUST satisfy all existing box quality
+rules. Both parts MUST be non-empty valid B-Rep solids whose combined compound
+reproduces the complete container geometry, preserving any intersecting side
+opening profiles or honeycomb cells across the split boundary. The Worker
+candidate and committed records MUST emit both parts as distinct `partMeshes`
+assigned to `body` and `rim`.
+
+#### Scenario: Top rim controls and defaults
+
+- **WHEN** the stackable-box panel initializes without persisted rim values
+- **THEN** `topRimEnabled` MUST default to `false` and `topRimHeight` to `2`
+- **AND** the `雙色飾圈` toggle MUST be unchecked and the `topRimHeight`
+  control MUST be hidden
+- **AND** checking the toggle MUST reveal the `topRimHeight` control bounded
+  from `1` to `floor(externalTop / 2)`
+
+#### Scenario: Top rim height bound validation
+
+- **WHEN** `topRimEnabled` is `true` and `topRimHeight` is less than `1` or
+  greater than `floor(externalTop / 2)`
+- **THEN** parameter validation MUST fail with a field-specific error on
+  `topRimHeight`
+- **AND** the invalid parameter set MUST NOT trigger B-Rep generation
+
+#### Scenario: Partitioning creates complementary non-empty parts
+
+- **WHEN** `topRimEnabled` is `true` and the box is built
+- **THEN** the build output MUST contain `parts` with names `body` and `rim`
+- **AND** the bounding box $Z$ maximum of `body` MUST equal
+  $\text{externalTop} - \text{topRimHeight}$ within tolerance
+- **AND** the bounding box $Z$ minimum of `rim` MUST equal
+  $\text{externalTop} - \text{topRimHeight}$ within tolerance
+- **AND** the volume sum of `body` and `rim` MUST match the uncut quality
+  shape volume within 0.1%
+
+#### Scenario: Accent rim does not alter single-solid geometry
+
+- **WHEN** the same parameters are generated with `topRimEnabled=false` and
+  `topRimEnabled=true`
+- **THEN** the uncut quality shape bounds and volume MUST match within
+  tolerance across both runs
+- **AND** all existing box quality gates MUST pass in both runs
+
+#### Scenario: Deterministic two-color export filenames
+
+- **WHEN** `topRimEnabled` is `true`, the model definition MUST report a 3MF
+  filename whose stem ends with `-rim<topRimHeight>` before the `.3mf`
+  extension
+- **AND** when `topRimEnabled` is `false`, the model definition MUST report no
+  3MF filename and the STL filename MUST remain unchanged from its current
+  fingerprint

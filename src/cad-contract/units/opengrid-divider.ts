@@ -23,6 +23,8 @@ export type OpenGridDividerParameterKey =
   | 'pegLengthMode'
   | 'pegDiameterIncrement'
   | 'honeycombMode'
+  | 'topRimEnabled'
+  | 'topRimHeight'
 
 export type OpenGridDividerParameters = {
   left: number
@@ -37,6 +39,8 @@ export type OpenGridDividerParameters = {
   pegLengthMode: OpenGridDividerPegLengthMode
   pegDiameterIncrement: number
   honeycombMode: boolean
+  topRimEnabled: boolean
+  topRimHeight: number
 }
 
 export type OpenGridDividerAlignmentInfo = {
@@ -98,6 +102,8 @@ const DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
   'pegLengthMode',
   'pegDiameterIncrement',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
 ]
 
 const LEGACY_DIVIDER_PARAMETER_KEYS: readonly OpenGridDividerParameterKey[] = [
@@ -169,6 +175,9 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
   maxHeight: 500,
   heightSliderMax: 200,
   defaultHoneycombMode: false,
+  defaultTopRimEnabled: false,
+  defaultTopRimHeight: 2,
+  minTopRimHeight: 1,
   defaultParameters: {
     left: 1.5,
     right: 1.5,
@@ -182,6 +191,8 @@ export const OPENGRID_DIVIDER_CONFIGURATION = {
     pegLengthMode: 'snap',
     pegDiameterIncrement: 0,
     honeycombMode: false,
+    topRimEnabled: false,
+    topRimHeight: 2,
   } satisfies OpenGridDividerParameters,
 } as const
 
@@ -746,6 +757,30 @@ export function validateOpenGridDividerParameters(
       messageId: 'validation.invalid',
     })
   }
+  const hasTopRimEnabledField = Object.prototype.hasOwnProperty.call(
+    value,
+    'topRimEnabled',
+  )
+  const hasTopRimHeightField = Object.prototype.hasOwnProperty.call(
+    value,
+    'topRimHeight',
+  )
+  if (hasTopRimEnabledField && typeof value.topRimEnabled !== 'boolean') {
+    issues.push({
+      field: 'topRimEnabled',
+      messageId: 'validation.invalid',
+    })
+  }
+  if (
+    hasTopRimHeightField &&
+    (typeof value.topRimHeight !== 'number' ||
+      !Number.isSafeInteger(value.topRimHeight))
+  ) {
+    issues.push({
+      field: 'topRimHeight',
+      messageId: 'validation.invalid',
+    })
+  }
 
   const boxFitWallGrids = candidateRecord.boxFitWallGrids as number
   const candidate = {
@@ -806,6 +841,25 @@ export function validateOpenGridDividerParameters(
 
   if (issues.length > 0) return { valid: false, issues }
 
+  const topRimHeight = hasTopRimHeightField
+    ? (value.topRimHeight as number)
+    : OPENGRID_DIVIDER_CONFIGURATION.defaultTopRimHeight
+  const maximumTopRimHeight = Math.max(
+    OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight,
+    Math.floor((value.height as number) / 2),
+  )
+  if (
+    (hasTopRimEnabledField ? value.topRimEnabled : false) === true &&
+    (topRimHeight < OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight ||
+      topRimHeight > maximumTopRimHeight)
+  ) {
+    issues.push({
+      field: 'topRimHeight',
+      messageId: 'validation.invalid',
+    })
+  }
+  if (issues.length > 0) return { valid: false, issues }
+
   return {
     valid: true,
     value: {
@@ -824,6 +878,10 @@ export function validateOpenGridDividerParameters(
       honeycombMode: hasHoneycombField
         ? (value.honeycombMode as boolean)
         : OPENGRID_DIVIDER_CONFIGURATION.defaultHoneycombMode,
+      topRimEnabled: hasTopRimEnabledField
+        ? (value.topRimEnabled as boolean)
+        : OPENGRID_DIVIDER_CONFIGURATION.defaultTopRimEnabled,
+      topRimHeight,
     },
   }
 }
@@ -911,4 +969,13 @@ export function openGridDividerStlFileName(
   parameters: OpenGridDividerParameters,
 ): string {
   return openGridDividerFileName(parameters).replace(/\.step$/, '.stl')
+}
+
+export function openGridDividerThreeMfFileName(
+  parameters: OpenGridDividerParameters,
+): string | null {
+  if (!parameters.topRimEnabled) return null
+  return openGridDividerFileName(parameters)
+    .replace(/\.step$/, '')
+    .concat(`-rim${parameters.topRimHeight}.3mf`)
 }

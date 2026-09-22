@@ -5,8 +5,16 @@ import {
   modelStlFileName,
   openGridWallCoverThreeMfFileName,
   openGridStackableCylinderThreeMfFileName,
+  openGridStackableBoxThreeMfFileName,
+  openGridOrganizerBoxThreeMfFileName,
+  openGridDividerThreeMfFileName,
+  openGridOpenConnectOrganizerThreeMfFileName,
   isOpenGridWallCoverParameters,
   isOpenGridStackableCylinderParameters,
+  isOpenGridStackableBoxParameters,
+  isOpenGridOrganizerBoxParameters,
+  isOpenGridDividerParameters,
+  isOpenGridOpenConnectOrganizerParameters,
   PROTOTYPE_CONFIGURATION,
   validateModelParameters,
 } from '../cad-contract/units'
@@ -29,6 +37,36 @@ type ExportContext = {
 type StepCommand = Extract<WorkerCommand, { kind: 'export.step' }>
 type StlCommand = Extract<WorkerCommand, { kind: 'export.stl' }>
 type ThreeMfCommand = Extract<WorkerCommand, { kind: 'export.3mf' }>
+
+const CONTAINER_THREE_MF_NAMING = {
+  'opengrid-stackable-box': {
+    plateName: 'OpenGrid Stackable Box',
+    baseMaterialName: 'Box Body',
+    accentMaterialName: 'Box Rim',
+  },
+  'opengrid-organizer-box': {
+    plateName: 'OpenGrid Organizer Box',
+    baseMaterialName: 'Organizer Body',
+    accentMaterialName: 'Organizer Rim',
+  },
+  'opengrid-divider': {
+    plateName: 'OpenGrid Divider',
+    baseMaterialName: 'Divider Body',
+    accentMaterialName: 'Divider Rim',
+  },
+  'opengrid-openconnect-organizer': {
+    plateName: 'OpenGrid OpenConnect Organizer',
+    baseMaterialName: 'Organizer Body',
+    accentMaterialName: 'Organizer Rim',
+  },
+} as const
+
+type ContainerThreeMfModelId = keyof typeof CONTAINER_THREE_MF_NAMING
+
+function containerThreeMfFileNameOrThrow(fileName: string | null): string {
+  if (fileName === null) throw new Error('THREEMF_METADATA_INVALID')
+  return fileName
+}
 
 export async function exportStepCommand(
   command: StepCommand,
@@ -159,6 +197,44 @@ export async function exportThreeMfCommand(
         validation.value.parameters,
       )
       expectedAccentName = 'rim'
+    } else if (
+      revision.modelId === 'opengrid-stackable-box' &&
+      isOpenGridStackableBoxParameters(validation.value.parameters) &&
+      validation.value.parameters.topRimEnabled
+    ) {
+      expectedFileName = containerThreeMfFileNameOrThrow(
+        openGridStackableBoxThreeMfFileName(validation.value.parameters),
+      )
+      expectedAccentName = 'rim'
+    } else if (
+      revision.modelId === 'opengrid-organizer-box' &&
+      isOpenGridOrganizerBoxParameters(validation.value.parameters) &&
+      validation.value.parameters.topRimEnabled
+    ) {
+      expectedFileName = containerThreeMfFileNameOrThrow(
+        openGridOrganizerBoxThreeMfFileName(validation.value.parameters),
+      )
+      expectedAccentName = 'rim'
+    } else if (
+      revision.modelId === 'opengrid-divider' &&
+      isOpenGridDividerParameters(validation.value.parameters) &&
+      validation.value.parameters.topRimEnabled
+    ) {
+      expectedFileName = containerThreeMfFileNameOrThrow(
+        openGridDividerThreeMfFileName(validation.value.parameters),
+      )
+      expectedAccentName = 'rim'
+    } else if (
+      revision.modelId === 'opengrid-openconnect-organizer' &&
+      isOpenGridOpenConnectOrganizerParameters(validation.value.parameters) &&
+      validation.value.parameters.topRimEnabled
+    ) {
+      expectedFileName = containerThreeMfFileNameOrThrow(
+        openGridOpenConnectOrganizerThreeMfFileName(
+          validation.value.parameters,
+        ),
+      )
+      expectedAccentName = 'rim'
     } else {
       throw new Error('THREEMF_METADATA_INVALID')
     }
@@ -189,6 +265,10 @@ export async function exportThreeMfCommand(
     })
     emitProgress(context.emit, command, 'exporting', revision.modelRevision)
     const colors = command.colors ?? DEFAULT_MODEL_COLORS
+    const containerNaming =
+      revision.modelId in CONTAINER_THREE_MF_NAMING
+        ? CONTAINER_THREE_MF_NAMING[revision.modelId as ContainerThreeMfModelId]
+        : undefined
     const bytes = await exportThreeMfBytes(threeMfParts, {
       baseColor: colors.primary,
       accentColor: colors.secondary,
@@ -196,6 +276,7 @@ export async function exportThreeMfCommand(
       angularTolerance: PROTOTYPE_CONFIGURATION.stlAngularTolerance,
       modelName: revision.modelId,
       sourceFile: command.file.name,
+      ...(containerNaming ?? {}),
     })
     if (bytes.byteLength === 0 || !isThreeMfPackage(bytes)) {
       throw new Error('THREEMF_EXPORT_FAILED')

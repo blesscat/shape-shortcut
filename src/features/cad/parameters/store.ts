@@ -1,6 +1,7 @@
 import { get as getStoreValue, writable, type Subscriber } from 'svelte/store'
 import {
   OPENGRID_DIVIDER_CONFIGURATION,
+  OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
@@ -161,10 +162,20 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
       'pegLengthMode',
       'pegDiameterIncrement',
       'honeycombMode',
+      'topRimEnabled',
+      'topRimHeight',
     ] as const) {
       if (!Object.prototype.hasOwnProperty.call(merged, key)) {
         merged[key] = OPENGRID_DIVIDER_CONFIGURATION.defaultParameters[key]
       }
+    }
+    return merged
+  }
+  if (modelId === 'opengrid-openconnect-organizer' && isRecord(value)) {
+    const merged = { ...value }
+    for (const key of ['topRimEnabled', 'topRimHeight'] as const) {
+      if (Object.prototype.hasOwnProperty.call(merged, key)) continue
+      merged[key] = OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS[key]
     }
     return merged
   }
@@ -204,6 +215,12 @@ function normalizeLegacyParameters(modelId: ModelId, value: unknown): unknown {
     topRimMode: canonicalBoxTopRimModeFor(value),
     bottomMode: canonicalBoxBottomModeFor(value),
     honeycombMode: hasHoneycombMode ? value.honeycombMode : false,
+    topRimEnabled: Object.prototype.hasOwnProperty.call(value, 'topRimEnabled')
+      ? value.topRimEnabled
+      : OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimEnabled,
+    topRimHeight: Object.prototype.hasOwnProperty.call(value, 'topRimHeight')
+      ? value.topRimHeight
+      : OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimHeight,
   }
   for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
     if (Object.prototype.hasOwnProperty.call(value, key)) continue

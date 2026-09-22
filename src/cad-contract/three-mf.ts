@@ -26,6 +26,42 @@ const REQUIRED_ENTRIES = [
   THREE_MF_MODEL_SETTINGS_ENTRY,
 ] as const
 
+// Two-color packages carry the generating model id as the object name and a
+// human-readable plate name; the set grows as more models gain accent rims.
+export const THREE_MF_SUPPORTED_MODEL_NAMES = [
+  'opengrid-wall-cover',
+  'opengrid-stackable-cylinder',
+  'opengrid-stackable-box',
+  'opengrid-organizer-box',
+  'opengrid-divider',
+  'opengrid-openconnect-organizer',
+] as const
+
+const THREE_MF_SUPPORTED_PLATE_NAMES = [
+  'OpenGrid Wall Cover',
+  'OpenGrid Stackable Cylinder',
+  'OpenGrid Stackable Box',
+  'OpenGrid Organizer Box',
+  'OpenGrid Divider',
+  'OpenGrid OpenConnect Organizer',
+] as const
+
+const THREE_MF_SUPPORTED_MATERIAL_NAME_PAIRS = [
+  ['Wall Cover Body', 'Wall Cover Text'],
+  ['Cylinder Body', 'Cylinder Rim'],
+  ['Box Body', 'Box Rim'],
+  ['Organizer Body', 'Organizer Rim'],
+  ['Divider Body', 'Divider Rim'],
+] as const
+
+function matchesAnyMetadataValue(
+  metadata: string,
+  key: string,
+  values: readonly string[],
+): boolean {
+  return values.some((value) => validSettingsMetadata(metadata, key, value))
+}
+
 function hasBytes(raw: Uint8Array, offset: number, length: number): boolean {
   return offset >= 0 && length >= 0 && offset <= raw.length - length
 }
@@ -353,8 +389,10 @@ function validObjectModel(xml: string): boolean {
   const accentName = attribute(materials[1]!, 'name')
   const accentColor = attribute(materials[1]!, 'displaycolor')
   const validMaterials =
-    ((baseName === 'Wall Cover Body' && accentName === 'Wall Cover Text') ||
-      (baseName === 'Cylinder Body' && accentName === 'Cylinder Rim')) &&
+    THREE_MF_SUPPORTED_MATERIAL_NAME_PAIRS.some(
+      ([expectedBaseName, expectedAccentName]) =>
+        baseName === expectedBaseName && accentName === expectedAccentName,
+    ) &&
     isModelColor(baseColor) &&
     isModelColor(accentColor)
   if (!validMaterials) {
@@ -603,12 +641,11 @@ function validSettingsObject(
     attribute(object[1]!, 'id') === '3' &&
     faceCount !== undefined &&
     nameMetadata !== undefined &&
-    (validSettingsMetadata(nameMetadata, 'name', 'opengrid-wall-cover') ||
-      validSettingsMetadata(
-        nameMetadata,
-        'name',
-        'opengrid-stackable-cylinder',
-      )) &&
+    matchesAnyMetadataValue(
+      nameMetadata,
+      'name',
+      THREE_MF_SUPPORTED_MODEL_NAMES,
+    ) &&
     extruderMetadata !== undefined &&
     validSettingsMetadata(extruderMetadata, 'extruder', '1') &&
     objectFaceCount !== null &&
@@ -648,16 +685,11 @@ function validSettingsPlate(xml: string): boolean {
   return (
     attribute(plate[1]!, 'id') === null &&
     validSettingsMetadata(metadataFor('plater_id')!, 'plater_id', '1') &&
-    (validSettingsMetadata(
+    matchesAnyMetadataValue(
       metadataFor('plater_name')!,
       'plater_name',
-      'OpenGrid Wall Cover',
-    ) ||
-      validSettingsMetadata(
-        metadataFor('plater_name')!,
-        'plater_name',
-        'OpenGrid Stackable Cylinder',
-      )) &&
+      THREE_MF_SUPPORTED_PLATE_NAMES,
+    ) &&
     validSettingsMetadata(metadataFor('locked')!, 'locked', 'false') &&
     validSettingsMetadata(
       metadataFor('filament_map_mode')!,

@@ -227,6 +227,13 @@ export async function generateCadCandidate(
       (command.modelId === 'opengrid-stackable-cylinder' &&
         Boolean(
           (generationParameters as Record<string, unknown>).topRimEnabled,
+        )) ||
+      ((command.modelId === 'opengrid-stackable-box' ||
+        command.modelId === 'opengrid-organizer-box' ||
+        command.modelId === 'opengrid-divider' ||
+        command.modelId === 'opengrid-openconnect-organizer') &&
+        Boolean(
+          (generationParameters as Record<string, unknown>).topRimEnabled,
         ))
     const buildResult: KernelModelBuildResult = await timing.measure(
       'build',
@@ -374,6 +381,32 @@ export async function generateCadCandidate(
         const rimPart = nativeParts.find((part) => part.name === 'rim')
         if (!bodyPart || !rimPart) {
           throw new Error('OPENGRID_STACKABLE_CYLINDER_PARTS_INVALID')
+        }
+        const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+        const rimMesh = meshBRep(rimPart.shape, command.previewConfig)
+        nativePartMeshes = [
+          { name: 'body', mesh: bodyMesh },
+          { name: 'rim', mesh: rimMesh },
+        ]
+      }
+    }
+
+    if (
+      command.modelId === 'opengrid-stackable-box' ||
+      command.modelId === 'opengrid-organizer-box' ||
+      command.modelId === 'opengrid-divider' ||
+      command.modelId === 'opengrid-openconnect-organizer'
+    ) {
+      if (nativeParts && nativeParts.length > 0) {
+        const bodyPart = nativeParts.find((part) => part.name === 'body')
+        const rimPart = nativeParts.find((part) => part.name === 'rim')
+        if (!bodyPart || !rimPart) {
+          throw new Error(
+            `OPENGRID_${command.modelId
+              .replace('opengrid-', '')
+              .replace(/-/g, '_')
+              .toUpperCase()}_PARTS_INVALID`,
+          )
         }
         const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
         const rimMesh = meshBRep(rimPart.shape, command.previewConfig)

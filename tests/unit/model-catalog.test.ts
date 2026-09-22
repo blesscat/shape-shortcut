@@ -843,6 +843,8 @@ describe('CAD component catalog', () => {
       pegLengthMode: 'snap',
       pegDiameterIncrement: 0,
       honeycombMode: false,
+      topRimEnabled: false,
+      topRimHeight: 2,
     })
     expect(definition?.exportFileName(definition.defaultParameters)).toBe(
       'opengrid-divider-l1.5-r1.5-u0-d0-t2-h20-a' + 'free-c0.15-psnap-i0.step',

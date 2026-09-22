@@ -28,6 +28,7 @@ import {
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+  OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_WALL_COVER_CONFIGURATION,
   normalizeOpenGridWallCoverText,
   normalizeOpenGridLocatingSeatMode,
@@ -68,6 +69,8 @@ export const OPENGRID_STACKABLE_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'topRimMode',
   'bottomMode',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
   ...OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
 ]
 export const OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS: ModelParameterKey[] = [
@@ -93,6 +96,8 @@ export const OPENGRID_DIVIDER_PARAMETER_KEYS: ModelParameterKey[] = [
   'pegLengthMode',
   'pegDiameterIncrement',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
 ]
 export const HEXAGONAL_COLUMN_PARAMETER_KEYS: ScalarModelParameterKey[] = [
   'height',
@@ -138,6 +143,8 @@ export const OPENGRID_ORGANIZER_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'cornerSeatMode',
   'boxMode',
   'stackingClearanceHeight',
+  'topRimEnabled',
+  'topRimHeight',
 ]
 export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] =
   [
@@ -156,6 +163,8 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] 
     'bottomThickness',
     'edgeThickness',
     'tiltAngle',
+    'topRimEnabled',
+    'topRimHeight',
   ]
 
 function parameterKeysForModel(modelId: ModelId): readonly ModelParameterKey[] {
@@ -253,6 +262,15 @@ function legacyParameterDefault(
     key === 'honeycombMode'
   ) {
     return 'false'
+  }
+  if (
+    modelId === 'opengrid-stackable-box' ||
+    modelId === 'opengrid-organizer-box' ||
+    modelId === 'opengrid-divider' ||
+    modelId === 'opengrid-openconnect-organizer'
+  ) {
+    if (key === 'topRimEnabled') return 'false'
+    if (key === 'topRimHeight') return '2'
   }
   if (modelId !== 'opengrid-stackable-cylinder') return undefined
   if (key === 'bottomPlateMode' || key === 'topRimEnabled') return 'false'
@@ -439,6 +457,18 @@ function parseOpenGridDividerRawParameters(raw: RawParameters):
     return invalid('honeycombMode')
   }
   parsed.honeycombMode = honeycombMode === 'true'
+  const topRimEnabled =
+    raw.topRimEnabled ??
+    legacyParameterDefault('opengrid-divider', 'topRimEnabled')
+  if (topRimEnabled !== 'true' && topRimEnabled !== 'false') {
+    return invalid('topRimEnabled')
+  }
+  parsed.topRimEnabled = topRimEnabled === 'true'
+  const topRimHeight = parseDimensionInput(
+    raw.topRimHeight ?? String(defaults.topRimHeight),
+  )
+  if (topRimHeight === null) return invalid('topRimHeight')
+  parsed.topRimHeight = topRimHeight
 
   const validation = validateModelParameters(
     'opengrid-divider',
@@ -679,6 +709,16 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
   if (stackingClearanceHeight === null) {
     return invalid('stackingClearanceHeight')
   }
+  const topRimEnabled =
+    raw.topRimEnabled ??
+    legacyParameterDefault('opengrid-organizer-box', 'topRimEnabled')
+  if (topRimEnabled !== 'true' && topRimEnabled !== 'false') {
+    return invalid('topRimEnabled')
+  }
+  const topRimHeight = parseHalfStepInput(
+    raw.topRimHeight ?? String(defaults.topRimHeight),
+  )
+  if (topRimHeight === null) return invalid('topRimHeight')
 
   const validation = validateModelParameters('opengrid-organizer-box', {
     holeCountX,
@@ -697,6 +737,8 @@ function parseOpenGridOrganizerBoxRawParameters(raw: RawParameters):
     cornerSeatMode,
     boxMode,
     stackingClearanceHeight,
+    topRimEnabled: topRimEnabled === 'true',
+    topRimHeight,
   })
   if (!validation.valid) {
     const issue = validation.issues[0]
@@ -774,6 +816,9 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
   if (edgeThickness === null) return invalid('edgeThickness')
   const tiltAngle = parseFiniteDecimalInput(raw.tiltAngle ?? '')
   if (tiltAngle === null) return invalid('tiltAngle')
+  const topRimEnabled = raw.topRimEnabled === 'true'
+  const topRimHeight = parseDimensionInput(raw.topRimHeight ?? '')
+  if (topRimHeight === null) return invalid('topRimHeight')
 
   const horizontalAlignment = raw.openConnectHorizontalAlignment ?? 'center'
   const verticalAlignment = raw.openConnectVerticalAlignment ?? 'top'
@@ -799,6 +844,8 @@ function parseOpenGridOpenConnectOrganizerRawParameters(raw: RawParameters):
     bottomThickness,
     edgeThickness,
     tiltAngle,
+    topRimEnabled,
+    topRimHeight,
   }
   const validation = validateModelParameters(
     'opengrid-openconnect-organizer',
@@ -898,6 +945,16 @@ export function rawFromParameters(
       bottomThickness: String(organizerParameters.bottomThickness),
       edgeThickness: String(organizerParameters.edgeThickness),
       tiltAngle: String(organizerParameters.tiltAngle),
+      topRimEnabled: String(
+        'topRimEnabled' in organizerParameters
+          ? organizerParameters.topRimEnabled
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.topRimEnabled,
+      ),
+      topRimHeight: String(
+        'topRimHeight' in organizerParameters
+          ? organizerParameters.topRimHeight
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.topRimHeight,
+      ),
     }
   }
 
@@ -921,6 +978,16 @@ export function rawFromParameters(
       boxMode: organizerParameters.boxMode,
       stackingClearanceHeight: String(
         organizerParameters.stackingClearanceHeight,
+      ),
+      topRimEnabled: String(
+        'topRimEnabled' in organizerParameters
+          ? organizerParameters.topRimEnabled
+          : OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.topRimEnabled,
+      ),
+      topRimHeight: String(
+        'topRimHeight' in organizerParameters
+          ? organizerParameters.topRimHeight
+          : OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.topRimHeight,
       ),
     }
   }
@@ -1015,6 +1082,16 @@ export function rawFromParameters(
         stackableParameters.bottomMode ??
         OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.bottomMode,
       honeycombMode: String(stackableParameters.honeycombMode ?? false),
+      topRimEnabled: String(
+        'topRimEnabled' in stackableParameters
+          ? stackableParameters.topRimEnabled
+          : OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimEnabled,
+      ),
+      topRimHeight: String(
+        'topRimHeight' in stackableParameters
+          ? stackableParameters.topRimHeight
+          : OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimHeight,
+      ),
     }
     for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
       const value =

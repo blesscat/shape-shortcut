@@ -1,5 +1,7 @@
 import { getOC, makeCompound, Sketcher, Solid, type Shape3D } from 'replicad'
 import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
+import { topRimPartsFor } from '../shared/top-rim-partition'
+import type { NativeModelPart } from '../../lifetime'
 import {
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_DIVIDER_HONEYCOMB_MAX_CELLS,
@@ -698,6 +700,48 @@ export async function buildOpenGridDivider(
     return result
   } catch (error) {
     deleteShape(current)
+    throw error
+  }
+}
+
+export type OpenGridDividerMultipartBuild = {
+  shape: Shape3D
+  qualityShape?: Shape3D
+  parts?: NativeModelPart[]
+}
+
+export async function buildOpenGridDividerWithParts(
+  parameters: OpenGridDividerParameters,
+  context: OpenGridDividerBuildContext = {},
+): Promise<OpenGridDividerMultipartBuild> {
+  const validation = validateOpenGridDividerParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('OPENGRID_DIVIDER_PARAMETERS_INVALID')
+  }
+  const normalizedParameters = validation.value
+  const fullShape = await buildOpenGridDivider(normalizedParameters, context)
+
+  if (!normalizedParameters.topRimEnabled) {
+    return {
+      shape: fullShape,
+    }
+  }
+
+  assertGenerationCurrent(context)
+  const splitZ = normalizedParameters.height - normalizedParameters.topRimHeight
+
+  try {
+    return {
+      shape: fullShape,
+      qualityShape: fullShape,
+      parts: topRimPartsFor(
+        fullShape,
+        splitZ,
+        'OPENGRID_DIVIDER_RIM_PARTITION_FAILED',
+      ),
+    }
+  } catch (error) {
+    deleteShape(fullShape)
     throw error
   }
 }

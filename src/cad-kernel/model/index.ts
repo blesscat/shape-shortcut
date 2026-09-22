@@ -36,8 +36,22 @@ import { buildHswCell } from '../components/hsw-cell/builder'
 import { buildHexagonalColumn } from '../components/hexagonal-column/builder'
 import { buildModularGridBase } from '../components/modular-grid-base/builder'
 import { buildOpenGridBRep } from '../components/opengrid/builder'
-import { buildOpenGridDivider } from '../components/opengrid-divider/builder'
-import { buildOpenGridStackableBoxAsync } from '../components/opengrid-stackable-box/builder'
+import {
+  buildOpenGridDivider,
+  buildOpenGridDividerWithParts,
+} from '../components/opengrid-divider/builder'
+import {
+  buildOpenGridStackableBoxAsync,
+  buildOpenGridStackableBoxWithParts,
+} from '../components/opengrid-stackable-box/builder'
+import {
+  buildOpenGridOrganizerBox,
+  buildOpenGridOrganizerBoxWithParts,
+} from '../components/opengrid-organizer-box/builder'
+import {
+  buildOpenGridOpenConnectOrganizer,
+  buildOpenGridOpenConnectOrganizerWithParts,
+} from '../components/opengrid-openconnect-organizer/builder'
 import {
   buildOpenGridStackableCylinder,
   buildOpenGridStackableCylinderWithParts,
@@ -54,8 +68,6 @@ import { buildOpenGridSnapRemover } from '../components/opengrid-snap-remover/bu
 import { buildPillar } from '../components/opengrid-pillar/builder'
 import { buildOpenGridOpenShelf } from '../components/opengrid-open-shelf/builder'
 import { buildOpenGridOpenConnectShelf } from '../components/opengrid-openconnect-shelf/builder'
-import { buildOpenGridOpenConnectOrganizer } from '../components/opengrid-openconnect-organizer/builder'
-import { buildOpenGridOrganizerBox } from '../components/opengrid-organizer-box/builder'
 
 export type KernelBuildContext = {
   getModularGridBaseTemplate: () => Promise<Shape3D>
@@ -677,6 +689,107 @@ export async function buildModelBRepWithParts(
       detachableCornerSeatReference,
       detachableCornerSeatHolderReference,
       isGenerationCurrent: context.isGenerationCurrent,
+      booleanOperations: context.booleanOperations,
+    })
+  }
+
+  if (modelId === 'opengrid-stackable-box') {
+    if (!isOpenGridStackableBoxParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-box')
+    }
+    const validation = validateOpenGridStackableBoxParameters(parameters)
+    if (!validation.valid) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-box')
+    }
+    let detachableCornerSeatReference: Shape3D | undefined
+    let detachableCornerSeatHolderReference: Shape3D | undefined
+    if (validation.value.cornerSeatMode === 'detachable-corner-seat') {
+      if (!context.getOpenGridDetachableCornerSeatReference) {
+        throw new Error('MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat')
+      }
+      if (!context.getOpenGridDetachableCornerSeatHolderReference) {
+        throw new Error(
+          'MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat-holder',
+        )
+      }
+      ;[detachableCornerSeatReference, detachableCornerSeatHolderReference] =
+        await Promise.all([
+          context.getOpenGridDetachableCornerSeatReference(),
+          context.getOpenGridDetachableCornerSeatHolderReference(),
+        ])
+      if (context.isGenerationCurrent && !context.isGenerationCurrent()) {
+        throw new Error('STALE_GENERATION')
+      }
+    }
+    return buildOpenGridStackableBoxWithParts(validation.value, {
+      detachableCornerSeatReference,
+      detachableCornerSeatHolderReference,
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
+      booleanOperations: context.booleanOperations,
+    })
+  }
+
+  if (modelId === 'opengrid-organizer-box') {
+    if (!isOpenGridOrganizerBoxParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-organizer-box')
+    }
+    let detachableCornerSeatReference: Shape3D | undefined
+    let detachableCornerSeatHolderReference: Shape3D | undefined
+    if (parameters.cornerSeatMode === 'detachable-corner-seat') {
+      if (!context.getOpenGridDetachableCornerSeatReference) {
+        throw new Error('MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat')
+      }
+      if (!context.getOpenGridDetachableCornerSeatHolderReference) {
+        throw new Error(
+          'MODEL_ASSET_CONTEXT_MISSING:detachable-corner-seat-holder',
+        )
+      }
+      ;[detachableCornerSeatReference, detachableCornerSeatHolderReference] =
+        await Promise.all([
+          context.getOpenGridDetachableCornerSeatReference(),
+          context.getOpenGridDetachableCornerSeatHolderReference(),
+        ])
+      if (context.isGenerationCurrent && !context.isGenerationCurrent()) {
+        throw new Error('STALE_GENERATION')
+      }
+    }
+    return buildOpenGridOrganizerBoxWithParts(parameters, {
+      detachableCornerSeatReference,
+      detachableCornerSeatHolderReference,
+      isGenerationCurrent: context.isGenerationCurrent,
+      booleanOperations: context.booleanOperations,
+    })
+  }
+
+  if (modelId === 'opengrid-divider') {
+    if (!isOpenGridDividerModelParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
+    }
+    return buildOpenGridDividerWithParts(parameters, {
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
+      reportProgress: context.reportProgress,
+      booleanOperations: context.booleanOperations,
+    })
+  }
+
+  if (modelId === 'opengrid-openconnect-organizer') {
+    if (!isOpenGridOpenConnectOrganizerParameters(parameters)) {
+      throw new Error(
+        'MODEL_PARAMETERS_MISMATCH:opengrid-openconnect-organizer',
+      )
+    }
+    if (!context.getOpenGridOpenConnectShelfLockedSlot) {
+      throw new Error(
+        'MODEL_ASSET_CONTEXT_MISSING:opengrid-openconnect-organizer-locked-slot',
+      )
+    }
+    return buildOpenGridOpenConnectOrganizerWithParts(parameters, {
+      getLockedSlot: context.getOpenGridOpenConnectShelfLockedSlot,
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
+      reportProgress: context.reportProgress,
       booleanOperations: context.booleanOperations,
     })
   }

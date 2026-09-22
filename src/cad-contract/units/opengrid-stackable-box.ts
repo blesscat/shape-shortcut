@@ -15,6 +15,8 @@ export type OpenGridStackableBoxParameterKey =
   | 'topRimMode'
   | 'bottomMode'
   | 'honeycombMode'
+  | 'topRimEnabled'
+  | 'topRimHeight'
   | 'openingPlusXDepth'
   | 'openingPlusXBottomLength'
   | 'openingPlusXAngle'
@@ -79,6 +81,8 @@ export type OpenGridStackableBoxParameters = {
   topRimMode: OpenGridStackableBoxTopRimMode
   bottomMode: OpenGridStackableBoxBottomMode
   honeycombMode: boolean
+  topRimEnabled: boolean
+  topRimHeight: number
 } & Record<OpenGridStackableBoxOpeningParameterKey, number>
 
 export type OpenGridStackableBoxDerivedOpening = {
@@ -136,6 +140,9 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   defaultTopRimMode: 'stacking-rail' as OpenGridStackableBoxTopRimMode,
   defaultBottomMode: 'stacking' as OpenGridStackableBoxBottomMode,
   defaultHoneycombMode: false,
+  defaultTopRimEnabled: false,
+  defaultTopRimHeight: 2,
+  minTopRimHeight: 1,
   minX: 0.5,
   maxX: 10,
   minY: 0.5,
@@ -225,6 +232,8 @@ export const OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS = {
   topRimMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimMode,
   bottomMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultBottomMode,
   honeycombMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHoneycombMode,
+  topRimEnabled: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimEnabled,
+  topRimHeight: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
   openingPlusXDepth: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultOpeningDepth,
   openingPlusXBottomLength:
     OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultOpeningBottomLength,
@@ -295,6 +304,8 @@ const CURRENT_BASE_PARAMETER_KEYS = [
   'topRimMode',
   'bottomMode',
   'honeycombMode',
+  'topRimEnabled',
+  'topRimHeight',
 ] as const
 
 const ALL_SUPPORTED_PARAMETER_KEYS = new Set<string>([
@@ -478,6 +489,30 @@ function validateHoneycombMode(
   if (typeof value !== 'boolean') {
     issues.push({
       field: 'honeycombMode',
+      messageId: 'validation.invalid',
+    })
+  }
+}
+
+function validateTopRimEnabled(
+  value: unknown,
+  issues: OpenGridStackableBoxValidationIssue[],
+): void {
+  if (typeof value !== 'boolean') {
+    issues.push({
+      field: 'topRimEnabled',
+      messageId: 'validation.invalid',
+    })
+  }
+}
+
+function validateTopRimHeight(
+  value: unknown,
+  issues: OpenGridStackableBoxValidationIssue[],
+): void {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
+    issues.push({
+      field: 'topRimHeight',
       messageId: 'validation.invalid',
     })
   }
@@ -840,6 +875,12 @@ export function validateOpenGridStackableBoxParameters(
   if (hasOwn(value, 'honeycombMode')) {
     validateHoneycombMode(value.honeycombMode, issues)
   }
+  if (hasOwn(value, 'topRimEnabled')) {
+    validateTopRimEnabled(value.topRimEnabled, issues)
+  }
+  if (hasOwn(value, 'topRimHeight')) {
+    validateTopRimHeight(value.topRimHeight, issues)
+  }
 
   if (hasOpeningParameters) {
     for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
@@ -880,11 +921,35 @@ export function validateOpenGridStackableBoxParameters(
       typeof value.honeycombMode === 'boolean'
         ? (value.honeycombMode as boolean)
         : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHoneycombMode,
+    topRimEnabled:
+      typeof value.topRimEnabled === 'boolean'
+        ? (value.topRimEnabled as boolean)
+        : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimEnabled,
+    topRimHeight:
+      typeof value.topRimHeight === 'number' &&
+      Number.isSafeInteger(value.topRimHeight)
+        ? (value.topRimHeight as number)
+        : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
     ...openingValuesFor(value, hasOpeningParameters),
   }
   if (parameters.bottomMode === 'none' && parameters.fullBottomHoleGrid) {
     issues.push({
       field: 'fullBottomHoleGrid',
+      messageId: 'validation.invalid',
+    })
+  }
+  const maximumTopRimHeight = Math.max(
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
+    Math.floor(externalOpenGridStackableBoxHeightFor(parameters) / 2),
+  )
+  if (
+    parameters.topRimEnabled === true &&
+    (parameters.topRimHeight <
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight ||
+      parameters.topRimHeight > maximumTopRimHeight)
+  ) {
+    issues.push({
+      field: 'topRimHeight',
       messageId: 'validation.invalid',
     })
   }
@@ -1113,4 +1178,14 @@ export function openGridStackableBoxStlFileName(
   const seatSuffix = seatSuffixFor(parameters)
   const honeycombSuffix = honeycombSuffixFor(parameters)
   return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${openingFileSuffixFor(parameters)}${modeSuffix}.stl`
+}
+
+export function openGridStackableBoxThreeMfFileName(
+  parameters: OpenGridStackableBoxParameters,
+): string | null {
+  if (!parameters.topRimEnabled) return null
+  const modeSuffix = modeSuffixFor(parameters)
+  const seatSuffix = seatSuffixFor(parameters)
+  const honeycombSuffix = honeycombSuffixFor(parameters)
+  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${openingFileSuffixFor(parameters)}${modeSuffix}-rim${parameters.topRimHeight}.3mf`
 }
