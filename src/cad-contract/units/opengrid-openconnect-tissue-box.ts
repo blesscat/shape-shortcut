@@ -44,10 +44,169 @@ export const TISSUE_BOX_KEYS = Object.keys(
 export const TISSUE_BOX_MAX_CELLS = 3000
 export const TISSUE_BOX_FRAME = 5
 export type TissueBoxPoint = [number, number, number]
+export type TissueBoxCellPoint = [number, number]
 export type TissueBoxCell = {
   wall: 'front' | 'left' | 'right' | 'bottom'
   u: number
   v: number
+  /** Hexagon clipped to the protected panel, in the wall's surface coordinates. */
+  polygon: TissueBoxCellPoint[]
+}
+
+type TissueBoxCellRectangle = {
+  minimumU: number
+  maximumU: number
+  minimumV: number
+  maximumV: number
+}
+
+const TISSUE_BOX_CELL_EPSILON = 1e-9
+// Matches the shared lattice module's nonEmptyPolygons floor so micro-slivers
+// are never cut.
+const TISSUE_BOX_CELL_MIN_AREA = 1e-4
+
+function hexagonPolygonAt(center: TissueBoxCellPoint): TissueBoxCellPoint[] {
+  const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+  const points: TissueBoxCellPoint[] = []
+  for (let index = 0; index < 6; index += 1) {
+    const angle = Math.PI / 6 + (Math.PI / 3) * index
+    points.push([
+      center[0] + lattice.cellRadius * Math.cos(angle),
+      center[1] + lattice.cellRadius * Math.sin(angle),
+    ])
+  }
+  return points
+}
+
+function intersectCellBoundary(
+  start: TissueBoxCellPoint,
+  end: TissueBoxCellPoint,
+  axis: 0 | 1,
+  position: number,
+): TissueBoxCellPoint {
+  const ratio =
+    (position - start[axis]) /
+    (end[axis] - start[axis] || TISSUE_BOX_CELL_EPSILON)
+  const point: TissueBoxCellPoint = [start[0], start[1]]
+  point[axis] = position
+  point[1 - axis] = start[1 - axis] + ratio * (end[1 - axis] - start[1 - axis])
+  return point
+}
+
+function clipCellPolygonToBoundary(
+  points: TissueBoxCellPoint[],
+  axis: 0 | 1,
+  position: number,
+  keepLower: boolean,
+): TissueBoxCellPoint[] {
+  const clipped: TissueBoxCellPoint[] = []
+  const inside = (point: TissueBoxCellPoint) =>
+    keepLower
+      ? point[axis] <= position + TISSUE_BOX_CELL_EPSILON
+      : point[axis] >= position - TISSUE_BOX_CELL_EPSILON
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index]!
+    const previous = points[(index + points.length - 1) % points.length]!
+    if (inside(current)) {
+      if (!inside(previous))
+        clipped.push(intersectCellBoundary(previous, current, axis, position))
+      clipped.push(current)
+    } else if (inside(previous)) {
+      clipped.push(intersectCellBoundary(previous, current, axis, position))
+    }
+  }
+  return clipped
+}
+
+function clipCellPolygonToRectangle(
+  points: TissueBoxCellPoint[],
+  rectangle: TissueBoxCellRectangle,
+): TissueBoxCellPoint[] {
+  let clipped = clipCellPolygonToBoundary(points, 0, rectangle.minimumU, false)
+  clipped = clipCellPolygonToBoundary(clipped, 0, rectangle.maximumU, true)
+  clipped = clipCellPolygonToBoundary(clipped, 1, rectangle.minimumV, false)
+  return clipCellPolygonToBoundary(clipped, 1, rectangle.maximumV, true)
+}
+
+function cellPolygonArea(points: TissueBoxCellPoint[]): number {
+  let area = 0
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index]!
+    const next = points[(index + 1) % points.length]!
+    area += current[0] * next[1] - next[0] * current[1]
+  }
+  return Math.abs(area) / 2
+}
+
+function cellPanelRectangle(
+  p: TissueBoxParameters,
+  wall: TissueBoxCell['wall'],
+): TissueBoxCellRectangle {
+  const l = tissueBoxLayout(p)
+  const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+  // Rounded front corners recede the outer surface, so panels keep the full
+  // radius plus the side frame away from those ends; square ends use the frame.
+  // No panel may enter the perpendicular wall slabs, so the frame bands are
+  // also clamped to the wall thickness.
+  const cornerFrame = Math.max(
+    p.outerRadius + lattice.sideFrame,
+    p.wallThickness,
+  )
+  const sideLimit = Math.max(lattice.sideFrame, p.wallThickness)
+  if (wall === 'bottom')
+    return {
+      minimumU: -l.width / 2 + lattice.bottomFrame,
+      maximumU: l.width / 2 - lattice.bottomFrame,
+      minimumV: lattice.bottomFrame,
+      maximumV: l.depth - lattice.bottomFrame,
+    }
+  const span = wall === 'front' ? l.width : l.depth
+  return {
+    minimumU: wall === 'front' ? cornerFrame : sideLimit,
+    maximumU: span - cornerFrame,
+    minimumV: p.bottomThickness + lattice.sideFrame,
+    maximumV: l.height - lattice.sideFrame,
+  }
+}
+
+function cellPolygonFitsProtectors(
+  p: TissueBoxParameters,
+  wall: TissueBoxCell['wall'],
+  u: number,
+  v: number,
+): boolean {
+  const l = tissueBoxLayout(p)
+  const radius = OPENGRID_HONEYCOMB_CONFIGURATION.cellRadius
+  if (wall !== 'bottom') return true
+  const slotCoreHalf = Math.max(0, p.slotLength / 2 - p.slotWidth / 2)
+  const slotClearance =
+    p.slotWidth / 2 +
+    radius +
+    OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
+  const distance = Math.hypot(
+    Math.max(0, Math.abs(u) - slotCoreHalf),
+    Math.abs(v - l.depth / 2),
+  )
+  if (distance < slotClearance) return false
+  if (p.outerRadius <= 0) return true
+  // The two front corners of the bottom plate are rounded by outerRadius.
+  // Cells reaching a corner arc must fit inside that arc inset by the bottom
+  // frame, so no opening breaks the rounded surface.
+  const cornerCenterY = l.depth - p.outerRadius
+  const arcLimit =
+    p.outerRadius - OPENGRID_HONEYCOMB_CONFIGURATION.bottomFrame - radius
+  if (v + radius <= cornerCenterY) return true
+  for (const sign of [-1, 1]) {
+    const cornerCenterX = sign * (l.width / 2 - p.outerRadius)
+    const reachesCorner =
+      sign === 1 ? u + radius > cornerCenterX : u - radius < cornerCenterX
+    if (
+      reachesCorner &&
+      Math.hypot(u - cornerCenterX, v - cornerCenterY) > arcLimit
+    )
+      return false
+  }
+  return true
 }
 
 export function tissueBoxSlotLipRadius(p: TissueBoxParameters): number {
@@ -174,80 +333,83 @@ export function tissueBoxSlotOrigins(p: TissueBoxParameters): TissueBoxPoint[] {
 }
 
 export function tissueBoxCells(p: TissueBoxParameters): TissueBoxCell[] {
-  const l = tissueBoxLayout(p)
   const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
   const radius = lattice.cellRadius
-  const sideFrame = lattice.sideFrame
-  const bottomFrame = lattice.bottomFrame
-  // Rounded front corners recede the outer surface, so cells keep the full
-  // radius plus the side frame away from those ends; square ends use the frame.
-  const cornerFrame = p.outerRadius + sideFrame
+  // Horizontal inradius of the point-up hexagon: its maximum u extent.
+  const hexagonHalfWidth = (Math.sqrt(3) * radius) / 2
   const cells: TissueBoxCell[] = []
+  const emit = (wall: TissueBoxCell['wall'], center: TissueBoxCellPoint) => {
+    if (!cellPolygonFitsProtectors(p, wall, center[0], center[1])) return
+    const polygon = clipCellPolygonToRectangle(
+      hexagonPolygonAt(center),
+      cellPanelRectangle(p, wall),
+    )
+    if (
+      polygon.length < 3 ||
+      cellPolygonArea(polygon) <= TISSUE_BOX_CELL_MIN_AREA
+    )
+      return
+    cells.push({ wall, u: center[0], v: center[1], polygon })
+  }
+  // Walls follow the shared side-panel lattice: rows centered inside the
+  // panel, columns on the absolute pitch, centers reaching one inradius past
+  // the frame lines so partial cells are clipped flush with the frames.
   for (const wall of ['front', 'left', 'right'] as const) {
-    const span = wall === 'front' ? l.width : l.depth
-    const lowFrame = wall === 'front' ? cornerFrame : sideFrame
-    let row = 0
-    for (
-      let v = p.bottomThickness + sideFrame + radius;
-      v <= l.height - sideFrame - radius;
-      v += lattice.rowPitch, row++
-    ) {
-      const offset = ((row % 2) * lattice.anchorPitch) / 2
-      for (
-        let u = lowFrame + radius + offset;
-        u <= span - cornerFrame - radius;
-        u += lattice.anchorPitch
-      ) {
-        cells.push({ wall, u, v })
-      }
+    const panel = cellPanelRectangle(p, wall)
+    const centerU = (panel.minimumU + panel.maximumU) / 2
+    const centerV = (panel.minimumV + panel.maximumV) / 2
+    const halfU = (panel.maximumU - panel.minimumU) / 2
+    const halfV = (panel.maximumV - panel.minimumV) / 2
+    const minimumU = -halfU - hexagonHalfWidth + TISSUE_BOX_CELL_EPSILON
+    const maximumU = halfU + hexagonHalfWidth - TISSUE_BOX_CELL_EPSILON
+    const availableRowSpan = Math.max(0, halfV * 2 - radius * 2)
+    const rowCount =
+      Math.ceil(
+        (availableRowSpan + TISSUE_BOX_CELL_EPSILON) / lattice.rowPitch,
+      ) + 1
+    const firstRowV = -((rowCount - 1) * lattice.rowPitch) / 2
+    for (let row = 0; row < rowCount; row += 1) {
+      const offset = (row % 2) * (lattice.anchorPitch / 2)
+      const firstColumn = Math.ceil(
+        (minimumU - offset - TISSUE_BOX_CELL_EPSILON) / lattice.anchorPitch,
+      )
+      const lastColumn = Math.floor(
+        (maximumU - offset + TISSUE_BOX_CELL_EPSILON) / lattice.anchorPitch,
+      )
+      for (let column = firstColumn; column <= lastColumn; column += 1)
+        emit(wall, [
+          centerU + column * lattice.anchorPitch + offset,
+          centerV + firstRowV + row * lattice.rowPitch,
+        ])
     }
   }
-  // Bottom cells are plan coordinates: u is centered X, v runs 0..depth.
-  const slotCoreHalf = Math.max(0, p.slotLength / 2 - p.slotWidth / 2)
-  const slotClearance =
-    p.slotWidth / 2 +
-    radius +
-    OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
-  // The two front corners of the bottom plate are rounded by outerRadius.
-  // Cells whose circumcircle reaches a corner arc must fit inside that arc
-  // inset by the bottom frame, so no opening breaks the rounded surface.
-  const cornerCenterY = l.depth - p.outerRadius
-  const arcLimit = p.outerRadius - bottomFrame - radius
-  let row = 0
-  for (
-    let v = bottomFrame + radius;
-    v <= l.depth - bottomFrame - radius;
-    v += lattice.rowPitch, row++
-  ) {
-    const offset = ((row % 2) * lattice.anchorPitch) / 2
-    for (
-      let u = -l.width / 2 + bottomFrame + radius + offset;
-      u <= l.width / 2 - bottomFrame - radius;
-      u += lattice.anchorPitch
-    ) {
-      const distance = Math.hypot(
-        Math.max(0, Math.abs(u) - slotCoreHalf),
-        Math.abs(v - l.depth / 2),
-      )
-      if (distance < slotClearance) continue
-      if (p.outerRadius > 0 && v + radius > cornerCenterY) {
-        let clearOfCorners = true
-        for (const sign of [-1, 1]) {
-          const cornerCenterX = sign * (l.width / 2 - p.outerRadius)
-          const reachesCorner =
-            sign === 1 ? u + radius > cornerCenterX : u - radius < cornerCenterX
-          if (
-            reachesCorner &&
-            Math.hypot(u - cornerCenterX, v - cornerCenterY) > arcLimit
-          ) {
-            clearOfCorners = false
-            break
-          }
-        }
-        if (!clearOfCorners) continue
-      }
-      cells.push({ wall: 'bottom', u, v })
-    }
+  // The bottom overlaps its frame lines on every side: extend each span so
+  // centers reach one inradius (u) / one circumradius (v) past the frame,
+  // matching the shared lattice's boundary-overlap, and clip into half cells.
+  const panel = cellPanelRectangle(p, 'bottom')
+  const centerU = (panel.minimumU + panel.maximumU) / 2
+  const centerV = (panel.minimumV + panel.maximumV) / 2
+  const halfU = (panel.maximumU - panel.minimumU) / 2 + hexagonHalfWidth
+  const halfV = (panel.maximumV - panel.minimumV) / 2 + 2 * radius
+  const availableRowSpan = Math.max(0, halfV * 2 - radius * 2)
+  const rowCount =
+    Math.floor(
+      (availableRowSpan + TISSUE_BOX_CELL_EPSILON) / lattice.rowPitch,
+    ) + 1
+  const firstRowV = -((rowCount - 1) * lattice.rowPitch) / 2
+  for (let row = 0; row < rowCount; row += 1) {
+    const offset = (row % 2) * (lattice.anchorPitch / 2)
+    const firstColumn = Math.ceil(
+      (-halfU - offset - TISSUE_BOX_CELL_EPSILON) / lattice.anchorPitch,
+    )
+    const lastColumn = Math.floor(
+      (halfU - offset + TISSUE_BOX_CELL_EPSILON) / lattice.anchorPitch,
+    )
+    for (let column = firstColumn; column <= lastColumn; column += 1)
+      emit('bottom', [
+        centerU + column * lattice.anchorPitch + offset,
+        centerV + firstRowV + row * lattice.rowPitch,
+      ])
   }
   return cells
 }
