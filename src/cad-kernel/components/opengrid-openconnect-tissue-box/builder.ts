@@ -17,7 +17,6 @@ import {
   type TissueBoxCell,
   type TissueBoxParameters,
 } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
-import { OPENGRID_HONEYCOMB_CONFIGURATION } from '../../../cad-contract/units/opengrid-honeycomb'
 import {
   measureBooleanInScope,
   type BooleanOperationReporter,
@@ -131,38 +130,46 @@ function support(p: TissueBoxParameters): Shape3D {
 }
 function hexCutter(p: TissueBoxParameters, cell: TissueBoxCell): Shape3D {
   const l = tissueBoxLayout(p)
-  const radius = OPENGRID_HONEYCOMB_CONFIGURATION.cellRadius
-  let origin: [number, number, number] = [
-    cell.u - l.width / 2,
-    l.depth - p.wallThickness - 0.1,
-    cell.v,
-  ]
-  let plane: 'XZ' | 'YZ' = 'XZ'
-  let direction: [number, number, number] = [0, 1, 0]
-  if (cell.wall !== 'front') {
+  // The contract clips each hexagon to its protected panel (half cells
+  // included), so the cutter just extrudes that polygon on the wall plane.
+  let origin: [number, number, number]
+  let plane: 'XZ' | 'YZ' | 'XY'
+  let direction: [number, number, number]
+  let points: [number, number][]
+  if (cell.wall === 'bottom') {
+    // Bottom cells carry plan coordinates: u is centered X, v runs 0..depth.
+    origin = [0, 0, -0.1]
+    plane = 'XY'
+    direction = [0, 0, 1]
+    points = cell.polygon.map(([u, v]) => [u, v] as [number, number])
+  } else if (cell.wall === 'front') {
+    origin = [0, l.depth - p.wallThickness - 0.1, 0]
+    plane = 'XZ'
+    direction = [0, 1, 0]
+    points = cell.polygon.map(
+      ([u, v]) => [u - l.width / 2, v] as [number, number],
+    )
+  } else {
     const x =
       cell.wall === 'left'
         ? -l.width / 2 - 0.1
         : l.width / 2 - p.wallThickness - 0.1
-    origin = [x, cell.u, cell.v]
+    origin = [x, 0, 0]
     plane = 'YZ'
     direction = [1, 0, 0]
+    points = cell.polygon.map(([u, v]) => [u, v] as [number, number])
   }
   const sketcher = new Sketcher(plane, origin)
-  for (let i = 0; i < 6; i++) {
-    const angle = Math.PI / 6 + (i * Math.PI) / 3
-    const point: [number, number] = [
-      radius * Math.cos(angle),
-      radius * Math.sin(angle),
-    ]
-    if (i === 0) sketcher.movePointerTo(point)
-    else sketcher.lineTo(point)
+  for (let index = 0; index < points.length; index += 1) {
+    if (index === 0) sketcher.movePointerTo(points[index]!)
+    else sketcher.lineTo(points[index]!)
   }
   const sketch = sketcher.close()
   try {
-    return sketch.extrude(p.wallThickness + 0.2, {
-      extrusionDirection: direction,
-    })
+    return sketch.extrude(
+      (cell.wall === 'bottom' ? p.bottomThickness : p.wallThickness) + 0.2,
+      { extrusionDirection: direction },
+    )
   } finally {
     dispose(sketch)
     dispose(sketcher)

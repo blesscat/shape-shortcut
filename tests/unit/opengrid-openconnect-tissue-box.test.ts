@@ -1,4 +1,5 @@
 import { OPENGRID_GRID_CONFIGURATION } from '../../src/cad-contract/units/opengrid-grid'
+import { OPENGRID_HONEYCOMB_CONFIGURATION } from '../../src/cad-contract/units/opengrid-honeycomb'
 import { describe, expect, it } from 'vitest'
 import {
   TISSUE_BOX_DEFAULTS as defaults,
@@ -51,13 +52,114 @@ describe('OpenConnect tissue box contract', () => {
       false,
     )
   })
-  it('protects frames and bounds honeycomb work', () => {
+  it('protects shared frames, rounded corners and the slot ring', () => {
+    const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+    const radius = lattice.cellRadius
+    const sideFrame = lattice.sideFrame
+    const bottomFrame = lattice.bottomFrame
+    const cornerFrame = defaults.outerRadius + sideFrame
+    const fullHexagonArea = ((3 * Math.sqrt(3)) / 2) * radius * radius
+    const l = tissueBoxLayout(defaults)
     const cells = tissueBoxCells(defaults)
-    expect(cells.length).toBeGreaterThan(0)
+    const wallCells = cells.filter((cell) => cell.wall !== 'bottom')
+    const bottomCells = cells.filter((cell) => cell.wall === 'bottom')
+    expect(wallCells.length).toBeGreaterThan(0)
+    expect(bottomCells.length).toBeGreaterThan(0)
     for (const cell of cells) {
-      expect(cell.v).toBeGreaterThan(defaults.bottomThickness + 5)
-      expect(cell.v).toBeLessThan(defaults.z + defaults.bottomThickness - 5)
+      const panel = cellPanelOf(cell.wall)
+      for (const [u, v] of cell.polygon) {
+        expect(u).toBeGreaterThanOrEqual(panel.minimumU - 1e-9)
+        expect(u).toBeLessThanOrEqual(panel.maximumU + 1e-9)
+        expect(v).toBeGreaterThanOrEqual(panel.minimumV - 1e-9)
+        expect(v).toBeLessThanOrEqual(panel.maximumV + 1e-9)
+      }
+      expect(cell.polygon.length).toBeGreaterThanOrEqual(3)
     }
+    function cellPanelOf(wall: 'front' | 'left' | 'right' | 'bottom') {
+      if (wall === 'bottom')
+        return {
+          minimumU: -l.width / 2 + bottomFrame,
+          maximumU: l.width / 2 - bottomFrame,
+          minimumV: bottomFrame,
+          maximumV: l.depth - bottomFrame,
+        }
+      const span = wall === 'front' ? l.width : l.depth
+      const cornerLimit = Math.max(cornerFrame, defaults.wallThickness)
+      const sideLimit = Math.max(sideFrame, defaults.wallThickness)
+      return {
+        minimumU: wall === 'front' ? cornerLimit : sideLimit,
+        maximumU: span - cornerLimit,
+        minimumV: defaults.bottomThickness + sideFrame,
+        maximumV: l.height - sideFrame,
+      }
+    }
+    // Half cells: clipped polygons exist whose centers sit outside the panel.
+    const partial = cells.filter((cell) => {
+      const panel = cellPanelOf(cell.wall)
+      return (
+        cell.u < panel.minimumU ||
+        cell.u > panel.maximumU ||
+        cell.v < panel.minimumV ||
+        cell.v > panel.maximumV
+      )
+    })
+    expect(partial.length).toBeGreaterThan(0)
+    const polygonAreaOf = (cell: (typeof cells)[number]) =>
+      Math.abs(
+        cell.polygon.reduce(
+          (sum, [u, v], index) =>
+            sum +
+            u * cell.polygon[(index + 1) % cell.polygon.length]![1] -
+            cell.polygon[(index + 1) % cell.polygon.length]![0]! * v,
+          0,
+        ),
+      ) / 2
+    for (const cell of partial)
+      expect(polygonAreaOf(cell)).toBeLessThan(fullHexagonArea - 1e-9)
+    // Wall polygons stay out of the frame bands; areas stay within a hexagon.
+    for (const cell of wallCells) {
+      const area = polygonAreaOf(cell)
+      expect(area).toBeGreaterThan(1e-4)
+      expect(area).toBeLessThanOrEqual(fullHexagonArea + 1e-9)
+    }
+    // Wall slabs clamp the panels: openings never notch the perpendicular
+    // walls when wallThickness exceeds the side frame.
+    const thick = { ...defaults, wallThickness: 4 }
+    const thickLayout = tissueBoxLayout(thick)
+    for (const cell of tissueBoxCells(thick)) {
+      if (cell.wall === 'bottom') continue
+      const span = cell.wall === 'front' ? thickLayout.width : thickLayout.depth
+      const limit = Math.max(
+        cell.wall === 'front' ? thick.outerRadius + sideFrame : sideFrame,
+        thick.wallThickness,
+      )
+      expect(Math.min(...cell.polygon.map(([u]) => u))).toBeGreaterThanOrEqual(
+        limit - 1e-9,
+      )
+      expect(Math.max(...cell.polygon.map(([u]) => u))).toBeLessThanOrEqual(
+        span - limit + 1e-9,
+      )
+    }
+    for (const cell of bottomCells) {
+      const coreHalf = defaults.slotLength / 2 - defaults.slotWidth / 2
+      const distance = Math.hypot(
+        Math.max(0, Math.abs(cell.u) - coreHalf),
+        Math.abs(cell.v - l.depth / 2),
+      )
+      expect(distance).toBeGreaterThanOrEqual(
+        defaults.slotWidth / 2 + radius + lattice.bottomHoleSafetyRing,
+      )
+    }
+    // Rounded front ends reserve the full outer radius; square rear ends do not.
+    const front = wallCells.filter((cell) => cell.wall === 'front')
+    const frontPanel = cellPanelOf('front')
+    expect(
+      Math.min(...front.flatMap((cell) => cell.polygon.map(([u]) => u))),
+    ).toBeCloseTo(frontPanel.minimumU, 6)
+    const sides = wallCells.filter((cell) => cell.wall !== 'front')
+    expect(
+      Math.min(...sides.flatMap((cell) => cell.polygon.map(([u]) => u))),
+    ).toBeCloseTo(sideFrame, 6)
     expect(
       validateTissueBoxParameters({
         ...defaults,
@@ -67,6 +169,41 @@ describe('OpenConnect tissue box contract', () => {
         honeycombMode: true,
       }).valid,
     ).toBe(false)
+  })
+  it('keeps bottom cells inside the rounded front corner arcs', () => {
+    const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+    const radius = lattice.cellRadius
+    const bottomFrame = lattice.bottomFrame
+    for (const outerRadius of [0, 5, 20, 30]) {
+      const p = { ...defaults, outerRadius }
+      const l = tissueBoxLayout(p)
+      const bottomCells = tissueBoxCells(p).filter(
+        (cell) => cell.wall === 'bottom',
+      )
+      expect(bottomCells.length).toBeGreaterThan(0)
+      for (const cell of bottomCells) {
+        for (const sign of [-1, 1] as const) {
+          const cornerCenterX = sign * (l.width / 2 - outerRadius)
+          const cornerCenterY = l.depth - outerRadius
+          const reachesCornerSquare =
+            cell.v + radius > cornerCenterY &&
+            (sign === 1
+              ? cell.u + radius > cornerCenterX
+              : cell.u - radius < cornerCenterX)
+          if (!reachesCornerSquare) continue
+          expect(
+            Math.hypot(cell.u - cornerCenterX, cell.v - cornerCenterY) + radius,
+          ).toBeLessThanOrEqual(outerRadius - bottomFrame + 1e-9)
+        }
+      }
+    }
+    expect(
+      Math.min(
+        ...tissueBoxCells({ ...defaults, outerRadius: 20 })
+          .filter((cell) => cell.wall === 'front')
+          .flatMap((cell) => cell.polygon.map(([u]) => u)),
+      ),
+    ).toBeCloseTo(20 + lattice.sideFrame, 6)
   })
   it('distinguishes every geometry parameter in export names', () => {
     const original = tissueBoxFileName(defaults, 'step')

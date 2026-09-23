@@ -30,6 +30,9 @@ test('tissue box exposes XYZ, persists input, guards invalid slots and exports',
   await expect(page.getByTestId('tissue-box-help')).toContainText(
     '背板上下端與盒頂、盒底齊平',
   )
+  await expect(page.getByTestId('tissue-box-help')).toContainText(
+    '省料鏤空前面、兩側與底板',
+  )
   const z = page.getByRole('textbox', { name: '內尺寸（Z）', exact: true })
   await z.fill('20')
   await expect(z).toHaveAttribute('aria-invalid', 'true')

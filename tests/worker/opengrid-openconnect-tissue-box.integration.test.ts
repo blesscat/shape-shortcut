@@ -14,6 +14,7 @@ import {
   TISSUE_BOX_FRAME,
   type TissueBoxParameters,
 } from '../../src/cad-contract/units/opengrid-openconnect-tissue-box'
+import { OPENGRID_HONEYCOMB_CONFIGURATION } from '../../src/cad-contract/units/opengrid-honeycomb'
 import {
   buildTissueBox,
   tissueBoxQuality,
@@ -121,7 +122,7 @@ describe('tissue box real geometry', () => {
     },
     180000,
   )
-  it('removes only front/side honeycomb and reports all cells', async () => {
+  it('removes wall and bottom honeycomb and reports all cells', async () => {
     const progress: any[] = []
     const solid = await build(small)
     const p = { ...small, honeycombMode: true }
@@ -132,31 +133,158 @@ describe('tissue box real geometry', () => {
       expect(tissueBoxQuality(saved)).toEqual({ valid: true, solids: 1 })
       expect(measureVolume(saved)).toBeLessThan(measureVolume(solid))
       const l = tissueBoxLayout(p)
-      for (const cell of tissueBoxCells(p)) {
+      const cells = tissueBoxCells(p)
+      const bottomCells = cells.filter((cell) => cell.wall === 'bottom')
+      expect(bottomCells.length).toBeGreaterThan(0)
+      // Half cells: clipped polygons whose centers sit outside their panel.
+      const partialCells = cells.filter((cell) => {
+        const us = cell.polygon.map(([u]) => u)
+        const vs = cell.polygon.map(([, v]) => v)
+        return (
+          cell.u < Math.min(...us) ||
+          cell.u > Math.max(...us) ||
+          cell.v < Math.min(...vs) ||
+          cell.v > Math.max(...vs)
+        )
+      })
+      expect(partialCells.length).toBeGreaterThan(0)
+      const centroidOf = (cell: (typeof cells)[number]) =>
+        cell.polygon.reduce(
+          (acc, [u, v]) => [
+            acc[0]! + u / cell.polygon.length,
+            acc[1]! + v / cell.polygon.length,
+          ],
+          [0, 0] as [number, number],
+        )
+      for (const cell of cells) {
+        const centroid = centroidOf(cell)
         let point: [number, number, number] = [
-          cell.u - l.width / 2,
+          centroid[0]! - l.width / 2,
           l.depth - p.wallThickness / 2,
-          cell.v,
+          centroid[1]!,
         ]
         if (cell.wall === 'left')
-          point = [-l.width / 2 + p.wallThickness / 2, cell.u, cell.v]
+          point = [
+            -l.width / 2 + p.wallThickness / 2,
+            centroid[0]!,
+            centroid[1]!,
+          ]
         if (cell.wall === 'right')
-          point = [l.width / 2 - p.wallThickness / 2, cell.u, cell.v]
+          point = [
+            l.width / 2 - p.wallThickness / 2,
+            centroid[0]!,
+            centroid[1]!,
+          ]
+        if (cell.wall === 'bottom')
+          point = [centroid[0]!, centroid[1]!, p.bottomThickness / 2]
         expect(volumeAt(saved, p, point)).toBeLessThan(1e-6)
+      }
+      // A partial bottom cell is cut through the full thickness at both faces.
+      const partialBottomCells = partialCells.filter(
+        (cell) => cell.wall === 'bottom',
+      )
+      expect(partialBottomCells.length).toBeGreaterThan(0)
+      const partialCentroid = centroidOf(partialBottomCells[0]!)
+      for (const z of [0.02, p.bottomThickness - 0.02])
+        expect(
+          volumeAt(saved, p, [partialCentroid[0]!, partialCentroid[1]!, z]),
+        ).toBeLessThan(1e-6)
+      // Disabling saving keeps the bottom fully solid where holes would be.
+      for (const cell of [bottomCells[0]!, bottomCells.at(-1)!]) {
+        const centroid = centroidOf(cell)
+        expect(
+          volumeAt(solid, p, [
+            centroid[0]!,
+            centroid[1]!,
+            p.bottomThickness / 2,
+          ]),
+        ).toBeGreaterThan(0.007)
       }
       expect(
         volumeAt(saved, p, [0, p.wallThickness / 2, l.height / 2]),
       ).toBeGreaterThan(0.007)
       expect(progress).toContainEqual(
         expect.objectContaining({
-          completed: tissueBoxCells(p).length,
-          total: tissueBoxCells(p).length,
+          completed: cells.length,
+          total: cells.length,
           unit: 'cells',
         }),
       )
     } finally {
       solid.delete()
       saved.delete()
+    }
+  }, 180000)
+  it('keeps bottom openings off rounded corners and the slot ring with saving on', async () => {
+    const p = {
+      ...small,
+      x: 120,
+      y: 80,
+      wallThickness: 4,
+      outerRadius: 20,
+      honeycombMode: true,
+    }
+    const shape = await build(p)
+    try {
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+      const l = tissueBoxLayout(p)
+      const bottomCells = tissueBoxCells(p).filter(
+        (cell) => cell.wall === 'bottom',
+      )
+      expect(bottomCells.length).toBeGreaterThan(0)
+      // One admitted opening passes through the full bottom thickness. Prefer
+      // a complete cell so the probe sits clear of the clipped frame slivers.
+      const frame = OPENGRID_HONEYCOMB_CONFIGURATION.bottomFrame
+      const sample =
+        bottomCells.find(
+          (cell) =>
+            cell.u > -l.width / 2 + frame &&
+            cell.u < l.width / 2 - frame &&
+            cell.v > frame &&
+            cell.v < l.depth - frame,
+        ) ?? bottomCells[0]!
+      const sampleCentroid = sample.polygon.reduce(
+        (acc, [u, v]) => [
+          acc[0]! + u / sample.polygon.length,
+          acc[1]! + v / sample.polygon.length,
+        ],
+        [0, 0] as [number, number],
+      )
+      for (const z of [0.02, p.bottomThickness - 0.02])
+        expect(
+          volumeAt(shape, p, [sampleCentroid[0]!, sampleCentroid[1]!, z]),
+        ).toBeLessThan(1e-6)
+      // The 2 mm ring hugging the slot and both rounded corner arcs stay solid.
+      expect(
+        volumeAt(shape, p, [
+          0,
+          l.depth / 2 + p.slotWidth / 2 + 1,
+          p.bottomThickness / 2,
+        ]),
+      ).toBeGreaterThan(0.007)
+      for (const sign of [-1, 1]) {
+        expect(
+          volumeAt(shape, p, [
+            sign * (l.width / 2 - p.outerRadius / 2),
+            l.depth - p.outerRadius / 2,
+            p.bottomThickness / 2,
+          ]),
+        ).toBeGreaterThan(0.007)
+      }
+      // The thick rear wall slab stays solid: with wallThickness above the
+      // side frame, clipped side cells must not notch the corner post where
+      // the side wall meets the rear wall.
+      for (const sign of [-1, 1]) {
+        expect(
+          volumeAt(shape, p, [
+            sign * (l.width / 2 - p.wallThickness / 2),
+            3.75,
+            30,
+          ]),
+        ).toBeGreaterThan(0.007)
+      }
+    } finally {
+      shape.delete()
     }
   }, 180000)
   it('rejects stale generation before building', async () => {
