@@ -58,7 +58,7 @@ In the installed wall orientation, at zero degrees the bottom MUST be horizontal
 - **THEN** validation MUST reject the configuration on Z before generation or export
 
 ### Requirement: Protected material-saving mode
-Saving mode MUST cut shared-size hexagonal openings through the front and two side wall regions and, when enabled, through the bottom plate, using the same shared OpenGrid honeycomb lattice for walls and bottom. Lattice placement MUST follow the shared saving-mode discipline: rows centered in each protected panel, columns anchored on the shared absolute pitch, and boundary-overlapping centers admitted so hexagonal openings MAY be clipped by the protected frames into partial cells that end flush with the frame lines. A clipped cell with no remaining area MUST NOT cut. Cells whose opening would enter the 2 mm dispensing-slot safety ring or break the bottom rounded-corner-arc clearance MUST be dropped entirely. Wall openings MUST stay out of the at-least-3.5 mm wall frame bands, and bottom openings MUST stay out of the at-least-5 mm outer bottom frame. Bottom openings MUST pass completely through the bottom thickness so the lattice is visible from both bottom faces. The back wall, rear support, mounting plate, rounded corner regions outside the corner clearance rule, wall frame bands, bottom frame, and slot safety ring MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and an estimated cell count covering walls and bottom, including partial cells, when enabled, and the 3000-cell ceiling MUST bound that combined estimate. Cutting MUST report cell progress and support stale-generation cancellation.
+Saving mode MUST cut shared-size hexagonal openings through the front and two side wall regions and, when enabled, through the bottom plate, using the same shared OpenGrid honeycomb lattice for walls and bottom. Lattice placement MUST follow the shared saving-mode discipline: rows centered in each protected panel, columns anchored on the shared absolute pitch, and boundary-overlapping centers admitted so hexagonal openings MAY be clipped by the protected frames into partial cells that end flush with the frame lines. A clipped cell with no remaining area MUST NOT cut. Bottom hexagonal openings MUST be clipped at the outer boundary of the 2 mm dispensing-slot safety ring so only opening area outside the ring is cut; a candidate with no remaining area outside the ring MUST NOT cut or count as a cell. Cells whose opening would break the bottom rounded-corner-arc clearance MUST be dropped entirely. Wall openings MUST stay out of the at-least-3.5 mm wall frame bands, and bottom openings MUST stay out of the at-least-5 mm outer bottom frame. Bottom openings MUST pass completely through the bottom thickness so the lattice is visible from both bottom faces. The back wall, rear support, mounting plate, rounded corner regions outside the corner clearance rule, wall frame bands, bottom frame, and slot safety ring MUST remain solid. The UI MUST show the shared Beta indicator, performance warning, and an estimated cell count covering walls and bottom, including partial cells, when enabled, and the 3000-cell ceiling MUST bound that combined estimate. Cutting MUST report cell progress and support stale-generation cancellation.
 
 #### Scenario: Toggle saving
 - **WHEN** saving is enabled on a box with room for cells
@@ -70,6 +70,16 @@ Saving mode MUST cut shared-size hexagonal openings through the front and two si
 - **THEN** the lattice MAY cut partial hexagonal openings that end flush with the protected frame lines
 - **AND** no clipped opening MAY enter the wall frame bands, the outer bottom frame, the slot safety ring, or the rounded corner clearances
 - **AND** the estimated cell count MUST include the partial cells
+
+#### Scenario: Slot-adjacent cells are clipped to the safety ring
+- **WHEN** a bottom hexagonal cell overlaps the 2 mm dispensing-slot safety ring and has opening area outside that ring
+- **THEN** only the part of its opening outside the ring MUST be cut, through the full bottom thickness
+- **AND** the slot safety ring, dispensing slot, and slot lip smoothing MUST remain intact
+- **AND** the clipped cell MUST contribute exactly once to the estimated cell count and cutting progress
+
+#### Scenario: Cells fully covered by the slot safety ring remain solid
+- **WHEN** a candidate bottom cell has no opening area outside the 2 mm dispensing-slot safety ring
+- **THEN** it MUST NOT cut and MUST NOT contribute to the cell estimate or cutting progress
 
 #### Scenario: Bottom openings clear the dispensing slot
 - **WHEN** saving mode cuts the bottom of a valid box

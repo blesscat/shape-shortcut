@@ -140,15 +140,23 @@ describe('OpenConnect tissue box contract', () => {
         span - limit + 1e-9,
       )
     }
+    const slotCoreHalf = defaults.slotLength / 2 - defaults.slotWidth / 2
+    const slotClearance = defaults.slotWidth / 2 + lattice.bottomHoleSafetyRing
+    const distanceToSlot = ([u, v]: [number, number]) =>
+      Math.hypot(
+        Math.max(0, Math.abs(u) - slotCoreHalf),
+        Math.abs(v - l.depth / 2),
+      )
+    expect(bottomCells.some((cell) => cell.clipToSlotSafetyRing)).toBe(true)
     for (const cell of bottomCells) {
-      const coreHalf = defaults.slotLength / 2 - defaults.slotWidth / 2
-      const distance = Math.hypot(
-        Math.max(0, Math.abs(cell.u) - coreHalf),
-        Math.abs(cell.v - l.depth / 2),
+      const centerDistance = distanceToSlot([cell.u, cell.v])
+      expect(centerDistance + radius).toBeGreaterThan(slotClearance)
+      expect(Math.max(...cell.polygon.map(distanceToSlot))).toBeGreaterThan(
+        slotClearance,
       )
-      expect(distance).toBeGreaterThanOrEqual(
-        defaults.slotWidth / 2 + radius + lattice.bottomHoleSafetyRing,
-      )
+      if (cell.clipToSlotSafetyRing) {
+        expect(centerDistance).toBeLessThan(slotClearance + radius)
+      }
     }
     // Rounded front ends reserve the full outer radius; square rear ends do not.
     const front = wallCells.filter((cell) => cell.wall === 'front')
@@ -169,6 +177,26 @@ describe('OpenConnect tissue box contract', () => {
         honeycombMode: true,
       }).valid,
     ).toBe(false)
+  })
+  it('plans partial bottom cells beside the dispensing-slot safety ring', () => {
+    const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+    const layout = tissueBoxLayout(defaults)
+    const slotCoreHalf = defaults.slotLength / 2 - defaults.slotWidth / 2
+    const clearance = defaults.slotWidth / 2 + lattice.bottomHoleSafetyRing
+    const distanceToSlot = ([u, v]: [number, number]) =>
+      Math.hypot(
+        Math.max(0, Math.abs(u) - slotCoreHalf),
+        Math.abs(v - layout.depth / 2),
+      )
+    const slotAdjacentCells = tissueBoxCells(defaults).filter((cell) => {
+      if (cell.wall !== 'bottom') return false
+      const distances = cell.polygon.map(distanceToSlot)
+      return (
+        Math.min(...distances) < clearance && Math.max(...distances) > clearance
+      )
+    })
+
+    expect(slotAdjacentCells.length).toBeGreaterThan(0)
   })
   it('keeps bottom cells inside the rounded front corner arcs', () => {
     const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
