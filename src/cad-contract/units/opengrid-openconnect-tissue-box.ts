@@ -51,6 +51,8 @@ export type TissueBoxCell = {
   v: number
   /** Hexagon clipped to the protected panel, in the wall's surface coordinates. */
   polygon: TissueBoxCellPoint[]
+  /** Bottom opening is clipped against the rounded dispensing-slot safety ring. */
+  clipToSlotSafetyRing: boolean
 }
 
 type TissueBoxCellRectangle = {
@@ -169,26 +171,60 @@ function cellPanelRectangle(
   }
 }
 
+function distanceToSlotCenterline(
+  p: TissueBoxParameters,
+  u: number,
+  v: number,
+  layout: ReturnType<typeof tissueBoxLayout>,
+): number {
+  const slotCoreHalf = Math.max(0, p.slotLength / 2 - p.slotWidth / 2)
+  return Math.hypot(
+    Math.max(0, Math.abs(u) - slotCoreHalf),
+    Math.abs(v - layout.depth / 2),
+  )
+}
+
+function polygonHasOpeningOutsideSlotSafetyRing(
+  p: TissueBoxParameters,
+  polygon: readonly TissueBoxCellPoint[],
+  layout: ReturnType<typeof tissueBoxLayout>,
+): boolean {
+  const safetyRing = OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
+  const protectedRadius = p.slotWidth / 2 + safetyRing
+  return polygon.some(
+    ([u, v]) =>
+      distanceToSlotCenterline(p, u, v, layout) >
+      protectedRadius + TISSUE_BOX_CELL_EPSILON,
+  )
+}
+
+function cellMayOverlapSlotSafetyRing(
+  p: TissueBoxParameters,
+  u: number,
+  v: number,
+  layout: ReturnType<typeof tissueBoxLayout>,
+): boolean {
+  const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+  const protectedRadius =
+    p.slotWidth / 2 + lattice.bottomHoleSafetyRing + lattice.cellRadius
+  return (
+    distanceToSlotCenterline(p, u, v, layout) <
+    protectedRadius - TISSUE_BOX_CELL_EPSILON
+  )
+}
+
 function cellPolygonFitsProtectors(
   p: TissueBoxParameters,
   wall: TissueBoxCell['wall'],
-  u: number,
-  v: number,
+  center: TissueBoxCellPoint,
+  polygon: readonly TissueBoxCellPoint[],
 ): boolean {
-  const l = tissueBoxLayout(p)
-  const radius = OPENGRID_HONEYCOMB_CONFIGURATION.cellRadius
   if (wall !== 'bottom') return true
-  const slotCoreHalf = Math.max(0, p.slotLength / 2 - p.slotWidth / 2)
-  const slotClearance =
-    p.slotWidth / 2 +
-    radius +
-    OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
-  const distance = Math.hypot(
-    Math.max(0, Math.abs(u) - slotCoreHalf),
-    Math.abs(v - l.depth / 2),
-  )
-  if (distance < slotClearance) return false
+  const l = tissueBoxLayout(p)
+  if (!polygonHasOpeningOutsideSlotSafetyRing(p, polygon, l)) return false
   if (p.outerRadius <= 0) return true
+  const [u, v] = center
+  const radius = OPENGRID_HONEYCOMB_CONFIGURATION.cellRadius
   // The two front corners of the bottom plate are rounded by outerRadius.
   // Cells reaching a corner arc must fit inside that arc inset by the bottom
   // frame, so no opening breaks the rounded surface.
@@ -339,7 +375,6 @@ export function tissueBoxCells(p: TissueBoxParameters): TissueBoxCell[] {
   const hexagonHalfWidth = (Math.sqrt(3) * radius) / 2
   const cells: TissueBoxCell[] = []
   const emit = (wall: TissueBoxCell['wall'], center: TissueBoxCellPoint) => {
-    if (!cellPolygonFitsProtectors(p, wall, center[0], center[1])) return
     const polygon = clipCellPolygonToRectangle(
       hexagonPolygonAt(center),
       cellPanelRectangle(p, wall),
@@ -349,7 +384,17 @@ export function tissueBoxCells(p: TissueBoxParameters): TissueBoxCell[] {
       cellPolygonArea(polygon) <= TISSUE_BOX_CELL_MIN_AREA
     )
       return
-    cells.push({ wall, u: center[0], v: center[1], polygon })
+    if (!cellPolygonFitsProtectors(p, wall, center, polygon)) return
+    const layout = tissueBoxLayout(p)
+    cells.push({
+      wall,
+      u: center[0],
+      v: center[1],
+      polygon,
+      clipToSlotSafetyRing:
+        wall === 'bottom' &&
+        cellMayOverlapSlotSafetyRing(p, center[0], center[1], layout),
+    })
   }
   // Walls follow the shared side-panel lattice: rows centered inside the
   // panel, columns on the absolute pitch, centers reaching one inradius past

@@ -287,6 +287,118 @@ describe('tissue box real geometry', () => {
       shape.delete()
     }
   }, 180000)
+  it('clips slot-adjacent cells to the rounded 2 mm safety ring', async () => {
+    const p = {
+      ...small,
+      x: 120,
+      y: 80,
+      z: 35,
+      slotLength: 85,
+      slotWidth: 5,
+      tiltAngle: 0,
+      honeycombMode: true,
+    }
+    const l = tissueBoxLayout(p)
+    const lattice = OPENGRID_HONEYCOMB_CONFIGURATION
+    const slotCoreHalf = p.slotLength / 2 - p.slotWidth / 2
+    const safetyRing = lattice.bottomHoleSafetyRing
+    const protectedRadius = p.slotWidth / 2 + safetyRing
+    const distanceToSlot = ([u, v]: [number, number]) =>
+      Math.hypot(
+        Math.max(0, Math.abs(u) - slotCoreHalf),
+        Math.abs(v - l.depth / 2),
+      )
+    const clippedCells = tissueBoxCells(p).filter(
+      (cell) => cell.wall === 'bottom' && cell.clipToSlotSafetyRing,
+    )
+    const furthestOutsideDistance = (cell: (typeof clippedCells)[number]) =>
+      Math.max(...cell.polygon.map(distanceToSlot))
+    const sideCell = clippedCells
+      .filter((cell) => Math.abs(cell.u) < slotCoreHalf - lattice.cellRadius)
+      .sort(
+        (left, right) =>
+          furthestOutsideDistance(right) - furthestOutsideDistance(left),
+      )[0]
+    const endCell = clippedCells
+      .filter((cell) => Math.abs(cell.u) > slotCoreHalf)
+      .sort(
+        (left, right) =>
+          furthestOutsideDistance(right) - furthestOutsideDistance(left),
+      )[0]
+    expect(sideCell).toBeDefined()
+    expect(endCell).toBeDefined()
+
+    const openingProbe = (cell: (typeof clippedCells)[number]) => {
+      const centroid = cell.polygon.reduce(
+        (sum, point) => [
+          sum[0] + point[0] / cell.polygon.length,
+          sum[1] + point[1] / cell.polygon.length,
+        ],
+        [0, 0],
+      )
+      const vertices = [...cell.polygon].sort(
+        (left, right) => distanceToSlot(right) - distanceToSlot(left),
+      )
+      for (const vertex of vertices) {
+        for (const fraction of [0.9, 0.8, 0.7, 0.6]) {
+          const point: [number, number] = [
+            centroid[0] + (vertex[0] - centroid[0]) * fraction,
+            centroid[1] + (vertex[1] - centroid[1]) * fraction,
+          ]
+          if (distanceToSlot(point) > protectedRadius + 0.25) return point
+        }
+      }
+      throw new Error(
+        `No probe point outside the slot safety ring: ${JSON.stringify({
+          center: [cell.u, cell.v],
+          centerDistance: distanceToSlot([cell.u, cell.v]),
+          vertexDistances: cell.polygon.map(distanceToSlot),
+          protectedRadius,
+        })}`,
+      )
+    }
+    const sideProbe = openingProbe(sideCell!)
+    const endProbe = openingProbe(endCell!)
+    const progress: any[] = []
+    const shape = await build(p, {
+      reportProgress: (value: unknown) => progress.push(value),
+    })
+    try {
+      expect(tissueBoxQuality(shape)).toEqual({ valid: true, solids: 1 })
+      for (const [u, v] of [sideProbe, endProbe]) {
+        for (const z of [0.02, p.bottomThickness - 0.02])
+          expect(volumeAt(shape, p, [u, v, z])).toBeLessThan(1e-6)
+      }
+      expect(
+        volumeAt(shape, p, [0, l.depth / 2, p.bottomThickness / 2]),
+      ).toBeLessThan(1e-6)
+      expect(
+        volumeAt(shape, p, [
+          0,
+          l.depth / 2 + protectedRadius - 0.5,
+          p.bottomThickness / 2,
+        ]),
+      ).toBeGreaterThan(0.007)
+      for (const sign of [-1, 1]) {
+        expect(
+          volumeAt(shape, p, [
+            sign * (slotCoreHalf + protectedRadius - 0.5),
+            l.depth / 2,
+            p.bottomThickness / 2,
+          ]),
+        ).toBeGreaterThan(0.007)
+      }
+      expect(progress).toContainEqual(
+        expect.objectContaining({
+          completed: tissueBoxCells(p).length,
+          total: tissueBoxCells(p).length,
+          unit: 'cells',
+        }),
+      )
+    } finally {
+      shape.delete()
+    }
+  }, 180000)
   it('rejects stale generation before building', async () => {
     await expect(
       build(small, { isGenerationCurrent: () => false }),

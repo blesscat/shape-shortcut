@@ -17,6 +17,7 @@ import {
   type TissueBoxCell,
   type TissueBoxParameters,
 } from '../../../cad-contract/units/opengrid-openconnect-tissue-box'
+import { OPENGRID_HONEYCOMB_CONFIGURATION } from '../../../cad-contract/units/opengrid-honeycomb'
 import {
   measureBooleanInScope,
   type BooleanOperationReporter,
@@ -175,6 +176,18 @@ function hexCutter(p: TissueBoxParameters, cell: TissueBoxCell): Shape3D {
     dispose(sketcher)
   }
 }
+function slotSafetyEnvelope(p: TissueBoxParameters): Shape3D {
+  const l = tissueBoxLayout(p)
+  const clearance = OPENGRID_HONEYCOMB_CONFIGURATION.bottomHoleSafetyRing
+  return prism(
+    p.slotLength + clearance * 2,
+    p.slotWidth + clearance * 2,
+    p.slotWidth / 2 + clearance,
+    -0.1,
+    p.bottomThickness + 0.2,
+    l.depth / 2,
+  )
+}
 export function tissueBoxQuality(shape: Shape3D): {
   valid: boolean
   solids: number
@@ -281,12 +294,27 @@ export async function buildTissueBox(
       const cells = tissueBoxCells(p)
       for (let start = 0; start < cells.length; start += 24) {
         checkCurrent(context)
+        const batchCells = cells.slice(start, start + 24)
         const cutters: Shape3D[] = []
+        let batchTool: Shape3D | null = null
         try {
-          for (const cell of cells.slice(start, start + 24))
-            cutters.push(hexCutter(p, cell))
-          boolean(makeCompound(cutters).asShape3D(), 'cut', cutters.length)
+          for (const cell of batchCells) cutters.push(hexCutter(p, cell))
+          batchTool = makeCompound(cutters).asShape3D()
+          if (batchCells.some((cell) => cell.clipToSlotSafetyRing)) {
+            const envelope = slotSafetyEnvelope(p)
+            try {
+              const clippedTool = batchTool.cut(envelope)
+              if (clippedTool !== batchTool) dispose(batchTool)
+              batchTool = clippedTool
+            } finally {
+              dispose(envelope)
+            }
+          }
+          const activeTool = batchTool
+          batchTool = null
+          boolean(activeTool, 'cut', cutters.length)
         } finally {
+          dispose(batchTool)
           cutters.forEach(dispose)
         }
         context.reportProgress?.({
