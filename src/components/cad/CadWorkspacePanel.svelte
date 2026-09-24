@@ -36,6 +36,7 @@
     onOpenGridDimensionCalculationInvalid: () => void
     onExport: (format: ExportFormat) => void
     onRetry: () => void
+    onDownloadSettings?: () => void
     resetVersion: number
     onRestoreDefaults: () => void
   }
@@ -56,6 +57,7 @@
     onOpenGridDimensionCalculationInvalid,
     onExport,
     onRetry,
+    onDownloadSettings,
     resetVersion,
     onRestoreDefaults,
   }: Props = $props()
@@ -130,6 +132,17 @@
     {#if state.status === 'recoverable-error' || state.status === 'fatal-worker-error'}
       <button class={ACTION_BUTTON_CLASS} type="button" onclick={onRetry}>
         {t('cad.action.retry')}
+      </button>
+    {/if}
+    {#if onDownloadSettings}
+      <button
+        class={ACTION_BUTTON_CLASS}
+        type="button"
+        data-testid="cad-download-settings"
+        disabled={state.status !== 'ready' && state.status !== 'generating'}
+        onclick={onDownloadSettings}
+      >
+        {t('workspace.downloadSettings')}
       </button>
     {/if}
   </div>

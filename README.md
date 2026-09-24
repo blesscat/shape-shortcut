@@ -30,6 +30,7 @@ Astro site shell（layouts/ + pages/）
 └─ Svelte workspace（components/cad/，主執行緒）
       ├─ 參數表單與 state machine
       ├─ component-local control panels
+      ├─ playground 場景規劃器（components/cad/playground/）
       ├─ Worker client / runtime validation
       ├─ Threlte + Three.js viewport
       └─ download adapter
@@ -43,6 +44,7 @@ Astro site shell（layouts/ + pages/）
          ├─ hexagonal-column builder + STEP template
          ├─ OpenGrid stackable-box / stackable-cylinder / organizer-box builders
          ├─ OpenGrid Wall Cover supplied STEP builder + named body/text parts
+         ├─ scene proxy builders（cad-kernel/scene/，規劃級包絡 B-Rep）
          ├─ preview mesh generation
          └─ STEP / binary STL / Wall Cover 3MF export
 ```
@@ -120,6 +122,7 @@ pages/
 - 預覽：由 Worker 產生的 B-Rep mesh。
 - `opengrid-wall-cover` 是只隸屬於 Wall 的固定元件，使用 component-local 的 `opengrid-snap-cover.step` 產生 body 與同平面的 `SNAP` 文字 part；資產維持 Snap Lite／Standard／full 的名義外框。
 - OpenGrid Snap 維持單色模型，不再提供雙色文字控制或 3MF capability；舊快照中的 `topText=SNAP` 會正規化成 `none`。
+- **Playground 規劃器**（`/cad/playground`）：一個場景可容納最多 100 個 component instance，以 OpenGrid 28 mm 格子座標（含負座標）擺放並以 90° 步進旋轉；重疊擺放會被明確拒絕。場景以規劃級 proxy mesh（包絡 B-Rep、粗 tessellation、無邊線）呈現，相同 `(modelId, parameters)` 共用 instanced geometry；選中/hover 只做顏色強調，不升級細節。每個 instance 可調整參數（schema 驅動表單）、標籤與主/副色（場景調色盤為 fallback，不影響全域顏色偏好）。場景可匯入/匯出為 `shape-shortcut/scene` JSON（schemaVersion 1）；各 component workspace 另提供「下載設定檔」輸出單件特例並快照當下全域調色盤。每片可個別下載 STEP/STL，檔名沿用 component 慣例並以 label（清理後）或序號後綴。堆疊（`supportedBy`）、拖放、minimap、localStorage 自動保存、任意模型匯入、fused 單體與 3MF plate 皆為非目標。
 - 匯出：由 Worker 目前 committed B-Rep 產生 STEP 或 binary STL；`opengrid-wall-cover` 另提供固定檔名 `opengrid-wall-cover.3mf`，body 與 text 預設分別使用耗材槽 1、2。
 - 不包含任意模型匯入、任意文字／字型 3MF、slicer profile、G-code、儲存、帳號、後端、多人協作或自動啟動 Bambu Studio。
 

@@ -810,6 +810,27 @@ the corresponding component capability specification.
 - **THEN** existing model IDs, OpenGrid build keys, route slugs, persistence keys,
   and export filename formats MUST remain unchanged
 
+### Requirement: 下載設定檔
+
+Each component workspace MUST offer a download-settings action that saves the component's currently accepted parameter snapshot as a single-instance playground scene JSON file. The file MUST use the same schema version and kind marker as playground scene files, MUST contain exactly one instance with the component's `modelId`, accepted parameters, and no placement, and MUST snapshot the current browser-wide primary/secondary palette into that instance's colors so the colors the user sees are carried into the playground. The action MUST NOT require a new generation, MUST NOT change the workspace generation state, and MUST be available whenever a valid accepted parameter snapshot exists.
+
+#### Scenario: Download settings from a valid workspace
+
+- **GIVEN** a component workspace holds an accepted parameter snapshot
+- **WHEN** the user activates the download-settings action
+- **THEN** a JSON file MUST download containing one instance with the accepted parameters and the current palette snapshot
+- **AND** the workspace generation state and preview MUST remain unchanged
+
+#### Scenario: Palette snapshot is faithful
+
+- **WHEN** the user has customized the primary/secondary palette and downloads settings
+- **THEN** the exported instance colors MUST equal the customized palette
+
+#### Scenario: Imported into playground
+
+- **WHEN** the downloaded settings file is imported in the playground
+- **THEN** the scene MUST contain one instance of that component with the exported parameters and colors
+
 ## 可追溯性
 
 - 變更動機、Prototype 範圍與後續演進：../../proposal.md

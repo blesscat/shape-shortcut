@@ -109,6 +109,28 @@ export type WorkerDisposeCommand = Envelope<'worker.dispose'> & {
   operationId: string
 }
 
+export type SceneInstanceGenerateCommand =
+  Envelope<'scene.instance.generate'> & {
+    operationId: string
+    instanceId: string
+    modelId: ModelId
+    parameters: ModelParameterValues
+    previewConfig: PreviewConfig
+  }
+
+export type SceneInstanceExportFormat = 'step' | 'stl'
+
+export type SceneInstanceExportCommand = Envelope<
+  'scene.instance.export.step' | 'scene.instance.export.stl'
+> & {
+  operationId: string
+  instanceId: string
+  modelId: ModelId
+  parameters: ModelParameterValues
+  format: SceneInstanceExportFormat
+  file: { name: string; mime: 'model/step' | 'model/stl' }
+}
+
 export type WorkerCommand =
   | EngineInitCommand
   | ModelGenerateCommand
@@ -118,6 +140,8 @@ export type WorkerCommand =
   | ExportStepCommand
   | ExportStlCommand
   | ExportThreeMfCommand
+  | SceneInstanceGenerateCommand
+  | SceneInstanceExportCommand
   | WorkerDisposeCommand
 
 export type WorkerCommandInput =
@@ -137,6 +161,10 @@ export type WorkerCommandInput =
       Partial<Pick<ExportStlCommand, 'version' | 'requestId'>>)
   | (Omit<ExportThreeMfCommand, 'version' | 'requestId'> &
       Partial<Pick<ExportThreeMfCommand, 'version' | 'requestId'>>)
+  | (Omit<SceneInstanceGenerateCommand, 'version' | 'requestId'> &
+      Partial<Pick<SceneInstanceGenerateCommand, 'version' | 'requestId'>>)
+  | (Omit<SceneInstanceExportCommand, 'version' | 'requestId'> &
+      Partial<Pick<SceneInstanceExportCommand, 'version' | 'requestId'>>)
   | (Omit<WorkerDisposeCommand, 'version' | 'requestId'> &
       Partial<Pick<WorkerDisposeCommand, 'version' | 'requestId'>>)
 
@@ -258,6 +286,27 @@ export type ExportThreeMfReadyEvent = ExportReadyEventBase & {
 export type ExportReadyEvent =
   ExportStepReadyEvent | ExportStlReadyEvent | ExportThreeMfReadyEvent
 
+export type SceneInstanceReadyEvent = Envelope<'scene.instance.ready'> & {
+  operationId: string
+  instanceId: string
+  workerEpoch: string
+  modelId: ModelId
+  parameters: ModelParameterValues
+  mesh: MeshSnapshot
+  bounds: BoxBounds
+}
+
+export type SceneInstanceExportReadyEvent =
+  Envelope<'scene.instance.export.ready'> & {
+    operationId: string
+    instanceId: string
+    workerEpoch: string
+    bytes: ArrayBuffer
+    fileName: string
+    format: SceneInstanceExportFormat
+    mime: 'model/step' | 'model/stl'
+  }
+
 export type WorkerEvent =
   | EngineReadyEvent
   | ProgressEvent
@@ -268,6 +317,8 @@ export type WorkerEvent =
   | SupersededEvent
   | OperationErrorEvent
   | ExportReadyEvent
+  | SceneInstanceReadyEvent
+  | SceneInstanceExportReadyEvent
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -616,6 +667,31 @@ export function isWorkerCommand(value: unknown): value is WorkerCommand {
       )
     case 'worker.dispose':
       return true
+    case 'scene.instance.generate':
+      return (
+        isNonEmptyString(value.instanceId) &&
+        validateModelParameters(value.modelId, value.parameters).valid &&
+        isRecord(value.previewConfig) &&
+        isFiniteNumber(value.previewConfig.tolerance) &&
+        value.previewConfig.tolerance >= 0 &&
+        isFiniteNumber(value.previewConfig.angularTolerance) &&
+        value.previewConfig.angularTolerance > 0
+      )
+    case 'scene.instance.export.step':
+    case 'scene.instance.export.stl':
+      return (
+        isNonEmptyString(value.instanceId) &&
+        validateModelParameters(value.modelId, value.parameters).valid &&
+        (value.format === 'step' || value.format === 'stl') &&
+        value.kind === `scene.instance.export.${value.format}` &&
+        isRecord(value.file) &&
+        isNonEmptyString(value.file.name) &&
+        (value.format === 'step'
+          ? value.file.mime === PROTOTYPE_CONFIGURATION.stepMime &&
+            value.file.name.endsWith(PROTOTYPE_CONFIGURATION.stepExtension)
+          : value.file.mime === PROTOTYPE_CONFIGURATION.stlMime &&
+            value.file.name.endsWith(PROTOTYPE_CONFIGURATION.stlExtension))
+      )
     default:
       return false
   }
@@ -720,6 +796,32 @@ export function isWorkerEvent(value: unknown): value is WorkerEvent {
       )
     case 'export.ready':
       return isExportReadyEvent(value)
+    case 'scene.instance.ready':
+      return (
+        isEnvelope(value, value.kind) &&
+        isNonEmptyString(value.operationId) &&
+        isNonEmptyString(value.instanceId) &&
+        isNonEmptyString(value.workerEpoch) &&
+        validateModelParameters(value.modelId, value.parameters).valid &&
+        isMesh(value.mesh) &&
+        isBounds(value.bounds)
+      )
+    case 'scene.instance.export.ready':
+      return (
+        isEnvelope(value, value.kind) &&
+        isNonEmptyString(value.operationId) &&
+        isNonEmptyString(value.instanceId) &&
+        isNonEmptyString(value.workerEpoch) &&
+        isArrayBuffer(value.bytes) &&
+        value.bytes.byteLength > 0 &&
+        isNonEmptyString(value.fileName) &&
+        (value.format === 'step' || value.format === 'stl') &&
+        (value.format === 'step'
+          ? value.mime === PROTOTYPE_CONFIGURATION.stepMime &&
+            value.fileName.endsWith(PROTOTYPE_CONFIGURATION.stepExtension)
+          : value.mime === PROTOTYPE_CONFIGURATION.stlMime &&
+            value.fileName.endsWith(PROTOTYPE_CONFIGURATION.stlExtension))
+      )
     default:
       return false
   }
@@ -751,6 +853,18 @@ export function transferablesForEvent(event: WorkerEvent): Transferable[] {
     return transferables
   }
   if (event.kind === 'export.ready') return [event.bytes]
+  if (event.kind === 'scene.instance.ready') {
+    const transferables: Transferable[] = [
+      event.mesh.positions,
+      event.mesh.normals,
+      event.mesh.indices,
+    ]
+    if (event.mesh.faceTriangleRanges) {
+      transferables.push(event.mesh.faceTriangleRanges)
+    }
+    return transferables
+  }
+  if (event.kind === 'scene.instance.export.ready') return [event.bytes]
   return []
 }
 
