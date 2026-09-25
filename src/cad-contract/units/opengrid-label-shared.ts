@@ -11,7 +11,7 @@ export const OPENGRID_LABEL_CARD_HEIGHT = 10
 export const OPENGRID_LABEL_CARD_INSERTION_THICKNESS = 0.6
 
 /** Accent depth for flush (flat) styling (mm). */
-export const OPENGRID_LABEL_ACCENT_DEPTH = 0.3
+export const OPENGRID_LABEL_ACCENT_DEPTH = 0.4
 
 /** Raised-style accent protrusion beyond the outward face (mm). */
 export const OPENGRID_LABEL_CARD_RAISED_HEIGHT = 0.4

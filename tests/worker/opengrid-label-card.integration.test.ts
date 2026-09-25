@@ -94,7 +94,7 @@ describe('OpenGrid Label Card generated geometry', () => {
       const accent = result.parts.find((part) => part.name === 'accent')!
       const accentBounds = shapeBounds(accent.shape)
       expect(accentBounds[1]?.[2]).toBeCloseTo(0.6, 2)
-      expect(accentBounds[0]?.[2]).toBeCloseTo(0.3, 2)
+      expect(accentBounds[0]?.[2]).toBeCloseTo(0.2, 2)
       assertOpenGridLabelCardShapeQuality(result.parts, parameters)
     } finally {
       deleteParts(result.parts)
