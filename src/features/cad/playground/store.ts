@@ -51,12 +51,20 @@ export type PlaygroundInstance = {
 
 export type PlaygroundWorkerState = 'initializing' | 'ready' | 'failed'
 
+/**
+ * Scene orientation: `desktop` places instances on a horizontal grid
+ * (footprint X/Y, height +Z); `wall` places them on a vertical wall board
+ * (columns X, rows up +Z, protrusion +Y).
+ */
+export type PlaygroundViewMode = 'desktop' | 'wall'
+
 export type PlaygroundSnapshot = {
   instances: PlaygroundInstance[]
   selectedInstanceId: string | null
   sceneColors: ModelColors
   workerState: PlaygroundWorkerState
   diagnostic: DiagnosticDescriptor | null
+  viewMode: PlaygroundViewMode
 }
 
 export type PlaygroundPlacementResult =
@@ -134,6 +142,7 @@ export type PlaygroundStore = {
   getSnapshot: () => PlaygroundSnapshot
   setDiagnostic: (diagnostic: DiagnosticDescriptor | null) => void
   select: (instanceId: string | null) => void
+  setViewMode: (viewMode: PlaygroundViewMode) => void
   addInstance: (modelId: ModelId) => boolean
   removeInstance: (instanceId: string) => void
   duplicateInstance: (instanceId: string) => boolean
@@ -167,6 +176,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let disposed = false
   let engineReady = false
   let nextInstanceNumber = 1
+  let viewMode: PlaygroundViewMode = 'desktop'
 
   const listeners = new Set<(snapshot: PlaygroundSnapshot) => void>()
   const readyCache = new Map<
@@ -188,6 +198,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       instances: instances.map((instance) => ({ ...instance })),
       selectedInstanceId,
       sceneColors: { ...sceneColors },
+      viewMode,
       workerState,
       diagnostic: diagnostic ? { ...diagnostic } : null,
     }
@@ -540,6 +551,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     instances: instances.map((instance) => ({ ...instance })),
     selectedInstanceId,
     sceneColors: { ...sceneColors },
+    viewMode,
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
   })
@@ -557,6 +569,10 @@ export function createPlaygroundStore(): PlaygroundStore {
     },
     select(instanceId) {
       selectedInstanceId = instanceId
+      emit()
+    },
+    setViewMode(next) {
+      viewMode = next
       emit()
     },
     addInstance(modelId) {

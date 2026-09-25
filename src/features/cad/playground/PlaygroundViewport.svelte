@@ -20,9 +20,11 @@
   } from '../viewport/coordinates'
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
   import { sceneProxyCacheKey } from './filenames'
+  import type { PlaygroundViewMode } from './store'
 
   type PlaygroundViewportInstance = {
     id: string
+    name: string
     modelId: string
     parameters: ModelParameterValues
     mesh: MeshSnapshot | null
@@ -40,14 +42,17 @@
   type Props = {
     instances: ReadonlyArray<PlaygroundViewportInstance>
     selectedInstanceId: string | null
+    viewMode: PlaygroundViewMode
     onSelect: (instanceId: string | null) => void
   }
 
-  let { instances, selectedInstanceId, onSelect }: Props = $props()
+  let { instances, selectedInstanceId, viewMode, onSelect }: Props = $props()
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
-  let hoveredInstanceId: string | null = null
+  let hoveredInstanceId: string | null = $state(null)
+  let pointerX = $state(0)
+  let pointerY = $state(0)
 
   type InstancedEntry = {
     instanceId: string
@@ -67,6 +72,7 @@
   let camera: THREE.PerspectiveCamera | null = null
   let controls: OrbitControls | null = null
   let contentGroup: THREE.Group | null = null
+  let grid: THREE.GridHelper | null = null
   let frameHandle = 0
   let resizeObserver: ResizeObserver | null = null
   let unobserveTheme: (() => void) | null = null
@@ -76,11 +82,40 @@
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
 
-  function matrixFor(instance: PlaygroundViewportInstance): THREE.Matrix4 {
+  const WALL_CAMERA_POSITION: [number, number, number] = [0, -620, 260]
+  const WALL_CAMERA_TARGET = new THREE.Vector3(0, 0, 180)
+  const DESKTOP_CAMERA_TARGET = new THREE.Vector3(0, 0, 20)
+
+  function matrixFor(
+    instance: PlaygroundViewportInstance,
+    mode: PlaygroundViewMode,
+  ): THREE.Matrix4 {
     const rotation = instance.placement?.rotation ?? 0
     const anchorX = (instance.placement?.cellX ?? 0) * PLAYGROUND_GRID_PITCH
     const anchorY = (instance.placement?.cellY ?? 0) * PLAYGROUND_GRID_PITCH
     const bounds = instance.bounds
+    const matrix = new THREE.Matrix4()
+    if (mode === 'wall') {
+      // Mount the authored piece (base plane Z=0, protrusion +Z) onto the
+      // vertical wall board: protrusion maps to world +Y, the footprint's
+      // depth becomes the vertical span, and the placement rotation stays
+      // in the wall plane.
+      const swap = rotation === 90 || rotation === 270
+      let width = 0
+      let depth = 0
+      if (bounds) {
+        width = Math.abs(bounds.max[0] - bounds.min[0])
+        depth = Math.abs(bounds.max[1] - bounds.min[1])
+      }
+      const wallWidth = swap ? depth : width
+      const wallHeight = swap ? width : depth
+      matrix.makeRotationX(-Math.PI / 2)
+      matrix.multiply(
+        new THREE.Matrix4().makeRotationZ((rotation * Math.PI) / 180),
+      )
+      matrix.setPosition(anchorX + wallWidth / 2, 0, anchorY + wallHeight / 2)
+      return matrix
+    }
     let offsetX = anchorX
     let offsetY = anchorY
     if (bounds) {
@@ -90,7 +125,6 @@
       offsetX += (swap ? depth : width) / 2
       offsetY += (swap ? width : depth) / 2
     }
-    const matrix = new THREE.Matrix4()
     matrix.makeRotationZ((rotation * Math.PI) / 180)
     matrix.setPosition(offsetX, offsetY, 0)
     return matrix
@@ -138,7 +172,7 @@
       const entry: InstancedEntry = {
         instanceId: instance.id,
         colorHex: instance.colorPrimary,
-        matrix: matrixFor(instance),
+        matrix: matrixFor(instance, viewMode),
       }
       const existing = groups.get(cacheKey)
       if (existing) existing.entries.push(entry)
@@ -188,11 +222,30 @@
         opacity: 0.25,
       })
       const placeholder = new THREE.Mesh(geometry, material)
-      placeholder.applyMatrix4(matrixFor(instance))
+      placeholder.applyMatrix4(matrixFor(instance, viewMode))
       placeholder.userData.playgroundInstanceId = instance.id
       contentGroup.add(placeholder)
       placeholderMeshes.push(placeholder)
     }
+  }
+
+  function applyViewMode(theme: CadViewportTheme): void {
+    if (grid) {
+      grid.rotation.set(
+        ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
+      )
+    }
+    if (camera && controls) {
+      if (viewMode === 'wall') {
+        camera.position.set(...WALL_CAMERA_POSITION)
+        controls.target.copy(WALL_CAMERA_TARGET)
+      } else {
+        camera.position.set(...CAD_VIEWPORT_CAMERA.position)
+        controls.target.copy(DESKTOP_CAMERA_TARGET)
+      }
+      controls.update()
+    }
+    rebuildScene(theme)
   }
 
   function pickInstance(clientX: number, clientY: number): string | null {
@@ -226,6 +279,8 @@
   }
 
   function handlePointerMove(event: MouseEvent): void {
+    pointerX = event.clientX
+    pointerY = event.clientY
     const next = pickInstance(event.clientX, event.clientY)
     if (next !== hoveredInstanceId) {
       hoveredInstanceId = next
@@ -239,6 +294,13 @@
       applyColors(observedTheme)
     }
   }
+
+  let hoveredName = $derived(
+    hoveredInstanceId
+      ? (instances.find((instance) => instance.id === hoveredInstanceId)
+          ?.name ?? null)
+      : null,
+  )
 
   onMount(() => {
     if (!container) return
@@ -262,7 +324,7 @@
 
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
-    controls.target.set(0, 0, 20)
+    controls.target.copy(DESKTOP_CAMERA_TARGET)
 
     const hemisphere = new THREE.HemisphereLight(
       new THREE.Color(theme.hemisphereSky),
@@ -285,7 +347,7 @@
     scene.add(fill)
 
     const gridCells = 40
-    const grid = new THREE.GridHelper(
+    grid = new THREE.GridHelper(
       gridCells * PLAYGROUND_GRID_PITCH,
       gridCells,
       new THREE.Color(theme.gridMajor),
@@ -344,6 +406,7 @@
       scene = null
       camera = null
       contentGroup = null
+      grid = null
     }
   })
 
@@ -351,6 +414,11 @@
     instances
     selectedInstanceId
     rebuildScene(observedTheme)
+  })
+
+  $effect(() => {
+    viewMode
+    applyViewMode(observedTheme)
   })
 
   $effect(() => {
@@ -363,9 +431,26 @@
   bind:this={container}
   class="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
+  data-view-mode={viewMode}
   data-selected-instance={selectedInstanceId ?? ''}
+  data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
   onpointermove={handlePointerMove}
   onpointerleave={handlePointerLeave}
   role="img"
-></div>
+>
+  {#if hoveredName}
+    <div
+      class="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg border border-border-card bg-card px-2 py-1 text-[0.75rem] font-medium text-card-foreground shadow-card"
+      data-testid="playground-hover-name"
+      style:left="{pointerX -
+        (container?.getBoundingClientRect().left ?? 0) +
+        14}px"
+      style:top="{pointerY -
+        (container?.getBoundingClientRect().top ?? 0) +
+        14}px"
+    >
+      {hoveredName}
+    </div>
+  {/if}
+</div>

@@ -10,6 +10,8 @@
 
 The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and a placement of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. The playground MUST NOT offer Z-offset or stacking controls; every instance is placed ground-level, and the scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability.
 
+The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Placement, occupancy, and rotation semantics MUST be identical in both orientations.
+
 #### Scenario: Add instance to scene
 
 - **WHEN** the user adds a registered component to the playground
@@ -26,6 +28,13 @@ The system MUST provide a playground route that holds a scene of multiple compon
 
 - **WHEN** the user enters any integer grid coordinate, including negative values
 - **THEN** the placement MUST be accepted and rendered without a boundary error
+
+#### Scenario: Wall orientation mounts pieces vertically
+
+- **WHEN** the user switches the scene to wall orientation
+- **THEN** the grid MUST render as a vertical board, rows extending upward along +Z
+- **AND** every instance MUST render mounted on the board with its protrusion toward +Y
+- **AND** placements, occupancy, and selection MUST be unchanged
 
 ### Requirement: 格子佔用驗證
 
@@ -169,12 +178,12 @@ The playground MUST export the current scene as a JSON file containing the schem
 
 ### Requirement: 每片 STEP/STL 匯出清單
 
-The playground MUST export STEP and binary STL for individual instances with a committed proxy-independent model revision for that instance's parameters, reusing the component's existing export filename convention. When an instance has a label, the file name MUST append the sanitized label; otherwise it MUST append the instance index. Instances whose parameters are invalid or whose mesh is not ready MUST NOT offer export.
+The playground MUST export binary STL for individual instances with a committed proxy-independent model revision for that instance's parameters, reusing the component's existing export filename convention. STEP download MUST follow the workspace policy and be offered in development builds only. When an instance has a label, the file name MUST append the sanitized label; otherwise it MUST append the instance index. Instances whose parameters are invalid or whose mesh is not ready MUST NOT offer export.
 
 #### Scenario: Export labeled instance
 
 - **GIVEN** an instance with label `底層左邊` and ready model
-- **WHEN** the user downloads its STEP
+- **WHEN** the user downloads its STL
 - **THEN** the downloaded file MUST use the component's filename convention suffixed with the label
 
 #### Scenario: Unlabeled collision-free names

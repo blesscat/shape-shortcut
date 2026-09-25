@@ -34,6 +34,7 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-viewport')).toBeVisible()
     await expect(page.getByTestId('playground-instance-help')).not.toBeEmpty()
+    await expect(page.getByTestId('playground-param-width')).toContainText(/\S/)
     await waitForInstanceReady(page, 'inst-1')
 
     const cellX = page.locator('#playground-cell-x')
@@ -90,10 +91,16 @@ test.describe('OpenGrid playground planner', () => {
     const sceneFile = await sceneDownload
     expect(sceneFile.suggestedFilename()).toBe('playground-scene.json')
 
-    const stepDownload = page.waitForEvent('download')
-    await page.getByTestId('playground-export-step').click()
-    const stepFile = await stepDownload
-    expect(stepFile.suggestedFilename()).toContain('box-20x30x40-1.step')
+    // STEP download follows the workspace policy: dev builds only.
+    const stepButton = page.getByTestId('playground-export-step')
+    if (await stepButton.isVisible()) {
+      const stepDownload = page.waitForEvent('download')
+      await stepButton.click()
+      const stepFile = await stepDownload
+      expect(stepFile.suggestedFilename()).toContain('box-20x30x40-1.step')
+    } else {
+      await expect(stepButton).toHaveCount(0)
+    }
   })
 
   test('imports a scene file into the playground', async ({ page }) => {
@@ -219,4 +226,33 @@ test('loads the localized playground route for every locale', async ({
 }) => {
   await page.goto(localizedPathFor('en', '/cad/playground'))
   await expect(page.getByTestId('playground')).toBeVisible({ timeout: 30_000 })
+})
+
+test('switches the scene between desktop and wall orientations', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-1')
+
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'desktop',
+  )
+
+  await page.getByTestId('playground-mode-wall').click()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+  )
+
+  await page.getByTestId('playground-mode-desktop').click()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'desktop',
+  )
 })

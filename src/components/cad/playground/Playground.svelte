@@ -90,6 +90,33 @@
       {t('playground.title')}
     </h1>
     <div class="flex flex-wrap items-center gap-2">
+      <div
+        class="flex items-center gap-1 rounded-lg border border-border-card bg-panel p-1"
+        role="group"
+        aria-label={t('playground.viewMode.title')}
+      >
+        <button
+          class="rounded-md px-3 py-1 text-base {snapshot?.viewMode ===
+          'desktop'
+            ? 'bg-page font-[650] text-ink'
+            : 'text-muted-foreground hover:text-ink'}"
+          data-testid="playground-mode-desktop"
+          aria-pressed={snapshot?.viewMode === 'desktop'}
+          onclick={() => store?.setViewMode('desktop')}
+        >
+          {t('playground.viewMode.desktop')}
+        </button>
+        <button
+          class="rounded-md px-3 py-1 text-base {snapshot?.viewMode === 'wall'
+            ? 'bg-page font-[650] text-ink'
+            : 'text-muted-foreground hover:text-ink'}"
+          data-testid="playground-mode-wall"
+          aria-pressed={snapshot?.viewMode === 'wall'}
+          onclick={() => store?.setViewMode('wall')}
+        >
+          {t('playground.viewMode.wall')}
+        </button>
+      </div>
       <input
         bind:this={fileInput}
         class="hidden"
@@ -233,6 +260,7 @@
       <PlaygroundViewport
         instances={snapshot.instances.map((instance) => ({
           id: instance.id,
+          name: `#${instance.id.replace('inst-', '')} ${modelName(instance.modelId)}${instance.label ? ` · ${instance.label}` : ''}`,
           modelId: instance.modelId,
           parameters: instance.parameters,
           mesh: instance.mesh,
@@ -242,6 +270,7 @@
           meshState: instance.meshState,
         }))}
         selectedInstanceId={snapshot.selectedInstanceId}
+        viewMode={snapshot.viewMode}
         onSelect={(instanceId) => store?.select(instanceId)}
       />
     </div>

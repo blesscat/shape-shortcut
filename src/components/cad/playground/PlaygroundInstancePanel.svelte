@@ -1,14 +1,18 @@
 <script lang="ts">
   import { translate, type Locale } from '../../../i18n'
-  import { formatValidationIssue } from '../../../i18n/diagnostics'
-  import type { ParameterField } from '../../../features/cad/model-catalog'
+  import type { ParameterField as ParameterFieldDefinition } from '../../../features/cad/model-catalog'
+  import {
+    displayParameterLabel,
+    unitLabelFor,
+  } from '../../../features/cad/model-catalog'
   import ParameterControl from '../component-panels/ParameterControl.svelte'
+  import ParameterField from '../component-panels/ParameterField.svelte'
   import type { PlaygroundInstance } from '../../../features/cad/playground/store'
 
   type Props = {
     locale: Locale
     instance: PlaygroundInstance
-    fields: ReadonlyArray<ParameterField>
+    fields: ReadonlyArray<ParameterFieldDefinition>
     onParameterChange: (key: string, value: string) => void
     onLabelChange: (label: string) => void
     onPlacementChange: (cellX: number, cellY: number, rotation: number) => void
@@ -164,23 +168,22 @@
       </legend>
       {#each fields as field (field.key)}
         <div data-testid={`playground-param-${field.key}`}>
-          <ParameterControl
+          <ParameterField
             {locale}
-            {field}
-            value={instance.rawParameters[field.key] ?? ''}
+            label={displayParameterLabel(field, locale)}
+            unit={unitLabelFor(locale, field.unit)}
             error={instance.fieldErrors[field.key]}
             errorId={`${field.key}-playground-error`}
-            onChange={(value) => onParameterChange(field.key, value)}
-          />
-          {#if instance.fieldErrors[field.key]}
-            <span
-              id={`${field.key}-playground-error`}
-              class="text-sm text-error"
-              role="alert"
-            >
-              {formatValidationIssue(locale, instance.fieldErrors[field.key])}
-            </span>
-          {/if}
+          >
+            <ParameterControl
+              {locale}
+              {field}
+              value={instance.rawParameters[field.key] ?? ''}
+              error={instance.fieldErrors[field.key]}
+              errorId={`${field.key}-playground-error`}
+              onChange={(value) => onParameterChange(field.key, value)}
+            />
+          </ParameterField>
         </div>
       {/each}
     </fieldset>
@@ -219,14 +222,16 @@
   </fieldset>
 
   <div class="flex flex-wrap items-center gap-2">
-    <button
-      class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
-      data-testid="playground-export-step"
-      disabled={instance.meshState !== 'ready' || instance.exportWorking}
-      onclick={() => onExport('step')}
-    >
-      {translate(locale, 'playground.export.step')}
-    </button>
+    {#if import.meta.env.DEV}
+      <button
+        class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+        data-testid="playground-export-step"
+        disabled={instance.meshState !== 'ready' || instance.exportWorking}
+        onclick={() => onExport('step')}
+      >
+        {translate(locale, 'playground.export.step')}
+      </button>
+    {/if}
     <button
       class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
       data-testid="playground-export-stl"

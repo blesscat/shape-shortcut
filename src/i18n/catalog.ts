@@ -528,6 +528,9 @@ export const zhHantMessages = {
   'diagnostic.sceneTooManyInstances': '場景最多 {max} 個元件，已超過上限。',
   'diagnostic.scenePlacementConflict': '擺放位置與其他元件重疊，已取消變更。',
   'playground.title': 'OpenGrid Playground 規劃器',
+  'playground.viewMode.title': '場景方向',
+  'playground.viewMode.desktop': '桌面',
+  'playground.viewMode.wall': '牆面',
   'playground.entry': '開啟 Playground 規劃器',
   'playground.description':
     '將多個 component 放進同一個 3D 場景，依 OpenGrid 格子擺放、調整參數與顏色，並逐片匯出 STEP/STL。場景以 proxy 外觀呈現，細節檢視請回到各 component 工作區。',
@@ -1470,6 +1473,9 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'diagnostic.scenePlacementConflict':
     'The placement overlaps another component; the change was canceled.',
   'playground.title': 'OpenGrid Playground Planner',
+  'playground.viewMode.title': 'Scene orientation',
+  'playground.viewMode.desktop': 'Desktop',
+  'playground.viewMode.wall': 'Wall',
   'playground.entry': 'Open the Playground planner',
   'playground.description':
     'Place multiple components in one 3D scene, arrange them on the OpenGrid grid, tune parameters and colors, and export STEP/STL per piece. Scenes render as planning-grade proxies; inspect details in each component workspace.',
