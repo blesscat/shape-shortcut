@@ -274,7 +274,32 @@
     return null
   }
 
+  /**
+   * Selection only happens on a true click: drags are view manipulation
+   * (orbit) and must leave the current selection untouched.
+   */
+  const CLICK_DRAG_THRESHOLD_PX = 5
+  let pointerDownX = 0
+  let pointerDownY = 0
+  let pointerDownValid = false
+
+  function handlePointerDown(event: MouseEvent): void {
+    if (event.button !== 0) {
+      pointerDownValid = false
+      return
+    }
+    pointerDownX = event.clientX
+    pointerDownY = event.clientY
+    pointerDownValid = true
+  }
+
   function handleClick(event: MouseEvent): void {
+    const isClick =
+      pointerDownValid &&
+      Math.hypot(event.clientX - pointerDownX, event.clientY - pointerDownY) <=
+        CLICK_DRAG_THRESHOLD_PX
+    pointerDownValid = false
+    if (!isClick) return
     onSelect(pickInstance(event.clientX, event.clientY))
   }
 
@@ -435,6 +460,7 @@
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
+  onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
   onpointerleave={handlePointerLeave}
   role="img"

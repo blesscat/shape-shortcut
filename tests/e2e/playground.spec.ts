@@ -256,3 +256,29 @@ test('switches the scene between desktop and wall orientations', async ({
     'desktop',
   )
 })
+
+test('orbit dragging keeps the selection; clicking empty space clears it', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-1')
+
+  const viewport = page.getByTestId('playground-viewport')
+  const box = (await viewport.boundingBox())!
+
+  // Drag = orbit: the selection must survive the view manipulation.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(
+    box.x + box.width / 2 + 140,
+    box.y + box.height / 2 + 80,
+    { steps: 6 },
+  )
+  await page.mouse.up()
+  await expect(viewport).toHaveAttribute('data-selected-instance', 'inst-1')
+
+  // Plain click on empty space clears the selection.
+  await page.mouse.click(box.x + 24, box.y + 24)
+  await expect(viewport).toHaveAttribute('data-selected-instance', '')
+})
