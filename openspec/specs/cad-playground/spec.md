@@ -33,8 +33,23 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 
 - **WHEN** the user switches the scene to wall orientation
 - **THEN** the grid MUST render as a vertical board, rows extending upward along +Z
-- **AND** every instance MUST render mounted on the board with its protrusion toward +Y
+- **AND** wall-mount components MUST render with their OpenConnect interface face directly against the wall board (no full-scene rotation)
 - **AND** placements, occupancy, and selection MUST be unchanged
+
+#### Scenario: Scene grid extent is user-selectable and remembered
+
+- **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 50×50)
+- **THEN** the rendered guide grid MUST cover that rectangular extent in both orientations
+- **AND** the values MUST be remembered in this browser and restored on the next visit
+- **AND** the logical placement space MUST remain unbounded regardless of the rendered extent
+
+#### Scenario: Wall mode offers only the wall-mount system
+
+- **WHEN** the scene is in wall orientation
+- **THEN** the component list MUST offer only wall-system components (and components without a system restriction)
+- **AND** desk-system instances MUST NOT render in the scene, appear in the instance list, or occupy placement cells
+- **WHEN** the scene is in desktop orientation
+- **THEN** only desk-system and unrestricted components MUST be offered and rendered
 
 ### Requirement: 格子佔用驗證
 

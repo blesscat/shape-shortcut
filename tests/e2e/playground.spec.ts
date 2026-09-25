@@ -232,7 +232,9 @@ test('switches the scene between desktop and wall orientations', async ({
   page,
 }) => {
   await openPlayground(page)
-  await addBoxInstance(page)
+  // The board belongs to both systems, so it survives the mode switch.
+  await page.getByTestId('playground-add-model').selectOption('opengrid')
+  await page.getByTestId('playground-add').click()
   await waitForInstanceReady(page, 'inst-1')
 
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
@@ -287,7 +289,8 @@ test('window focus/blur does not reset the scene or selection', async ({
   page,
 }) => {
   await openPlayground(page)
-  await addBoxInstance(page)
+  await page.getByTestId('playground-add-model').selectOption('opengrid')
+  await page.getByTestId('playground-add').click()
   await waitForInstanceReady(page, 'inst-1')
   await page.getByTestId('playground-mode-wall').click()
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
@@ -317,21 +320,74 @@ test('window focus/blur does not reset the scene or selection', async ({
 
 test('remembers the scene grid size across reloads', async ({ page }) => {
   await openPlayground(page)
-  const gridInput = page.getByTestId('playground-grid-cells')
-  await expect(gridInput).toHaveValue('50')
+  const gridX = page.getByTestId('playground-grid-size-x')
+  const gridY = page.getByTestId('playground-grid-size-y')
+  await expect(gridX).toHaveValue('50')
+  await expect(gridY).toHaveValue('50')
 
-  await gridInput.fill('40')
-  await gridInput.blur()
+  await gridX.fill('40')
+  await gridX.blur()
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
-    'data-grid-cells',
-    '40',
+    'data-grid-size',
+    '40x50',
+  )
+
+  await gridY.fill('30')
+  await gridY.blur()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-grid-size',
+    '40x30',
+  )
+
+  // Values below the minimum clamp to 1 cell.
+  await gridX.fill('0')
+  await gridX.blur()
+  await expect(gridX).toHaveValue('1')
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-grid-size',
+    '1x30',
   )
 
   await page.reload()
   await openPlayground(page)
-  await expect(gridInput).toHaveValue('40')
+  await expect(gridX).toHaveValue('1')
+  await expect(gridY).toHaveValue('30')
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
-    'data-grid-cells',
-    '40',
+    'data-grid-size',
+    '1x30',
   )
+})
+
+test('separates wall and desk systems by orientation', async ({ page }) => {
+  await openPlayground(page)
+  await page.getByTestId('playground-add-model').selectOption('box')
+  await page.getByTestId('playground-add').click()
+  await waitForInstanceReady(page, 'inst-1')
+
+  // Desktop mode: desk-system components are offered and render.
+  await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
+
+  // Wall mode: desk-only instances disappear from the scene and the
+  // wall-system components become available.
+  await page.getByTestId('playground-mode-wall').click()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveCount(0)
+
+  await page
+    .getByTestId('playground-add-model')
+    .selectOption('opengrid-openconnect-tissue-box')
+  await page.getByTestId('playground-add').click()
+  await waitForInstanceReady(page, 'inst-2')
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+
+  // Back to desktop: the wall piece hides and the desk piece returns.
+  await page.getByTestId('playground-mode-desktop').click()
+  await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
+  await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
 })

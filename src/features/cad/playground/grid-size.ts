@@ -1,7 +1,9 @@
 import { PLAYGROUND_GRID_PITCH } from '../../../cad-contract/scene'
 
+export type PlaygroundGridSize = { x: number; y: number }
+
 export const PLAYGROUND_GRID_CELLS_DEFAULT = 50
-export const PLAYGROUND_GRID_CELLS_MIN = 10
+export const PLAYGROUND_GRID_CELLS_MIN = 1
 export const PLAYGROUND_GRID_CELLS_MAX = 200
 
 export const PLAYGROUND_GRID_STORAGE_KEY = 'shape-shortcut:playground-grid:v1'
@@ -22,6 +24,24 @@ export function clampPlaygroundGridCells(value: unknown): number {
   )
 }
 
+function clampGridSize(value: unknown): PlaygroundGridSize {
+  if (typeof value === 'number') {
+    const clamped = clampPlaygroundGridCells(value)
+    return { x: clamped, y: clamped }
+  }
+  if (typeof value === 'object' && value !== null) {
+    const record = value as Record<string, unknown>
+    return {
+      x: clampPlaygroundGridCells(record.x),
+      y: clampPlaygroundGridCells(record.y),
+    }
+  }
+  return {
+    x: PLAYGROUND_GRID_CELLS_DEFAULT,
+    y: PLAYGROUND_GRID_CELLS_DEFAULT,
+  }
+}
+
 function browserStorage(): GridStorage | undefined {
   try {
     return globalThis.localStorage
@@ -35,27 +55,33 @@ function browserStorage(): GridStorage | undefined {
  * browser; missing, corrupt, or out-of-range values fall back to the 50×50
  * default. The logical scene stays unbounded regardless of this value.
  */
-export function loadPlaygroundGridCells(
+export function loadPlaygroundGridSize(
   storage: GridStorage | undefined = browserStorage(),
-): number {
+): PlaygroundGridSize {
   try {
     const saved: unknown = JSON.parse(
       storage?.getItem(PLAYGROUND_GRID_STORAGE_KEY) ?? 'null',
     )
-    return clampPlaygroundGridCells(saved)
+    return clampGridSize(saved)
   } catch {
-    return PLAYGROUND_GRID_CELLS_DEFAULT
+    return {
+      x: PLAYGROUND_GRID_CELLS_DEFAULT,
+      y: PLAYGROUND_GRID_CELLS_DEFAULT,
+    }
   }
 }
 
-export function savePlaygroundGridCells(
-  cells: number,
+export function savePlaygroundGridSize(
+  size: PlaygroundGridSize,
   storage: GridStorage | undefined = browserStorage(),
 ): void {
   try {
     storage?.setItem(
       PLAYGROUND_GRID_STORAGE_KEY,
-      JSON.stringify(clampPlaygroundGridCells(cells)),
+      JSON.stringify({
+        x: clampPlaygroundGridCells(size.x),
+        y: clampPlaygroundGridCells(size.y),
+      }),
     )
   } catch {
     // Keep editing usable in memory when browser storage is unavailable.

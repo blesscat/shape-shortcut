@@ -33,9 +33,11 @@ import { findFreeAnchorCell, firstPlacementConflict } from './occupancy'
 import { sceneInstanceFileName, sceneProxyCacheKey } from './filenames'
 import {
   clampPlaygroundGridCells,
-  loadPlaygroundGridCells,
-  savePlaygroundGridCells,
+  loadPlaygroundGridSize,
+  savePlaygroundGridSize,
+  type PlaygroundGridSize,
 } from './grid-size'
+import { modelVisibleInViewMode, wallMountFace } from './wall-mount'
 
 export type PlaygroundMeshState = 'pending' | 'ready' | 'failed'
 
@@ -70,7 +72,7 @@ export type PlaygroundSnapshot = {
   workerState: PlaygroundWorkerState
   diagnostic: DiagnosticDescriptor | null
   viewMode: PlaygroundViewMode
-  gridCells: number
+  gridSize: PlaygroundGridSize
 }
 
 export type PlaygroundPlacementResult =
@@ -149,7 +151,7 @@ export type PlaygroundStore = {
   setDiagnostic: (diagnostic: DiagnosticDescriptor | null) => void
   select: (instanceId: string | null) => void
   setViewMode: (viewMode: PlaygroundViewMode) => void
-  setGridCells: (cells: number) => void
+  setGridSize: (size: PlaygroundGridSize) => void
   addInstance: (modelId: ModelId) => boolean
   removeInstance: (instanceId: string) => void
   duplicateInstance: (instanceId: string) => boolean
@@ -184,7 +186,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let engineReady = false
   let nextInstanceNumber = 1
   let viewMode: PlaygroundViewMode = 'desktop'
-  let gridCells = loadPlaygroundGridCells()
+  let gridSize = loadPlaygroundGridSize()
 
   const listeners = new Set<(snapshot: PlaygroundSnapshot) => void>()
   const readyCache = new Map<
@@ -207,7 +209,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       selectedInstanceId,
       sceneColors: { ...sceneColors },
       viewMode,
-      gridCells,
+      gridSize: { ...gridSize },
       workerState,
       diagnostic: diagnostic ? { ...diagnostic } : null,
     }
@@ -222,6 +224,26 @@ export function createPlaygroundStore(): PlaygroundStore {
     const definition = getModelDefinition(instance.modelId)
     if (!definition) return null
     return definition.boundsForParameters(instance.parameters)
+  }
+
+  /**
+   * The footprint an instance occupies on the active plane. On the wall,
+   * standing wall-mount components (faceY) cover width x model height
+   * instead of width x depth, so their footprint swaps the Y extent for the
+   * Z extent.
+   */
+  const effectiveFootprintBounds = (
+    instance: PlaygroundInstance,
+  ): ModelBounds | null => {
+    const bounds = boundsFor(instance)
+    if (!bounds) return null
+    if (viewMode === 'wall' && wallMountFace(instance.modelId) === 'faceY') {
+      return {
+        min: [bounds.min[0], bounds.min[2], 0],
+        max: [bounds.max[0], bounds.max[2], 0],
+      }
+    }
+    return bounds
   }
 
   /** Analytic bounds for the given parameters, used to seed placeholders. */
@@ -561,7 +583,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     selectedInstanceId,
     sceneColors: { ...sceneColors },
     viewMode,
-    gridCells,
+    gridSize: { ...gridSize },
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
   })
@@ -583,13 +605,24 @@ export function createPlaygroundStore(): PlaygroundStore {
     },
     setViewMode(next) {
       viewMode = next
+      // A selection from the other system's component list would render as
+      // hidden in the newly active orientation.
+      if (
+        selectedInstanceId !== null &&
+        !modelVisibleInViewMode(getInstance(selectedInstanceId)!.modelId, next)
+      ) {
+        selectedInstanceId = null
+      }
       emit()
     },
-    setGridCells(cells) {
-      const next = clampPlaygroundGridCells(cells)
-      if (next === gridCells) return
-      gridCells = next
-      savePlaygroundGridCells(gridCells)
+    setGridSize(size) {
+      const next = {
+        x: clampPlaygroundGridCells(size.x),
+        y: clampPlaygroundGridCells(size.y),
+      }
+      if (next.x === gridSize.x && next.y === gridSize.y) return
+      gridSize = next
+      savePlaygroundGridSize(gridSize)
       emit()
     },
     addInstance(modelId) {
@@ -696,7 +729,7 @@ export function createPlaygroundStore(): PlaygroundStore {
           diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
         }
       }
-      const bounds = boundsFor(instance)
+      const bounds = effectiveFootprintBounds(instance)
       if (!bounds) {
         return {
           ok: false,

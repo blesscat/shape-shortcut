@@ -21,6 +21,7 @@
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
   import { sceneProxyCacheKey } from './filenames'
   import type { PlaygroundViewMode } from './store'
+  import { wallMountFace } from './wall-mount'
 
   type PlaygroundViewportInstance = {
     id: string
@@ -43,16 +44,12 @@
     instances: ReadonlyArray<PlaygroundViewportInstance>
     selectedInstanceId: string | null
     viewMode: PlaygroundViewMode
+    gridSize: { x: number; y: number }
     onSelect: (instanceId: string | null) => void
   }
 
-  let {
-    instances,
-    selectedInstanceId,
-    viewMode,
-    gridCells,
-    onSelect,
-  }: Props = $props()
+  let { instances, selectedInstanceId, viewMode, gridSize, onSelect }: Props =
+    $props()
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
@@ -78,7 +75,61 @@
   let camera: THREE.PerspectiveCamera | null = null
   let controls: OrbitControls | null = null
   let contentGroup: THREE.Group | null = null
-  let grid: THREE.GridHelper | null = null
+  let grid: THREE.Group | null = null
+
+  /** Rectangular cell grid centered on the origin, in the plane of `mode`. */
+  function buildGridLines(
+    minorColor: string,
+    majorColor: string,
+    cellsX: number,
+    cellsY: number,
+    mode: PlaygroundViewMode,
+  ): THREE.Group {
+    const pitch = PLAYGROUND_GRID_PITCH
+    const sizeX = cellsX * pitch
+    const sizeY = cellsY * pitch
+    const minor: number[] = []
+    const major: number[] = []
+    for (let i = 0; i <= cellsX; i += 1) {
+      const x = -sizeX / 2 + i * pitch
+      const target = i === 0 || i === cellsX ? major : minor
+      target.push(x, 0, -sizeY / 2, x, 0, sizeY / 2)
+    }
+    for (let j = 0; j <= cellsY; j += 1) {
+      const z = -sizeY / 2 + j * pitch
+      const target = j === 0 || j === cellsY ? major : minor
+      target.push(-sizeX / 2, 0, z, sizeX / 2, 0, z)
+    }
+    const group = new THREE.Group()
+    const addLines = (points: number[], color: string) => {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(points, 3),
+      )
+      group.add(
+        new THREE.LineSegments(
+          geometry,
+          new THREE.LineBasicMaterial({ color: new THREE.Color(color) }),
+        ),
+      )
+    }
+    addLines(minor, minorColor)
+    addLines(major, majorColor)
+    if (mode === 'desktop') {
+      group.rotation.set(...CAD_VIEWPORT_GRID_ROTATION)
+    }
+    return group
+  }
+
+  function disposeGrid(target: THREE.Group): void {
+    target.traverse((child) => {
+      if (child instanceof THREE.LineSegments) {
+        child.geometry.dispose()
+        ;(child.material as THREE.Material).dispose()
+      }
+    })
+  }
   let frameHandle = 0
   let resizeObserver: ResizeObserver | null = null
   let unobserveTheme: (() => void) | null = null
@@ -398,14 +449,13 @@
     fill.position.set(...CAD_VIEWPORT_LIGHTING.oppositeFill.position)
     scene.add(fill)
 
-    const cells = Math.max(Math.round(gridCells), 1)
-    grid = new THREE.GridHelper(
-      cells * PLAYGROUND_GRID_PITCH,
-      cells,
-      new THREE.Color(theme.gridMajor),
-      new THREE.Color(theme.gridMinor),
+    grid = buildGridLines(
+      theme.gridMinor,
+      theme.gridMajor,
+      Math.max(Math.round(gridSize.x), 1),
+      Math.max(Math.round(gridSize.y), 1),
+      viewMode,
     )
-    grid.rotation.set(...CAD_VIEWPORT_GRID_ROTATION)
     scene.add(grid)
 
     contentGroup = new THREE.Group()
@@ -487,17 +537,14 @@
     // grid orientation stays bound to the current view mode.
     if (grid) {
       scene.remove(grid)
-      grid.dispose()
+      disposeGrid(grid)
     }
-    const cells = Math.max(Math.round(gridCells), 1)
-    grid = new THREE.GridHelper(
-      cells * PLAYGROUND_GRID_PITCH,
-      cells,
-      new THREE.Color(theme.gridMajor),
-      new THREE.Color(theme.gridMinor),
-    )
-    grid.rotation.set(
-      ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
+    grid = buildGridLines(
+      theme.gridMinor,
+      theme.gridMajor,
+      Math.max(Math.round(gridSize.x), 1),
+      Math.max(Math.round(gridSize.y), 1),
+      viewMode,
     )
     scene.add(grid)
   })
@@ -508,7 +555,7 @@
   class="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
   data-view-mode={viewMode}
-  data-grid-cells={gridCells}
+  data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}

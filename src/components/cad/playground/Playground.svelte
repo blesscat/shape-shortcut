@@ -13,6 +13,7 @@
   import { translate, type Locale } from '../../../i18n'
   import { onMount } from 'svelte'
   import type { ModelParameterKey } from '../../../cad-contract/units'
+  import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
 
   type Props = {
     locale: Locale
@@ -42,13 +43,30 @@
   })
 
   let selectableModels = $derived(
-    modelDefinitions.map((definition) => definition.id),
+    modelDefinitions
+      .filter((definition) =>
+        modelVisibleInViewMode(definition.id, snapshot?.viewMode ?? 'desktop'),
+      )
+      .map((definition) => definition.id),
+  )
+  let visibleInstances = $derived(
+    (snapshot?.instances ?? []).filter((instance) =>
+      modelVisibleInViewMode(instance.modelId, snapshot?.viewMode ?? 'desktop'),
+    ),
   )
   let selectedInstance = $derived(
-    snapshot?.instances.find(
+    visibleInstances.find(
       (instance) => instance.id === snapshot?.selectedInstanceId,
     ) ?? null,
   )
+
+  $effect(() => {
+    // Reset the pending add-model choice when the current orientation does
+    // not offer it.
+    if (addModelId && !selectableModels.includes(addModelId as never)) {
+      addModelId = ''
+    }
+  })
 
   function modelName(id: string): string {
     return t(`models.model.${id}.name`)
@@ -119,25 +137,51 @@
       </div>
       <label
         class="flex items-center gap-2 text-base text-muted-foreground"
-        for="playground-grid-cells"
+        for="playground-grid-size-x"
       >
         {t('playground.grid.title')}
       </label>
-      <input
-        id="playground-grid-cells"
-        class="w-20 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
-        inputmode="numeric"
-        type="text"
-        data-testid="playground-grid-cells"
-        value={snapshot?.gridCells ?? 50}
-        onchange={(event) => {
-          if (!(event.currentTarget instanceof HTMLInputElement)) return
-          store?.setGridCells(Number(event.currentTarget.value))
-          event.currentTarget.value = String(
-            store?.getSnapshot().gridCells ?? 50,
-          )
-        }}
-      />
+      <div class="flex items-center gap-1">
+        <input
+          id="playground-grid-size-x"
+          class="w-16 rounded-lg border border-border-field bg-panel px-[0.5rem] py-[0.4rem] text-center text-base text-ink"
+          inputmode="numeric"
+          type="text"
+          data-testid="playground-grid-size-x"
+          aria-label={t('playground.grid.axisX')}
+          value={snapshot?.gridSize.x ?? 50}
+          onchange={(event) => {
+            if (!(event.currentTarget instanceof HTMLInputElement)) return
+            store?.setGridSize({
+              x: Number(event.currentTarget.value),
+              y: snapshot?.gridSize.y ?? 50,
+            })
+            event.currentTarget.value = String(
+              store?.getSnapshot().gridSize.x ?? 50,
+            )
+          }}
+        />
+        <span class="text-muted-foreground">×</span>
+        <input
+          id="playground-grid-size-y"
+          class="w-16 rounded-lg border border-border-field bg-panel px-[0.5rem] py-[0.4rem] text-center text-base text-ink"
+          inputmode="numeric"
+          type="text"
+          data-testid="playground-grid-size-y"
+          aria-label={t('playground.grid.axisY')}
+          value={snapshot?.gridSize.y ?? 50}
+          onchange={(event) => {
+            if (!(event.currentTarget instanceof HTMLInputElement)) return
+            store?.setGridSize({
+              x: snapshot?.gridSize.x ?? 50,
+              y: Number(event.currentTarget.value),
+            })
+            event.currentTarget.value = String(
+              store?.getSnapshot().gridSize.y ?? 50,
+            )
+          }}
+        />
+      </div>
       <input
         bind:this={fileInput}
         class="hidden"
@@ -180,7 +224,7 @@
         <div class="grid gap-2">
           <label class="font-[650]" for="playground-add-model">
             {t('playground.addComponent')}
-            {` (${snapshot.instances.length}/${PLAYGROUND_SCENE_MAX_INSTANCES})`}
+            {` (${visibleInstances.length}/${PLAYGROUND_SCENE_MAX_INSTANCES})`}
           </label>
           <div class="flex items-center gap-2">
             <select
@@ -205,13 +249,13 @@
           </div>
         </div>
 
-        {#if snapshot.instances.length === 0}
+        {#if visibleInstances.length === 0}
           <p class="m-0 text-sm text-muted-foreground">
             {t('playground.empty')}
           </p>
         {:else}
           <ul class="m-0 grid list-none gap-1 p-0">
-            {#each snapshot.instances as instance (instance.id)}
+            {#each visibleInstances as instance (instance.id)}
               <li>
                 <button
                   class="w-full rounded-lg px-2 py-2 text-left text-base hover:bg-page {snapshot.selectedInstanceId ===
@@ -279,7 +323,7 @@
       </aside>
 
       <PlaygroundViewport
-        instances={snapshot.instances.map((instance) => ({
+        instances={visibleInstances.map((instance) => ({
           id: instance.id,
           name: `#${instance.id.replace('inst-', '')} ${modelName(instance.modelId)}${instance.label ? ` · ${instance.label}` : ''}`,
           modelId: instance.modelId,
@@ -292,7 +336,7 @@
         }))}
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
-        gridCells={snapshot.gridCells}
+        gridSize={snapshot.gridSize}
         onSelect={(instanceId) => store?.select(instanceId)}
       />
     </div>
