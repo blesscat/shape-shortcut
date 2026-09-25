@@ -117,6 +117,27 @@
           {t('playground.viewMode.wall')}
         </button>
       </div>
+      <label
+        class="flex items-center gap-2 text-base text-muted-foreground"
+        for="playground-grid-cells"
+      >
+        {t('playground.grid.title')}
+      </label>
+      <input
+        id="playground-grid-cells"
+        class="w-20 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
+        inputmode="numeric"
+        type="text"
+        data-testid="playground-grid-cells"
+        value={snapshot?.gridCells ?? 50}
+        onchange={(event) => {
+          if (!(event.currentTarget instanceof HTMLInputElement)) return
+          store?.setGridCells(Number(event.currentTarget.value))
+          event.currentTarget.value = String(
+            store?.getSnapshot().gridCells ?? 50,
+          )
+        }}
+      />
       <input
         bind:this={fileInput}
         class="hidden"
@@ -271,6 +292,7 @@
         }))}
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
+        gridCells={snapshot.gridCells}
         onSelect={(instanceId) => store?.select(instanceId)}
       />
     </div>

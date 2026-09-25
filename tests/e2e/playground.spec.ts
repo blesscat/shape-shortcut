@@ -314,3 +314,24 @@ test('window focus/blur does not reset the scene or selection', async ({
     'ready',
   )
 })
+
+test('remembers the scene grid size across reloads', async ({ page }) => {
+  await openPlayground(page)
+  const gridInput = page.getByTestId('playground-grid-cells')
+  await expect(gridInput).toHaveValue('50')
+
+  await gridInput.fill('40')
+  await gridInput.blur()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-grid-cells',
+    '40',
+  )
+
+  await page.reload()
+  await openPlayground(page)
+  await expect(gridInput).toHaveValue('40')
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-grid-cells',
+    '40',
+  )
+})

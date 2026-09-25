@@ -31,6 +31,11 @@ import {
 } from './scene-file'
 import { findFreeAnchorCell, firstPlacementConflict } from './occupancy'
 import { sceneInstanceFileName, sceneProxyCacheKey } from './filenames'
+import {
+  clampPlaygroundGridCells,
+  loadPlaygroundGridCells,
+  savePlaygroundGridCells,
+} from './grid-size'
 
 export type PlaygroundMeshState = 'pending' | 'ready' | 'failed'
 
@@ -65,6 +70,7 @@ export type PlaygroundSnapshot = {
   workerState: PlaygroundWorkerState
   diagnostic: DiagnosticDescriptor | null
   viewMode: PlaygroundViewMode
+  gridCells: number
 }
 
 export type PlaygroundPlacementResult =
@@ -143,6 +149,7 @@ export type PlaygroundStore = {
   setDiagnostic: (diagnostic: DiagnosticDescriptor | null) => void
   select: (instanceId: string | null) => void
   setViewMode: (viewMode: PlaygroundViewMode) => void
+  setGridCells: (cells: number) => void
   addInstance: (modelId: ModelId) => boolean
   removeInstance: (instanceId: string) => void
   duplicateInstance: (instanceId: string) => boolean
@@ -177,6 +184,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let engineReady = false
   let nextInstanceNumber = 1
   let viewMode: PlaygroundViewMode = 'desktop'
+  let gridCells = loadPlaygroundGridCells()
 
   const listeners = new Set<(snapshot: PlaygroundSnapshot) => void>()
   const readyCache = new Map<
@@ -199,6 +207,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       selectedInstanceId,
       sceneColors: { ...sceneColors },
       viewMode,
+      gridCells,
       workerState,
       diagnostic: diagnostic ? { ...diagnostic } : null,
     }
@@ -552,6 +561,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     selectedInstanceId,
     sceneColors: { ...sceneColors },
     viewMode,
+    gridCells,
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
   })
@@ -573,6 +583,13 @@ export function createPlaygroundStore(): PlaygroundStore {
     },
     setViewMode(next) {
       viewMode = next
+      emit()
+    },
+    setGridCells(cells) {
+      const next = clampPlaygroundGridCells(cells)
+      if (next === gridCells) return
+      gridCells = next
+      savePlaygroundGridCells(gridCells)
       emit()
     },
     addInstance(modelId) {

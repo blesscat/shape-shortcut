@@ -46,7 +46,13 @@
     onSelect: (instanceId: string | null) => void
   }
 
-  let { instances, selectedInstanceId, viewMode, onSelect }: Props = $props()
+  let {
+    instances,
+    selectedInstanceId,
+    viewMode,
+    gridCells,
+    onSelect,
+  }: Props = $props()
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
@@ -392,10 +398,10 @@
     fill.position.set(...CAD_VIEWPORT_LIGHTING.oppositeFill.position)
     scene.add(fill)
 
-    const gridCells = 40
+    const cells = Math.max(Math.round(gridCells), 1)
     grid = new THREE.GridHelper(
-      gridCells * PLAYGROUND_GRID_PITCH,
-      gridCells,
+      cells * PLAYGROUND_GRID_PITCH,
+      cells,
       new THREE.Color(theme.gridMajor),
       new THREE.Color(theme.gridMinor),
     )
@@ -483,10 +489,10 @@
       scene.remove(grid)
       grid.dispose()
     }
-    const gridCells = 40
+    const cells = Math.max(Math.round(gridCells), 1)
     grid = new THREE.GridHelper(
-      gridCells * PLAYGROUND_GRID_PITCH,
-      gridCells,
+      cells * PLAYGROUND_GRID_PITCH,
+      cells,
       new THREE.Color(theme.gridMajor),
       new THREE.Color(theme.gridMinor),
     )
@@ -502,6 +508,7 @@
   class="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
   data-view-mode={viewMode}
+  data-grid-cells={gridCells}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
