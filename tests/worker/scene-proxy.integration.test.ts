@@ -30,6 +30,10 @@ import type { KernelBuildContext } from '../../src/cad-kernel/model'
 import { importHswCellTemplate } from '../../src/cad-kernel/components/hsw-cell/builder'
 import { importModularGridBaseTemplate } from '../../src/cad-kernel/components/modular-grid-base/builder'
 import { importOpenGridOpenConnectShelfLockedSlot } from '../../src/cad-kernel/components/opengrid-openconnect-shelf/slot'
+import {
+  loadOpenGridDetachableCornerSeatHolderReference,
+  loadOpenGridDetachableCornerSeatReference,
+} from '../../src/cad-kernel/components/opengrid-locating-assembly/reference'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -97,7 +101,10 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   },
   {
     modelId: 'opengrid-stackable-cylinder',
-    parameters: { ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS },
+    parameters: {
+      ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
+      topRimEnabled: true,
+    },
   },
   {
     modelId: 'opengrid-divider',
@@ -135,11 +142,43 @@ let template: Shape3D
 let hswTemplate: Shape3D
 let lockedSlot: Shape3D
 
+function localAssetFetcher(files: Record<string, Uint8Array>): typeof fetch {
+  const fetcher = (url: URL | RequestInfo): Promise<Response> => {
+    const href = String(url)
+    const match = Object.keys(files).find((suffix) => href.endsWith(suffix))
+    if (!match) return Promise.resolve(new Response(null, { status: 404 }))
+    return Promise.resolve(new Response(new Blob([files[match] as BlobPart])))
+  }
+  return fetcher as unknown as typeof fetch
+}
+
 function kernelContext(): KernelBuildContext {
+  const seatFetcher = localAssetFetcher({
+    'detachable-corner-seat-v13.step': new Uint8Array(
+      readFileSync(
+        join(
+          COMPONENT_ASSETS_DIR,
+          'opengrid-locating-assembly/assets/detachable-corner-seat-v13.step',
+        ),
+      ),
+    ),
+    'detachable-corner-seat-holder-11.step': new Uint8Array(
+      readFileSync(
+        join(
+          COMPONENT_ASSETS_DIR,
+          'opengrid-locating-assembly/assets/detachable-corner-seat-holder-11.step',
+        ),
+      ),
+    ),
+  })
   return {
     getModularGridBaseTemplate: async () => template,
     getHswCellTemplate: async () => hswTemplate,
     getOpenGridOpenConnectShelfLockedSlot: async () => lockedSlot,
+    getOpenGridDetachableCornerSeatReference: () =>
+      loadOpenGridDetachableCornerSeatReference(seatFetcher),
+    getOpenGridDetachableCornerSeatHolderReference: () =>
+      loadOpenGridDetachableCornerSeatHolderReference(seatFetcher),
     isGenerationCurrent: () => true,
   }
 }
@@ -197,7 +236,7 @@ describe('scene preview B-Reps', () => {
         )
       }
       shape.delete()
-    })
+    }, 180_000)
   }
 
   it('matches the hexagonal cross-section extents exactly', async () => {

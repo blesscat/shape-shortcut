@@ -2,18 +2,15 @@ import {
   cast,
   getOC,
   isShape3D,
-  makeCylinder,
   makePolygon,
   Sketch,
   type Shape3D,
 } from 'replicad'
 import {
-  boundsForModel,
   HEXAGONAL_COLUMN_CONFIGURATION,
   validateModelParameters,
   type HexagonalColumnParameters,
   type ModelId,
-  type ModelParameters,
   type ModelParameterValues,
 } from '../../cad-contract/units'
 import { buildModelBRep, type KernelBuildContext } from '../model'
@@ -108,24 +105,13 @@ function hexagonalColumnProxy(parameters: HexagonalColumnParameters): Shape3D {
   return compoundShapes(prisms)
 }
 
-function stackableCylinderProxy(model: ModelParameters): Shape3D {
-  const bounds = boundsForModel(model)
-  const radius = (bounds.max[0] - bounds.min[0]) / 2
-  const height = bounds.max[2] - bounds.min[2]
-  return makeCylinder(radius, height, [
-    (bounds.min[0] + bounds.max[0]) / 2,
-    (bounds.min[1] + bounds.max[1]) / 2,
-    bounds.min[2],
-  ])
-}
-
 /**
  * Builds the scene preview B-Rep for an instance. The preview renders the
  * component's real characteristic geometry through the production builders
- * (grid cutouts, openings, stacking rails, seats, wall-mount interfaces)
- * with only the material-saving (省料) honeycomb features turned off;
- * shape silhouettes that are cheaper than a full build (hexagonal columns,
- * cylinders) keep their dedicated outline.
+ * (grid cutouts, openings, stacking rails, seats, wall-mount interfaces,
+ * the stackable cylinder's rim and openings) with only the material-saving
+ * (省料) honeycomb features turned off; the hexagonal column keeps its
+ * dedicated silhouette, which is cheaper than a full build.
  */
 export async function buildScenePreviewBRep(
   modelId: ModelId,
@@ -139,9 +125,6 @@ export async function buildScenePreviewBRep(
   const model = validation.value
   if (modelId === 'hexagonal-column') {
     return hexagonalColumnProxy(model.parameters as HexagonalColumnParameters)
-  }
-  if (modelId === 'opengrid-stackable-cylinder') {
-    return stackableCylinderProxy(model)
   }
   return buildModelBRep(
     modelId,
