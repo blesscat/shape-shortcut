@@ -2,7 +2,6 @@ import {
   cast,
   getOC,
   isShape3D,
-  makeBox,
   makeCylinder,
   makePolygon,
   Sketch,
@@ -40,22 +39,10 @@ const HEX_PROXY_PROFILE: readonly HexPoint[] = [
 ]
 
 /**
- * Components whose scene preview keeps the footprint envelope only: the
- * OpenConnect family's geometry is dominated by its lock interfaces, which
- * the scene preview deliberately does not render.
- */
-const ENVELOPE_ONLY_MODEL_IDS: ReadonlySet<ModelId> = new Set([
-  'opengrid-openconnect-shelf',
-  'opengrid-openconnect-organizer',
-  'opengrid-openconnect-tissue-box',
-] as ModelId[])
-
-/**
- * Preview parameter overrides that turn off material-saving (省料) and
- * OpenConnect interface features so the preview renders the component's
- * characteristic geometry without the expensive feature systems. The
- * instance's real parameters — including these features — are unchanged for
- * export.
+ * Preview parameter overrides that turn off material-saving (省料) honeycomb
+ * features so the preview renders the component's characteristic geometry
+ * without the expensive lattice systems. The instance's real parameters —
+ * including these features — are unchanged for export.
  */
 export function parametersForScenePreview(
   modelId: ModelId,
@@ -68,9 +55,6 @@ export function parametersForScenePreview(
     modelId === 'opengrid-open-shelf'
   ) {
     stripped.honeycombMode = false
-  }
-  if (modelId === 'opengrid-snap' || modelId === 'opengrid-wall-cover') {
-    stripped.openConnect = false
   }
   return stripped as ModelParameterValues
 }
@@ -89,11 +73,6 @@ function compoundShapes(shapes: Shape3D[]): Shape3D {
     throw new Error('SCENE_PROXY_COMPOUND_INVALID')
   }
   return castResult
-}
-
-function boxEnvelope(model: ModelParameters): Shape3D {
-  const bounds = boundsForModel(model)
-  return makeBox(bounds.min, bounds.max)
 }
 
 function hexColumnPrism(parameters: HexagonalColumnParameters): Shape3D {
@@ -143,11 +122,10 @@ function stackableCylinderProxy(model: ModelParameters): Shape3D {
 /**
  * Builds the scene preview B-Rep for an instance. The preview renders the
  * component's real characteristic geometry through the production builders
- * (grid cutouts, openings, stacking rails, seats) with the material-saving
- * (省料) honeycomb and OpenConnect interface features turned off; shape
- * silhouettes that are cheaper than a full build (hexagonal columns,
- * cylinders) keep their dedicated outline, and the OpenConnect family keeps
- * its footprint envelope.
+ * (grid cutouts, openings, stacking rails, seats, wall-mount interfaces)
+ * with only the material-saving (省料) honeycomb features turned off;
+ * shape silhouettes that are cheaper than a full build (hexagonal columns,
+ * cylinders) keep their dedicated outline.
  */
 export async function buildScenePreviewBRep(
   modelId: ModelId,
@@ -164,9 +142,6 @@ export async function buildScenePreviewBRep(
   }
   if (modelId === 'opengrid-stackable-cylinder') {
     return stackableCylinderProxy(model)
-  }
-  if (ENVELOPE_ONLY_MODEL_IDS.has(modelId)) {
-    return boxEnvelope(model)
   }
   return buildModelBRep(
     modelId,

@@ -29,6 +29,7 @@ import {
 import type { KernelBuildContext } from '../../src/cad-kernel/model'
 import { importHswCellTemplate } from '../../src/cad-kernel/components/hsw-cell/builder'
 import { importModularGridBaseTemplate } from '../../src/cad-kernel/components/modular-grid-base/builder'
+import { importOpenGridOpenConnectShelfLockedSlot } from '../../src/cad-kernel/components/opengrid-openconnect-shelf/slot'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -132,11 +133,13 @@ const BOUNDS_TOLERANCE = 0.05
 
 let template: Shape3D
 let hswTemplate: Shape3D
+let lockedSlot: Shape3D
 
 function kernelContext(): KernelBuildContext {
   return {
     getModularGridBaseTemplate: async () => template,
     getHswCellTemplate: async () => hswTemplate,
+    getOpenGridOpenConnectShelfLockedSlot: async () => lockedSlot,
     isGenerationCurrent: () => true,
   }
 }
@@ -160,6 +163,16 @@ describe('scene preview B-Reps', () => {
     hswTemplate = await importHswCellTemplate(
       new Blob([
         readFileSync(join(COMPONENT_ASSETS_DIR, 'hsw-cell/hsw-cell.step')),
+      ]),
+    )
+    lockedSlot = await importOpenGridOpenConnectShelfLockedSlot(
+      new Blob([
+        readFileSync(
+          join(
+            COMPONENT_ASSETS_DIR,
+            'opengrid-openconnect-shelf/assets/openconnect-slot-negative-lock.step',
+          ),
+        ),
       ]),
     )
   })
@@ -208,7 +221,7 @@ describe('scene preview B-Reps', () => {
     shape.delete()
   })
 
-  it('strips material-saving and OpenConnect features from preview parameters', () => {
+  it('strips the material-saving feature from preview parameters', () => {
     const divider = parametersForScenePreview('opengrid-divider', {
       ...(OPENGRID_DIVIDER_CONFIGURATION.defaultParameters as Record<
         string,
@@ -221,7 +234,9 @@ describe('scene preview B-Reps', () => {
     const snap = parametersForScenePreview('opengrid-snap', {
       openConnect: true,
     } as unknown as ModelParameterValues) as Record<string, unknown>
-    expect(snap.openConnect).toBe(false)
+    // OpenConnect interfaces are part of the rendered geometry; only the
+    // material-saving feature is stripped.
+    expect(snap.openConnect).toBe(true)
 
     const box = parametersForScenePreview('box', {
       width: 20,

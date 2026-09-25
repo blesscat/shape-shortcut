@@ -84,6 +84,21 @@
     onPlacementChange(parsedX, parsedY, rotation)
   }
 
+  function stepPlacement(axis: 'x' | 'y', delta: number): void {
+    const raw = axis === 'x' ? cellX : cellY
+    const parsed = Number(raw)
+    if (raw.trim() === '' || !Number.isInteger(parsed)) return
+    const nextX = axis === 'x' ? parsed + delta : Number(cellX)
+    const nextY = axis === 'y' ? parsed + delta : Number(cellY)
+    if (!Number.isInteger(nextX) || !Number.isInteger(nextY)) return
+    if (axis === 'x') cellX = String(nextX)
+    else cellY = String(nextY)
+    onPlacementChange(nextX, nextY, rotation)
+  }
+
+  const STEP_BUTTON_CLASS =
+    'w-8 shrink-0 rounded-md border border-border-field bg-panel text-center text-base leading-none text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50'
+
   function handleColorInput(which: 'primary' | 'secondary', value: string) {
     return which === 'primary'
       ? onColorsChange(value, instance.colors.secondary)
@@ -124,25 +139,71 @@
       <label class="shrink-0" for="playground-cell-x">
         {translate(locale, 'playground.placement.cellX')}
       </label>
-      <input
-        id="playground-cell-x"
-        class="w-full rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
-        inputmode="numeric"
-        type="text"
-        bind:value={cellX}
-        onchange={commitPlacement}
-      />
+      <div class="flex w-full items-center gap-1">
+        <button
+          class={STEP_BUTTON_CLASS}
+          type="button"
+          aria-label={translate(locale, 'playground.placement.stepDown', {
+            axis: 'X',
+          })}
+          onclick={() => stepPlacement('x', -1)}
+        >
+          −
+        </button>
+        <input
+          id="playground-cell-x"
+          class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
+          inputmode="numeric"
+          type="text"
+          bind:value={cellX}
+          onchange={commitPlacement}
+        />
+        <button
+          class={STEP_BUTTON_CLASS}
+          type="button"
+          aria-label={translate(locale, 'playground.placement.stepUp', {
+            axis: 'X',
+          })}
+          onclick={() => stepPlacement('x', 1)}
+        >
+          +
+        </button>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
       <label class="shrink-0" for="playground-cell-y">
         {translate(locale, 'playground.placement.cellY')}
       </label>
-      <input
-        id="playground-cell-y"
-        class="w-full rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
-        inputmode="numeric"
-        type="text"
-        bind:value={cellY}
-        onchange={commitPlacement}
-      />
+      <div class="flex w-full items-center gap-1">
+        <button
+          class={STEP_BUTTON_CLASS}
+          type="button"
+          aria-label={translate(locale, 'playground.placement.stepDown', {
+            axis: 'Y',
+          })}
+          onclick={() => stepPlacement('y', -1)}
+        >
+          −
+        </button>
+        <input
+          id="playground-cell-y"
+          class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
+          inputmode="numeric"
+          type="text"
+          bind:value={cellY}
+          onchange={commitPlacement}
+        />
+        <button
+          class={STEP_BUTTON_CLASS}
+          type="button"
+          aria-label={translate(locale, 'playground.placement.stepUp', {
+            axis: 'Y',
+          })}
+          onclick={() => stepPlacement('y', 1)}
+        >
+          +
+        </button>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <label class="shrink-0" for="playground-rotation">
