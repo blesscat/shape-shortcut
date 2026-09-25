@@ -33,6 +33,7 @@ test.describe('OpenGrid playground planner', () => {
 
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-viewport')).toBeVisible()
+    await expect(page.getByTestId('playground-instance-help')).not.toBeEmpty()
     await waitForInstanceReady(page, 'inst-1')
 
     const cellX = page.locator('#playground-cell-x')

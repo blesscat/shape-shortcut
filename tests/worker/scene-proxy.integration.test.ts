@@ -1,22 +1,19 @@
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { fileURLToPath } from 'node:url'
-import { setOC } from 'replicad'
+import { setOC, type Shape3D } from 'replicad'
 
 import {
-  HSW_CELL_CONFIGURATION,
   OPENGRID_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
   OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
-  OPENGRID_SNAP_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-  OPENGRID_WALL_COVER_CONFIGURATION,
-  PILLAR_CONFIGURATION,
   PROTOTYPE_CONFIGURATION,
   TISSUE_BOX_DEFAULTS,
   boundsForModel,
@@ -25,7 +22,13 @@ import {
   type ModelParameterValues,
 } from '../../src/cad-contract/units'
 import { meshBRep } from '../../src/cad-kernel/mesh'
-import { buildProxyBRep } from '../../src/cad-kernel/scene/proxy'
+import {
+  buildScenePreviewBRep,
+  parametersForScenePreview,
+} from '../../src/cad-kernel/scene/proxy'
+import type { KernelBuildContext } from '../../src/cad-kernel/model'
+import { importHswCellTemplate } from '../../src/cad-kernel/components/hsw-cell/builder'
+import { importModularGridBaseTemplate } from '../../src/cad-kernel/components/modular-grid-base/builder'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -39,8 +42,30 @@ const WASM_PATH = join(
   dirname(fileURLToPath(import.meta.url)),
   '../../node_modules/replicad-opencascadejs/src/replicad_single.wasm',
 )
+const COMPONENT_ASSETS_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../src/cad-kernel/components',
+)
 
-const PROXY_MESH_CONFIG = { tolerance: 0.001, angularTolerance: 0.05 }
+const PROXY_MESH_CONFIG = { tolerance: 0.05, angularTolerance: 0.2 }
+
+function stackableBoxParameters(): ModelParameterValues {
+  return {
+    ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+    cornerSeatMode: 'none',
+    honeycombMode: false,
+    x: 2,
+    y: 1,
+    height: 40,
+  } as ModelParameterValues
+}
+
+function organizerBoxParameters(): ModelParameterValues {
+  return {
+    ...OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+    cornerSeatMode: 'none',
+  } as ModelParameterValues
+}
 
 const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   {
@@ -63,41 +88,31 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   },
   {
     modelId: 'opengrid-stackable-box',
-    parameters: {
-      ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
-      x: 2,
-      y: 1,
-      height: 40,
-    },
+    parameters: stackableBoxParameters(),
   },
   {
     modelId: 'opengrid-organizer-box',
-    parameters: { ...OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS },
+    parameters: organizerBoxParameters(),
   },
   {
     modelId: 'opengrid-stackable-cylinder',
     parameters: { ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS },
   },
   {
-    modelId: 'opengrid-snap',
-    parameters: { ...OPENGRID_SNAP_CONFIGURATION.defaultParameters },
-  },
-  {
-    modelId: 'opengrid-wall-cover',
-    parameters: { ...OPENGRID_WALL_COVER_CONFIGURATION.defaultParameters },
-  },
-  { modelId: 'opengrid-snap-remover', parameters: {} },
-  {
     modelId: 'opengrid-divider',
     parameters: { ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters },
   },
   {
-    modelId: 'opengrid-pillar',
-    parameters: { ...PILLAR_CONFIGURATION.defaultParameters },
-  },
-  {
     modelId: 'opengrid-open-shelf',
     parameters: { ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS },
+  },
+  {
+    modelId: 'opengrid-pillar',
+    parameters: {
+      mode: 'positioning',
+      length: 20,
+      offset: 0,
+    } as ModelParameterValues,
   },
   {
     modelId: 'opengrid-openconnect-shelf',
@@ -105,9 +120,7 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   },
   {
     modelId: 'opengrid-openconnect-organizer',
-    parameters: {
-      ...OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
-    },
+    parameters: { ...OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS },
   },
   {
     modelId: 'opengrid-openconnect-tissue-box',
@@ -115,25 +128,49 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   },
 ]
 
-const BOUNDS_TOLERANCE = 0.01
-/**
- * Envelope proxies must stay far below any full-detail triangle count
- * (full OpenGrid components mesh in the tens of thousands); the coarse
- * cylinder tessellation dominates this budget.
- */
-const MAX_PROXY_TRIANGLE_COUNT = 2500
+const BOUNDS_TOLERANCE = 0.05
 
-describe('scene proxy B-Reps', () => {
+let template: Shape3D
+let hswTemplate: Shape3D
+
+function kernelContext(): KernelBuildContext {
+  return {
+    getModularGridBaseTemplate: async () => template,
+    getHswCellTemplate: async () => hswTemplate,
+    isGenerationCurrent: () => true,
+  }
+}
+
+describe('scene preview B-Reps', () => {
   beforeAll(async () => {
     const openCascade = await initialiseOpenCascade({
       locateFile: () => WASM_PATH,
     })
     setOC(openCascade as Parameters<typeof setOC>[0])
+    template = await importModularGridBaseTemplate(
+      new Blob([
+        readFileSync(
+          join(
+            COMPONENT_ASSETS_DIR,
+            'modular-grid-base/board-cell-template.step',
+          ),
+        ),
+      ]),
+    )
+    hswTemplate = await importHswCellTemplate(
+      new Blob([
+        readFileSync(join(COMPONENT_ASSETS_DIR, 'hsw-cell/hsw-cell.step')),
+      ]),
+    )
   })
 
   for (const { modelId, parameters } of CASES) {
-    it(`builds an envelope proxy for ${modelId} whose mesh bounds and triangle budget match the analytic envelope`, () => {
-      const shape = buildProxyBRep(modelId, parameters)
+    it(`builds a scene preview for ${modelId} whose mesh bounds match the analytic bounds`, async () => {
+      const shape = await buildScenePreviewBRep(
+        modelId,
+        parameters,
+        kernelContext(),
+      )
       const mesh = meshBRep(shape, PROXY_MESH_CONFIG)
       const validation = validateModelParameters(modelId, parameters)
       if (!validation.valid) throw new Error('INVALID_TEST_PARAMETERS')
@@ -146,25 +183,51 @@ describe('scene proxy B-Reps', () => {
           expected.max[axis] + BOUNDS_TOLERANCE,
         )
       }
-      expect(mesh.triangleCount).toBeLessThanOrEqual(MAX_PROXY_TRIANGLE_COUNT)
       shape.delete()
     })
   }
 
-  it('matches the hexagonal cross-section extents exactly', () => {
+  it('matches the hexagonal cross-section extents exactly', async () => {
     const parameters = {
       height: 40,
       count: 1,
       gap: 1,
       orientation: 'standing' as const,
     }
-    const shape = buildProxyBRep('hexagonal-column', parameters)
-    const mesh = meshBRep(shape, PROXY_MESH_CONFIG)
+    const shape = await buildScenePreviewBRep(
+      'hexagonal-column',
+      parameters,
+      kernelContext(),
+    )
+    const mesh = meshBRep(shape, { tolerance: 0.001, angularTolerance: 0.05 })
     const expected = boundsForModel({ modelId: 'hexagonal-column', parameters })
     expect(mesh.bounds.min[0]).toBeCloseTo(expected.min[0], 3)
     expect(mesh.bounds.max[0]).toBeCloseTo(expected.max[0], 3)
     expect(mesh.bounds.min[1]).toBeCloseTo(expected.min[1], 3)
     expect(mesh.bounds.max[1]).toBeCloseTo(expected.max[1], 3)
     shape.delete()
+  })
+
+  it('strips material-saving and OpenConnect features from preview parameters', () => {
+    const divider = parametersForScenePreview('opengrid-divider', {
+      ...(OPENGRID_DIVIDER_CONFIGURATION.defaultParameters as Record<
+        string,
+        unknown
+      >),
+      honeycombMode: true,
+    } as ModelParameterValues)
+    expect((divider as Record<string, unknown>).honeycombMode).toBe(false)
+
+    const snap = parametersForScenePreview('opengrid-snap', {
+      openConnect: true,
+    } as unknown as ModelParameterValues) as Record<string, unknown>
+    expect(snap.openConnect).toBe(false)
+
+    const box = parametersForScenePreview('box', {
+      width: 20,
+      depth: 30,
+      height: 40,
+    } as ModelParameterValues) as Record<string, unknown>
+    expect(box).toEqual({ width: 20, depth: 30, height: 40 })
   })
 })

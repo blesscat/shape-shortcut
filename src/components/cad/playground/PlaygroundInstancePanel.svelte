@@ -38,6 +38,27 @@
   let rotation = $state(0)
   let lastPlacementSignature = $state('')
 
+  /**
+   * Component-page help text: the panel description shown by the component's
+   * own workspace; components whose panels have no description fall back to
+   * the model description from the catalog.
+   */
+  const PANEL_HELP_KEYS: Partial<Record<string, string>> = {
+    'hexagonal-column': 'panel.hexagonalColumn.description',
+    'hsw-cell': 'panel.hswCell.description',
+    'modular-grid-base': 'panel.modularGridBase.description',
+    'opengrid-organizer-box': 'panel.organizerBox.description',
+    'opengrid-openconnect-organizer': 'panel.openConnectOrganizer.description',
+    'opengrid-openconnect-shelf': 'panel.openConnectShelf.description',
+    'opengrid-openconnect-tissue-box': 'panel.tissueBox.help',
+    'opengrid-open-shelf': 'panel.openShelf.description',
+  }
+
+  let helpKey = $derived(
+    PANEL_HELP_KEYS[instance.modelId] ??
+      `models.model.${instance.modelId}.description`,
+  )
+
   $effect(() => {
     // Resync the placement inputs only when the selected instance changes or
     // its committed placement actually changes; unrelated store emissions
@@ -67,6 +88,13 @@
 </script>
 
 <div class="grid gap-4" data-testid="playground-instance-panel">
+  <p
+    class="m-0 text-sm leading-normal text-muted-foreground"
+    data-testid="playground-instance-help"
+  >
+    {translate(locale, helpKey)}
+  </p>
+
   <div class="grid gap-[0.3rem]">
     <label class="font-[650]" for="playground-label">
       {translate(locale, 'playground.instance.label')}

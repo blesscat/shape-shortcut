@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   initialiseCadKernel: vi.fn(),
-  buildProxyBRep: vi.fn(),
+  buildScenePreviewBRep: vi.fn(),
   buildModelBRep: vi.fn(),
   meshBRep: vi.fn(),
   serializeMesh: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('../../src/cad-kernel/initialise', () => ({
   initialiseCadKernel: mocks.initialiseCadKernel,
 }))
 vi.mock('../../src/cad-kernel/scene/proxy', () => ({
-  buildProxyBRep: mocks.buildProxyBRep,
+  buildScenePreviewBRep: mocks.buildScenePreviewBRep,
 }))
 vi.mock('../../src/cad-kernel/model', () => ({
   buildModelBRep: mocks.buildModelBRep,
@@ -46,7 +46,7 @@ const base = {
 
 function configureMocks(): void {
   mocks.initialiseCadKernel.mockResolvedValue(undefined)
-  mocks.buildProxyBRep.mockReturnValue({ delete: vi.fn() })
+  mocks.buildScenePreviewBRep.mockResolvedValue({ delete: vi.fn() })
   mocks.meshBRep.mockReturnValue(PROXY_MESH)
   mocks.serializeMesh.mockImplementation((mesh) => ({
     positions: mesh.positions.slice().buffer,
@@ -116,11 +116,11 @@ describe('scene Worker commands', () => {
     await runtime.handle(initCommand())
     await runtime.handle(sceneGenerateCommand())
 
-    expect(mocks.buildProxyBRep).toHaveBeenCalledWith('box', {
-      width: 20,
-      depth: 30,
-      height: 40,
-    })
+    expect(mocks.buildScenePreviewBRep).toHaveBeenCalledWith(
+      'box',
+      { width: 20, depth: 30, height: 40 },
+      expect.any(Object),
+    )
     expect(events).toContainEqual(
       expect.objectContaining({
         kind: 'scene.instance.ready',
@@ -174,7 +174,7 @@ describe('scene Worker commands', () => {
       parameters: { width: -5, depth: 30, height: 40 },
     })
 
-    expect(mocks.buildProxyBRep).not.toHaveBeenCalled()
+    expect(mocks.buildScenePreviewBRep).not.toHaveBeenCalled()
     expect(events).toContainEqual(
       expect.objectContaining({
         kind: 'operation.error',

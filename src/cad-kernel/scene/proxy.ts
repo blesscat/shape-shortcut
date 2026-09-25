@@ -17,6 +17,7 @@ import {
   type ModelParameters,
   type ModelParameterValues,
 } from '../../cad-contract/units'
+import { buildModelBRep, type KernelBuildContext } from '../model'
 
 /**
  * Half extents of the hexagonal-column planning envelope. They match the
@@ -37,6 +38,42 @@ const HEX_PROXY_PROFILE: readonly HexPoint[] = [
   [-HEX_PROXY_HALF_X, -HEX_PROXY_HALF_Y / 2],
   [-HEX_PROXY_HALF_X, HEX_PROXY_HALF_Y / 2],
 ]
+
+/**
+ * Components whose scene preview keeps the footprint envelope only: the
+ * OpenConnect family's geometry is dominated by its lock interfaces, which
+ * the scene preview deliberately does not render.
+ */
+const ENVELOPE_ONLY_MODEL_IDS: ReadonlySet<ModelId> = new Set([
+  'opengrid-openconnect-shelf',
+  'opengrid-openconnect-organizer',
+  'opengrid-openconnect-tissue-box',
+] as ModelId[])
+
+/**
+ * Preview parameter overrides that turn off material-saving (省料) and
+ * OpenConnect interface features so the preview renders the component's
+ * characteristic geometry without the expensive feature systems. The
+ * instance's real parameters — including these features — are unchanged for
+ * export.
+ */
+export function parametersForScenePreview(
+  modelId: ModelId,
+  parameters: ModelParameterValues,
+): ModelParameterValues {
+  const stripped = { ...parameters } as Record<string, unknown>
+  if (
+    modelId === 'opengrid-divider' ||
+    modelId === 'opengrid-stackable-box' ||
+    modelId === 'opengrid-open-shelf'
+  ) {
+    stripped.honeycombMode = false
+  }
+  if (modelId === 'opengrid-snap' || modelId === 'opengrid-wall-cover') {
+    stripped.openConnect = false
+  }
+  return stripped as ModelParameterValues
+}
 
 function compoundShapes(shapes: Shape3D[]): Shape3D {
   if (shapes.length === 1) return shapes[0]
@@ -104,16 +141,19 @@ function stackableCylinderProxy(model: ModelParameters): Shape3D {
 }
 
 /**
- * Builds the planning-grade proxy B-Rep for a scene instance: an
- * envelope-level representation that omits fine details (cell cutouts,
- * fillets, hole arrays, text). Most components use the analytic bounds box;
- * shape-defining silhouettes (hexagonal columns, cylinders) keep their
- * outline. No canonical assets are required.
+ * Builds the scene preview B-Rep for an instance. The preview renders the
+ * component's real characteristic geometry through the production builders
+ * (grid cutouts, openings, stacking rails, seats) with the material-saving
+ * (省料) honeycomb and OpenConnect interface features turned off; shape
+ * silhouettes that are cheaper than a full build (hexagonal columns,
+ * cylinders) keep their dedicated outline, and the OpenConnect family keeps
+ * its footprint envelope.
  */
-export function buildProxyBRep(
+export async function buildScenePreviewBRep(
   modelId: ModelId,
   parameters: ModelParameterValues,
-): Shape3D {
+  context: KernelBuildContext,
+): Promise<Shape3D> {
   const validation = validateModelParameters(modelId, parameters)
   if (!validation.valid) {
     throw new Error(`MODEL_PARAMETERS_INVALID:${modelId}`)
@@ -125,5 +165,12 @@ export function buildProxyBRep(
   if (modelId === 'opengrid-stackable-cylinder') {
     return stackableCylinderProxy(model)
   }
-  return boxEnvelope(model)
+  if (ENVELOPE_ONLY_MODEL_IDS.has(modelId)) {
+    return boxEnvelope(model)
+  }
+  return buildModelBRep(
+    modelId,
+    parametersForScenePreview(modelId, parameters),
+    context,
+  )
 }

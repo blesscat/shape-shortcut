@@ -2,7 +2,7 @@ import { PROTOCOL_VERSION, type WorkerCommand } from '../cad-contract/messages'
 import { PROTOTYPE_CONFIGURATION } from '../cad-contract/units'
 import { buildModelBRep, type KernelBuildContext } from '../cad-kernel/model'
 import { meshBRep, serializeMesh } from '../cad-kernel/mesh'
-import { buildProxyBRep } from '../cad-kernel/scene/proxy'
+import { buildScenePreviewBRep } from '../cad-kernel/scene/proxy'
 import { exportStepBytes, exportStlBytes } from '../cad-kernel/export'
 import type { CadWorkerAssetCache } from './cad-worker-assets'
 import { emitProgress, id } from './cad-worker-events'
@@ -72,7 +72,11 @@ export async function sceneInstanceGenerateCommand(
   context: SceneWorkerContext,
 ): Promise<void> {
   emitProgress(context.emit, command, 'building')
-  const shape = buildProxyBRep(command.modelId, command.parameters)
+  const shape = await buildScenePreviewBRep(
+    command.modelId,
+    command.parameters,
+    kernelBuildContext(command, context),
+  )
   try {
     const mesh = meshBRep(shape, command.previewConfig)
     const meshSnapshot = serializeMesh(mesh)
