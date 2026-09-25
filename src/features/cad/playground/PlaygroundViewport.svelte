@@ -86,6 +86,27 @@
   const WALL_CAMERA_TARGET = new THREE.Vector3(0, 0, 180)
   const DESKTOP_CAMERA_TARGET = new THREE.Vector3(0, 0, 20)
 
+  let appliedViewMode: PlaygroundViewMode | null = null
+
+  const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
+    'background',
+    'gridMajor',
+    'gridMinor',
+    'gizmoBackground',
+    'edge',
+    'annotation',
+    'annotationLabel',
+    'faceHighlight',
+    'hemisphereSky',
+    'hemisphereGround',
+    'keyLight',
+    'oppositeFill',
+  ]
+
+  function sameTheme(a: CadViewportTheme, b: CadViewportTheme): boolean {
+    return THEME_FIELDS.every((field) => a[field] === b[field])
+  }
+
   function matrixFor(
     instance: PlaygroundViewportInstance,
     mode: PlaygroundViewMode,
@@ -402,6 +423,9 @@
     animate()
 
     unobserveTheme = observeCadViewportTheme((nextTheme) => {
+      // The theme observer can emit on window focus/blur (the app re-applies
+      // its theme class); only a real value change may re-run theme effects.
+      if (sameTheme(nextTheme, observedTheme)) return
       observedTheme = nextTheme
     })
 
@@ -442,13 +466,34 @@
   })
 
   $effect(() => {
-    viewMode
+    // Only a real view-mode change may reset the camera pose; theme-object
+    // churn (the theme observer can emit on focus/blur) must not.
+    if (appliedViewMode === viewMode) return
+    appliedViewMode = viewMode
     applyViewMode(observedTheme)
   })
 
   $effect(() => {
     const theme = observedTheme
-    if (scene) scene.background = new THREE.Color(theme.background)
+    if (!scene) return
+    scene.background = new THREE.Color(theme.background)
+    // Recreate the grid so its line colors follow real theme changes; the
+    // grid orientation stays bound to the current view mode.
+    if (grid) {
+      scene.remove(grid)
+      grid.dispose()
+    }
+    const gridCells = 40
+    grid = new THREE.GridHelper(
+      gridCells * PLAYGROUND_GRID_PITCH,
+      gridCells,
+      new THREE.Color(theme.gridMajor),
+      new THREE.Color(theme.gridMinor),
+    )
+    grid.rotation.set(
+      ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
+    )
+    scene.add(grid)
   })
 </script>
 

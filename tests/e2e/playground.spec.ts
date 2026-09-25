@@ -282,3 +282,35 @@ test('orbit dragging keeps the selection; clicking empty space clears it', async
   await page.mouse.click(box.x + 24, box.y + 24)
   await expect(viewport).toHaveAttribute('data-selected-instance', '')
 })
+
+test('window focus/blur does not reset the scene or selection', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-1')
+  await page.getByTestId('playground-mode-wall').click()
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('blur'))
+    window.dispatchEvent(new Event('focus'))
+  })
+  await page.waitForTimeout(500)
+
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-selected-instance',
+    'inst-1',
+  )
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+  )
+})
