@@ -105,6 +105,8 @@ export function cadErrorCodeFor(
   if (commandKind === 'export.step') return 'STEP_EXPORT_FAILED'
   if (commandKind === 'export.stl') return 'STL_EXPORT_FAILED'
   if (commandKind === 'export.3mf') return 'THREEMF_EXPORT_FAILED'
+  if (commandKind === 'scene.instance.export.step') return 'STEP_EXPORT_FAILED'
+  if (commandKind === 'scene.instance.export.stl') return 'STL_EXPORT_FAILED'
   return 'MODEL_BUILD_FAILED'
 }
 
@@ -158,8 +160,11 @@ export function cadErrorStageFor(
     case 'export.step':
     case 'export.stl':
     case 'export.3mf':
+    case 'scene.instance.export.step':
+    case 'scene.instance.export.stl':
       return 'exporting'
     case 'model.generate':
+    case 'scene.instance.generate':
       return 'building'
     default:
       return 'worker'
