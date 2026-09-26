@@ -11,6 +11,7 @@ import {
 } from '../../../../cad-contract/messages'
 import {
   PROTOTYPE_CONFIGURATION,
+  isOpenGridLabelCardParameters,
   validateModelParameters,
   type ModelId,
   type ModelParameterKey,
@@ -21,8 +22,20 @@ import {
   validateMeshSnapshot,
   validateModelPartMeshes,
 } from '../../../../features/cad/worker-client'
+import type { OperationRecord } from '../types'
 import type { ExportHandlers } from './export'
 import type { ModelGenerationHandlers, RuntimeContext } from './types'
+
+function requiresColoredParts(operation: OperationRecord): boolean {
+  if (operation.modelId === 'opengrid-wall-cover') return true
+  if (operation.modelId !== 'opengrid-label-card') return false
+  const parameters = operation.parameters
+  if (!isOpenGridLabelCardParameters(parameters)) return true
+  return (
+    parameters.icon !== 'none' ||
+    Boolean(parameters.text || parameters.textLine2)
+  )
+}
 
 type WorkerEventContext = RuntimeContext & {
   generation: ModelGenerationHandlers
@@ -115,6 +128,38 @@ function modelEventMatchesOperation(
     JSON.stringify(stableParameterValue(expected.value.parameters)) ===
     JSON.stringify(stableParameterValue(actual.value.parameters))
   )
+}
+
+function labelCardFieldErrorFor(
+  operation: { kind: string; modelId?: ModelId } | undefined,
+  messageId: string,
+  params: DiagnosticParams | undefined,
+): FieldDiagnostic | null {
+  if (
+    operation?.kind !== 'model' ||
+    (messageId !== 'validation.labelCardTextTooWide' &&
+      messageId !== 'diagnostic.labelCardGlyphUnsupported' &&
+      messageId !== 'diagnostic.labelCardFontLoadFailed' &&
+      messageId !== 'diagnostic.labelCardIconUnknown' &&
+      messageId !== 'diagnostic.labelCardIconGeometryFailed')
+  ) {
+    return null
+  }
+  if (
+    messageId === 'diagnostic.labelCardIconUnknown' ||
+    messageId === 'diagnostic.labelCardIconGeometryFailed'
+  ) {
+    return {
+      field: 'icon',
+      messageId,
+      ...(params ? { params } : {}),
+    }
+  }
+  return {
+    field: params?.field === 'textLine2' ? 'textLine2' : 'text',
+    messageId,
+    ...(params ? { params } : {}),
+  }
 }
 
 function wallCoverFieldErrorFor(
@@ -287,7 +332,7 @@ export function createWorkerEventHandler(
         const validMesh = validateMeshSnapshot(event.mesh)
         const validPartMeshes = validateModelPartMeshes(
           event.partMeshes,
-          operation.modelId === 'opengrid-wall-cover',
+          requiresColoredParts(operation),
         )
         const matchingParameters = modelEventMatchesOperation(operation, event)
         const currentOperation = isCurrentModelOperation(
@@ -369,7 +414,7 @@ export function createWorkerEventHandler(
         }
         const mesh = event.mesh ?? operation.candidateMesh
         const matchingParameters = modelEventMatchesOperation(operation, event)
-        const requiresParts = operation.modelId === 'opengrid-wall-cover'
+        const requiresParts = requiresColoredParts(operation)
         const partMeshes = event.partMeshes ?? operation.candidatePartMeshes
         const validPartMeshes = validateModelPartMeshes(
           partMeshes,
@@ -500,6 +545,16 @@ export function createWorkerEventHandler(
         )
         if (wallCoverFieldError) {
           context.setFieldErrors({ text: wallCoverFieldError })
+        }
+        const labelCardFieldError = labelCardFieldErrorFor(
+          operation,
+          event.messageId,
+          event.messageParams,
+        )
+        if (labelCardFieldError) {
+          context.setFieldErrors({
+            [labelCardFieldError.field]: labelCardFieldError,
+          })
         }
         if (event.code === 'ENGINE_INIT_FAILED') {
           context.recoverWorker(error)

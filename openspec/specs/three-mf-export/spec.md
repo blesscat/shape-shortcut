@@ -6,17 +6,18 @@
 
 ### Requirement: 3MF is generated from the committed multipart revision
 
-For a committed `opengrid-wall-cover` revision, an
-`opengrid-stackable-cylinder` revision with `topRimEnabled=true`, or a
-committed `opengrid-stackable-box`, `opengrid-organizer-box`,
-`opengrid-divider`, or `opengrid-openconnect-organizer` revision with
-`topRimEnabled=true`, the system MUST generate 3MF bytes inside the CAD Worker
-from the pinned multipart B-Rep parts. It MUST NOT reconstruct the package
-from the viewport mesh alone or run CAD export on the main thread. The system
-MUST reject unsupported models or configurations without rim parts with a
-structured recoverable export error. The former `opengrid-snap`
-`topText=SNAP` path MUST not be an export target.
-
+For a committed supported dual-color revision — `opengrid-wall-cover`, an
+`opengrid-stackable-cylinder` revision with `topRimEnabled=true`, a committed
+`opengrid-stackable-box`, `opengrid-organizer-box`, `opengrid-divider`, or
+`opengrid-openconnect-organizer` revision with `topRimEnabled=true`, an
+`opengrid-label-tag` revision with valid body and icon accent parts, or an
+`opengrid-label-card` revision with valid body and accent parts — the
+system MUST generate 3MF bytes inside the CAD Worker from the pinned multipart
+B-Rep parts of that model. It MUST NOT reconstruct the package from the
+viewport mesh alone or run CAD export on the main thread. The system MUST
+reject unsupported models or configurations without rim or accent parts with a
+structured recoverable export error. The former `opengrid-snap` `topText=SNAP`
+path MUST not be an export target.
 #### Scenario: Successful Wall Cover 3MF export
 
 - **WHEN** the workspace is ready and the user requests 3MF for a committed
@@ -45,11 +46,22 @@ structured recoverable export error. The former `opengrid-snap`
   object with their relative placement preserved
 - **AND** the main thread MUST receive one validated `.3mf` download
 
-#### Scenario: Unsupported 3MF export is rejected
+#### Scenario: Successful Label Tag 3MF export
+
+- **WHEN** the workspace is ready and the user requests 3MF for a committed
+  `opengrid-label-tag` revision with valid body and icon parts
+- **THEN** the Worker MUST pin that revision before writing the package
+- **AND** the package MUST be non-empty and contain a body object and an icon
+  accent object with their relative placement preserved
+- **AND** the main thread MUST receive one validated `.3mf` download named
+  after `opengrid-label-tag`
+
+### Scenario: Unsupported 3MF export is rejected
 
 - **WHEN** the user requests 3MF for a revision without supported multipart
-  data, including an `opengrid-snap` revision or a supported container or
-  cylinder revision with `topRimEnabled=false`
+  data, including an `opengrid-snap` revision, a supported container or
+  cylinder revision with `topRimEnabled=false`, or a label revision
+  without valid body/accent parts
 - **THEN** the Worker MUST emit a structured recoverable 3MF export error
 - **AND** it MUST NOT emit export-ready bytes or trigger a download
 
@@ -58,17 +70,22 @@ structured recoverable export error. The former `opengrid-snap`
 The generated 3MF package MUST be a valid ZIP-based 3MF package with a model
 part, package relationships, content types, and a separate object model. Its
 Bambu-compatible model MUST contain one parent object with distinct primary-body
-and secondary-accent (`text` or `rim`) component mesh objects, two
-material entries using the shared primary and secondary palette captured at export initiation, and preserved part coordinates. The parent
+and secondary-accent (`text`, `rim`, `icon`, or `accent`) component mesh objects, two
+material entries using the shared primary and secondary palette captured at export
+initiation, and preserved part coordinates. The parent
 object MUST be the only build item; the component parts MUST remain
-independently addressable through `Metadata/model_settings.config`. The package
-MUST use millimetres without a hidden scale; its build item MUST apply the
+independently addressable through `Metadata/model_settings.config`. The accent
+part naming inside the package distinguishes the models (`body`/`text` for
+Wall Cover, `body`/`rim` for rim containers, `body`/`icon` for Label Tag, and
+`body`/`accent` for Label Card). The
+package MUST use millimetres without a hidden scale; its build item MUST apply the
 supported printer's plate-centering translation while component and part
 matrices remain identity. It MUST also carry a valid Bambu project
 configuration in `Metadata/project_settings.config` identifying a supported Bambu
 printer and two project filament slots. Bambu Studio metadata MUST assign model
-part `1` (`body`) to extruder/filament slot `1`, model part `2` (`text` or
-`rim`) to extruder/filament slot `2`, and declare the plate filament map `1 2`.
+part `1` (`body`) to extruder/filament slot `1`, model part `2` (`text`,
+`rim`, `icon`, or `accent`) to extruder/filament slot `2`, and declare the
+plate filament map `1 2`.
 
 #### Scenario: Body and accent have separate material assignments
 
@@ -120,17 +137,20 @@ export-ready response carrying request correlation, Worker epoch, model
 revision, `format: 3mf`, a `.3mf` filename, `model/3mf` MIME, and non-empty
 ArrayBuffer bytes. Runtime validation MUST reject unknown, mismatched, empty,
 stale, or malformed 3MF metadata and MUST NOT trigger a download for a rejected
-response. The contract MUST identify supported multipart models
+response. The contract MUST identify supported multipart dual-color models
 (`opengrid-wall-cover`, `opengrid-stackable-cylinder` with `topRimEnabled=true`,
-or `opengrid-stackable-box` / `opengrid-organizer-box` / `opengrid-divider` /
-`opengrid-openconnect-organizer` with `topRimEnabled=true`) when export is
-requested and MUST reject unsupported configurations.
+`opengrid-stackable-box` / `opengrid-organizer-box` / `opengrid-divider` /
+`opengrid-openconnect-organizer` with `topRimEnabled=true`, or
+`opengrid-label-tag` / `opengrid-label-card`) when export is requested and
+MUST reject unsupported configurations and MUST NOT treat an `opengrid-snap`
+revision as a supported multipart export.
 
 #### Scenario: Valid 3MF metadata is accepted
 
 - **WHEN** the main thread receives a 3MF response matching the active
   operation, Worker epoch, model revision, filename, MIME, and non-empty
   package bytes for a supported multipart model
+
 - **THEN** the response MUST pass validation
 - **AND** the browser MUST trigger exactly one `.3mf` download
 
@@ -147,15 +167,16 @@ requested and MUST reject unsupported configurations.
 
 The 3MF action MUST be enabled only for the latest successfully committed
 supported revision (`opengrid-wall-cover`, `opengrid-stackable-cylinder` with
-`topRimEnabled=true`, or `opengrid-stackable-box` / `opengrid-organizer-box` /
+`topRimEnabled=true`, `opengrid-stackable-box` / `opengrid-organizer-box` /
 `opengrid-divider` / `opengrid-openconnect-organizer` with
-`topRimEnabled=true`) while the workspace is ready, not stale, and not already
-exporting. The request MUST be correlated to the selected model revision and
-Worker epoch. The action MUST be unavailable for `opengrid-snap` and for any
-supported model with `topRimEnabled=false`. STEP and STL actions MUST remain
-independent and their existing lifecycle behavior MUST remain unchanged.
-
+`topRimEnabled=true`, or `opengrid-label-tag` / `opengrid-label-card`) while
+the workspace is ready, not stale, and not already exporting. The request MUST
+be correlated to the selected model revision and Worker epoch. The action MUST
+be unavailable for `opengrid-snap` and for any supported model with
+`topRimEnabled=false`. STEP and STL actions MUST remain independent and their
+existing lifecycle behavior MUST remain unchanged.
 #### Scenario: 3MF is available for supported models
+
 
 - **WHEN** the committed revision is `opengrid-wall-cover`, a cylinder with
   `topRimEnabled=true`, or a container model with `topRimEnabled=true`
@@ -168,6 +189,15 @@ independent and their existing lifecycle behavior MUST remain unchanged.
   with `topRimEnabled=false`
 - **THEN** the 3MF action MUST be disabled
 - **AND** the Worker MUST NOT receive an `export.3mf` request
+
+#### Scenario: 3MF is available for the supported Label Tag
+
+- **GIVEN** the current revision is a committed, ready, non-stale
+  `opengrid-label-tag` with valid body/icon parts
+- **WHEN** the user views the export actions
+- **THEN** `下載 3MF` / `Download 3MF` MUST be enabled
+- **AND** selecting it MUST start an `export.3mf` request for that revision
+  whose filename names `opengrid-label-tag`
 
 ### Requirement: 3MF exports all requested Wall Cover instances as one flat two-color assembly
 
@@ -213,3 +243,11 @@ top in the exported geometry.
 - **WHEN** the committed revision lacks a valid body/text pair, contains invalid text, or contains more than eight generated covers
 - **THEN** the Worker MUST return a structured recoverable export error
 - **AND** it MUST NOT emit export-ready bytes or trigger a download
+
+### Requirement: Exported meshes share boundary vertex indices
+The exporter MUST reuse one vertex index for coordinates that are identical at the serialized precision within each part. Adjacent triangles MUST share indices across CAD face boundaries while retaining their winding, positions, and material assignments. Triangles collapsed by coordinate serialization MUST be rejected rather than emitted with repeated indices.
+
+#### Scenario: Flat label card with Chinese text and icon
+- **WHEN** a flat label card with Chinese text and a gear icon is exported
+- **THEN** every undirected triangle edge in each closed part MUST have two incident triangles using the same vertex indices
+- **AND** the card thickness, text holes, icon holes, and material placement MUST remain unchanged

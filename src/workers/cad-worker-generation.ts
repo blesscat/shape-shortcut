@@ -1,3 +1,5 @@
+import { assertOpenGridLabelSlotTestQuality } from '../cad-kernel/components/opengrid-label-slot-test/builder'
+import { isOpenGridLabelSlotTestParameters } from '../cad-contract/units/opengrid-label-slot-test'
 import type { Shape3D } from 'replicad'
 import { PreviewTimingRecorder } from '../cad-contract/preview-timing'
 import {
@@ -10,6 +12,7 @@ import {
 } from '../cad-contract/messages'
 import {
   boundsForOpenGridWallCover,
+  boundsForOpenGridLabelCard,
   isHswCellParameters,
   isOpenGridDividerModelParameters,
   isOpenGridOpenConnectShelfParameters,
@@ -19,6 +22,7 @@ import {
   isOpenGridParameters,
   isOpenGridSnapParameters,
   isOpenGridStackableCylinderParameters,
+  isOpenGridLabelCardParameters,
   isPillarParameters,
   normalizeOpenGridDividerParameters,
   normalizeOpenGridParameters,
@@ -49,6 +53,7 @@ import { assertOpenGridOrganizerBoxGeometry } from '../cad-kernel/components/ope
 import { assertOpenGridShapeQuality } from '../cad-kernel/components/opengrid/quality'
 import { assertPillarShapeQuality } from '../cad-kernel/components/opengrid-pillar/quality'
 import { assertOpenGridWallCoverShapeQuality } from '../cad-kernel/components/opengrid-wall-cover/quality'
+import { assertOpenGridLabelCardShapeQuality } from '../cad-kernel/components/opengrid-label-card/quality'
 import {
   assertOpenGridSnapOpenConnectShapeQuality,
   assertOpenGridSnapShapeQuality,
@@ -149,6 +154,16 @@ export async function generateCadCandidate(
     }
     generationParameters = validation.value.parameters
   }
+  if (command.modelId === 'opengrid-label-card') {
+    const validation = validateModelParameters(
+      command.modelId,
+      command.parameters,
+    )
+    if (!validation.valid) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:' + command.modelId)
+    }
+    generationParameters = validation.value.parameters
+  }
   const hswProgress =
     command.modelId === 'hsw-cell' && isHswCellParameters(command.parameters)
       ? {
@@ -224,6 +239,7 @@ export async function generateCadCandidate(
     }
     const usesMultipart =
       command.modelId === 'opengrid-wall-cover' ||
+      command.modelId === 'opengrid-label-card' ||
       (command.modelId === 'opengrid-stackable-cylinder' &&
         Boolean(
           (generationParameters as Record<string, unknown>).topRimEnabled,
@@ -417,6 +433,42 @@ export async function generateCadCandidate(
       }
     }
 
+    if (command.modelId === 'opengrid-label-card') {
+      if (!isOpenGridLabelCardParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+      }
+      const bodyPart = nativeParts?.find((part) => part.name === 'body')
+      const accentPart = nativeParts?.find((part) => part.name === 'accent')
+      const blankCard =
+        generationParameters.icon === 'none' &&
+        !generationParameters.text &&
+        !generationParameters.textLine2
+      if (!bodyPart || (!accentPart && !blankCard)) {
+        throw new Error('OPENGRID_LABEL_CARD_PARTS_INVALID')
+      }
+      const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+      nativePartMeshes = [{ name: 'body', mesh: bodyMesh }]
+      if (accentPart) {
+        const accentMesh = meshBRep(accentPart.shape, command.previewConfig)
+        nativePartMeshes.push({ name: 'accent', mesh: accentMesh })
+      }
+      mesh.bounds = boundsForOpenGridLabelCard(generationParameters)
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelCardShapeQuality(
+          nativeParts ?? [],
+          generationParameters,
+        ),
+      )
+    }
+
+    if (command.modelId === 'opengrid-label-slot-test') {
+      if (!isOpenGridLabelSlotTestParameters(generationParameters))
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelSlotTestQuality(shape, generationParameters),
+      )
+    }
+
     if (command.modelId === 'opengrid-divider') {
       if (!isOpenGridDividerModelParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-divider')
@@ -539,7 +591,7 @@ export async function generateCadCandidate(
       serializeMesh(mesh),
     )
     partMeshSnapshots = candidate.partMeshes?.map((part) => ({
-      name: part.name as 'body' | 'text' | 'rim',
+      name: part.name as 'body' | 'text' | 'rim' | 'icon' | 'accent',
       mesh: serializeMesh(part.mesh),
     }))
     candidate.previewTiming = timing.snapshot()

@@ -1,0 +1,243 @@
+import { expect, test } from '@playwright/test'
+import {
+  COMPONENT_PARAMETER_STORAGE_KEY,
+  COMPONENT_PARAMETER_STORAGE_VERSION,
+} from '../../src/features/cad/parameters'
+import { skipHeadlessFirefoxWithoutWebGL } from './helpers'
+
+for (const locale of ['zh-Hant', 'en'] as const) {
+  test(`${locale}: integrated slot fits, persists and exports without clamping`, async ({
+    page,
+    browserName,
+  }, testInfo) => {
+    test.setTimeout(180_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await page.goto(`/${locale}/cad/opengrid-openconnect-organizer?system=wall`)
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    const viewport = page.getByTestId('cad-viewport')
+    const before = await viewport.getAttribute('data-model-revision')
+    await page.getByTestId('organizer-label-slot-enabled').check()
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      before ?? '',
+      { timeout: 90_000 },
+    )
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    const units = page.getByTestId('organizer-label-grid-units')
+    await expect(units).toHaveRole('slider')
+    await expect(units).toHaveValue('3')
+    await expect(
+      page.getByTestId('organizer-label-width-summary'),
+    ).toContainText('30 mm')
+    await page.screenshot({
+      path: testInfo.outputPath('integrated-slot.png'),
+      fullPage: true,
+    })
+    const stepButton = page.getByRole('button', {
+      name: locale === 'en' ? 'Download STEP' : '下載 STEP',
+      exact: true,
+    })
+    const stlButton = page.getByRole('button', {
+      name: locale === 'en' ? 'Download STL' : '下載 STL',
+      exact: true,
+    })
+    for (const [button, extension] of [
+      [stepButton, 'step'],
+      [stlButton, 'stl'],
+    ] as const) {
+      const pendingDownload = page.waitForEvent('download')
+      await button.click()
+      const download = await pendingDownload
+      expect(download.suggestedFilename()).toContain(`label3.${extension}`)
+    }
+    await units.press('ArrowRight')
+    await expect(page.locator('#organizer-label-fit')).toContainText(
+      locale === 'en' ? 'exceeds' : '超出',
+    )
+    await expect(units).toHaveValue('4')
+    await expect(stepButton).toBeDisabled()
+    await expect(stlButton).toBeDisabled()
+    await page.reload()
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    await expect(page.getByTestId('organizer-label-slot-enabled')).toBeChecked()
+    await expect(units).toHaveRole('slider')
+    await expect(units).toHaveValue('3')
+  })
+
+  test(`${locale}: card units migrate and reject narrow text`, async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(180_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await page.addInitScript(
+      ({ key, version }) => {
+        if (localStorage.getItem(key)) return
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            version,
+            values: {
+              wall: {
+                'opengrid-label-card': {
+                  widthTier: 30,
+                  style: 'raised',
+                  icon: 'gear-fill',
+                  text: '',
+                },
+              },
+            },
+          }),
+        )
+      },
+      {
+        key: COMPONENT_PARAMETER_STORAGE_KEY,
+        version: COMPONENT_PARAMETER_STORAGE_VERSION,
+      },
+    )
+    await page.goto(`/${locale}/cad/opengrid-label-card?system=wall`)
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    const height = page.locator('#label-card-text-height')
+    await expect(height).toHaveValue('7')
+    await height.fill('4.5')
+    await page.getByTestId('opengrid-label-card-icon-none').click()
+    const units = page.getByTestId('opengrid-label-card-grid-units')
+    await expect(units).toHaveRole('slider')
+    await expect(units).toHaveValue('3')
+    const viewport = page.getByTestId('cad-viewport')
+    const before = await viewport.getAttribute('data-model-revision')
+    await units.press('ArrowRight')
+    await units.press('ArrowRight')
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      before ?? '',
+      { timeout: 90_000 },
+    )
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    await expect(page.getByTestId('label-card-width-summary')).toContainText(
+      '50 mm',
+    )
+    const textInput = page.getByRole('textbox', {
+      name: locale === 'en' ? 'Label card text' : '標籤卡文字',
+      exact: true,
+    })
+    await textInput.fill('M3')
+    const iconPosition = page.locator('#label-card-icon-position')
+    await expect(iconPosition).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    await page.screenshot({
+      path: `test-results/card-horizontal-${locale}.png`,
+      fullPage: true,
+    })
+    const exportButton = page.getByRole('button', {
+      name: locale === 'en' ? 'Download 3MF' : '下載 3MF',
+      exact: true,
+    })
+    await expect(exportButton).toBeEnabled()
+    const pendingDownload = page.waitForEvent('download')
+    await exportButton.click()
+    const fileName = (await pendingDownload).suggestedFilename()
+    expect(fileName).toContain('w50')
+    expect(fileName).toContain('-none-')
+    expect(fileName).toContain('-left.3mf')
+    await page.reload()
+    await expect(
+      page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),
+    ).toBeEnabled({ timeout: 90_000 })
+    await expect(units).toHaveValue('5')
+    await expect(iconPosition).toHaveValue('left')
+    await expect(height).toHaveValue('4.5')
+    await expect(
+      page.getByTestId('opengrid-label-card-icon-none'),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await expect(textInput).toHaveValue('M3')
+    await expect(units).toHaveAttribute('max', '10')
+    await units.press('Home')
+    await page
+      .getByRole('textbox', {
+        name: locale === 'en' ? 'Label card text' : '標籤卡文字',
+        exact: true,
+      })
+      .fill('ABCDEF')
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: locale === 'en' ? 'usable card width' : '可用寬度' })
+        .first(),
+    ).toBeVisible()
+    await expect(exportButton).toBeDisabled()
+    await expect(units).toHaveValue('1')
+  })
+}
+
+for (const locale of ['zh-Hant', 'en'] as const) {
+  test(`${locale}: two rows preserve independent alignment and screw symbols`, async ({
+    page,
+  }) => {
+    test.setTimeout(180_000)
+    await page.goto(`/${locale}/cad/opengrid-label-card?system=wall`)
+    const download = page.getByRole('button', {
+      name: /^(下載 3MF|Download 3MF)$/,
+    })
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-icon-drive-hex').click()
+    await page.getByTestId('opengrid-label-card-text').fill('M3')
+    const height = page.locator('#label-card-text-height')
+    await expect(height).toHaveAttribute('min', '2')
+    await expect(height).toHaveValue('7')
+    await page.getByTestId('opengrid-label-card-textLine2').fill('10mm')
+    await expect(height).toHaveAttribute('max', '4')
+    await expect(height).toHaveValue('4')
+    await page.locator('#label-card-text-alignment').selectOption('left')
+    await page.locator('#label-card-textLine2-alignment').selectOption('right')
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    const pending = page.waitForEvent('download')
+    await download.click()
+    expect((await pending).suggestedFilename()).toContain('drive-hex')
+    await page.reload()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await expect(page.getByTestId('opengrid-label-card-text')).toHaveValue('M3')
+    await expect(page.getByTestId('opengrid-label-card-textLine2')).toHaveValue(
+      '10mm',
+    )
+    await expect(page.locator('#label-card-text-alignment')).toHaveValue('left')
+    await expect(page.locator('#label-card-textLine2-alignment')).toHaveValue(
+      'right',
+    )
+    await expect(height).toHaveValue('4')
+    await expect(
+      page.getByTestId('opengrid-label-card-icon-drive-hex'),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await page.screenshot({
+      path: `test-results/card-two-rows-${locale}.png`,
+      fullPage: true,
+    })
+    await page.getByTestId('opengrid-label-card-icon-hole-counterbore').click()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('')
+    await expect(height).toHaveAttribute('max', '7')
+    await height.fill('2')
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('😀')
+    await expect(
+      page.locator('#opengrid-label-card-textLine2-error'),
+    ).toBeVisible({ timeout: 90_000 })
+    await page.getByTestId('opengrid-label-card-textLine2').fill('M4')
+    await page.getByTestId('opengrid-label-card-text').fill('')
+    await page.getByTestId('opengrid-label-card-icon-none').click()
+    await expect(download).toBeEnabled({ timeout: 90_000 })
+    await expect(height).toHaveAttribute('max', '7')
+  })
+}

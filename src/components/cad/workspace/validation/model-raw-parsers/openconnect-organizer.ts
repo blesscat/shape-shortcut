@@ -6,6 +6,7 @@ import {
   isOpenConnectVerticalAlignment,
 } from '../../../../../cad-contract/units/openconnect-alignment'
 import {
+  OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   parseDimensionInput,
   parseFiniteDecimalInput,
   validateModelParameters,
@@ -35,7 +36,10 @@ export function parseOpenGridOpenConnectOrganizerRawParameters(
     (field) =>
       !OPENCONNECT_ALIGNMENT_KEYS.includes(
         field as (typeof OPENCONNECT_ALIGNMENT_KEYS)[number],
-      ) && raw[field] === undefined,
+      ) &&
+      field !== 'labelSlotEnabled' &&
+      field !== 'labelGridUnits' &&
+      raw[field] === undefined,
   )
   if (missingField) return invalid(missingField)
 
@@ -85,6 +89,15 @@ export function parseOpenGridOpenConnectOrganizerRawParameters(
   const topRimEnabled = raw.topRimEnabled === 'true'
   const topRimHeight = parseDimensionInput(raw.topRimHeight ?? '')
   if (topRimHeight === null) return invalid('topRimHeight')
+  const labelSlotRaw = raw.labelSlotEnabled ?? 'false'
+  if (labelSlotRaw !== 'true' && labelSlotRaw !== 'false')
+    return invalid('labelSlotEnabled')
+  const labelSlotEnabled = labelSlotRaw === 'true'
+  const labelGridUnits = parseDimensionInput(
+    raw.labelGridUnits ??
+      String(OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits),
+  )
+  if (labelGridUnits === null) return invalid('labelGridUnits')
 
   const horizontalAlignment = raw.openConnectHorizontalAlignment ?? 'center'
   const verticalAlignment = raw.openConnectVerticalAlignment ?? 'top'
@@ -112,6 +125,8 @@ export function parseOpenGridOpenConnectOrganizerRawParameters(
     tiltAngle,
     topRimEnabled,
     topRimHeight,
+    labelSlotEnabled,
+    labelGridUnits,
   }
   const validation = validateModelParameters(
     'opengrid-openconnect-organizer',

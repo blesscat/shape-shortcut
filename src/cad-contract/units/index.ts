@@ -450,6 +450,8 @@ export {
   isOpenGridDividerModelParameters,
   isOpenGridModelParameters,
   isOpenGridOpenConnectOrganizerModelParameters,
+  isOpenGridLabelCardModelParameters,
+  isOpenGridLabelSlotTestModelParameters,
   isOpenGridOpenConnectShelfModelParameters,
   isOpenGridOpenShelfModelParameters,
   isOpenGridOrganizerBoxModelParameters,
@@ -479,3 +481,36 @@ export type {
   ScalarModelParameterKey,
   ValidationIssue,
 } from './model'
+
+export {
+  boundsForOpenGridLabelCard,
+  isOpenGridLabelCardParameters,
+  isOpenGridLabelCardStyle,
+  normalizeOpenGridLabelCardText,
+  openGridLabelCardFileName,
+  openGridLabelCardStlFileName,
+  openGridLabelCardThreeMfFileName,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
+  OPENGRID_LABEL_CARD_STYLES,
+  OPENGRID_LABEL_CARD_ICON_IDS,
+  validateOpenGridLabelCardParameters,
+} from './opengrid-label-card'
+
+export {
+  OPENGRID_LABEL_WIDTH_TIERS,
+  OPENGRID_LABEL_CARD_HEIGHT,
+  OPENGRID_LABEL_CARD_INSERTION_THICKNESS,
+  OPENGRID_LABEL_ACCENT_DEPTH,
+  OPENGRID_LABEL_CARD_RAISED_HEIGHT,
+  OPENGRID_LABEL_CARD_POCKET_PROUD,
+  isOpenGridLabelWidthTier,
+  type OpenGridLabelWidthTier,
+} from './opengrid-label-shared'
+export * from './opengrid-label-slot-test'
+
+export type {
+  OpenGridLabelCardParameterKey,
+  OpenGridLabelCardParameters,
+  OpenGridLabelCardStyle,
+  OpenGridLabelCardValidation,
+} from './opengrid-label-card'

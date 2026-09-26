@@ -16,6 +16,7 @@ import {
   type HexagonalColumnParameters,
   type ModelParameterValues,
   type OpenGridOpenConnectOrganizerParameters,
+  type OpenGridLabelCardParameters,
   type OpenGridOpenConnectShelfParameters,
   type OpenGridOpenShelfParameters,
   type OpenGridOrganizerBoxParameters,
@@ -42,6 +43,27 @@ export function rawFromParameters(
       TISSUE_BOX_KEYS.map((key) => [key, String(normalized[key])]),
     ) as RawParameters
   }
+
+  if ('style' in parameters) {
+    const labelCardParameters = parameters as OpenGridLabelCardParameters
+    const raw: RawParameters = {
+      gridUnits: String(labelCardParameters.gridUnits),
+      style: labelCardParameters.style,
+      icon: labelCardParameters.icon,
+      textHeight: String(labelCardParameters.textHeight ?? 7),
+      iconPosition: labelCardParameters.iconPosition ?? 'left',
+      textLine2: labelCardParameters.textLine2 ?? '',
+      textAlignment: labelCardParameters.textAlignment ?? 'center',
+      textLine2Alignment: labelCardParameters.textLine2Alignment ?? 'center',
+    }
+    if (labelCardParameters.text !== undefined) {
+      raw.text = labelCardParameters.text
+    }
+    return raw
+  }
+
+  if ('gridUnits' in parameters)
+    return { gridUnits: String(parameters.gridUnits) }
 
   if ('text' in parameters) {
     const wallCoverParameters = parameters as OpenGridWallCoverParameters
@@ -116,6 +138,16 @@ export function rawFromParameters(
         'topRimHeight' in organizerParameters
           ? organizerParameters.topRimHeight
           : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.topRimHeight,
+      ),
+      labelSlotEnabled: String(
+        'labelSlotEnabled' in organizerParameters
+          ? organizerParameters.labelSlotEnabled
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelSlotEnabled,
+      ),
+      labelGridUnits: String(
+        'labelGridUnits' in organizerParameters
+          ? organizerParameters.labelGridUnits
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits,
       ),
     }
   }

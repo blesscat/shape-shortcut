@@ -6,12 +6,14 @@ import type { Shape3D } from 'replicad'
 import {
   isValidThreeMfPackage,
   THREE_MF_BUILD_TRANSFORM,
+  THREE_MF_WALL_COVER_EXPECTATION,
+  type ThreeMfPackageExpectation,
 } from '../../cad-contract/three-mf'
 import { PROTOTYPE_CONFIGURATION } from '../../cad-contract/units'
 import { meshBRep, type MeshData } from '../mesh'
 
 export type ThreeMfShapePart = {
-  name: 'body' | 'text' | 'rim'
+  name: 'body' | 'text' | 'rim' | 'icon' | 'accent'
   shape: Shape3D
 }
 
@@ -25,6 +27,128 @@ export type ExportThreeMfOptions = {
   accentMaterialName?: string
   baseColor?: string
   accentColor?: string
+}
+
+export type ThreeMfPackageMeta = {
+  modelSettingsName: string
+  sourceFileName: string
+  platerName: string
+  baseMaterialName: string
+  baseMaterialColor: string
+  accentMaterialName: string
+  accentMaterialColor: string
+  accentPartName: string
+}
+
+export const THREE_MF_WALL_COVER_META: ThreeMfPackageMeta = {
+  modelSettingsName: THREE_MF_WALL_COVER_EXPECTATION.modelSettingsName,
+  sourceFileName: THREE_MF_WALL_COVER_EXPECTATION.sourceFileName,
+  platerName: THREE_MF_WALL_COVER_EXPECTATION.platerName,
+  baseMaterialName: THREE_MF_WALL_COVER_EXPECTATION.baseMaterialName,
+  baseMaterialColor: THREE_MF_WALL_COVER_EXPECTATION.baseMaterialColor,
+  accentMaterialName: THREE_MF_WALL_COVER_EXPECTATION.accentMaterialName,
+  accentMaterialColor: THREE_MF_WALL_COVER_EXPECTATION.accentMaterialColor,
+  accentPartName: THREE_MF_WALL_COVER_EXPECTATION.accentPartName,
+}
+
+const CONTAINER_THREE_MF_METAS = {
+  'opengrid-stackable-cylinder': {
+    platerName: 'OpenGrid Stackable Cylinder',
+    baseMaterialName: 'Cylinder Body',
+    accentMaterialName: 'Cylinder Rim',
+  },
+  'opengrid-stackable-box': {
+    platerName: 'OpenGrid Stackable Box',
+    baseMaterialName: 'Box Body',
+    accentMaterialName: 'Box Rim',
+  },
+  'opengrid-organizer-box': {
+    platerName: 'OpenGrid Organizer Box',
+    baseMaterialName: 'Organizer Body',
+    accentMaterialName: 'Organizer Rim',
+  },
+  'opengrid-divider': {
+    platerName: 'OpenGrid Divider',
+    baseMaterialName: 'Divider Body',
+    accentMaterialName: 'Divider Rim',
+  },
+  'opengrid-openconnect-organizer': {
+    platerName: 'OpenGrid OpenConnect Organizer',
+    baseMaterialName: 'Organizer Body',
+    accentMaterialName: 'Organizer Rim',
+  },
+} as const
+
+type ContainerThreeMfModelId = keyof typeof CONTAINER_THREE_MF_METAS
+
+/**
+ * Per-model 3MF metadata for every supported dual-color export. Label
+ * Tag and Label Card source file names embed the generation parameters,
+ * so they are derived from the export file name.
+ */
+export function threeMfMetaFor(
+  modelId:
+    | 'opengrid-wall-cover'
+    | ContainerThreeMfModelId
+    | 'opengrid-label-tag'
+    | 'opengrid-label-card',
+  fileName: string,
+): ThreeMfPackageMeta {
+  if (modelId === 'opengrid-label-tag') {
+    return {
+      modelSettingsName: 'opengrid-label-tag',
+      sourceFileName: fileName,
+      platerName: 'OpenGrid Label Tag',
+      baseMaterialName: 'Label Tag Body',
+      baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
+      accentMaterialName: 'Label Tag Icon',
+      accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
+      accentPartName: 'icon',
+    }
+  }
+  if (modelId === 'opengrid-label-card') {
+    return {
+      modelSettingsName: 'opengrid-label-card',
+      sourceFileName: fileName,
+      platerName: 'OpenGrid Label Card',
+      baseMaterialName: 'Label Card Body',
+      baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
+      accentMaterialName: 'Label Card Accent',
+      accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
+      accentPartName: 'accent',
+    }
+  }
+  const container =
+    modelId in CONTAINER_THREE_MF_METAS
+      ? CONTAINER_THREE_MF_METAS[modelId as ContainerThreeMfModelId]
+      : undefined
+  if (container) {
+    return {
+      modelSettingsName: modelId,
+      sourceFileName: fileName,
+      ...container,
+      baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
+      accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
+      accentPartName: 'rim',
+    }
+  }
+  return THREE_MF_WALL_COVER_META
+}
+
+export function threeMfExpectationFor(
+  meta: ThreeMfPackageMeta,
+): ThreeMfPackageExpectation {
+  return {
+    baseMaterialName: meta.baseMaterialName,
+    baseMaterialColor: meta.baseMaterialColor,
+    accentMaterialName: meta.accentMaterialName,
+    accentMaterialColor: meta.accentMaterialColor,
+    accentPartName: meta.accentPartName,
+    modelSettingsName: meta.modelSettingsName,
+    sourceFileName: meta.sourceFileName,
+    platerName: meta.platerName,
+    filamentColors: [meta.baseMaterialColor, meta.accentMaterialColor],
+  }
 }
 
 type ZipEntry = {
@@ -75,11 +199,23 @@ function meshXml(mesh: MeshData): string {
   }
   const vertexCount = mesh.positions.length / 3
   const vertices: string[] = []
+  const vertexIndices = new Map<string, number>()
+  const remappedIndices: number[] = []
+  // CAD tessellation duplicates vertices along face boundaries. 3MF needs
+  // adjacent triangles to share indices, not merely equal coordinates.
   for (let index = 0; index < vertexCount; index += 1) {
     const offset = index * 3
-    vertices.push(
-      `<vertex x="${finiteNumber(mesh.positions[offset]!, 'x')}" y="${finiteNumber(mesh.positions[offset + 1]!, 'y')}" z="${finiteNumber(mesh.positions[offset + 2]!, 'z')}"/>`,
-    )
+    const x = finiteNumber(mesh.positions[offset]!, 'x')
+    const y = finiteNumber(mesh.positions[offset + 1]!, 'y')
+    const z = finiteNumber(mesh.positions[offset + 2]!, 'z')
+    const key = `${x},${y},${z}`
+    let sharedIndex = vertexIndices.get(key)
+    if (sharedIndex === undefined) {
+      sharedIndex = vertices.length
+      vertexIndices.set(key, sharedIndex)
+      vertices.push(`<vertex x="${x}" y="${y}" z="${z}"/>`)
+    }
+    remappedIndices.push(sharedIndex)
   }
 
   const triangles: string[] = []
@@ -95,7 +231,13 @@ function meshXml(mesh: MeshData): string {
     ) {
       throw new Error('THREEMF_TRIANGLE_INDEX_INVALID')
     }
-    triangles.push(`<triangle v1="${first}" v2="${second}" v3="${third}"/>`)
+    const v1 = remappedIndices[first]!
+    const v2 = remappedIndices[second]!
+    const v3 = remappedIndices[third]!
+    if (v1 === v2 || v2 === v3 || v3 === v1) {
+      throw new Error('THREEMF_MESH_INVALID')
+    }
+    triangles.push(`<triangle v1="${v1}" v2="${v2}" v3="${v3}"/>`)
   }
 
   if (vertices.length === 0 || triangles.length === 0) {
@@ -106,12 +248,7 @@ function meshXml(mesh: MeshData): string {
 
 function objectModelXml(
   parts: readonly { name: string; mesh: MeshData }[],
-  materials: {
-    baseName: string
-    baseColor: string
-    accentName: string
-    accentColor: string
-  },
+  meta: ThreeMfPackageMeta,
 ): string {
   const objects = parts
     .map((part, index) => {
@@ -125,8 +262,8 @@ function objectModelXml(
   <metadata name="BambuStudio:3mfVersion">1</metadata>
   <resources>
     <basematerials id="1">
-      <base name="${xmlEscape(materials.baseName)}" displaycolor="${materials.baseColor}" />
-      <base name="${xmlEscape(materials.accentName)}" displaycolor="${materials.accentColor}" />
+      <base name="${xmlEscape(meta.baseMaterialName)}" displaycolor="${meta.baseMaterialColor}" />
+      <base name="${xmlEscape(meta.accentMaterialName)}" displaycolor="${meta.accentMaterialColor}" />
     </basematerials>
     ${objects}
   </resources>
@@ -162,13 +299,10 @@ function contentTypesXml(): string {
 </Types>`
 }
 
-function projectSettingsJson(materials: {
-  baseColor: string
-  accentColor: string
-}): string {
+function projectSettingsJson(meta: ThreeMfPackageMeta): string {
   return `{
   "extruder_type": ["Direct Drive"],
-  "filament_colour": ["${materials.baseColor}", "${materials.accentColor}"],
+  "filament_colour": ["${meta.baseMaterialColor}", "${meta.accentMaterialColor}"],
   "filament_flow_ratio": ["1", "1"],
   "filament_map": ["1", "1"],
   "filament_settings_id": ["Bambu PLA Basic @BBL A1", "Bambu PLA Basic @BBL A1"],
@@ -195,11 +329,7 @@ function projectSettingsJson(materials: {
 
 function modelSettingsXml(
   parts: readonly { name: string; mesh: MeshData }[],
-  meta: {
-    modelName: string
-    sourceFile: string
-    plateName: string
-  },
+  meta: ThreeMfPackageMeta,
 ): string {
   const bodyFaceCount = parts[0]!.mesh.indices.length / 3
   const accentFaceCount = parts[1]!.mesh.indices.length / 3
@@ -208,13 +338,13 @@ function modelSettingsXml(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <config>
   <object id="3">
-    <metadata key="name" value="${xmlEscape(meta.modelName)}" />
+    <metadata key="name" value="${xmlEscape(meta.modelSettingsName)}" />
     <metadata key="extruder" value="1" />
     <metadata face_count="${bodyFaceCount + accentFaceCount}" />
     <part id="1" subtype="normal_part" uuid="${BODY_PART_UUID}">
       <metadata key="name" value="${xmlEscape(parts[0]!.name)}" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="${xmlEscape(meta.sourceFile)}" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFileName)}" />
       <metadata key="source_object_id" value="0" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
@@ -226,7 +356,7 @@ function modelSettingsXml(
     <part id="2" subtype="normal_part" uuid="${accentPartUuid}">
       <metadata key="name" value="${xmlEscape(parts[1]!.name)}" />
       <metadata key="matrix" value="${IDENTITY_MATRIX}" />
-      <metadata key="source_file" value="${xmlEscape(meta.sourceFile)}" />
+      <metadata key="source_file" value="${xmlEscape(meta.sourceFileName)}" />
       <metadata key="source_object_id" value="1" />
       <metadata key="source_volume_id" value="0" />
       <metadata key="source_offset_x" value="0" />
@@ -238,7 +368,7 @@ function modelSettingsXml(
   </object>
   <plate>
     <metadata key="plater_id" value="1" />
-    <metadata key="plater_name" value="${xmlEscape(meta.plateName)}" />
+    <metadata key="plater_name" value="${xmlEscape(meta.platerName)}" />
     <metadata key="locked" value="false" />
     <metadata key="filament_map_mode" value="Auto For Flush" />
     <metadata key="filament_maps" value="1 2" />
@@ -372,28 +502,42 @@ function zipStore(entries: readonly ZipEntry[]): ArrayBuffer {
 export async function exportThreeMfBytes(
   parts: readonly ThreeMfShapePart[],
   options: ExportThreeMfOptions = {},
+  metaOverride?: ThreeMfPackageMeta,
 ): Promise<ArrayBuffer> {
   if (
     parts.length !== 2 ||
     parts[0]?.name !== 'body' ||
-    (parts[1]?.name !== 'text' && parts[1]?.name !== 'rim')
+    (parts[1]?.name !== 'text' &&
+      parts[1]?.name !== 'rim' &&
+      parts[1]?.name !== 'icon' &&
+      parts[1]?.name !== 'accent')
   ) {
     throw new Error('THREEMF_PARTS_INVALID')
   }
 
-  const modelName = options.modelName ?? 'opengrid-wall-cover'
+  const modelName =
+    options.modelName ??
+    (parts[1]?.name === 'rim'
+      ? 'opengrid-stackable-cylinder'
+      : parts[1]?.name === 'icon'
+        ? 'opengrid-label-tag'
+        : parts[1]?.name === 'accent'
+          ? 'opengrid-label-card'
+          : 'opengrid-wall-cover')
   const sourceFile = options.sourceFile ?? `${modelName}.3mf`
-  const isCylinder =
-    modelName === 'opengrid-stackable-cylinder' || parts[1]?.name === 'rim'
-  const plateName =
-    options.plateName ??
-    (isCylinder ? 'OpenGrid Stackable Cylinder' : 'OpenGrid Wall Cover')
-  const baseMaterialName =
-    options.baseMaterialName ??
-    (isCylinder ? 'Cylinder Body' : 'Wall Cover Body')
+  const baseMeta =
+    metaOverride ??
+    threeMfMetaFor(
+      modelName as Parameters<typeof threeMfMetaFor>[0],
+      sourceFile,
+    )
+  if (parts[1]?.name !== baseMeta.accentPartName) {
+    throw new Error('THREEMF_PARTS_INVALID')
+  }
+  const plateName = options.plateName ?? baseMeta.platerName
+  const baseMaterialName = options.baseMaterialName ?? baseMeta.baseMaterialName
   const accentMaterialName =
-    options.accentMaterialName ??
-    (isCylinder ? 'Cylinder Rim' : 'Wall Cover Text')
+    options.accentMaterialName ?? baseMeta.accentMaterialName
   const baseColor = options.baseColor ?? DEFAULT_MODEL_COLORS.primary
   const accentColor = options.accentColor ?? DEFAULT_MODEL_COLORS.secondary
   if (!isModelColor(baseColor) || !isModelColor(accentColor)) {
@@ -411,21 +555,19 @@ export async function exportThreeMfBytes(
     mesh: meshBRep(part.shape, meshOptions),
   }))
 
-  const materials = {
-    baseName: baseMaterialName,
-    baseColor,
-    accentName: accentMaterialName,
-    accentColor,
-  }
-
-  const meta = {
-    modelName,
-    sourceFile,
-    plateName,
+  const meta: ThreeMfPackageMeta = {
+    modelSettingsName: baseMeta.modelSettingsName,
+    sourceFileName: sourceFile,
+    platerName: plateName,
+    baseMaterialName,
+    baseMaterialColor: baseColor,
+    accentMaterialName,
+    accentMaterialColor: accentColor,
+    accentPartName: baseMeta.accentPartName,
   }
 
   const model = TEXT_ENCODER.encode(modelXml())
-  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes, materials))
+  const objectModel = TEXT_ENCODER.encode(objectModelXml(meshes, meta))
   const entries: ZipEntry[] = [
     {
       name: '[Content_Types].xml',
@@ -443,7 +585,7 @@ export async function exportThreeMfBytes(
     { name: OBJECT_MODEL_PATH, bytes: objectModel },
     {
       name: PROJECT_SETTINGS_PATH,
-      bytes: TEXT_ENCODER.encode(projectSettingsJson(materials)),
+      bytes: TEXT_ENCODER.encode(projectSettingsJson(meta)),
     },
     {
       name: MODEL_SETTINGS_PATH,
@@ -455,6 +597,9 @@ export async function exportThreeMfBytes(
   return bytes
 }
 
-export function isThreeMfPackage(bytes: ArrayBuffer): boolean {
-  return isValidThreeMfPackage(bytes)
+export function isThreeMfPackage(
+  bytes: ArrayBuffer,
+  expectation?: ThreeMfPackageExpectation,
+): boolean {
+  return isValidThreeMfPackage(bytes, expectation)
 }

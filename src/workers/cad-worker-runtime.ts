@@ -4,7 +4,7 @@ import {
   PROTOCOL_VERSION,
   type WorkerCommand,
 } from '../cad-contract/messages'
-import { diagnostic } from '../cad-contract/diagnostics'
+import { diagnostic, type DiagnosticParams } from '../cad-contract/diagnostics'
 import type {
   CadError,
   CadErrorCode,
@@ -365,6 +365,56 @@ export class CadWorkerRuntime {
         'building',
         code,
         diagnostic('diagnostic.wallCoverFontLoadFailed'),
+        true,
+      )
+    }
+    let labelTextParams: DiagnosticParams | undefined
+    if (message.endsWith(':textLine2')) labelTextParams = { field: 'textLine2' }
+    if (message.includes('LABEL_CARD_TEXT_TOO_WIDE')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('validation.labelCardTextTooWide', labelTextParams),
+        true,
+      )
+    }
+    if (message.includes('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelCardGlyphUnsupported', labelTextParams),
+        true,
+      )
+    }
+    if (message.includes('LABEL_CARD_FONT_LOAD_FAILED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelCardFontLoadFailed'),
+        true,
+      )
+    }
+    if (code === 'OPENGRID_LABEL_CARD_QUALITY_INVALID') {
+      return makeError(
+        'meshing',
+        code,
+        diagnostic('diagnostic.labelCardQualityInvalid'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_CARD_ICON_UNKNOWN')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelCardIconUnknown'),
+        true,
+      )
+    }
+    if (message.includes('LABEL_CARD_ICON_GEOMETRY_FAILED')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.labelCardIconGeometryFailed'),
         true,
       )
     }

@@ -257,6 +257,21 @@ export const zhHantMessages = {
     '直接以背面 OpenConnect 母座掛牆的收納件；可調整 X/Y 孔數、孔距、圓形或 3–6 邊形孔、孔深、底厚、邊緣厚度與開口朝使用者的前傾角。',
   'models.model.opengrid-openconnect-organizer.alt':
     'OpenGrid OpenConnect 壁掛前傾收納方格預覽',
+  'models.model.opengrid-label-slot-test.name':
+    'OpenGrid Label Slot Test (標籤卡槽測試件)',
+  'models.model.opengrid-label-slot-test.selection':
+    'Label Slot Test (卡槽測試件)',
+  'models.model.opengrid-label-slot-test.description':
+    '單獨列印壁掛收納方格的同款上抽式卡槽，以少量材料測試標籤卡間隙。每格 10 mm。',
+  'models.model.opengrid-label-slot-test.alt': 'OpenGrid 標籤卡槽測試件預覽',
+  'panel.labelSlotTest.summary': '標籤卡槽測試件',
+  'panel.labelSlotTest.details':
+    '薄背板與收納方格同款卡槽一體列印，不含夾扣或壁掛接頭。每格 10 mm；搭配相同格數的標籤卡從上方插入。請依預設直立方向列印，以測試導軌與底部斜面；必要時加 brim 增加附著。',
+  'models.model.opengrid-label-card.name': 'OpenGrid Label Card (標籤卡)',
+  'models.model.opengrid-label-card.selection': 'Label Card (標籤卡)',
+  'models.model.opengrid-label-card.description':
+    '每格 10 mm 的可抽換雙色標籤卡，搭配壁掛收納方格正面卡槽；可選齊平或凸起樣式、圖示與文字。文字高度可調 2–7 mm，支援上下兩排各自對齊；兩排每排最高 4 mm。圖標可選無、左側或右側。',
+  'models.model.opengrid-label-card.alt': 'OpenGrid 標籤卡預覽',
   'docs.eyebrow': 'Documentation',
   'docs.deskQuickStart.title': 'Desk System 快速入門',
   'docs.deskQuickStart.intro':
@@ -436,6 +451,10 @@ export const zhHantMessages = {
   'unit.grid': '格',
   'unit.count': '支',
   'parameter.width': '寬度',
+  'parameter.widthTier': '寬度檔位 (mm)',
+  'parameter.gripThickness': '夾持厚度 (mm)',
+  'parameter.icon': 'Icon',
+  'parameter.style': '樣式',
   'parameter.text': '文字',
   'parameter.depth': '深度',
   'parameter.height': '高度',
@@ -504,6 +523,7 @@ export const zhHantMessages = {
   'cad.action.stl': '下載 STL',
   'cad.action.threeMf': '下載 3MF',
   'cad.wallCover.threeMfNote': '雙色效果僅適用於 3MF。',
+  'cad.labelCard.threeMfNote': '雙色效果僅適用於 3MF。',
   'cad.action.retry': '重試',
   'cad.system.current': '目前系統：{name}',
   'cad.error.title.initializing': 'CAD engine 載入失敗',
@@ -542,6 +562,15 @@ export const zhHantMessages = {
     '輸入文字有字元無法由預設字體建立，請更換文字後重試。',
   'diagnostic.wallCoverFontLoadFailed':
     'OpenGrid Wall Cover 預設字體載入失敗，請重新整理後重試。',
+  'diagnostic.labelCardGlyphUnsupported':
+    '標籤文字有字元無法由預設字體建立，請更換文字後重試。',
+  'diagnostic.labelCardFontLoadFailed':
+    'OpenGrid 標籤卡扣預設字體載入失敗，請重新整理後重試。',
+  'diagnostic.labelCardIconUnknown': 'Icon 選擇無效，請重新選擇。',
+  'diagnostic.labelCardIconGeometryFailed':
+    'Icon 幾何建立失敗，請更換 Icon 後重試。',
+  'diagnostic.labelCardQualityInvalid':
+    'OpenGrid 標籤卡幾何未通過品質檢查，請重試。',
   'diagnostic.dividerQualityInvalid':
     'OpenGrid 分隔器幾何未通過品質檢查，請調整參數後重試。',
   'diagnostic.dividerHoneycombMemoryLimit':
@@ -564,6 +593,23 @@ export const zhHantMessages = {
   'validation.invalid': '{field} 輸入無效，請檢查參數後重試。',
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
+  'parameter.gridUnits': '標籤格數',
+  'parameter.labelGridUnits': '標籤格數',
+  'parameter.labelSlotEnabled': '正面標籤卡槽',
+  'panel.labelCard.unitWidth': '{width} mm · 每格 10 mm · 1–{max} 格',
+  'panel.openConnectOrganizer.labelWidth':
+    '{width} mm · 每格 10 mm · 正面最多 {max} 格',
+  'panel.openConnectOrganizer.labelHelp':
+    '與本體一起列印。使用相同格數的標籤卡，從上方插入；抽換需預留約 10 mm 空間。',
+  'validation.labelGridUnitsInvalid': '標籤格數必須是 1 至 10 的整數。',
+  'validation.labelCardTextTooWide':
+    '文字超出卡片可用寬度，請縮短文字或增加格數。',
+  'validation.labelSlotDoesNotFit':
+    '卡槽超出正面可用寬度或高度，請減少標籤格數、增加本體尺寸或關閉卡槽。',
+  'validation.labelCardWidthTierInvalid': '{field} 必須是 {values} 之一。',
+  'validation.labelCardStyleInvalid': '{field} 必須是齊平或凸起。',
+  'validation.labelCardIconUnknown': '{field} 不在內建 icon 集內。',
+  'validation.labelCardTextTooLong': '{field} 不可超過 {max} 個字元。',
   'validation.parameter': '參數',
   'validation.invalidNumber': '{field} 必須是有效數字。',
   'validation.requiredDimension': '{axis} 尺寸不可空白。',
@@ -780,6 +826,60 @@ export const zhHantMessages = {
   'panel.wallCover.characterCount': '{count} / {max} 字',
   'panel.wallCover.font': '目前只支援中英文',
   'panel.wallCover.openConnect': '移除孔',
+  'panel.labelCard.summary': '自訂標籤卡',
+  'panel.labelCard.details':
+    '每格 10 mm 的可替換標籤卡，搭配壁掛收納方格正面卡槽使用。可選齊平或凸起樣式、圖示與文字；文字高度可調 2–7 mm，支援上下兩排各自對齊；兩排每排最高 4 mm。圖標可選無、左側或右側。雙色效果僅適用 3MF。',
+  'panel.labelCard.inputAria': '標籤卡文字',
+  'panel.labelCard.characterCount': '{count} / {max} 字',
+  'panel.labelCard.font': '目前只支援中英文',
+  'panel.labelCard.icon.none': '無',
+  'panel.labelCard.icon.drive-slot': '一字孔',
+  'panel.labelCard.icon.drive-phillips': '十字孔 PH',
+  'panel.labelCard.icon.drive-hex': '內六角孔',
+  'panel.labelCard.icon.drive-torx': '梅花孔 Torx',
+  'panel.labelCard.icon.hole-through': '通孔',
+  'panel.labelCard.icon.hole-threaded': '螺紋孔',
+  'panel.labelCard.icon.hole-countersink': '沉頭孔',
+  'panel.labelCard.icon.hole-counterbore': '沉孔',
+
+  'panel.labelCard.textHeight': '文字高度',
+  'panel.labelCard.topText': '上排文字',
+  'panel.labelCard.bottomText': '下排文字（選填）',
+  'panel.labelCard.alignment': '對齊',
+  'panel.labelCard.align.left': '靠左',
+  'panel.labelCard.align.center': '置中',
+  'panel.labelCard.align.right': '靠右',
+  'panel.labelCard.twoRowHeight':
+    '兩排共用字高，每排最多 4 mm；文字合計最高 8 mm，另留 0.5 mm 行距。',
+  'validation.labelCardTwoRowHeight': '兩排文字時，每排高度最多 4 mm。',
+
+  'panel.labelCard.iconPosition': '圖標位置',
+  'panel.labelCard.iconPosition.left': '文字左側',
+  'panel.labelCard.iconPosition.right': '文字右側',
+  'panel.labelCard.style': '樣式',
+  'panel.labelCard.style.flat': '齊平（總厚 0.6 mm）',
+  'panel.labelCard.style.raised': '凸起（總厚 1.0 mm）',
+  'panel.labelCard.icon': 'Icon',
+  'panel.labelCard.icon.wrench': '扳手',
+  'panel.labelCard.icon.screwdriver': '螺絲起子',
+  'panel.labelCard.icon.tools': '工具',
+  'panel.labelCard.icon.hammer': '鎚子',
+  'panel.labelCard.icon.box-seam': '紙箱',
+  'panel.labelCard.icon.archive': '收藏盒',
+  'panel.labelCard.icon.battery-full': '電池',
+  'panel.labelCard.icon.cpu': '晶片',
+  'panel.labelCard.icon.lightbulb': '燈泡',
+  'panel.labelCard.icon.paperclip': '迴紋針',
+  'panel.labelCard.icon.scissors': '剪刀',
+  'panel.labelCard.icon.brush': '筆刷',
+  'panel.labelCard.icon.palette': '調色盤',
+  'panel.labelCard.icon.usb-drive': 'USB',
+  'panel.labelCard.icon.sd-card': 'SD 卡',
+  'panel.labelCard.icon.keyboard': '鍵盤',
+  'panel.labelCard.icon.mouse': '滑鼠',
+  'panel.labelCard.icon.headset': '耳機',
+  'panel.labelCard.icon.camera': '相機',
+  'panel.labelCard.icon.gear-fill': '齒輪',
   'panel.opengrid.profile': '板型',
   'panel.opengrid.profileAria': 'OpenGrid 板型',
   'panel.opengrid.variant.lite': 'Lite（4 mm）',
@@ -1145,6 +1245,20 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'An organizer that mounts directly through integrated rear OpenConnect female sockets, with configurable X/Y counts, spacing, circle or regular 3–6-sided cavities, depth, bottom thickness, edge thickness, and opening-toward-user tilt.',
   'models.model.opengrid-openconnect-organizer.alt':
     'OpenGrid OpenConnect forward-tilted wall organizer preview',
+  'models.model.opengrid-label-slot-test.name': 'OpenGrid Label Slot Test',
+  'models.model.opengrid-label-slot-test.selection': 'Label Slot Test',
+  'models.model.opengrid-label-slot-test.description':
+    'Print the organizer’s top-loading label slot on its own to test card clearance with little material. Each unit is 10 mm.',
+  'models.model.opengrid-label-slot-test.alt':
+    'OpenGrid Label Slot Test preview',
+  'panel.labelSlotTest.summary': 'Label slot test coupon',
+  'panel.labelSlotTest.details':
+    'A thin back wall with the organizer’s integrated slot, without clips or wall connectors. Each unit is 10 mm; insert a matching card from above. Print upright in the supplied orientation to test the rails and bottom slope; add a brim if needed for adhesion.',
+  'models.model.opengrid-label-card.name': 'OpenGrid Label Card',
+  'models.model.opengrid-label-card.selection': 'Label Card',
+  'models.model.opengrid-label-card.description':
+    'A swappable two-color card in 10 mm units for the organizer front slot, with flat or raised styling, an icon, and optional text. Text height is adjustable from 2–7 mm, with independently aligned rows (up to 4 mm each for two rows) and an optional icon on either side.',
+  'models.model.opengrid-label-card.alt': 'OpenGrid Label Card preview',
   'docs.eyebrow': 'Documentation',
   'docs.deskQuickStart.title': 'Desk System Quick Start',
   'docs.deskQuickStart.intro':
@@ -1332,6 +1446,10 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'unit.grid': 'cells',
   'unit.count': 'columns',
   'parameter.width': 'Width',
+  'parameter.widthTier': 'Width tier (mm)',
+  'parameter.gripThickness': 'Grip thickness (mm)',
+  'parameter.icon': 'Icon',
+  'parameter.style': 'Style',
   'parameter.text': 'Text',
   'parameter.depth': 'Depth',
   'parameter.height': 'Height',
@@ -1400,6 +1518,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'cad.action.stl': 'Download STL',
   'cad.action.threeMf': 'Download 3MF',
   'cad.wallCover.threeMfNote': 'The two-color effect is available only in 3MF.',
+  'cad.labelCard.threeMfNote': 'The two-color effect is available only in 3MF.',
   'cad.action.retry': 'Retry',
   'cad.system.current': 'Current system: {name}',
   'cad.error.title.initializing': 'CAD engine failed to load',
@@ -1443,6 +1562,16 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'A character cannot be built with the default font. Choose different text and try again.',
   'diagnostic.wallCoverFontLoadFailed':
     'The OpenGrid Wall Cover default font could not be loaded. Reload and try again.',
+  'diagnostic.labelCardGlyphUnsupported':
+    'A label character cannot be built with the default font. Choose different text and try again.',
+  'diagnostic.labelCardFontLoadFailed':
+    'The OpenGrid Label Card default font could not be loaded. Reload and try again.',
+  'diagnostic.labelCardIconUnknown':
+    'The selected icon is invalid. Choose a different icon.',
+  'diagnostic.labelCardIconGeometryFailed':
+    'The icon geometry could not be built. Choose a different icon and try again.',
+  'diagnostic.labelCardQualityInvalid':
+    'The OpenGrid Label Card geometry did not pass quality checks. Try again.',
   'diagnostic.dividerQualityInvalid':
     'The OpenGrid divider geometry did not pass quality checks. Adjust the parameters and try again.',
   'diagnostic.dividerHoneycombMemoryLimit':
@@ -1469,6 +1598,25 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     '{field} is invalid. Check the parameter and try again.',
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
   'validation.wallCoverTextTooLong': '{field} cannot exceed {max} characters.',
+  'parameter.gridUnits': 'Label units',
+  'parameter.labelGridUnits': 'Label units',
+  'parameter.labelSlotEnabled': 'Front label slot',
+  'panel.labelCard.unitWidth': '{width} mm · 10 mm per unit · 1–{max} units',
+  'panel.openConnectOrganizer.labelWidth':
+    '{width} mm · 10 mm per unit · Front fits up to {max} units',
+  'panel.openConnectOrganizer.labelHelp':
+    'Printed with the organizer. Slide a matching-unit card in from above; allow about 10 mm above for removal.',
+  'validation.labelGridUnitsInvalid':
+    'Label units must be a whole number from 1 to 10.',
+  'validation.labelCardTextTooWide':
+    'Text exceeds the usable card width. Shorten the text or increase label units.',
+  'validation.labelSlotDoesNotFit':
+    'The slot exceeds the flat front width or height. Reduce label units, enlarge the organizer, or disable the slot.',
+  'validation.labelCardWidthTierInvalid': '{field} must be one of {values}.',
+  'validation.labelCardStyleInvalid': '{field} must be flat or raised.',
+  'validation.labelCardIconUnknown':
+    '{field} is not part of the built-in icon set.',
+  'validation.labelCardTextTooLong': '{field} cannot exceed {max} characters.',
   'validation.parameter': 'Parameter',
   'validation.invalidNumber': '{field} must be a valid number.',
   'validation.requiredDimension': '{axis} dimension is required.',
@@ -1696,6 +1844,61 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.wallCover.characterCount': '{count} / {max} characters',
   'panel.wallCover.font': 'Only Chinese and English are currently supported.',
   'panel.wallCover.openConnect': 'Remover hole',
+  'panel.labelCard.summary': 'Customize the label card',
+  'panel.labelCard.details':
+    'A replaceable card sized in 10 mm units for the organizer front slot. Choose flat or raised styling, an icon, and optional text. Text height is adjustable from 2–7 mm, with independently aligned rows (up to 4 mm each for two rows) and an optional icon on either side. Two-color printing uses 3MF.',
+  'panel.labelCard.inputAria': 'Label card text',
+  'panel.labelCard.characterCount': '{count} / {max} characters',
+  'panel.labelCard.font': 'Only Chinese and English are currently supported.',
+  'panel.labelCard.icon.none': 'None',
+  'panel.labelCard.icon.drive-slot': 'Slotted drive',
+  'panel.labelCard.icon.drive-phillips': 'Phillips drive',
+  'panel.labelCard.icon.drive-hex': 'Hex socket',
+  'panel.labelCard.icon.drive-torx': 'Torx drive',
+  'panel.labelCard.icon.hole-through': 'Through hole',
+  'panel.labelCard.icon.hole-threaded': 'Threaded hole',
+  'panel.labelCard.icon.hole-countersink': 'Countersink',
+  'panel.labelCard.icon.hole-counterbore': 'Counterbore',
+
+  'panel.labelCard.textHeight': 'Text height',
+  'panel.labelCard.topText': 'Top text',
+  'panel.labelCard.bottomText': 'Bottom text (optional)',
+  'panel.labelCard.alignment': 'Alignment',
+  'panel.labelCard.align.left': 'Left',
+  'panel.labelCard.align.center': 'Center',
+  'panel.labelCard.align.right': 'Right',
+  'panel.labelCard.twoRowHeight':
+    'Both rows share the height, up to 4 mm each (8 mm combined), with a 0.5 mm gap.',
+  'validation.labelCardTwoRowHeight':
+    'With two text rows, each row can be at most 4 mm high.',
+
+  'panel.labelCard.iconPosition': 'Icon position',
+  'panel.labelCard.iconPosition.left': 'Left of text',
+  'panel.labelCard.iconPosition.right': 'Right of text',
+  'panel.labelCard.style': 'Style',
+  'panel.labelCard.style.flat': 'Flat (0.6 mm total)',
+  'panel.labelCard.style.raised': 'Raised (1.0 mm total)',
+  'panel.labelCard.icon': 'Icon',
+  'panel.labelCard.icon.wrench': 'Wrench',
+  'panel.labelCard.icon.screwdriver': 'Screwdriver',
+  'panel.labelCard.icon.tools': 'Tools',
+  'panel.labelCard.icon.hammer': 'Hammer',
+  'panel.labelCard.icon.box-seam': 'Box',
+  'panel.labelCard.icon.archive': 'Archive',
+  'panel.labelCard.icon.battery-full': 'Battery',
+  'panel.labelCard.icon.cpu': 'CPU',
+  'panel.labelCard.icon.lightbulb': 'Lightbulb',
+  'panel.labelCard.icon.paperclip': 'Paperclip',
+  'panel.labelCard.icon.scissors': 'Scissors',
+  'panel.labelCard.icon.brush': 'Brush',
+  'panel.labelCard.icon.palette': 'Palette',
+  'panel.labelCard.icon.usb-drive': 'USB drive',
+  'panel.labelCard.icon.sd-card': 'SD card',
+  'panel.labelCard.icon.keyboard': 'Keyboard',
+  'panel.labelCard.icon.mouse': 'Mouse',
+  'panel.labelCard.icon.headset': 'Headset',
+  'panel.labelCard.icon.camera': 'Camera',
+  'panel.labelCard.icon.gear-fill': 'Gear',
   'panel.opengrid.profile': 'Board profile',
   'panel.opengrid.profileAria': 'OpenGrid board profile',
   'panel.opengrid.variant.lite': 'Lite (4 mm)',
