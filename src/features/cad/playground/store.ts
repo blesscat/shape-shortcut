@@ -37,7 +37,7 @@ import {
   savePlaygroundGridSize,
   type PlaygroundGridSize,
 } from './grid-size'
-import { modelVisibleInViewMode, wallMountFace } from './wall-mount'
+import { modelVisibleInViewMode } from './wall-mount'
 
 export type PlaygroundMeshState = 'pending' | 'ready' | 'failed'
 
@@ -227,24 +227,13 @@ export function createPlaygroundStore(): PlaygroundStore {
   }
 
   /**
-   * The footprint an instance occupies on the active plane. On the wall,
-   * standing wall-mount components (faceY) cover width x model height
-   * instead of width x depth, so their footprint swaps the Y extent for the
-   * Z extent.
+   * The footprint an instance occupies on the active plane. Every component
+   * mounts by its base face, so the footprint is the authored X/Y extent in
+   * both orientations.
    */
   const effectiveFootprintBounds = (
     instance: PlaygroundInstance,
-  ): ModelBounds | null => {
-    const bounds = boundsFor(instance)
-    if (!bounds) return null
-    if (viewMode === 'wall' && wallMountFace(instance.modelId) === 'faceY') {
-      return {
-        min: [bounds.min[0], bounds.min[2], 0],
-        max: [bounds.max[0], bounds.max[2], 0],
-      }
-    }
-    return bounds
-  }
+  ): ModelBounds | null => boundsFor(instance)
 
   /** Analytic bounds for the given parameters, used to seed placeholders. */
   const analyticBounds = (

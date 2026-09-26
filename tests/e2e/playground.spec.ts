@@ -318,6 +318,39 @@ test('window focus/blur does not reset the scene or selection', async ({
   )
 })
 
+test('persists the camera pose per orientation and can reset it', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-1')
+
+  const viewport = page.getByTestId('playground-viewport')
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+
+  // Orbit: the pose becomes custom, survives a reload, and is restored.
+  const box = (await viewport.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 160, box.y + 60, {
+    steps: 6,
+  })
+  await page.mouse.up()
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+
+  await page.reload()
+  await openPlayground(page)
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+
+  // Reset view restores the grid-fitting default pose.
+  await page.getByTestId('playground-camera-reset').click()
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+
+  await page.reload()
+  await openPlayground(page)
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+})
+
 test('remembers the scene grid size across reloads', async ({ page }) => {
   await openPlayground(page)
   const gridX = page.getByTestId('playground-grid-size-x')

@@ -21,7 +21,12 @@
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
   import { sceneProxyCacheKey } from './filenames'
   import type { PlaygroundViewMode } from './store'
-  import { wallMountFace } from './wall-mount'
+  import { translate, type Locale } from '../../../i18n'
+  import {
+    loadPlaygroundCameraState,
+    savePlaygroundCameraState,
+    type PlaygroundCameraPose,
+  } from './camera-pose'
 
   type PlaygroundViewportInstance = {
     id: string
@@ -45,11 +50,21 @@
     selectedInstanceId: string | null
     viewMode: PlaygroundViewMode
     gridSize: { x: number; y: number }
+    locale: Locale
     onSelect: (instanceId: string | null) => void
   }
 
-  let { instances, selectedInstanceId, viewMode, gridSize, onSelect }: Props =
-    $props()
+  let {
+    instances,
+    selectedInstanceId,
+    viewMode,
+    gridSize,
+    locale,
+    onSelect,
+  }: Props = $props()
+
+  let cameraState = loadPlaygroundCameraState()
+  let cameraPoseIsCustom = $state(false)
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
@@ -138,10 +153,6 @@
   let placeholderMeshes: THREE.Mesh[] = []
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
-
-  const WALL_CAMERA_POSITION: [number, number, number] = [0, -620, 260]
-  const WALL_CAMERA_TARGET = new THREE.Vector3(0, 0, 180)
-  const DESKTOP_CAMERA_TARGET = new THREE.Vector3(0, 0, 20)
 
   let appliedViewMode: PlaygroundViewMode | null = null
 
@@ -307,23 +318,58 @@
     }
   }
 
+  /**
+   * Default pose that frames the entire rendered grid for the orientation:
+   * the camera sits on the usual inspection direction at a distance that
+   * fits the rectangular extent (plus margin for the mounted pieces).
+   */
+  function defaultPoseFor(mode: PlaygroundViewMode): PlaygroundCameraPose {
+    const cellsX = Math.max(Math.round(gridSize.x), 1)
+    const cellsY = Math.max(Math.round(gridSize.y), 1)
+    const sizeX = cellsX * PLAYGROUND_GRID_PITCH
+    const sizeY = cellsY * PLAYGROUND_GRID_PITCH
+    const radius = 0.5 * Math.hypot(sizeX, sizeY)
+    const distance =
+      (radius / Math.sin((CAD_VIEWPORT_CAMERA.fov * Math.PI) / 360)) * 1.15
+    if (mode === 'wall') {
+      const center = new THREE.Vector3(0, 0, sizeY / 2)
+      const direction = new THREE.Vector3(0, -0.85, 0.5).normalize()
+      return {
+        position: center.clone().addScaledVector(direction, distance).toArray(),
+        target: center.toArray(),
+      }
+    }
+    const direction = new THREE.Vector3(...CAD_VIEWPORT_CAMERA.position)
+      .normalize()
+      .multiplyScalar(distance)
+    return { position: direction.toArray(), target: [0, 0, 0] }
+  }
+
+  function applyCameraPose(mode: PlaygroundViewMode): void {
+    if (!camera || !controls) return
+    const pose = cameraState[mode] ?? defaultPoseFor(mode)
+    camera.position.set(...pose.position)
+    controls.target.set(...pose.target)
+    controls.update()
+    // A restored pose counts as custom: it must survive further reloads.
+    cameraPoseIsCustom = cameraState[mode] != null
+  }
+
   function applyViewMode(theme: CadViewportTheme): void {
     if (grid) {
       grid.rotation.set(
         ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
       )
     }
-    if (camera && controls) {
-      if (viewMode === 'wall') {
-        camera.position.set(...WALL_CAMERA_POSITION)
-        controls.target.copy(WALL_CAMERA_TARGET)
-      } else {
-        camera.position.set(...CAD_VIEWPORT_CAMERA.position)
-        controls.target.copy(DESKTOP_CAMERA_TARGET)
-      }
-      controls.update()
-    }
+    applyCameraPose(viewMode)
     rebuildScene(theme)
+  }
+
+  function resetCameraPose(): void {
+    delete cameraState[viewMode]
+    savePlaygroundCameraState(cameraState)
+    cameraPoseIsCustom = false
+    applyCameraPose(viewMode)
   }
 
   function pickInstance(clientX: number, clientY: number): string | null {
@@ -427,7 +473,18 @@
 
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
-    controls.target.copy(DESKTOP_CAMERA_TARGET)
+    controls.addEventListener('end', () => {
+      if (!camera) return
+      cameraState = {
+        ...cameraState,
+        [viewMode]: {
+          position: camera.position.toArray(),
+          target: controls.target.toArray(),
+        },
+      }
+      savePlaygroundCameraState(cameraState)
+      cameraPoseIsCustom = true
+    })
 
     const hemisphere = new THREE.HemisphereLight(
       new THREE.Color(theme.hemisphereSky),
@@ -556,6 +613,7 @@
   data-testid="playground-viewport"
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
+  data-camera-pose={cameraPoseIsCustom ? 'custom' : 'default'}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
@@ -564,6 +622,13 @@
   onpointerleave={handlePointerLeave}
   role="img"
 >
+  <button
+    class="absolute right-3 top-3 z-10 rounded-lg border border-border-card bg-card px-3 py-1 text-sm font-medium text-card-foreground shadow-card hover:bg-page"
+    data-testid="playground-camera-reset"
+    onclick={resetCameraPose}
+  >
+    {translate(locale, 'playground.camera.reset')}
+  </button>
   {#if hoveredName}
     <div
       class="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg border border-border-card bg-card px-2 py-1 text-[0.75rem] font-medium text-card-foreground shadow-card"
