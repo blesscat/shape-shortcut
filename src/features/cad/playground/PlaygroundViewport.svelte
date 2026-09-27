@@ -23,7 +23,10 @@
   import type { PlaygroundViewMode } from './store'
   import { translate, type Locale } from '../../../i18n'
   import {
+    defaultPlaygroundCameraPose,
     loadPlaygroundCameraState,
+    playgroundCameraFarPlane,
+    PLAYGROUND_CAMERA_MIN_FAR,
     savePlaygroundCameraState,
     type PlaygroundCameraPose,
   } from './camera-pose'
@@ -65,6 +68,9 @@
 
   let cameraState = loadPlaygroundCameraState()
   let cameraPoseIsCustom = $state(false)
+  let cameraInteractionActive = $state(false)
+  let pendingCameraMode: PlaygroundViewMode | null = $state(null)
+  let renderedCameraPose: PlaygroundCameraPose | null = $state(null)
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
@@ -89,6 +95,7 @@
   let scene: THREE.Scene | null = null
   let camera: THREE.PerspectiveCamera | null = null
   let controls: OrbitControls | null = null
+  let controlStartPose: PlaygroundCameraPose | null = null
   let contentGroup: THREE.Group | null = null
   let grid: THREE.Group | null = null
 
@@ -155,6 +162,7 @@
   const pointer = new THREE.Vector2()
 
   let appliedViewMode: PlaygroundViewMode | null = null
+  const CAMERA_POSE_CHANGE_EPSILON = 0.000001
 
   const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
     'background',
@@ -318,39 +326,72 @@
     }
   }
 
-  /**
-   * Default pose that frames the entire rendered grid for the orientation:
-   * the camera sits on the usual inspection direction at a distance that
-   * fits the rectangular extent (plus margin for the mounted pieces).
-   */
   function defaultPoseFor(mode: PlaygroundViewMode): PlaygroundCameraPose {
-    const cellsX = Math.max(Math.round(gridSize.x), 1)
-    const cellsY = Math.max(Math.round(gridSize.y), 1)
-    const sizeX = cellsX * PLAYGROUND_GRID_PITCH
-    const sizeY = cellsY * PLAYGROUND_GRID_PITCH
-    const radius = 0.5 * Math.hypot(sizeX, sizeY)
-    const distance =
-      (radius / Math.sin((CAD_VIEWPORT_CAMERA.fov * Math.PI) / 360)) * 1.15
-    if (mode === 'wall') {
-      const center = new THREE.Vector3(0, 0, sizeY / 2)
-      const direction = new THREE.Vector3(0, -0.85, 0.5).normalize()
-      return {
-        position: center.clone().addScaledVector(direction, distance).toArray(),
-        target: center.toArray(),
-      }
+    return defaultPlaygroundCameraPose({
+      mode,
+      gridSize,
+      aspect: camera?.aspect ?? 1,
+    })
+  }
+
+  function currentCameraPose(): PlaygroundCameraPose | null {
+    if (!camera || !controls) return null
+    return {
+      position: [camera.position.x, camera.position.y, camera.position.z],
+      target: [controls.target.x, controls.target.y, controls.target.z],
     }
-    const direction = new THREE.Vector3(...CAD_VIEWPORT_CAMERA.position)
-      .normalize()
-      .multiplyScalar(distance)
-    return { position: direction.toArray(), target: [0, 0, 0] }
+  }
+
+  function cameraPoseChanged(
+    before: PlaygroundCameraPose,
+    after: PlaygroundCameraPose,
+  ): boolean {
+    const valuesBefore = [...before.position, ...before.target]
+    const valuesAfter = [...after.position, ...after.target]
+    return valuesBefore.some(
+      (value, index) =>
+        Math.abs(value - valuesAfter[index]) > CAMERA_POSE_CHANGE_EPSILON,
+    )
+  }
+
+  function clearControlMomentum(): void {
+    if (!controls) return
+    // One non-damped update consumes and clears OrbitControls' remaining
+    // rotation and pan deltas before a programmatic pose is applied.
+    const dampingWasEnabled = controls.enableDamping
+    controls.enableDamping = false
+    controls.update()
+    controls.enableDamping = dampingWasEnabled
+  }
+
+  function persistPendingCameraPose(): void {
+    const mode = pendingCameraMode
+    if (!mode) return
+
+    clearControlMomentum()
+    const pose = currentCameraPose()
+    pendingCameraMode = null
+    if (!pose) return
+
+    cameraState = {
+      ...cameraState,
+      [mode]: pose,
+    }
+    savePlaygroundCameraState(cameraState)
+    renderedCameraPose = pose
   }
 
   function applyCameraPose(mode: PlaygroundViewMode): void {
     if (!camera || !controls) return
+    persistPendingCameraPose()
+    clearControlMomentum()
     const pose = cameraState[mode] ?? defaultPoseFor(mode)
     camera.position.set(...pose.position)
     controls.target.set(...pose.target)
+    camera.far = playgroundCameraFarPlane({ mode, gridSize, pose })
+    camera.updateProjectionMatrix()
     controls.update()
+    renderedCameraPose = currentCameraPose()
     // A restored pose counts as custom: it must survive further reloads.
     cameraPoseIsCustom = cameraState[mode] != null
   }
@@ -366,9 +407,15 @@
   }
 
   function resetCameraPose(): void {
+    persistPendingCameraPose()
     delete cameraState[viewMode]
     savePlaygroundCameraState(cameraState)
     cameraPoseIsCustom = false
+    applyCameraPose(viewMode)
+  }
+
+  function refitDefaultWallCamera(): void {
+    if (viewMode !== 'wall' || cameraPoseIsCustom) return
     applyCameraPose(viewMode)
   }
 
@@ -466,24 +513,41 @@
       CAD_VIEWPORT_CAMERA.fov,
       container.clientWidth / Math.max(container.clientHeight, 1),
       0.1,
-      20000,
+      PLAYGROUND_CAMERA_MIN_FAR,
     )
     camera.position.set(...CAD_VIEWPORT_CAMERA.position)
     camera.up.set(...CAD_VIEWPORT_CAMERA.up)
 
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
-    controls.addEventListener('end', () => {
-      if (!camera) return
-      cameraState = {
-        ...cameraState,
-        [viewMode]: {
-          position: camera.position.toArray(),
-          target: controls.target.toArray(),
-        },
+    controls.addEventListener('start', () => {
+      cameraInteractionActive = true
+      controlStartPose = currentCameraPose()
+    })
+    controls.addEventListener('change', () => {
+      const pose = currentCameraPose()
+      if (!pose) return
+      renderedCameraPose = pose
+      if (
+        cameraInteractionActive &&
+        controlStartPose &&
+        cameraPoseChanged(controlStartPose, pose)
+      ) {
+        cameraPoseIsCustom = true
       }
-      savePlaygroundCameraState(cameraState)
+    })
+    controls.addEventListener('end', () => {
+      cameraInteractionActive = false
+      const pose = currentCameraPose()
+      const startPose = controlStartPose
+      controlStartPose = null
+      if (!pose || (startPose && !cameraPoseChanged(startPose, pose))) {
+        cameraPoseIsCustom = cameraState[viewMode] != null
+        return
+      }
+      renderedCameraPose = pose
       cameraPoseIsCustom = true
+      pendingCameraMode = viewMode
     })
 
     const hemisphere = new THREE.HemisphereLight(
@@ -525,12 +589,19 @@
       renderer.setSize(width, height)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
+      refitDefaultWallCamera()
     })
     resizeObserver.observe(container)
 
+    const settleCameraBeforePageExit = () => persistPendingCameraPose()
+    window.addEventListener('pagehide', settleCameraBeforePageExit)
+
     const animate = () => {
       frameHandle = requestAnimationFrame(animate)
-      controls?.update()
+      const cameraChanged = controls?.update() ?? false
+      if (!cameraChanged && !cameraInteractionActive && pendingCameraMode) {
+        persistPendingCameraPose()
+      }
       if (renderer && scene && camera) renderer.render(scene, camera)
     }
     animate()
@@ -544,10 +615,13 @@
 
     return () => {
       cancelAnimationFrame(frameHandle)
+      window.removeEventListener('pagehide', settleCameraBeforePageExit)
+      persistPendingCameraPose()
       resizeObserver?.disconnect()
       resizeObserver = null
       controls?.dispose()
       controls = null
+      controlStartPose = null
       unobserveTheme?.()
       unobserveTheme = null
       for (const group of instancedGroups) {
@@ -604,16 +678,22 @@
       viewMode,
     )
     scene.add(grid)
+    refitDefaultWallCamera()
   })
 </script>
 
 <div
   bind:this={container}
-  class="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
+  class="playground-viewport relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
   data-camera-pose={cameraPoseIsCustom ? 'custom' : 'default'}
+  data-camera-settled={cameraInteractionActive || pendingCameraMode
+    ? 'false'
+    : 'true'}
+  data-camera-position={renderedCameraPose?.position.join(',') ?? ''}
+  data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
@@ -644,3 +724,10 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .playground-viewport :global(canvas) {
+    display: block;
+    border-radius: inherit;
+  }
+</style>

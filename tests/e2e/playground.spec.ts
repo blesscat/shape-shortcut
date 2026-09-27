@@ -24,6 +24,20 @@ async function waitForInstanceReady(
   ).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
 }
 
+function expectSerializedVectorCloseTo(
+  actual: string | null,
+  expected: string | null,
+): void {
+  expect(actual).toBeTruthy()
+  expect(expected).toBeTruthy()
+  const actualValues = actual!.split(',').map(Number)
+  const expectedValues = expected!.split(',').map(Number)
+  expect(actualValues).toHaveLength(expectedValues.length)
+  actualValues.forEach((value, index) => {
+    expect(value).toBeCloseTo(expectedValues[index], 5)
+  })
+}
+
 test.describe('OpenGrid playground planner', () => {
   test('adds an instance, renders its proxy, and edits its placement', async ({
     page,
@@ -221,12 +235,28 @@ test.describe('OpenGrid playground planner', () => {
   })
 })
 
-test('loads the localized playground route for every locale', async ({
-  page,
-}) => {
-  await page.goto(localizedPathFor('en', '/cad/playground'))
-  await expect(page.getByTestId('playground')).toBeVisible({ timeout: 30_000 })
-})
+const localizedCameraResetLabels: ReadonlyArray<{
+  locale: Locale
+  label: string
+}> = [
+  { locale: 'zh-Hant', label: '恢復視角' },
+  { locale: 'en', label: 'Reset view' },
+]
+
+for (const { locale, label } of localizedCameraResetLabels) {
+  test(`loads the initialized playground viewport in ${locale}`, async ({
+    page,
+  }) => {
+    await page.goto(localizedPathFor(locale, '/cad/playground'))
+
+    await expect(page.getByTestId('playground-viewport')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      page.getByRole('button', { name: label, exact: true }),
+    ).toBeVisible()
+  })
+}
 
 test('switches the scene between desktop and wall orientations', async ({
   page,
@@ -337,18 +367,117 @@ test('persists the camera pose per orientation and can reset it', async ({
   })
   await page.mouse.up()
   await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+  await expect(viewport).toHaveAttribute('data-camera-settled', 'true')
+  const settledPosition = await viewport.getAttribute('data-camera-position')
+  const settledTarget = await viewport.getAttribute('data-camera-target')
+  expect(settledPosition).toBeTruthy()
+  expect(settledTarget).toBeTruthy()
 
   await page.reload()
   await openPlayground(page)
   await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+  await expect(viewport).toHaveAttribute('data-camera-settled', 'true')
+  expectSerializedVectorCloseTo(
+    await viewport.getAttribute('data-camera-position'),
+    settledPosition,
+  )
+  expectSerializedVectorCloseTo(
+    await viewport.getAttribute('data-camera-target'),
+    settledTarget,
+  )
+
+  // Reset during active damping clears its remaining motion before applying
+  // the default, so the reset pose stays fixed.
+  const reloadedBox = (await viewport.boundingBox())!
+  await page.mouse.move(
+    reloadedBox.x + reloadedBox.width / 2,
+    reloadedBox.y + reloadedBox.height / 2,
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    reloadedBox.x + reloadedBox.width / 2 + 160,
+    reloadedBox.y + reloadedBox.height / 2 + 60,
+    { steps: 6 },
+  )
+  await page.mouse.up()
+  await expect(viewport).toHaveAttribute('data-camera-settled', 'false')
 
   // Reset view restores the grid-fitting default pose.
   await page.getByTestId('playground-camera-reset').click()
   await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+  await expect(viewport).toHaveAttribute('data-camera-settled', 'true')
+  const resetPosition = await viewport.getAttribute('data-camera-position')
+  const resetTarget = await viewport.getAttribute('data-camera-target')
+  await page.waitForTimeout(300)
+  await expect(viewport).toHaveAttribute('data-camera-position', resetPosition!)
+  await expect(viewport).toHaveAttribute('data-camera-target', resetTarget!)
 
   await page.reload()
   await openPlayground(page)
   await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+})
+
+test('refits only the default wall camera when framing inputs change', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await page.getByTestId('playground-mode-wall').click()
+
+  const viewport = page.getByTestId('playground-viewport')
+  await expect(viewport).toHaveAttribute('data-camera-target', '0,0,0')
+  await viewport.click({ position: { x: 20, y: 20 } })
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+  const initialPosition = await viewport.getAttribute('data-camera-position')
+  expect(initialPosition).toBeTruthy()
+
+  await page.setViewportSize({ width: 600, height: 1000 })
+  await expect(viewport).not.toHaveAttribute(
+    'data-camera-position',
+    initialPosition!,
+  )
+  const aspectRefitPosition = await viewport.getAttribute(
+    'data-camera-position',
+  )
+  expect(aspectRefitPosition).toBeTruthy()
+
+  const gridY = page.getByTestId('playground-grid-size-y')
+  await gridY.fill('80')
+  await gridY.blur()
+  await expect(viewport).toHaveAttribute('data-grid-size', '50x80')
+  await expect(viewport).not.toHaveAttribute(
+    'data-camera-position',
+    aspectRefitPosition!,
+  )
+
+  const box = (await viewport.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + 50, {
+    steps: 6,
+  })
+  await page.mouse.up()
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+  await expect(viewport).toHaveAttribute('data-camera-settled', 'true')
+  const customPosition = await viewport.getAttribute('data-camera-position')
+  const customTarget = await viewport.getAttribute('data-camera-target')
+  expect(customPosition).toBeTruthy()
+  expect(customTarget).toBeTruthy()
+
+  await gridY.fill('90')
+  await gridY.blur()
+  await expect(viewport).toHaveAttribute('data-grid-size', '50x90')
+  await expect(viewport).toHaveAttribute(
+    'data-camera-position',
+    customPosition!,
+  )
+  await expect(viewport).toHaveAttribute('data-camera-target', customTarget!)
+
+  await page.setViewportSize({ width: 900, height: 700 })
+  await expect(viewport).toHaveAttribute(
+    'data-camera-position',
+    customPosition!,
+  )
+  await expect(viewport).toHaveAttribute('data-camera-target', customTarget!)
 })
 
 test('remembers the scene grid size across reloads', async ({ page }) => {
