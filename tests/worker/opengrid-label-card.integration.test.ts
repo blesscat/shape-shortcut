@@ -64,6 +64,12 @@ describe('OpenGrid Label Card generated geometry', () => {
     } as const
     const result = await buildOpenGridLabelCardWithParts(parameters, {})
     try {
+      if (process.env.ZZ_DEBUG) {
+        const accentDbg = result.parts.find((p) => p.name === 'accent')!
+        console.log('DBG accent', JSON.stringify(shapeBounds(accentDbg.shape)))
+        const bodyDbg = result.parts.find((p) => p.name === 'body')!
+        console.log('DBG body', JSON.stringify(shapeBounds(bodyDbg.shape)))
+      }
       const expected = boundsForOpenGridLabelCard(parameters)
       const body = result.parts.find((part) => part.name === 'body')!
       const accent = result.parts.find((part) => part.name === 'accent')!
@@ -160,7 +166,7 @@ describe('OpenGrid Label Card generated geometry', () => {
   it('reports the shared card envelope constants', () => {
     const config = OPENGRID_LABEL_CARD_CONFIGURATION
     expect(config.plateThickness).toBe(0.6)
-    expect(config.cardHeight).toBe(10)
+    expect(config.cardHeight).toBe(12)
     expect(config.raisedHeight).toBe(0.4)
   })
 })
@@ -192,18 +198,38 @@ it.each(['left', 'right'] as const)(
     const built = await buildOpenGridLabelCardWithParts(p, {})
     try {
       const accent = built.parts.find((part) => part.name === 'accent')!.shape
-      for (const side of ['left', 'right']) {
-        const minX = side === 'left' ? -12 : 5
-        const probe = makeBox([minX, 3.2, 0.65], [minX + 7, 3.45, 0.95])
-        const intersection = accent.intersect(probe)
+      const bounds = shapeBounds(accent)
+      // Group layout: icon (6) + gap (2) + text block centered as one unit.
+      const groupWidth = 6 + 2 + 15
+      expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(groupWidth, 0)
+      expect((bounds[0][0] + bounds[1][0]) / 2).toBeCloseTo(0, 0)
+      // Icon and text must not overlap: the text edge starts after the icon
+      // plus the minimum gap on the chosen side.
+      const gapProbe = makeBox(
+        iconPosition === 'left' ? [-5.4, -3.2, 0.65] : [3.6, -3.2, 0.65],
+        iconPosition === 'left' ? [-3.6, 3.2, 0.95] : [5.4, 3.2, 0.95],
+      )
+      const iconProbe = makeBox(
+        iconPosition === 'left' ? [-11.3, -3.2, 0.65] : [5.6, -3.2, 0.65],
+        iconPosition === 'left' ? [-10.7, 3.2, 0.95] : [11.3, 3.2, 0.95],
+      )
+      try {
+        const gapIntersection = accent.intersect(gapProbe)
+        const iconIntersection = accent.intersect(iconProbe)
         try {
-          const volume = Math.abs(measureVolume(intersection))
-          if (side === iconPosition) expect(volume).toBeLessThan(1e-5)
-          else expect(volume).toBeGreaterThan(0.01)
+          // A probe laid over the gap between icon and text must stay empty…
+          expect(Math.abs(measureVolume(gapIntersection))).toBeLessThan(0.02)
+          // …while the icon side of the group still carries the icon solid.
+          expect(Math.abs(measureVolume(iconIntersection))).toBeGreaterThan(
+            0.01,
+          )
         } finally {
-          intersection.delete()
-          probe.delete()
+          gapIntersection.delete()
+          iconIntersection.delete()
         }
+      } finally {
+        gapProbe.delete()
+        iconProbe.delete()
       }
     } finally {
       built.shape.delete()
@@ -411,6 +437,8 @@ it.each([
   'aligns top %s and bottom %s independently beside %s',
   async (textAlignment, textLine2Alignment, icon, iconPosition) => {
     const { makeBox } = await import('replicad')
+    const { makeOpenGridLabelCardTextShape } =
+      await import('../../src/cad-kernel/components/opengrid-label-card/flat-text')
     const { OPENGRID_LABEL_GRID, openGridLabelWidthFor } =
       await import('../../src/cad-contract/units/opengrid-label-shared')
     const parameters = {
@@ -431,21 +459,51 @@ it.each([
       const half =
         openGridLabelWidthFor(parameters.gridUnits) / 2 -
         OPENGRID_LABEL_GRID.artworkSideInset
-      let left = -half,
-        right = half
-      if (icon !== 'none') {
-        const iconSpace =
-          OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
-        if (iconPosition === 'left') left += iconSpace
-        else right -= iconSpace
+
+      // Mirror the builder's group math to locate the text block.
+      const rowWidths = []
+      for (const rowText of [parameters.text, parameters.textLine2]) {
+        const shape = await makeOpenGridLabelCardTextShape(rowText, {
+          depth: 0.4,
+          textHeight: parameters.textHeight,
+        })
+        try {
+          const box = shape!.boundingBox
+          rowWidths.push(box.bounds[1][0] - box.bounds[0][0])
+        } finally {
+          shape!.delete()
+        }
       }
+      const blockWidth = Math.max(...rowWidths)
+      let groupWidth = blockWidth
+      if (icon !== 'none') groupWidth += 6 + OPENGRID_LABEL_GRID.iconTextGap
+      // groupAlign defaults to center for legacy snapshots.
+      const groupLeft = -groupWidth / 2
+      let textMinX = groupLeft
+      let textMaxX = groupLeft + blockWidth
+      let iconMinX: number | null = null
+      let iconMaxX: number | null = null
+      if (icon !== 'none') {
+        if (iconPosition === 'left') {
+          iconMinX = groupLeft
+          iconMaxX = groupLeft + 6
+          textMinX = groupLeft + 6 + OPENGRID_LABEL_GRID.iconTextGap
+          textMaxX = textMinX + blockWidth
+        } else {
+          iconMinX = groupLeft + groupWidth - 6
+          iconMaxX = groupLeft + groupWidth
+          textMinX = groupLeft
+          textMaxX = textMinX + blockWidth
+        }
+      }
+
       for (const [top, alignment] of [
         [true, textAlignment],
         [false, textLine2Alignment],
       ] as const) {
         const clip = makeBox(
-          [left - 0.001, top ? 0 : -5, 0.6],
-          [right + 0.001, top ? 5 : 0, 1],
+          [textMinX - 0.001, top ? 0 : -5, 0.6],
+          [textMaxX + 0.001, top ? 5 : 0, 1],
         )
         const row = accent.intersect(clip)
         try {
@@ -454,13 +512,15 @@ it.each([
             parameters.textHeight,
             2,
           )
-          if (alignment === 'left') expect(bounds[0][0]).toBeCloseTo(left, 2)
+          if (alignment === 'left')
+            expect(bounds[0][0]).toBeCloseTo(textMinX, 1)
           if (alignment === 'center')
             expect((bounds[0][0] + bounds[1][0]) / 2).toBeCloseTo(
-              (left + right) / 2,
-              2,
+              (textMinX + textMaxX) / 2,
+              1,
             )
-          if (alignment === 'right') expect(bounds[1][0]).toBeCloseTo(right, 2)
+          if (alignment === 'right')
+            expect(bounds[1][0]).toBeCloseTo(textMaxX, 1)
           if (top)
             expect(bounds[0][1]).toBeCloseTo(
               OPENGRID_LABEL_CARD_CONFIGURATION.textRowGap / 2,
@@ -475,6 +535,12 @@ it.each([
           row.delete()
           clip.delete()
         }
+      }
+      // The icon must sit fully outside the text block.
+      if (iconMinX !== null && iconMaxX !== null) {
+        const outside =
+          iconMaxX <= textMinX + 0.001 || iconMinX >= textMaxX - 0.001
+        expect(outside).toBe(true)
       }
       expect(
         isThreeMfPackage(

@@ -493,6 +493,11 @@ export {
   OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_LABEL_CARD_STYLES,
   OPENGRID_LABEL_CARD_ICON_IDS,
+  OPENGRID_LABEL_SCREW_ICON_IDS,
+  isOpenGridLabelScrewIconId,
+  OPENGRID_LABEL_CARD_LAYOUTS,
+  OPENGRID_LABEL_CARD_STACKED_GAP,
+  OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT,
   validateOpenGridLabelCardParameters,
 } from './opengrid-label-card'
 
@@ -513,4 +518,6 @@ export type {
   OpenGridLabelCardParameters,
   OpenGridLabelCardStyle,
   OpenGridLabelCardValidation,
+  OpenGridLabelCardLayout,
+  OpenGridLabelCardGroupAlign,
 } from './opengrid-label-card'

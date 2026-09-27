@@ -43,6 +43,36 @@ export function parseOpenGridLabelCardRawParameters(raw: RawParameters):
   const style =
     raw.style ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.style
   const text = typeof raw.text === 'string' ? raw.text : undefined
+  const iconSize = Number(
+    raw.iconSize ?? OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.default,
+  )
+  if (
+    !Number.isFinite(iconSize) ||
+    iconSize < OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.min ||
+    iconSize > OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.max
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'iconSize',
+    }
+  }
+  const layout = raw.layout ?? 'inline'
+  if (layout !== 'inline' && layout !== 'stacked') {
+    return { valid: false, messageId: 'validation.invalid', field: 'layout' }
+  }
+  const groupAlign = raw.groupAlign ?? 'center'
+  if (
+    groupAlign !== 'left' &&
+    groupAlign !== 'center' &&
+    groupAlign !== 'right'
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'groupAlign',
+    }
+  }
   const normalizedRaw: Record<string, unknown> = {
     gridUnits,
     style,
@@ -51,6 +81,9 @@ export function parseOpenGridLabelCardRawParameters(raw: RawParameters):
     textLine2: raw.textLine2 ?? '',
     textAlignment: raw.textAlignment ?? 'center',
     textLine2Alignment: raw.textLine2Alignment ?? 'center',
+    layout,
+    groupAlign,
+    iconSize,
   }
   if (raw.icon !== undefined) normalizedRaw.icon = raw.icon
   if (text !== undefined)

@@ -146,6 +146,9 @@ export function parameterKeysForModel(
       'textLine2',
       'textAlignment',
       'textLine2Alignment',
+      'layout',
+      'groupAlign',
+      'iconSize',
     ]
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']

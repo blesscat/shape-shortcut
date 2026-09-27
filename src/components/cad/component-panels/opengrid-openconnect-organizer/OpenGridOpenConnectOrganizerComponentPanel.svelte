@@ -202,6 +202,14 @@
   const tiltField = fieldFor('tiltAngle')
   let layout = $derived(layoutForRawParameters())
   let tiltValue = $derived(valueFor(tiltField))
+  let labelEnabled = $derived(rawParameters.labelSlotEnabled === 'true')
+  let labelUnits = $derived(
+    rawParameters.labelGridUnits ??
+      String(OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits),
+  )
+  let slotLayout = $derived(
+    layout ? openGridLabelSlotLayoutFor(layout, Number(labelUnits)) : null,
+  )
 
   function handleSpacingModeChange(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return

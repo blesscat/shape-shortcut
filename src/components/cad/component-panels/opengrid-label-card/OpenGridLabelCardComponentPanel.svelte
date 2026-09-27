@@ -2,6 +2,7 @@
   import {
     OPENGRID_LABEL_CARD_CONFIGURATION,
     OPENGRID_LABEL_CARD_ICON_IDS,
+    OPENGRID_LABEL_CARD_LAYOUTS,
     OPENGRID_LABEL_CARD_STYLES,
     normalizeOpenGridLabelCardText,
   } from '../../../../cad-contract/units'
@@ -44,6 +45,16 @@
     },
   ] as const
   const alignments = ['left', 'center', 'right'] as const
+  let rawLayout = $derived(
+    rawParameters.layout ?? config.defaultParameters.layout,
+  )
+  let rawGroupAlign = $derived(
+    rawParameters.groupAlign ?? config.defaultParameters.groupAlign,
+  )
+  let rawIconSize = $derived(
+    rawParameters.iconSize ?? String(config.defaultParameters.iconSize),
+  )
+  let stacked = $derived(rawLayout === 'stacked')
   let hasTwoRows = $derived(
     Boolean(
       normalizeOpenGridLabelCardText(rawParameters.text ?? '') &&
@@ -60,6 +71,14 @@
 
   function handleIconInput(icon: string): void {
     onInputChange('icon', icon)
+  }
+
+  function handleLayoutInput(nextLayout: string): void {
+    onInputChange('layout', nextLayout)
+    if (nextLayout === 'stacked') {
+      // Stacked layout only supports a single text row.
+      onInputChange('textLine2', '')
+    }
   }
 
   function handleTextInput(field: 'text' | 'textLine2', event: Event): void {
@@ -122,6 +141,87 @@
     {#if fieldErrors.gridUnits}
       <span id="label-card-units-error" class="text-sm text-error" role="alert"
         >{formatValidationIssue(locale, fieldErrors.gridUnits)}</span
+      >
+    {/if}
+  </div>
+
+  <div class="grid gap-1">
+    <span class="text-sm text-ink">
+      {translate(locale, 'panel.labelCard.layout')}
+    </span>
+    <div
+      class="flex flex-wrap gap-2"
+      role="radiogroup"
+      aria-label={translate(locale, 'panel.labelCard.layout')}
+      data-testid="opengrid-label-card-layout"
+    >
+      {#each OPENGRID_LABEL_CARD_LAYOUTS as layoutOption (layoutOption)}
+        <button
+          type="button"
+          class="rounded-lg border px-3 py-1 text-sm"
+          class:border-primary={rawLayout === layoutOption}
+          aria-pressed={rawLayout === layoutOption}
+          data-testid={`opengrid-label-card-layout-${layoutOption}`}
+          onclick={() => handleLayoutInput(layoutOption)}
+        >
+          {translate(locale, `panel.labelCard.layout.${layoutOption}`)}
+        </button>
+      {/each}
+    </div>
+  </div>
+
+  {#if rawLayout === 'inline'}
+    <div class="grid gap-1">
+      <span class="text-sm text-ink">
+        {translate(locale, 'panel.labelCard.groupAlign')}
+      </span>
+      <div
+        class="flex flex-wrap gap-2"
+        role="radiogroup"
+        aria-label={translate(locale, 'panel.labelCard.groupAlign')}
+        data-testid="opengrid-label-card-group-align"
+      >
+        {#each alignments as align (align)}
+          <button
+            type="button"
+            class="rounded-lg border px-3 py-1 text-sm"
+            class:border-primary={rawGroupAlign === align}
+            aria-pressed={rawGroupAlign === align}
+            data-testid={`opengrid-label-card-group-align-${align}`}
+            onclick={() => onInputChange('groupAlign', align)}
+          >
+            {translate(locale, `panel.labelCard.groupAlign.${align}`)}
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  <div class="grid gap-1">
+    <label for="label-card-icon-size" class="text-sm text-ink"
+      >{translate(locale, 'panel.labelCard.iconSize')} · {rawIconSize}
+      mm</label
+    >
+    <input
+      id="label-card-icon-size"
+      type="range"
+      min={config.iconSize.min}
+      max={config.iconSize.max}
+      step={config.iconSize.step}
+      value={rawIconSize}
+      data-testid="opengrid-label-card-icon-size"
+      aria-invalid={Boolean(fieldErrors.iconSize)}
+      aria-describedby={fieldErrors.iconSize
+        ? 'label-card-icon-size-error'
+        : undefined}
+      class="min-w-0 w-full accent-primary"
+      oninput={(event) => onInputChange('iconSize', event.currentTarget.value)}
+    />
+    {#if fieldErrors.iconSize}
+      <span
+        id="label-card-icon-size-error"
+        class="text-sm text-error"
+        role="alert">{formatValidationIssue(locale, fieldErrors.iconSize)}</span
       >
     {/if}
   </div>
@@ -250,58 +350,63 @@
   </div>
 
   {#each rowFields as row (row.key)}
-    {@const rawText = rawParameters[row.key] ?? ''}
-    {@const textLength = Array.from(
-      normalizeOpenGridLabelCardText(rawText),
-    ).length}
-    <ParameterField
-      {locale}
-      label={translate(locale, row.label)}
-      changed={rawText !== ''}
-      error={fieldErrors[row.key]}
-      errorId={`opengrid-label-card-${row.key}-error`}
-      restoreLabel={translate(locale, row.label)}
-      onRestore={() => onInputChange(row.key, '')}
-    >
-      <div class="grid gap-1">
-        <input
-          aria-describedby="opengrid-label-card-text-help"
-          aria-invalid={fieldErrors[row.key] ? 'true' : undefined}
-          aria-label={translate(locale, row.aria)}
-          autocomplete="off"
-          class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
-          data-testid={`opengrid-label-card-${row.key}`}
-          spellcheck="false"
-          type="text"
-          value={rawText}
-          oninput={(event) => handleTextInput(row.key, event)}
-        />
-        <span
-          aria-live="polite"
-          class="text-right text-sm text-muted-foreground"
-          data-testid={`opengrid-label-card-${row.key}-count`}
-        >
-          {translate(locale, 'panel.labelCard.characterCount', {
-            count: textLength,
-            max: config.maxTextLength,
-          })}
-        </span>
-        <label for={`label-card-${row.key}-alignment`}
-          >{translate(locale, 'panel.labelCard.alignment')}</label
-        >
-        <select
-          id={`label-card-${row.key}-alignment`}
-          value={rawParameters[row.alignment] ?? 'center'}
-          class="rounded-lg border border-border-field bg-panel px-3 py-2"
-          onchange={(event) =>
-            onInputChange(row.alignment, event.currentTarget.value)}
-        >
-          {#each alignments as alignment}<option value={alignment}
-              >{translate(locale, `panel.labelCard.align.${alignment}`)}</option
-            >{/each}
-        </select>
-      </div>
-    </ParameterField>
+    {#if !(stacked && row.key === 'textLine2')}
+      {@const rawText = rawParameters[row.key] ?? ''}
+      {@const textLength = Array.from(
+        normalizeOpenGridLabelCardText(rawText),
+      ).length}
+      <ParameterField
+        {locale}
+        label={translate(locale, row.label)}
+        changed={rawText !== ''}
+        error={fieldErrors[row.key]}
+        errorId={`opengrid-label-card-${row.key}-error`}
+        restoreLabel={translate(locale, row.label)}
+        onRestore={() => onInputChange(row.key, '')}
+      >
+        <div class="grid gap-1">
+          <input
+            aria-describedby="opengrid-label-card-text-help"
+            aria-invalid={fieldErrors[row.key] ? 'true' : undefined}
+            aria-label={translate(locale, row.aria)}
+            autocomplete="off"
+            class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
+            data-testid={`opengrid-label-card-${row.key}`}
+            spellcheck="false"
+            type="text"
+            value={rawText}
+            oninput={(event) => handleTextInput(row.key, event)}
+          />
+          <span
+            aria-live="polite"
+            class="text-right text-sm text-muted-foreground"
+            data-testid={`opengrid-label-card-${row.key}-count`}
+          >
+            {translate(locale, 'panel.labelCard.characterCount', {
+              count: textLength,
+              max: config.maxTextLength,
+            })}
+          </span>
+          <label for={`label-card-${row.key}-alignment`}
+            >{translate(locale, 'panel.labelCard.alignment')}</label
+          >
+          <select
+            id={`label-card-${row.key}-alignment`}
+            value={rawParameters[row.alignment] ?? 'center'}
+            class="rounded-lg border border-border-field bg-panel px-3 py-2"
+            onchange={(event) =>
+              onInputChange(row.alignment, event.currentTarget.value)}
+          >
+            {#each alignments as alignment}<option value={alignment}
+                >{translate(
+                  locale,
+                  `panel.labelCard.align.${alignment}`,
+                )}</option
+              >{/each}
+          </select>
+        </div>
+      </ParameterField>
+    {/if}
   {/each}
 
   <p

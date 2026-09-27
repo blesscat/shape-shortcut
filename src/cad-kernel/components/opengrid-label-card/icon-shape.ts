@@ -79,7 +79,7 @@ function extrudePolygon(polygon: PathPolygon, depth: number): Shape3D {
   }
 }
 
-function extrudeContourGroup(
+export function extrudeContourGroup(
   outer: PathPolygon,
   holes: readonly PathPolygon[],
   depth: number,
@@ -115,6 +115,7 @@ function extrudeContourGroup(
 export function makeLabelCardIconShape(
   iconId: string,
   depth: number = LABEL_CARD_ICON_CONFIGURATION.depth,
+  size: number = LABEL_CARD_ICON_CONFIGURATION.size,
 ): Shape3D {
   const icon = LABEL_CARD_ICON_PATHS[iconId]
   if (!icon) throw new Error('LABEL_CARD_ICON_UNKNOWN')
@@ -128,10 +129,7 @@ export function makeLabelCardIconShape(
     if (totalPoints(polygons) > LABEL_CARD_ICON_CONFIGURATION.maxPoints) {
       throw new SvgPathParseError('SVG_PATH_TOO_COMPLEX')
     }
-    polygons = scaleAndCenterPolygons(
-      polygons,
-      LABEL_CARD_ICON_CONFIGURATION.size,
-    )
+    polygons = scaleAndCenterPolygons(polygons, size)
 
     for (const [outer, ...holes] of groupPolygonContours(polygons)) {
       if (!outer) continue

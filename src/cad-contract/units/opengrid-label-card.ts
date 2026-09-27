@@ -12,6 +12,8 @@ import {
 import {
   OPENGRID_LABEL_CARD_ICON_IDS,
   isOpenGridLabelCardIconId,
+  isOpenGridLabelScrewIconId,
+  OPENGRID_LABEL_SCREW_ICON_IDS,
   type OpenGridLabelCardIconId as LabelIconId,
 } from './opengrid-label-icons'
 
@@ -25,6 +27,9 @@ export type OpenGridLabelCardParameterKey =
   | 'textLine2'
   | 'textAlignment'
   | 'textLine2Alignment'
+  | 'layout'
+  | 'groupAlign'
+  | 'iconSize'
 
 export const OPENGRID_LABEL_CARD_STYLES = ['flat', 'raised'] as const
 
@@ -32,9 +37,29 @@ export type OpenGridLabelCardStyle = (typeof OPENGRID_LABEL_CARD_STYLES)[number]
 
 export type OpenGridLabelCardIconId = LabelIconId
 
-export { OPENGRID_LABEL_CARD_ICON_IDS }
+export {
+  OPENGRID_LABEL_CARD_ICON_IDS,
+  OPENGRID_LABEL_SCREW_ICON_IDS,
+  isOpenGridLabelScrewIconId,
+}
 
 export type LabelCardTextAlignment = 'left' | 'center' | 'right'
+
+export type OpenGridLabelCardLayout = 'inline' | 'stacked'
+
+export type OpenGridLabelCardGroupAlign = 'left' | 'center' | 'right'
+
+export const OPENGRID_LABEL_CARD_LAYOUTS: readonly OpenGridLabelCardLayout[] = [
+  'inline',
+  'stacked',
+]
+
+/** Vertical gap between the icon and the text row in stacked layout (mm). */
+export const OPENGRID_LABEL_CARD_STACKED_GAP = 1
+
+/** Safe height available to stacked content: card height minus rail insets. */
+export const OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT =
+  OPENGRID_LABEL_CARD_HEIGHT - 2 * OPENGRID_LABEL_GRID.artworkSideInset
 
 export type OpenGridLabelCardParameters = {
   gridUnits: number
@@ -46,6 +71,9 @@ export type OpenGridLabelCardParameters = {
   textLine2?: string
   textAlignment?: LabelCardTextAlignment
   textLine2Alignment?: LabelCardTextAlignment
+  layout?: OpenGridLabelCardLayout
+  groupAlign?: OpenGridLabelCardGroupAlign
+  iconSize?: number
 }
 
 export const OPENGRID_LABEL_CARD_CONFIGURATION = {
@@ -55,11 +83,14 @@ export const OPENGRID_LABEL_CARD_CONFIGURATION = {
   raisedHeight: OPENGRID_LABEL_CARD_RAISED_HEIGHT,
   textHeight: { min: 2, max: 7, default: 7, step: 0.5, twoRowMax: 4 },
   textRowGap: 0.5,
+  iconSize: { min: 3, max: 8, default: 6, step: 0.5 },
   maxTextLength: 6,
   defaultGridUnits: 4,
   defaultStyle: 'raised',
   defaultIcon: 'gear-fill',
   defaultText: '' as string,
+  defaultLayout: 'inline',
+  defaultGroupAlign: 'center',
   defaultParameters: {
     gridUnits: 4,
     textHeight: 7,
@@ -67,6 +98,9 @@ export const OPENGRID_LABEL_CARD_CONFIGURATION = {
     style: 'raised',
     icon: 'gear-fill',
     text: '',
+    layout: 'inline',
+    groupAlign: 'center',
+    iconSize: 6,
   } as OpenGridLabelCardParameters,
   fileNames: {
     step: 'opengrid-label-card.step',
@@ -139,6 +173,9 @@ export function validateOpenGridLabelCardParameters(
     'style',
     'icon',
     'text',
+    'layout',
+    'groupAlign',
+    'iconSize',
   ]
   if (keys.some((key) => !knownKeys.includes(key as never))) {
     return invalid('parameters')
@@ -173,6 +210,31 @@ export function validateOpenGridLabelCardParameters(
   if (iconPosition !== 'left' && iconPosition !== 'right')
     return invalid('iconPosition')
 
+  const layout = value.layout ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultLayout
+  if (layout !== 'inline' && layout !== 'stacked') return invalid('layout')
+
+  const groupAlign =
+    value.groupAlign ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultGroupAlign
+  if (
+    groupAlign !== 'left' &&
+    groupAlign !== 'center' &&
+    groupAlign !== 'right'
+  )
+    return invalid('groupAlign')
+
+  const iconSize =
+    value.iconSize ?? OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.default
+  if (
+    typeof iconSize !== 'number' ||
+    !Number.isFinite(iconSize) ||
+    iconSize < OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.min ||
+    iconSize > OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.max ||
+    Math.round(iconSize / OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.step) *
+      OPENGRID_LABEL_CARD_CONFIGURATION.iconSize.step !==
+      iconSize
+  )
+    return invalid('iconSize')
+
   const rawStyle =
     value.style ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.style
   if (!isOpenGridLabelCardStyle(rawStyle)) {
@@ -191,6 +253,9 @@ export function validateOpenGridLabelCardParameters(
     iconPosition,
     style: rawStyle,
     icon: rawIcon,
+    layout,
+    groupAlign,
+    iconSize,
   }
   for (const field of ['textAlignment', 'textLine2Alignment'] as const) {
     const alignment = value[field] ?? 'center'
@@ -213,9 +278,15 @@ export function validateOpenGridLabelCardParameters(
         OPENGRID_LABEL_GRID.textFontSize) *
       (textHeight / OPENGRID_LABEL_GRID.textFontSize)
     let requiredWidth = textWidth
-    if (rawIcon !== 'none')
-      requiredWidth +=
-        OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
+    if (rawIcon !== 'none') {
+      if (layout === 'stacked') {
+        if (field === 'textLine2' && textLength > 0)
+          return invalid('textLine2', 'validation.labelCardStackedSingleRow')
+        requiredWidth = Math.max(requiredWidth, iconSize)
+      } else {
+        requiredWidth += iconSize + OPENGRID_LABEL_GRID.iconTextGap
+      }
+    }
     if (
       textLength > 0 &&
       requiredWidth >
@@ -231,6 +302,15 @@ export function validateOpenGridLabelCardParameters(
     textHeight > OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.twoRowMax
   )
     return invalid('textHeight', 'validation.labelCardTwoRowHeight')
+  if (
+    layout === 'stacked' &&
+    (parameters.text || parameters.textLine2 || parameters.icon !== 'none') &&
+    iconSize +
+      OPENGRID_LABEL_CARD_STACKED_GAP +
+      (parameters.text || parameters.textLine2 ? textHeight : 0) >
+      OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
+  )
+    return invalid('iconSize', 'validation.labelCardStackedHeight')
   return { valid: true, value: parameters }
 }
 
@@ -284,18 +364,19 @@ export function boundsForOpenGridLabelCard(
 }
 
 function parameterSuffixFor(parameters: OpenGridLabelCardParameters): string {
-  return `w${openGridLabelWidthFor(parameters.gridUnits)}-${parameters.style}-${parameters.icon}-${parameters.iconPosition ?? 'left'}`
+  return `w${openGridLabelWidthFor(parameters.gridUnits)}-${parameters.style}-${parameters.icon}-${parameters.iconPosition ?? 'left'}-l${parameters.layout}-g${parameters.groupAlign}-i${parameters.iconSize}`
 }
 
 function fileNameFor(
   parameters: OpenGridLabelCardParameters,
   format: keyof typeof OPENGRID_LABEL_CARD_CONFIGURATION.fileNames,
 ): string {
-  if (!isOpenGridLabelCardParameters(parameters)) {
+  const validation = validateOpenGridLabelCardParameters(parameters)
+  if (!validation.valid) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
   }
   const base = OPENGRID_LABEL_CARD_CONFIGURATION.fileNames[format]
-  const suffix = parameterSuffixFor(parameters)
+  const suffix = parameterSuffixFor(validation.value)
   return base.replace('opengrid-label-card', `opengrid-label-card-${suffix}`)
 }
 

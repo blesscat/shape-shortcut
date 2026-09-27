@@ -3,6 +3,8 @@
 // Note: the kernel always groups contours with even-odd containment
 // semantics; `evenOdd` is only consumed by the gallery thumbnail's SVG
 // fill-rule. Curate new icons so even-odd rendering matches nonzero.
+import { screwOutlineSvgPath } from './screw-outline'
+
 export type LabelCardIconPath = {
   readonly id: string
   readonly paths: readonly string[]
@@ -40,6 +42,16 @@ export const LABEL_CARD_ICON_PATHS: Readonly<
     paths: [
       'M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M12.6 8 L10.339 9.35 L10.3 11.984 L8 10.7 L5.7 11.984 L5.661 9.35 L3.4 8 L5.661 6.65 L5.7 4.016 L8 5.3 L10.3 4.016 L10.339 6.65 Z',
     ],
+  },
+  'screw-pan': {
+    id: 'screw-pan',
+    evenOdd: false,
+    paths: [screwOutlineSvgPath('pan', 0.65)],
+  },
+  'screw-hex': {
+    id: 'screw-hex',
+    evenOdd: false,
+    paths: [screwOutlineSvgPath('hex', 0.65)],
   },
   'hole-through': {
     id: 'hole-through',

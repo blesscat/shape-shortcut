@@ -8,6 +8,7 @@ import {
   assertOpenGridLabelSlotTestQuality,
 } from '../../src/cad-kernel/components/opengrid-label-slot-test/builder'
 import { openGridLabelSlotTestLayoutFor } from '../../src/cad-contract/units/opengrid-label-slot-test'
+import { OPENGRID_LABEL_CARD_HEIGHT } from '../../src/cad-contract/units/opengrid-label-shared'
 import { buildOpenGridLabelCardWithParts } from '../../src/cad-kernel/components/opengrid-label-card/builder'
 import { OPENGRID_LABEL_CARD_CONFIGURATION } from '../../src/cad-contract/units/opengrid-label-card'
 import { exportStepBytes, exportStlBytes } from '../../src/cad-kernel/export'
@@ -51,7 +52,11 @@ it.each([1, 3, 5])(
             const placed = card.shape
               .clone()
               .rotate(90, [0, 0, 0], [1, 0, 0])
-              .translate(0, -0.15, slot.cardBottom + 5 + lift)
+              .translate(
+                0,
+                -0.15,
+                slot.cardBottom + OPENGRID_LABEL_CARD_HEIGHT / 2 + lift,
+              )
             const overlap = shape.intersect(placed)
             expect(Math.abs(measureVolume(overlap))).toBeLessThan(1e-5)
             overlap.delete()

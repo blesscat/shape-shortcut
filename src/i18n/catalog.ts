@@ -597,6 +597,17 @@ export const zhHantMessages = {
   'parameter.labelGridUnits': '標籤格數',
   'parameter.labelSlotEnabled': '正面標籤卡槽',
   'panel.labelCard.unitWidth': '{width} mm · 每格 10 mm · 1–{max} 格',
+  'panel.labelCard.layout': '版式',
+  'panel.labelCard.layout.inline': '橫式',
+  'panel.labelCard.layout.stacked': 'icon 上／文字下',
+  'panel.labelCard.groupAlign': '群組對齊',
+  'panel.labelCard.groupAlign.left': '靠左',
+  'panel.labelCard.groupAlign.center': '置中',
+  'panel.labelCard.groupAlign.right': '靠右',
+  'panel.labelCard.iconSize': 'icon 尺寸',
+  'validation.labelCardStackedSingleRow': 'icon 上／文字下版式只支援一排文字。',
+  'validation.labelCardStackedHeight':
+    'icon 尺寸加文字高度超出卡片可用高度，請縮小 icon 或文字。',
   'panel.openConnectOrganizer.labelWidth':
     '{width} mm · 每格 10 mm · 正面最多 {max} 格',
   'panel.openConnectOrganizer.labelHelp':
@@ -1602,6 +1613,18 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.labelGridUnits': 'Label units',
   'parameter.labelSlotEnabled': 'Front label slot',
   'panel.labelCard.unitWidth': '{width} mm · 10 mm per unit · 1–{max} units',
+  'panel.labelCard.layout': 'Layout',
+  'panel.labelCard.layout.inline': 'Inline',
+  'panel.labelCard.layout.stacked': 'Icon above text',
+  'panel.labelCard.groupAlign': 'Group alignment',
+  'panel.labelCard.groupAlign.left': 'Left',
+  'panel.labelCard.groupAlign.center': 'Center',
+  'panel.labelCard.groupAlign.right': 'Right',
+  'panel.labelCard.iconSize': 'Icon size',
+  'validation.labelCardStackedSingleRow':
+    'The icon-above-text layout supports a single text row.',
+  'validation.labelCardStackedHeight':
+    'Icon size plus text height exceeds the usable card height. Shrink the icon or the text.',
   'panel.openConnectOrganizer.labelWidth':
     '{width} mm · 10 mm per unit · Front fits up to {max} units',
   'panel.openConnectOrganizer.labelHelp':

@@ -5,7 +5,7 @@ export const OPENGRID_LABEL_WIDTH_TIERS = [20, 30, 40, 60] as const
 export type OpenGridLabelWidthTier = (typeof OPENGRID_LABEL_WIDTH_TIERS)[number]
 
 /** Card height along the hang direction (mm). */
-export const OPENGRID_LABEL_CARD_HEIGHT = 10
+export const OPENGRID_LABEL_CARD_HEIGHT = 12
 
 /** Card thickness at the insertion faces — the portion the pocket walls grip (mm). */
 export const OPENGRID_LABEL_CARD_INSERTION_THICKNESS = 0.6

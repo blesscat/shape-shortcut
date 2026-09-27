@@ -55,6 +55,9 @@ export function rawFromParameters(
       textLine2: labelCardParameters.textLine2 ?? '',
       textAlignment: labelCardParameters.textAlignment ?? 'center',
       textLine2Alignment: labelCardParameters.textLine2Alignment ?? 'center',
+      layout: labelCardParameters.layout ?? 'inline',
+      groupAlign: labelCardParameters.groupAlign ?? 'center',
+      iconSize: String(labelCardParameters.iconSize ?? 6),
     }
     if (labelCardParameters.text !== undefined) {
       raw.text = labelCardParameters.text

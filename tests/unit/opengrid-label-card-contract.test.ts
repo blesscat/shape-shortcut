@@ -22,6 +22,9 @@ describe('OpenGrid Label Card contract', () => {
       icon: 'gear-fill',
       text: '',
       textHeight: OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default,
+      layout: 'inline',
+      groupAlign: 'center',
+      iconSize: 6,
     })
   })
 
@@ -43,6 +46,9 @@ describe('OpenGrid Label Card contract', () => {
         style: 'raised',
         iconPosition: 'left',
         icon: 'gear-fill',
+        layout: 'inline',
+        groupAlign: 'center',
+        iconSize: 6,
       },
     })
     expect(
@@ -64,6 +70,9 @@ describe('OpenGrid Label Card contract', () => {
         iconPosition: 'left',
         icon: 'wrench',
         text: 'M3x40',
+        layout: 'inline',
+        groupAlign: 'center',
+        iconSize: 6,
       },
     })
     expect(
@@ -154,6 +163,9 @@ describe('OpenGrid Label Card contract', () => {
           style: 'flat',
           iconPosition: 'left',
           icon: 'box-seam',
+          layout: 'inline',
+          groupAlign: 'center',
+          iconSize: 6,
         },
       },
     })
@@ -170,7 +182,7 @@ describe('OpenGrid Label Card contract', () => {
         iconPosition: 'left',
         icon: 'gear-fill',
       }),
-    ).toEqual({ min: [-20, -5, 0], max: [20, 5, 0.6] })
+    ).toEqual({ min: [-20, -6, 0], max: [20, 6, 0.6] })
     expect(
       boundsForOpenGridLabelCard({
         gridUnits: 4,
@@ -178,7 +190,7 @@ describe('OpenGrid Label Card contract', () => {
         iconPosition: 'left',
         icon: 'gear-fill',
       }),
-    ).toEqual({ min: [-20, -5, 0], max: [20, 5, 1] })
+    ).toEqual({ min: [-20, -6, 0], max: [20, 6, 1] })
     expect(
       boundsForOpenGridLabelCard({
         gridUnits: 2,
@@ -186,7 +198,7 @@ describe('OpenGrid Label Card contract', () => {
         iconPosition: 'left',
         icon: 'gear-fill',
       }),
-    ).toEqual({ min: [-10, -5, 0], max: [10, 5, 1] })
+    ).toEqual({ min: [-10, -6, 0], max: [10, 6, 1] })
   })
 
   it('encodes parameters into stable export file names', () => {
@@ -197,17 +209,17 @@ describe('OpenGrid Label Card contract', () => {
       icon: 'wrench',
     } as const
     expect(openGridLabelCardFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench-left.step',
+      'opengrid-label-card-w30-flat-wrench-left-linline-gcenter-i6.step',
     )
     expect(openGridLabelCardStlFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench-left.stl',
+      'opengrid-label-card-w30-flat-wrench-left-linline-gcenter-i6.stl',
     )
     expect(openGridLabelCardThreeMfFileName(parameters)).toBe(
-      'opengrid-label-card-w30-flat-wrench-left.3mf',
+      'opengrid-label-card-w30-flat-wrench-left-linline-gcenter-i6.3mf',
     )
     expect(
       getModelDefinition('opengrid-label-card')?.threeMfFileName?.(parameters),
-    ).toBe('opengrid-label-card-w30-flat-wrench-left.3mf')
+    ).toBe('opengrid-label-card-w30-flat-wrench-left-linline-gcenter-i6.3mf')
   })
 
   it('shares the icon set and width tiers with the label system', () => {
@@ -217,5 +229,95 @@ describe('OpenGrid Label Card contract', () => {
     )) {
       expect(LABEL_CARD_ICON_PATHS[iconId], iconId).toBeDefined()
     }
+  })
+
+  it('applies the new layout parameters', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'gear-fill',
+        layout: 'stacked',
+        groupAlign: 'left',
+        iconSize: 4.5,
+        textHeight: 4,
+        text: 'M4x16',
+      }),
+    ).toMatchObject({
+      valid: true,
+      value: {
+        layout: 'stacked',
+        groupAlign: 'left',
+        iconSize: 4.5,
+      },
+    })
+  })
+
+  it('rejects invalid layout, group alignment, and icon sizes per field', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'gear-fill',
+        layout: 'diagonal',
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'layout' }] })
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'gear-fill',
+        groupAlign: 'up',
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'groupAlign' }] })
+    for (const iconSize of [2.9, 8.1, 4.25]) {
+      expect(
+        validateOpenGridLabelCardParameters({
+          gridUnits: 4,
+          style: 'raised',
+          icon: 'gear-fill',
+          iconSize,
+        }),
+      ).toMatchObject({ valid: false, issues: [{ field: 'iconSize' }] })
+    }
+  })
+
+  it('rejects a second text row and impossible stacks in stacked layout', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'gear-fill',
+        layout: 'stacked',
+        iconSize: 4,
+        textHeight: 4,
+        text: 'M4',
+        textLine2: 'extra',
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [
+        {
+          field: 'textLine2',
+          messageId: 'validation.labelCardStackedSingleRow',
+        },
+      ],
+    })
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'gear-fill',
+        layout: 'stacked',
+        iconSize: 6,
+        textHeight: 4,
+        text: 'M4',
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [
+        { field: 'iconSize', messageId: 'validation.labelCardStackedHeight' },
+      ],
+    })
   })
 })

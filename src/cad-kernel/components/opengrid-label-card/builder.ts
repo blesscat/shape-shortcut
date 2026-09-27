@@ -9,6 +9,11 @@ import {
   type OpenGridLabelCardParameters,
 } from '../../../cad-contract/units'
 import { makeLabelCardIconShape } from '../opengrid-label-card/icon-shape'
+import {
+  makeOpenGridLabelScrewShape,
+  parseOpenGridLabelScrewShaftRatio,
+} from '../opengrid-label-card/screw-shape'
+import { isOpenGridLabelScrewIconId } from '../../../cad-contract/units'
 import { makeOpenGridLabelCardTextShape } from '../opengrid-label-card/flat-text'
 
 export type OpenGridLabelCardNativePart = {
@@ -106,12 +111,12 @@ export async function buildOpenGridLabelCardWithParts(
   try {
     const rows = [
       {
-        field: 'text',
+        field: 'text' as const,
         text: validation.value.text,
         alignment: validation.value.textAlignment ?? 'center',
       },
       {
-        field: 'textLine2',
+        field: 'textLine2' as const,
         text: validation.value.textLine2,
         alignment: validation.value.textLine2Alignment ?? 'center',
       },
@@ -121,29 +126,21 @@ export async function buildOpenGridLabelCardWithParts(
     const accentZ = raised ? plateTop : plateTop - accentDepth
     const hasIcon = validation.value.icon !== 'none'
     const safeHalfWidth = halfWidth - OPENGRID_LABEL_GRID.artworkSideInset
-    let textMinX = -safeHalfWidth
-    let textMaxX = safeHalfWidth
-    if (hasIcon) {
-      let iconX = 0
-      if (rows.length > 0) {
-        const iconSpace =
-          OPENGRID_LABEL_GRID.iconSize + OPENGRID_LABEL_GRID.iconTextGap
-        if (validation.value.iconPosition === 'left') {
-          iconX = -safeHalfWidth + OPENGRID_LABEL_GRID.iconSize / 2
-          textMinX += iconSpace
-        } else {
-          iconX = safeHalfWidth - OPENGRID_LABEL_GRID.iconSize / 2
-          textMaxX -= iconSpace
-        }
-      }
-      const iconShape = makeLabelCardIconShape(
-        validation.value.icon,
-        accentDepth,
-      )
-      accent = iconShape.translate(iconX, 0, accentZ)
-      if (accent !== iconShape) deleteShape(iconShape)
-    }
+    const safeWidth = safeHalfWidth * 2
+    const safeHalfHeight =
+      config.cardHeight / 2 - OPENGRID_LABEL_GRID.artworkSideInset
+    const iconSize = validation.value.iconSize ?? config.iconSize.default
+    const layout = validation.value.layout ?? 'inline'
+    const groupAlign = validation.value.groupAlign ?? 'center'
 
+    // First pass: build every text row and measure it so the widest
+    // non-empty row defines the text block width.
+    const builtRows: {
+      field: 'text' | 'textLine2'
+      shape: Shape3D
+      width: number
+      alignment: 'left' | 'center' | 'right'
+    }[] = []
     for (const [index, row] of rows.entries()) {
       let textShape: Shape3D | null = null
       try {
@@ -160,30 +157,141 @@ export async function buildOpenGridLabelCardWithParts(
       if (!textShape) continue
       try {
         const box = textShape.boundingBox
-        let textWidth: number
         try {
-          textWidth = box.bounds[1][0] - box.bounds[0][0]
+          builtRows.push({
+            field: row.field,
+            shape: textShape,
+            width: box.bounds[1][0] - box.bounds[0][0],
+            alignment: row.alignment,
+          })
         } finally {
           box.delete()
         }
-        if (textWidth > textMaxX - textMinX)
-          throw new Error(`LABEL_CARD_TEXT_TOO_WIDE:${row.field}`)
-        let x = (textMinX + textMaxX) / 2
-        if (row.alignment === 'left') x = textMinX + textWidth / 2
-        if (row.alignment === 'right') x = textMaxX - textWidth / 2
-        const y =
-          ((rows.length - 1) / 2 - index) * (textHeight + config.textRowGap)
-        textShape = textShape.translate(x, y, accentZ)
+        textShape = null
+      } finally {
+        deleteShape(textShape)
+      }
+    }
+
+    const blockWidth = builtRows.reduce(
+      (max, row) => Math.max(max, row.width),
+      0,
+    )
+    const hasText = builtRows.length > 0
+
+    // Group layout: icon + minimum gap + text block positioned as one unit.
+    let iconX = 0
+    let iconY = 0
+    let textMinX = -safeHalfWidth
+    let textMaxX = safeHalfWidth
+    if (hasIcon && hasText) {
+      if (layout === 'stacked') {
+        iconX = 0
+        iconY = safeHalfHeight - iconSize / 2
+      } else {
+        const groupWidth =
+          iconSize + OPENGRID_LABEL_GRID.iconTextGap + blockWidth
+        if (groupWidth > safeWidth)
+          throw new Error(`LABEL_CARD_TEXT_TOO_WIDE:${builtRows[0]!.field}`)
+        const groupLeft =
+          groupAlign === 'left'
+            ? -safeHalfWidth
+            : groupAlign === 'right'
+              ? safeHalfWidth - groupWidth
+              : -groupWidth / 2
+        if (validation.value.iconPosition === 'left') {
+          iconX = groupLeft + iconSize / 2
+          textMinX = groupLeft + iconSize + OPENGRID_LABEL_GRID.iconTextGap
+        } else {
+          iconX = groupLeft + groupWidth - iconSize / 2
+          textMinX = groupLeft
+        }
+        textMaxX = textMinX + blockWidth
+      }
+    } else if (hasIcon) {
+      // Icon-only cards stay centered regardless of groupAlign.
+    } else if (hasText) {
+      const groupLeft =
+        groupAlign === 'left'
+          ? -safeHalfWidth
+          : groupAlign === 'right'
+            ? safeHalfWidth - blockWidth
+            : -blockWidth / 2
+      textMinX = groupLeft
+      textMaxX = groupLeft + blockWidth
+    }
+
+    for (const [index, built] of builtRows.entries()) {
+      let x: number
+      if (hasIcon && hasText && layout === 'inline') {
+        if (built.alignment === 'left') x = textMinX + built.width / 2
+        else if (built.alignment === 'right') x = textMaxX - built.width / 2
+        else x = (textMinX + textMaxX) / 2
+      } else if (layout === 'stacked') {
+        x = 0
+      } else if (!hasIcon && hasText) {
+        if (builtRows.length > 1 && built.alignment === 'left')
+          x = textMinX + built.width / 2
+        else if (builtRows.length > 1 && built.alignment === 'right')
+          x = textMaxX - built.width / 2
+        else x = (textMinX + textMaxX) / 2
+      } else {
+        x = 0
+      }
+      const y =
+        layout === 'stacked'
+          ? -safeHalfHeight + textHeight / 2
+          : ((builtRows.length - 1) / 2 - index) *
+            (textHeight + config.textRowGap)
+      let rowShape: Shape3D | null = built.shape.translate(x, y, accentZ)
+      try {
         if (accent) {
-          const pieces = makeCompound([accent, textShape]).asShape3D()
+          const pieces = makeCompound([accent, rowShape]).asShape3D()
           deleteShape(accent)
           accent = pieces
         } else {
-          accent = textShape
-          textShape = null
+          accent = rowShape
+          rowShape = null
         }
       } finally {
-        deleteShape(textShape)
+        deleteShape(rowShape)
+      }
+    }
+
+    if (hasIcon) {
+      let iconShape: Shape3D | null = null
+      try {
+        if (isOpenGridLabelScrewIconId(validation.value.icon)) {
+          iconShape = makeOpenGridLabelScrewShape({
+            iconId: validation.value.icon,
+            shaftRatio: parseOpenGridLabelScrewShaftRatio(
+              validation.value.text,
+            ),
+            size: iconSize,
+            depth: accentDepth,
+          })
+        } else {
+          iconShape = makeLabelCardIconShape(
+            validation.value.icon,
+            accentDepth,
+            iconSize,
+          )
+        }
+        const translated = iconShape.translate(iconX, iconY, accentZ)
+        try {
+          if (accent) {
+            const fused = makeCompound([accent, translated]).asShape3D()
+            deleteShape(accent)
+            accent = fused
+          } else {
+            accent = translated
+          }
+        } finally {
+          if (translated !== (accent as unknown)) deleteShape(translated)
+        }
+      } catch (error) {
+        deleteShape(iconShape)
+        throw error
       }
     }
 
