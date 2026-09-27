@@ -317,6 +317,23 @@ describe('OpenGrid Label Card contract', () => {
     }
   })
 
+  it('rejects stacked layout without an icon', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        icon: 'none',
+        layout: 'stacked',
+        text: 'M4',
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [
+        { field: 'layout', messageId: 'validation.labelCardStackedNeedsIcon' },
+      ],
+    })
+  })
+
   it('rejects a second text row and impossible stacks in stacked layout', () => {
     expect(
       validateOpenGridLabelCardParameters({

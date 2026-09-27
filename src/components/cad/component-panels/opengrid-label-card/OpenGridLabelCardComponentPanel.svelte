@@ -168,6 +168,11 @@
         </button>
       {/each}
     </div>
+    {#if fieldErrors.layout}
+      <span class="text-sm text-error" role="alert"
+        >{formatValidationIssue(locale, fieldErrors.layout)}</span
+      >
+    {/if}
   </div>
 
   {#if rawLayout === 'inline'}

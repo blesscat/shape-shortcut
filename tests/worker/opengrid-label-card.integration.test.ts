@@ -601,7 +601,6 @@ describe('label card layout modes', () => {
         right.parts.find((part) => part.name === 'accent')!.shape,
       )
       // The icon edge hugs the corresponding safe-area edge (1 mm inset).
-      console.log('DBG LR', leftBounds[0]![0], rightBounds[1]![0])
       expect(leftBounds[0]![0]!).toBeCloseTo(-29, 0)
       expect(rightBounds[1]![0]!).toBeCloseTo(29, 0)
     } finally {
@@ -651,12 +650,6 @@ describe('label card layout modes', () => {
       {},
     )
     try {
-      const shortBounds = shapeBounds(
-        short.parts.find((part) => part.name === 'accent')!.shape,
-      )
-      const longBounds = shapeBounds(
-        long.parts.find((part) => part.name === 'accent')!.shape,
-      )
       const shortVolume = measureVolume(
         short.parts.find((part) => part.name === 'accent')!.shape,
       )

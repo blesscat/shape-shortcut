@@ -139,6 +139,10 @@ export async function buildOpenGridLabelCardWithParts(
       field: 'text' | 'textLine2'
       shape: Shape3D
       width: number
+      minX: number
+      maxX: number
+      minY: number
+      maxY: number
       alignment: 'left' | 'center' | 'right'
     }[] = []
     for (const [index, row] of rows.entries()) {
@@ -162,6 +166,10 @@ export async function buildOpenGridLabelCardWithParts(
             field: row.field,
             shape: textShape,
             width: box.bounds[1][0] - box.bounds[0][0],
+            minX: box.bounds[0][0],
+            maxX: box.bounds[1][0],
+            minY: box.bounds[0][1],
+            maxY: box.bounds[1][1],
             alignment: row.alignment,
           })
         } finally {
@@ -248,6 +256,10 @@ export async function buildOpenGridLabelCardWithParts(
           : ((builtRows.length - 1) / 2 - index) *
             (textHeight + config.textRowGap)
       let rowShape: Shape3D | null = built.shape.translate(x, y, accentZ)
+      built.minX = x - built.width / 2
+      built.maxX = x + built.width / 2
+      built.minY = y - textHeight / 2
+      built.maxY = y + textHeight / 2
       try {
         if (accent) {
           const pieces = makeCompound([accent, rowShape]).asShape3D()
@@ -283,6 +295,23 @@ export async function buildOpenGridLabelCardWithParts(
         }
         const translated = iconShape.translate(iconX, iconY, accentZ)
         try {
+          // Icon and text regions are disjoint by layout construction; guard
+          // against numeric drift producing an overlapping two-color accent.
+          const iconBox = translated.boundingBox
+          try {
+            for (const row of builtRows) {
+              if (
+                iconBox.bounds[0][0] < row.maxX &&
+                iconBox.bounds[1][0] > row.minX &&
+                iconBox.bounds[0][1] < row.maxY &&
+                iconBox.bounds[1][1] > row.minY
+              ) {
+                throw new Error('LABEL_CARD_ICON_TEXT_OVERLAP')
+              }
+            }
+          } finally {
+            iconBox.delete()
+          }
           if (accent) {
             const fused = makeCompound([accent, translated]).asShape3D()
             deleteShape(accent)
