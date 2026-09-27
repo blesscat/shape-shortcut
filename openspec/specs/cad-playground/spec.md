@@ -42,6 +42,7 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 - **THEN** the camera pose for that orientation MUST be restored from browser persistence
 - **AND** the selected locale MUST provide a visible reset action that restores the orientation's default pose
 - **AND** the reset default pose MUST frame the currently rendered grid
+- **AND** resetting MUST cancel any remaining camera motion so the default pose stays fixed
 
 #### Scenario: Default wall camera follows the visible grid
 

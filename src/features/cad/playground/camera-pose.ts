@@ -16,6 +16,7 @@ export type PlaygroundCameraState = {
 
 export const PLAYGROUND_CAMERA_STORAGE_KEY =
   'shape-shortcut:playground-camera:v1'
+export const PLAYGROUND_CAMERA_MIN_FAR = 20_000
 
 type DefaultPlaygroundCameraPoseOptions = {
   mode: keyof PlaygroundCameraState
@@ -25,6 +26,7 @@ type DefaultPlaygroundCameraPoseOptions = {
 
 const DESKTOP_CAMERA_MARGIN = 1.15
 const WALL_CAMERA_MARGIN = 1.1
+const CAMERA_FAR_MARGIN = 1.1
 // Wall pieces protrude toward +Y, so this views their usable face with a
 // small elevation that still makes their depth readable.
 const WALL_CAMERA_DIRECTION = new Vector3(0, 1, 0.2).normalize()
@@ -126,6 +128,39 @@ export function defaultPlaygroundCameraPose({
   }
 
   return defaultWallCameraPose(gridSize, aspect)
+}
+
+export function playgroundCameraFarPlane({
+  mode,
+  gridSize,
+  pose,
+}: {
+  mode: keyof PlaygroundCameraState
+  gridSize: PlaygroundGridSize
+  pose: PlaygroundCameraPose
+}): number {
+  const { width, height } = gridDimensions(gridSize)
+  const cameraPosition = new Vector3(...pose.position)
+  const forward = new Vector3(...pose.target).sub(cameraPosition)
+  const targetDistance = forward.length()
+  if (targetDistance === 0) return PLAYGROUND_CAMERA_MIN_FAR
+  forward.normalize()
+
+  let farthestDepth = targetDistance
+  for (const horizontal of [-width / 2, width / 2]) {
+    for (const vertical of [-height / 2, height / 2]) {
+      const corner =
+        mode === 'wall'
+          ? new Vector3(horizontal, 0, vertical)
+          : new Vector3(horizontal, vertical, 0)
+      const depth = corner.sub(cameraPosition).dot(forward)
+      farthestDepth = Math.max(farthestDepth, depth)
+    }
+  }
+
+  // Keep the usual range for depth precision and expand it only when the
+  // current pose would put part of the grid beyond the far clipping plane.
+  return Math.max(PLAYGROUND_CAMERA_MIN_FAR, farthestDepth * CAMERA_FAR_MARGIN)
 }
 
 type CameraStorage = Pick<Storage, 'getItem' | 'setItem'>

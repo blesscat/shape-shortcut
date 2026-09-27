@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 
 import { PLAYGROUND_GRID_PITCH } from '../../src/cad-contract/scene'
-import { defaultPlaygroundCameraPose } from '../../src/features/cad/playground/camera-pose'
+import {
+  defaultPlaygroundCameraPose,
+  playgroundCameraFarPlane,
+  PLAYGROUND_CAMERA_MIN_FAR,
+} from '../../src/features/cad/playground/camera-pose'
 import { CAD_VIEWPORT_CAMERA } from '../../src/features/cad/viewport/coordinates'
 
 type GridSize = { x: number; y: number }
@@ -20,7 +24,7 @@ function projectedGridCorners(
     CAD_VIEWPORT_CAMERA.fov,
     aspect,
     0.1,
-    20_000,
+    playgroundCameraFarPlane({ mode: 'wall', gridSize, pose }),
   )
   camera.position.set(...pose.position)
   camera.up.set(...CAD_VIEWPORT_CAMERA.up)
@@ -78,6 +82,7 @@ describe('playground default camera pose', () => {
     ['square portrait', { x: 50, y: 50 }, 9 / 16],
     ['wide portrait', { x: 200, y: 1 }, 9 / 16],
     ['tall portrait', { x: 1, y: 200 }, 9 / 16],
+    ['wide narrow viewport', { x: 200, y: 1 }, 0.35],
   ] as const)(
     'fits every wall-grid corner for %s',
     (_name, gridSize, aspect) => {
@@ -91,4 +96,17 @@ describe('playground default camera pose', () => {
       }
     },
   )
+
+  it('extends the far plane when narrow framing exceeds the baseline', () => {
+    const gridSize = { x: 200, y: 1 }
+    const pose = defaultPlaygroundCameraPose({
+      mode: 'wall',
+      gridSize,
+      aspect: 0.35,
+    })
+
+    expect(
+      playgroundCameraFarPlane({ mode: 'wall', gridSize, pose }),
+    ).toBeGreaterThan(PLAYGROUND_CAMERA_MIN_FAR)
+  })
 })

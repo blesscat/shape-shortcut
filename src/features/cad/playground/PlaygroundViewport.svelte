@@ -25,6 +25,8 @@
   import {
     defaultPlaygroundCameraPose,
     loadPlaygroundCameraState,
+    playgroundCameraFarPlane,
+    PLAYGROUND_CAMERA_MIN_FAR,
     savePlaygroundCameraState,
     type PlaygroundCameraPose,
   } from './camera-pose'
@@ -66,6 +68,8 @@
 
   let cameraState = loadPlaygroundCameraState()
   let cameraPoseIsCustom = $state(false)
+  let cameraInteractionActive = $state(false)
+  let pendingCameraMode: PlaygroundViewMode | null = $state(null)
   let renderedCameraPose: PlaygroundCameraPose | null = $state(null)
 
   let container: HTMLDivElement | undefined = $state()
@@ -350,11 +354,42 @@
     )
   }
 
+  function clearControlMomentum(): void {
+    if (!controls) return
+    // One non-damped update consumes and clears OrbitControls' remaining
+    // rotation and pan deltas before a programmatic pose is applied.
+    const dampingWasEnabled = controls.enableDamping
+    controls.enableDamping = false
+    controls.update()
+    controls.enableDamping = dampingWasEnabled
+  }
+
+  function persistPendingCameraPose(): void {
+    const mode = pendingCameraMode
+    if (!mode) return
+
+    clearControlMomentum()
+    const pose = currentCameraPose()
+    pendingCameraMode = null
+    if (!pose) return
+
+    cameraState = {
+      ...cameraState,
+      [mode]: pose,
+    }
+    savePlaygroundCameraState(cameraState)
+    renderedCameraPose = pose
+  }
+
   function applyCameraPose(mode: PlaygroundViewMode): void {
     if (!camera || !controls) return
+    persistPendingCameraPose()
+    clearControlMomentum()
     const pose = cameraState[mode] ?? defaultPoseFor(mode)
     camera.position.set(...pose.position)
     controls.target.set(...pose.target)
+    camera.far = playgroundCameraFarPlane({ mode, gridSize, pose })
+    camera.updateProjectionMatrix()
     controls.update()
     renderedCameraPose = currentCameraPose()
     // A restored pose counts as custom: it must survive further reloads.
@@ -372,6 +407,7 @@
   }
 
   function resetCameraPose(): void {
+    persistPendingCameraPose()
     delete cameraState[viewMode]
     savePlaygroundCameraState(cameraState)
     cameraPoseIsCustom = false
@@ -477,7 +513,7 @@
       CAD_VIEWPORT_CAMERA.fov,
       container.clientWidth / Math.max(container.clientHeight, 1),
       0.1,
-      20000,
+      PLAYGROUND_CAMERA_MIN_FAR,
     )
     camera.position.set(...CAD_VIEWPORT_CAMERA.position)
     camera.up.set(...CAD_VIEWPORT_CAMERA.up)
@@ -485,20 +521,33 @@
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.addEventListener('start', () => {
+      cameraInteractionActive = true
       controlStartPose = currentCameraPose()
     })
+    controls.addEventListener('change', () => {
+      const pose = currentCameraPose()
+      if (!pose) return
+      renderedCameraPose = pose
+      if (
+        cameraInteractionActive &&
+        controlStartPose &&
+        cameraPoseChanged(controlStartPose, pose)
+      ) {
+        cameraPoseIsCustom = true
+      }
+    })
     controls.addEventListener('end', () => {
+      cameraInteractionActive = false
       const pose = currentCameraPose()
       const startPose = controlStartPose
       controlStartPose = null
-      if (!pose || (startPose && !cameraPoseChanged(startPose, pose))) return
-      cameraState = {
-        ...cameraState,
-        [viewMode]: pose,
+      if (!pose || (startPose && !cameraPoseChanged(startPose, pose))) {
+        cameraPoseIsCustom = cameraState[viewMode] != null
+        return
       }
-      savePlaygroundCameraState(cameraState)
       renderedCameraPose = pose
       cameraPoseIsCustom = true
+      pendingCameraMode = viewMode
     })
 
     const hemisphere = new THREE.HemisphereLight(
@@ -544,9 +593,15 @@
     })
     resizeObserver.observe(container)
 
+    const settleCameraBeforePageExit = () => persistPendingCameraPose()
+    window.addEventListener('pagehide', settleCameraBeforePageExit)
+
     const animate = () => {
       frameHandle = requestAnimationFrame(animate)
-      controls?.update()
+      const cameraChanged = controls?.update() ?? false
+      if (!cameraChanged && !cameraInteractionActive && pendingCameraMode) {
+        persistPendingCameraPose()
+      }
       if (renderer && scene && camera) renderer.render(scene, camera)
     }
     animate()
@@ -560,6 +615,8 @@
 
     return () => {
       cancelAnimationFrame(frameHandle)
+      window.removeEventListener('pagehide', settleCameraBeforePageExit)
+      persistPendingCameraPose()
       resizeObserver?.disconnect()
       resizeObserver = null
       controls?.dispose()
@@ -632,6 +689,9 @@
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
   data-camera-pose={cameraPoseIsCustom ? 'custom' : 'default'}
+  data-camera-settled={cameraInteractionActive || pendingCameraMode
+    ? 'false'
+    : 'true'}
   data-camera-position={renderedCameraPose?.position.join(',') ?? ''}
   data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
