@@ -684,7 +684,7 @@
 
 <div
   bind:this={container}
-  class="relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
+  class="playground-viewport relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
@@ -724,3 +724,10 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .playground-viewport :global(canvas) {
+    display: block;
+    border-radius: inherit;
+  }
+</style>
