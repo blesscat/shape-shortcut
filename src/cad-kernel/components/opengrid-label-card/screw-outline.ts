@@ -63,7 +63,14 @@ function headOutline(head: ScrewHeadStyle): {
 } {
   if (head === 'pan') {
     const angle = Math.asin(PAN.shaftHalf / PAN.radius)
-    const arc = circleArc(0, CENTER_Y, PAN.radius, -angle, Math.PI + angle, 14)
+    const arc = circleArc(
+      0,
+      CENTER_Y,
+      PAN.radius,
+      -(Math.PI - angle),
+      Math.PI - angle,
+      14,
+    )
     return {
       start: arc,
       shaftHalf: PAN.shaftHalf,
@@ -88,7 +95,9 @@ function headOutline(head: ScrewHeadStyle): {
 /**
  * Full screw silhouette on the 16-unit grid: head at the bottom, sawtooth
  * shaft rising with the given ratio (0..1), flat tip, bounding box centered
- * on the icon origin. One closed contour.
+ * on the icon origin. One closed contour. The pan dome sweeps symmetrically
+ * through the bottom from the left shaft base to the right shaft base, and
+ * the final left-descent vertex is omitted to avoid a degenerate closure.
  */
 export function screwOutlinePolygon16(
   head: ScrewHeadStyle,
@@ -112,7 +121,8 @@ export function screwOutlinePolygon16(
     points.push([shaftHalf + offset, baseY + k * step])
   }
   points.push([-shaftHalf, tip])
-  for (let k = teeth - 1; k >= 0; k -= 1) {
+  const leftStop = head === 'pan' ? 1 : 0
+  for (let k = teeth - 1; k >= leftStop; k -= 1) {
     const offset = k % 2 === 1 ? TOOTH_DEPTH : 0
     points.push([-(shaftHalf + offset), baseY + k * step])
   }

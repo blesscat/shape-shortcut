@@ -11,7 +11,43 @@ import {
 } from '../../src/cad-contract/units'
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
+import { screwOutlinePolygon16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
+
+function pointOnSegment(
+  point: readonly [number, number],
+  mirror: readonly [number, number],
+  a: readonly [number, number],
+  b: readonly [number, number],
+): boolean {
+  const cross =
+    (b[0] - a[0]) * (mirror[1] - a[1]) - (b[1] - a[1]) * (mirror[0] - a[0])
+  if (Math.abs(cross) > 1e-6) return false
+  const dot =
+    (mirror[0] - a[0]) * (b[0] - a[0]) +
+    (mirror[1] - a[1]) * (b[1] - a[1])
+  if (dot < -1e-6) return false
+  const lengthSquared = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
+  return dot <= lengthSquared + 1e-6
+}
+
+function segmentsCross(
+  p1: readonly [number, number],
+  p2: readonly [number, number],
+  p3: readonly [number, number],
+  p4: readonly [number, number],
+): boolean {
+  const d = (a: readonly number[], b: readonly number[], c: readonly number[]) =>
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+  const d1 = d(p3, p4, p1)
+  const d2 = d(p3, p4, p2)
+  const d3 = d(p1, p2, p3)
+  const d4 = d(p1, p2, p4)
+  return (
+    ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+    ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+  )
+}
 
 function svgPathBounds(d: string): {
   min: [number, number]
@@ -249,7 +285,63 @@ describe('OpenGrid Label Card contract', () => {
     }
   })
 
-  it('renders screw gallery paths inside the 16-unit viewBox', () => {
+  it('keeps the screw silhouette symmetric and free of self-intersections', () => {
+    const onOutline = (
+      point: readonly [number, number],
+      polygon: readonly (readonly [number, number])[],
+    ): boolean =>
+      polygon.some((a, i) => {
+        const b = polygon[(i + 1) % polygon.length]!
+        const cross =
+          (b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0])
+        if (Math.abs(cross) > 1e-6) return false
+        const dot =
+          (point[0] - a[0]) * (b[0] - a[0]) + (point[1] - a[1]) * (b[1] - a[1])
+        return dot >= -1e-6 && dot <= (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2 + 1e-6
+      })
+
+    for (const head of ['pan', 'hex'] as const) {
+      for (const ratio of [0.35, 0.55, 0.65, 0.87, 1]) {
+        const polygon = screwOutlinePolygon16(head, ratio)
+
+        // x-symmetric about the icon origin
+        const xs = polygon.map((point) => point[0])
+        expect(
+          Math.abs(Math.min(...xs) + Math.max(...xs)),
+          `${head} ${ratio} x-symmetry`,
+        ).toBeLessThan(1e-6)
+
+        // every vertex and its x-mirror lie on the outline
+        for (const [px, py] of polygon) {
+          expect(onOutline([px, py], polygon), `${head} ${ratio} vertex`).toBe(
+            true,
+          )
+          expect(
+            onOutline([-px, py], polygon),
+            `${head} ${ratio} mirror of ${px},${py}`,
+          ).toBe(true)
+        }
+
+        // no self-intersections between non-adjacent edges
+        let crossings = 0
+        const n = polygon.length
+        for (let i = 0; i < n; i += 1) {
+          for (let j = i + 2; j < n - 1; j += 1) {
+            if (
+              segmentsCross(
+                polygon[i]!,
+                polygon[i + 1]!,
+                polygon[j]!,
+                polygon[j + 1]!,
+              )
+            )
+              crossings += 1
+          }
+        }
+        expect(crossings).toBe(0)
+      }
+    }
+  })
     // Arc commands make generic bounds parsing unreliable; the screw paths
     // are pure lines, so they are checked exactly.
     for (const iconId of ['screw-pan', 'screw-hex'] as const) {
@@ -372,4 +464,3 @@ describe('OpenGrid Label Card contract', () => {
       ],
     })
   })
-})
