@@ -61,7 +61,7 @@ describe('playground default camera pose', () => {
     expect(landscape.position[0]).toBeCloseTo(landscape.position[2])
   })
 
-  it('centers the wall grid with slight side and elevation angles', () => {
+  it('centers the wall grid with a three-quarter viewing angle', () => {
     const pose = defaultPlaygroundCameraPose({
       mode: 'wall',
       gridSize: { x: 50, y: 50 },
@@ -69,11 +69,11 @@ describe('playground default camera pose', () => {
     })
 
     expect(pose.target).toEqual([0, 0, 0])
-    expect(pose.position[0]).toBeGreaterThan(0)
+    expect(pose.position[0]).toBeLessThan(0)
     expect(pose.position[1]).toBeGreaterThan(0)
     expect(pose.position[2]).toBeGreaterThan(0)
-    expect(pose.position[0] / pose.position[1]).toBeCloseTo(0.18)
-    expect(pose.position[2] / pose.position[1]).toBeCloseTo(0.2)
+    expect(pose.position[0] / pose.position[1]).toBeCloseTo(-0.75)
+    expect(pose.position[2] / pose.position[1]).toBeCloseTo(0.4)
   })
 
   it.each([

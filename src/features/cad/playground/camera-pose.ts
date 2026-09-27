@@ -27,9 +27,9 @@ type DefaultPlaygroundCameraPoseOptions = {
 const DESKTOP_CAMERA_MARGIN = 1.15
 const WALL_CAMERA_MARGIN = 1.1
 const CAMERA_FAR_MARGIN = 1.1
-// Wall pieces protrude toward +Y, so this views their usable face with small
-// horizontal and vertical offsets that make their side and depth readable.
-const WALL_CAMERA_DIRECTION = new Vector3(0.18, 1, 0.2).normalize()
+// Wall pieces protrude toward +Y, so this three-quarter view keeps their
+// usable face dominant while making their side and depth easy to read.
+const WALL_CAMERA_DIRECTION = new Vector3(-0.75, 1, 0.4).normalize()
 const WALL_UP = new Vector3(0, 0, 1)
 
 function vectorTuple(vector: Vector3): [number, number, number] {
