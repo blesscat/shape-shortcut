@@ -59,3 +59,18 @@ test('production build hides the STEP action on the Snap remover', async ({
   })
   await expect(page.getByRole('button', { name: '下載 STEP' })).toHaveCount(0)
 })
+
+test('production build hides the playground STEP download action', async ({
+  page,
+}) => {
+  await page.goto('/zh-Hant/cad/playground')
+  await page.getByTestId('playground-add-model').selectOption('box')
+  await page.getByTestId('playground-add').click()
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+    { timeout: 90_000 },
+  )
+  await expect(page.getByTestId('playground-export-step')).toHaveCount(0)
+  await expect(page.getByTestId('playground-export-stl')).toBeVisible()
+})

@@ -23,6 +23,10 @@ import {
   makeError,
 } from './cad-worker-events'
 import { generateCadCandidate } from './cad-worker-generation'
+import {
+  sceneInstanceExportCommand,
+  sceneInstanceGenerateCommand,
+} from './cad-worker-scene'
 import { CadWorkerLifecycle } from './cad-worker-lifecycle'
 import type {
   CadWorkerBuildOptions,
@@ -131,6 +135,23 @@ export class CadWorkerRuntime {
           return
         case 'export.3mf':
           await this.exportThreeMf(command)
+          return
+        case 'scene.instance.generate':
+          await sceneInstanceGenerateCommand(command, {
+            epoch: this.epoch,
+            assets: this.assets,
+            buildOptions: this.openGridBuildOptions,
+            emit: this.emit,
+          })
+          return
+        case 'scene.instance.export.step':
+        case 'scene.instance.export.stl':
+          await sceneInstanceExportCommand(command, {
+            epoch: this.epoch,
+            assets: this.assets,
+            buildOptions: this.openGridBuildOptions,
+            emit: this.emit,
+          })
           return
         case 'worker.dispose':
           this.dispose()

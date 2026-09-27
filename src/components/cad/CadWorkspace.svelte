@@ -29,6 +29,7 @@
     systemContextForModel,
     type OpenGridSystemContext,
   } from '../../features/cad/system-entry-context'
+  import { serializePlaygroundScene } from '../../features/cad/playground/scene-file'
   import CadProgressIndicator from './CadProgressIndicator.svelte'
   import CadErrorToast from './CadErrorToast.svelte'
   import CadWorkspacePanel from './CadWorkspacePanel.svelte'
@@ -136,6 +137,34 @@
     controller?.onRestoreDefaults()
     resetVersion += 1
   }
+
+  function handleDownloadSettings(): void {
+    const current = snapshot
+    if (!current) return
+    if (
+      current.state.status !== 'ready' &&
+      current.state.status !== 'generating'
+    )
+      return
+    const sceneFile = serializePlaygroundScene(colors, [
+      {
+        label: null,
+        modelId: current.state.modelId,
+        parameters: current.state.input,
+        placement: null,
+        colors,
+      },
+    ])
+    const blob = new Blob([JSON.stringify(sceneFile, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${current.state.modelId}-settings.json`
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 0)
+  }
 </script>
 
 {#if snapshot}
@@ -161,6 +190,7 @@
       onRetry={handleRetry}
       {resetVersion}
       onRestoreDefaults={handleRestoreDefaults}
+      onDownloadSettings={handleDownloadSettings}
     />
     <CadViewport
       {locale}

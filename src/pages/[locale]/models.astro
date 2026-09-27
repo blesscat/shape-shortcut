@@ -24,7 +24,7 @@ import {
   type ModelDefinition,
 } from '../../features/cad/model-catalog'
 import { SUPPORTED_LOCALES, isLocale, translate, type Locale } from '../../i18n'
-import { localizedCadPathFor } from '../../i18n/routes'
+import { localizedCadPathFor, localizedPathFor } from '../../i18n/routes'
 
 export function getStaticPaths() {
   return SUPPORTED_LOCALES.map((locale) => ({
@@ -128,6 +128,13 @@ function detailsDialogIdFor(definition: ModelDefinition): string {
       >
         {t('models.title')}
       </h1>
+      <a
+        class="inline-flex w-fit items-center rounded-lg border border-border bg-background px-4 py-2 font-semibold text-foreground no-underline shadow-sm hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+        data-testid="playground-entry"
+        href={localizedPathFor(locale, '/cad/playground')}
+      >
+        {t('playground.entry')}
+      </a>
     </header>
 
     <div class="grid gap-12" aria-label={t('models.series')}>

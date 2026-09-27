@@ -1,0 +1,36 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro'
+import Playground from '../../../components/cad/playground/Playground.svelte'
+import { isLocale, translate, type Locale } from '../../../i18n'
+import { publicPathFor } from '../../../i18n/routes'
+
+export function getStaticPaths() {
+  return [
+    { params: { locale: 'zh-Hant' }, props: { locale: 'zh-Hant' } },
+    { params: { locale: 'en' }, props: { locale: 'en' } },
+  ]
+}
+
+const locale = Astro.props.locale as Locale
+if (!isLocale(locale)) throw new Error(`UNSUPPORTED_LOCALE:${locale}`)
+const t = (key: string) => translate(locale, key)
+---
+
+<SiteLayout
+  {locale}
+  fullWidth
+  title={t('playground.title')}
+  description={t('playground.description')}
+>
+  <section aria-labelledby="playground-title">
+    <header class="mb-4">
+      <a
+        class="text-base text-ink underline underline-offset-4"
+        href={publicPathFor(locale, 'models')}
+      >
+        {t('common.backToModels')}
+      </a>
+    </header>
+    <Playground client:only="svelte" {locale} />
+  </section>
+</SiteLayout>

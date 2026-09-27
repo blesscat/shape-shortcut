@@ -1,0 +1,23 @@
+---
+const targetPath = '/zh-Hant/cad/playground'
+---
+
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${targetPath}`} />
+    <link rel="canonical" href={targetPath} />
+    <title>OpenGrid Playground 規劃器 | Shape Shortcut</title>
+    <script is:inline define:vars={{ targetPath }}>
+      window.location.replace(targetPath + window.location.search)
+    </script>
+  </head>
+  <body>
+    <main>
+      <p>
+        <a href={targetPath}>返回模型選擇</a>
+      </p>
+    </main>
+  </body>
+</html>
