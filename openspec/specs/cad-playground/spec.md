@@ -49,7 +49,7 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 - **GIVEN** the wall orientation has no persisted custom camera pose
 - **WHEN** the wall grid extent or viewport aspect changes
 - **THEN** the camera MUST target the geometric center of the wall grid
-- **AND** the camera MUST view the grid from its component-facing +Y side with slight elevation
+- **AND** the camera MUST view the grid from its component-facing +Y side with slight horizontal and vertical angles
 - **AND** the camera MUST frame the complete wall grid using its current rectangular extent and viewport aspect
 - **AND** clicking the viewport without moving the camera MUST keep the default pose eligible for automatic reframing
 
