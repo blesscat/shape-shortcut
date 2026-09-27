@@ -112,6 +112,7 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 - **WHEN** the user drags one instance to a candidate whose footprint overlaps the other
 - **THEN** the candidate MUST be visibly marked invalid while it is previewed
 - **AND** releasing it MUST restore the dragged instance's original placement
+- **AND** the camera position, target, and persisted pose state MUST remain unchanged
 - **AND** the playground MUST show the placement-conflict diagnostic
 
 #### Scenario: Cancelled drag restores placement

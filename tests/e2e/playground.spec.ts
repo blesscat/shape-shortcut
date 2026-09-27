@@ -741,7 +741,7 @@ test('maps wall dragging to cell X and cell Y while preserving the mount', async
   await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
 })
 
-test('previews an overlapping drag as invalid and restores the original placement', async ({
+test('rejects an overlapping drag without changing placement or camera', async ({
   page,
 }) => {
   await useCompactPlaygroundGrid(page)
@@ -755,6 +755,9 @@ test('previews an overlapping drag as invalid and restores the original placemen
   const firstPoint = await findInstancePoint(page, 'inst-1')
   const secondPoint = await findInstancePoint(page, 'inst-2')
   const viewport = page.getByTestId('playground-viewport')
+  const cameraPosition = await viewport.getAttribute('data-camera-position')
+  const cameraTarget = await viewport.getAttribute('data-camera-target')
+  const cameraPose = await viewport.getAttribute('data-camera-pose')
 
   await page.mouse.move(secondPoint.x, secondPoint.y)
   await page.mouse.down()
@@ -768,6 +771,15 @@ test('previews an overlapping drag as invalid and restores the original placemen
 
   expect(await readSelectedPlacement(page)).toEqual(original)
   await expect(page.getByTestId('playground-diagnostic')).toBeVisible()
+  await expect(viewport).toHaveAttribute('data-camera-pose', cameraPose!)
+  expectSerializedVectorCloseTo(
+    await viewport.getAttribute('data-camera-position'),
+    cameraPosition,
+  )
+  expectSerializedVectorCloseTo(
+    await viewport.getAttribute('data-camera-target'),
+    cameraTarget,
+  )
 })
 
 test('refits only the default wall camera when framing inputs change', async ({
