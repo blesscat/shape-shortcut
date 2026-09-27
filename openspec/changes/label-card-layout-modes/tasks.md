@@ -38,4 +38,4 @@
 ## 6. Spec sync and verification
 
 - [ ] 6.1 Sync the label-card spec delta into main specs and validate
-- [x] 6.2 Regenerate the label-card model-previews captures (gear-fill defaults unaffected; capture at least one inline and one stacked sample for manual inspection)
+- [x] 6.2 Regenerate the label-card model-previews captures (default inline previews; a stacked sample with screw-pan/M4x16 captured to stacked-sample.png in this change folder)

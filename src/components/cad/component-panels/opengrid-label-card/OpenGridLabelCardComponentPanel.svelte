@@ -387,23 +387,25 @@
               max: config.maxTextLength,
             })}
           </span>
-          <label for={`label-card-${row.key}-alignment`}
-            >{translate(locale, 'panel.labelCard.alignment')}</label
-          >
-          <select
-            id={`label-card-${row.key}-alignment`}
-            value={rawParameters[row.alignment] ?? 'center'}
-            class="rounded-lg border border-border-field bg-panel px-3 py-2"
-            onchange={(event) =>
-              onInputChange(row.alignment, event.currentTarget.value)}
-          >
-            {#each alignments as alignment}<option value={alignment}
-                >{translate(
-                  locale,
-                  `panel.labelCard.align.${alignment}`,
-                )}</option
-              >{/each}
-          </select>
+          {#if !stacked}
+            <label for={`label-card-${row.key}-alignment`}
+              >{translate(locale, 'panel.labelCard.alignment')}</label
+            >
+            <select
+              id={`label-card-${row.key}-alignment`}
+              value={rawParameters[row.alignment] ?? 'center'}
+              class="rounded-lg border border-border-field bg-panel px-3 py-2"
+              onchange={(event) =>
+                onInputChange(row.alignment, event.currentTarget.value)}
+            >
+              {#each alignments as alignment}<option value={alignment}
+                  >{translate(
+                    locale,
+                    `panel.labelCard.align.${alignment}`,
+                  )}</option
+                >{/each}
+            </select>
+          {/if}
         </div>
       </ParameterField>
     {/if}

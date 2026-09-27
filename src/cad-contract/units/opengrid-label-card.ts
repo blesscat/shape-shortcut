@@ -302,6 +302,8 @@ export function validateOpenGridLabelCardParameters(
     textHeight > OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.twoRowMax
   )
     return invalid('textHeight', 'validation.labelCardTwoRowHeight')
+  if (layout === 'stacked' && parameters.icon === 'none')
+    return invalid('layout', 'validation.labelCardStackedNeedsIcon')
   if (
     layout === 'stacked' &&
     (parameters.text || parameters.textLine2 || parameters.icon !== 'none') &&

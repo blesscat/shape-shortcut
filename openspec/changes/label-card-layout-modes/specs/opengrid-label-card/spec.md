@@ -4,7 +4,7 @@
 
 ### Requirement: Label Card parameter contract
 
-The label card MUST expose width in integer `gridUnits` from 1 through 10, with each unit corresponding to 10 mm of actual card width, independently of the OpenGrid mounting pitch. Its other parameter groups MUST remain style `flat` or `raised`, an icon from the shared built-in set, and up to two optional text rows of at most six characters each. The panel MUST offer `iconPosition` as `left` or `right`, defaulting missing legacy values to `left`. The panel MUST offer `layout` as `inline` (icon beside text) or `stacked` (icon above text), defaulting missing legacy values to `inline`. The panel MUST offer `groupAlign` as `left`, `center`, or `right`, defaulting missing legacy values to `center`; `groupAlign` MUST apply only to `inline` layout. The panel MUST offer `iconSize` from 3 through 8 mm in 0.5 mm steps, defaulting missing legacy values to 6 mm. Defaults MUST be four units, raised style, the shared default icon, `inline` layout, `center` group alignment, 6 mm icon size and empty text. Validation MUST reject unknown keys, invalid units/icons/styles/layouts/group alignments/icon sizes, overlong text and content wider than the usable face. In `stacked` layout validation MUST reject a non-empty second text row. Legacy snapshots with `widthTier` in {20,30,40,60} MUST normalize to the corresponding unit count; mixed widthTier/gridUnits input MUST be rejected.
+The label card MUST expose width in integer `gridUnits` from 1 through 10, with each unit corresponding to 10 mm of actual card width, independently of the OpenGrid mounting pitch. Its other parameter groups MUST remain style `flat` or `raised`, an icon from the shared built-in set, and up to two optional text rows of at most six characters each. The panel MUST offer `iconPosition` as `left` or `right`, defaulting missing legacy values to `left`. The panel MUST offer `layout` as `inline` (icon beside text) or `stacked` (icon above text), defaulting missing legacy values to `inline`. The panel MUST offer `groupAlign` as `left`, `center`, or `right`, defaulting missing legacy values to `center`; `groupAlign` MUST apply only to `inline` layout. The panel MUST offer `iconSize` from 3 through 8 mm in 0.5 mm steps, defaulting missing legacy values to 6 mm. Defaults MUST be four units, raised style, the shared default icon, `inline` layout, `center` group alignment, 6 mm icon size and empty text. Validation MUST reject unknown keys, invalid units/icons/styles/layouts/group alignments/icon sizes, overlong text and content wider than the usable face. In `stacked` layout validation MUST reject a non-empty second text row and MUST reject a missing icon. Legacy snapshots with `widthTier` in {20,30,40,60} MUST normalize to the corresponding unit count; mixed widthTier/gridUnits input MUST be rejected.
 
 #### Scenario: Default parameters generate on first open
 
@@ -32,6 +32,11 @@ The label card MUST expose width in integer `gridUnits` from 1 through 10, with 
 
 - **WHEN** layout is `stacked` and the second text row is non-empty
 - **THEN** validation MUST return a field-specific error on the second row and prevent generation and export
+
+#### Scenario: Stacked layout requires an icon
+
+- **WHEN** layout is `stacked` and the icon is `none`
+- **THEN** validation MUST return a field-specific error on `layout` and prevent generation and export
 
 #### Scenario: New keys fall back for legacy snapshots
 
@@ -68,7 +73,7 @@ The card MUST be a flat plate whose insertion thickness is nominally 0.6 mm in b
 
 ### Requirement: Horizontal artwork with printable text height
 
-In `inline` layout the icon MUST sit to the selected left or right of one or two horizontal text lines, and the combined icon + minimum gap + widest text row MUST be treated as one group positioned `left`, `center`, or `right` inside the safe area per `groupAlign`. Text geometry MUST have a user-selected visible height from 2 to 7 mm (default 7 mm) and MUST NOT be reduced to fit a narrow card. The icon and text MUST keep at least the 2 mm minimum gap, remain vertically centered, and respect the retaining-rail safety margin. In `stacked` layout the icon MUST sit centered above a single centered text row separated by a 1 mm vertical gap, `iconSize + 1 + textHeight` MUST NOT exceed the 10 mm safe height, and `groupAlign` MUST NOT apply. Insufficient width or stacked height MUST produce a field diagnostic. Empty text MUST keep the icon centered.
+In `inline` layout the icon MUST sit to the selected left or right of one or two horizontal text lines, and the combined icon + minimum gap + widest text row MUST be treated as one group positioned `left`, `center`, or `right` inside the safe area per `groupAlign`. Text geometry MUST have a user-selected visible height from 2 to 7 mm (default 7 mm) and MUST NOT be reduced to fit a narrow card. The icon and text MUST keep at least the 2 mm minimum gap, remain vertically centered, and respect the retaining-rail safety margin. In `stacked` layout the icon MUST sit centered above a single centered text row with a vertical separation of at least 1 mm, `iconSize + 1 + textHeight` MUST NOT exceed the 10 mm safe height, `groupAlign` MUST NOT apply, and `stacked` MUST require a selected icon (icon `none` MUST be rejected). Insufficient width or stacked height MUST produce a field diagnostic. Empty text MUST keep the icon centered.
 
 #### Scenario: Switch the icon side
 
@@ -89,7 +94,7 @@ In `inline` layout the icon MUST sit to the selected left or right of one or two
 #### Scenario: Stacked layout centers the icon above the text
 
 - **WHEN** layout is `stacked` with an icon and one text row sized to fit
-- **THEN** the icon MUST sit horizontally centered above the centered text row with a 1 mm vertical gap
+- **THEN** the icon MUST sit horizontally centered above the centered text row with at least a 1 mm vertical gap
 - **AND** `groupAlign` MUST NOT shift the stack
 
 #### Scenario: Stacked layout rejects combinations that exceed the safe height

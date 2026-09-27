@@ -7,7 +7,7 @@ import { screwOutlinePolygon16, type ScrewHeadStyle } from './screw-outline'
 export const OPENGRID_LABEL_SCREW_SHAFT_RATIO = {
   min: 0.35,
   max: 1,
-  fallback: 0.65,
+  fallback: 0.55,
   lengthMin: 4,
   lengthMax: 30,
 } as const

@@ -13,6 +13,24 @@ import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
 
+function svgPathBounds(d: string): {
+  min: [number, number]
+  max: [number, number]
+} {
+  const numbers = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? []
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
+  for (let i = 0; i + 1 < numbers.length; i += 2) {
+    minX = Math.min(minX, numbers[i]!)
+    maxX = Math.max(maxX, numbers[i]!)
+    minY = Math.min(minY, numbers[i + 1]!)
+    maxY = Math.max(maxY, numbers[i + 1]!)
+  }
+  return { min: [minX, minY], max: [maxX, maxY] }
+}
+
 describe('OpenGrid Label Card contract', () => {
   it('uses the confirmed v2 defaults', () => {
     expect(OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters).toEqual({
@@ -228,6 +246,23 @@ describe('OpenGrid Label Card contract', () => {
       (icon) => icon !== 'none',
     )) {
       expect(LABEL_CARD_ICON_PATHS[iconId], iconId).toBeDefined()
+    }
+  })
+
+  it('renders screw gallery paths inside the 16-unit viewBox', () => {
+    // Arc commands make generic bounds parsing unreliable; the screw paths
+    // are pure lines, so they are checked exactly.
+    for (const iconId of ['screw-pan', 'screw-hex'] as const) {
+      const icon = LABEL_CARD_ICON_PATHS[iconId]
+      expect(icon, iconId).toBeDefined()
+      expect(icon.evenOdd).toBe(false)
+      for (const d of icon.paths) {
+        const { min, max } = svgPathBounds(d)
+        expect(min[0], `${iconId} min x`).toBeGreaterThanOrEqual(-0.05)
+        expect(min[1], `${iconId} min y`).toBeGreaterThanOrEqual(-0.05)
+        expect(max[0], `${iconId} max x`).toBeLessThanOrEqual(16.05)
+        expect(max[1], `${iconId} max y`).toBeLessThanOrEqual(16.05)
+      }
     }
   })
 

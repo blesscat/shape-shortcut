@@ -15,10 +15,7 @@ import {
   OPENGRID_LABEL_CARD_HEIGHT,
 } from '../../src/cad-contract/units/opengrid-label-shared'
 import { OPENGRID_LABEL_CARD_CONFIGURATION } from '../../src/cad-contract/units/opengrid-label-card'
-import {
-  buildOpenGridOpenConnectOrganizer,
-} from '../../src/cad-kernel/components/opengrid-openconnect-organizer/builder'
-import { boundsForOpenGridOpenConnectOrganizer } from '../../src/cad-contract/units/opengrid-openconnect-organizer'
+import { buildOpenGridOpenConnectOrganizer } from '../../src/cad-kernel/components/opengrid-openconnect-organizer/builder'
 import { inspectOpenGridOpenConnectOrganizerShapeQuality } from '../../src/cad-kernel/components/opengrid-openconnect-organizer/quality'
 import { buildOpenGridLabelCardWithParts } from '../../src/cad-kernel/components/opengrid-label-card/builder'
 import { inspectOpenGridLabelCardShapeQuality } from '../../src/cad-kernel/components/opengrid-label-card/quality'
@@ -119,9 +116,7 @@ describe('integrated front label slot geometry', () => {
                   .translate(
                     0,
                     slot.frontY - OPENGRID_LABEL_SLOT.depthClearance / 2,
-                    slot.cardBottom +
-                    OPENGRID_LABEL_CARD_HEIGHT / 2 +
-                    lift,
+                    slot.cardBottom + OPENGRID_LABEL_CARD_HEIGHT / 2 + lift,
                   )
                 try {
                   expect(Math.abs(overlapVolume(shape, placed))).toBeLessThan(
@@ -192,15 +187,6 @@ describe('integrated front label slot geometry', () => {
           meshBRep(candidate, { tolerance: 0.05, angularTolerance: 0.1 }),
           locked,
         )
-      {
-        const rep = await inspect(plain)
-        console.log('DBG plain failures:', JSON.stringify(rep.failures))
-        console.log('DBG plain bounds:', JSON.stringify(rep.bounds))
-        console.log(
-          'DBG expected:',
-          JSON.stringify(boundsForOpenGridOpenConnectOrganizer(value)),
-        )
-      }
       expect((await inspect(plain)).failures).toContain('label-slot-material')
       expect((await inspect(blocked)).failures).toContain('label-slot-seat')
     } finally {

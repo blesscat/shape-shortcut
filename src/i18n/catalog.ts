@@ -598,6 +598,8 @@ export const zhHantMessages = {
   'parameter.labelSlotEnabled': '正面標籤卡槽',
   'panel.labelCard.unitWidth': '{width} mm · 每格 10 mm · 1–{max} 格',
   'panel.labelCard.layout': '版式',
+  'panel.labelCard.icon.screw-pan': '螺絲（傘頭）',
+  'panel.labelCard.icon.screw-hex': '螺絲（六角頭）',
   'panel.labelCard.layout.inline': '橫式',
   'panel.labelCard.layout.stacked': 'icon 上／文字下',
   'panel.labelCard.groupAlign': '群組對齊',
@@ -606,6 +608,8 @@ export const zhHantMessages = {
   'panel.labelCard.groupAlign.right': '靠右',
   'panel.labelCard.iconSize': 'icon 尺寸',
   'validation.labelCardStackedSingleRow': 'icon 上／文字下版式只支援一排文字。',
+  'validation.labelCardStackedNeedsIcon':
+    'icon 上／文字下版式需要選擇一個 icon。',
   'validation.labelCardStackedHeight':
     'icon 尺寸加文字高度超出卡片可用高度，請縮小 icon 或文字。',
   'panel.openConnectOrganizer.labelWidth':
@@ -1614,6 +1618,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'parameter.labelSlotEnabled': 'Front label slot',
   'panel.labelCard.unitWidth': '{width} mm · 10 mm per unit · 1–{max} units',
   'panel.labelCard.layout': 'Layout',
+  'panel.labelCard.icon.screw-pan': 'Screw (pan head)',
+  'panel.labelCard.icon.screw-hex': 'Screw (hex head)',
   'panel.labelCard.layout.inline': 'Inline',
   'panel.labelCard.layout.stacked': 'Icon above text',
   'panel.labelCard.groupAlign': 'Group alignment',
@@ -1623,6 +1629,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.labelCard.iconSize': 'Icon size',
   'validation.labelCardStackedSingleRow':
     'The icon-above-text layout supports a single text row.',
+  'validation.labelCardStackedNeedsIcon':
+    'The icon-above-text layout requires selecting an icon.',
   'validation.labelCardStackedHeight':
     'Icon size plus text height exceeds the usable card height. Shrink the icon or the text.',
   'panel.openConnectOrganizer.labelWidth':

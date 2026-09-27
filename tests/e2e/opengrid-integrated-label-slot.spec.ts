@@ -151,9 +151,7 @@ for (const locale of ['zh-Hant', 'en'] as const) {
     const fileName = (await pendingDownload).suggestedFilename()
     expect(fileName).toContain('w50')
     expect(fileName).toContain('-none-')
-    expect(fileName).toContain(
-      '-left-linline-gcenter-i6.3mf',
-    )
+    expect(fileName).toContain('-left-linline-gcenter-i6.3mf')
     await page.reload()
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),

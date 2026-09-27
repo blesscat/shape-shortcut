@@ -191,8 +191,12 @@ export async function buildOpenGridLabelCardWithParts(
       } else {
         const groupWidth =
           iconSize + OPENGRID_LABEL_GRID.iconTextGap + blockWidth
-        if (groupWidth > safeWidth)
-          throw new Error(`LABEL_CARD_TEXT_TOO_WIDE:${builtRows[0]!.field}`)
+        if (groupWidth > safeWidth) {
+          const widest = builtRows.reduce((max, row) =>
+            row.width > max.width ? row : max,
+          )
+          throw new Error(`LABEL_CARD_TEXT_TOO_WIDE:${widest.field}`)
+        }
         const groupLeft =
           groupAlign === 'left'
             ? -safeHalfWidth

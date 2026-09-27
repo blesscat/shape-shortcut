@@ -64,12 +64,6 @@ describe('OpenGrid Label Card generated geometry', () => {
     } as const
     const result = await buildOpenGridLabelCardWithParts(parameters, {})
     try {
-      if (process.env.ZZ_DEBUG) {
-        const accentDbg = result.parts.find((p) => p.name === 'accent')!
-        console.log('DBG accent', JSON.stringify(shapeBounds(accentDbg.shape)))
-        const bodyDbg = result.parts.find((p) => p.name === 'body')!
-        console.log('DBG body', JSON.stringify(shapeBounds(bodyDbg.shape)))
-      }
       const expected = boundsForOpenGridLabelCard(parameters)
       const body = result.parts.find((part) => part.name === 'body')!
       const accent = result.parts.find((part) => part.name === 'accent')!
@@ -561,3 +555,151 @@ it.each([
     }
   },
 )
+
+describe('label card layout modes', () => {
+  const base = {
+    gridUnits: 6,
+    style: 'raised',
+    iconPosition: 'left',
+    icon: 'gear-fill',
+    text: 'M4',
+    textHeight: 4,
+    iconSize: 4.5,
+  } as const
+
+  it('centers the icon and text group in inline layout', async () => {
+    const result = await buildOpenGridLabelCardWithParts(
+      { ...base, groupAlign: 'center' },
+      {},
+    )
+    try {
+      const accent = result.parts.find((part) => part.name === 'accent')!.shape
+      const bounds = shapeBounds(accent)
+      const centerX = (bounds[0]![0]! + bounds[1]![0]!) / 2
+      expect(Math.abs(centerX)).toBeLessThan(0.6)
+    } finally {
+      deleteParts(result.parts)
+      result.qualityShape.delete()
+      result.shape.delete()
+    }
+  })
+
+  it('positions the group left and right per groupAlign', async () => {
+    const left = await buildOpenGridLabelCardWithParts(
+      { ...base, groupAlign: 'left' },
+      {},
+    )
+    const right = await buildOpenGridLabelCardWithParts(
+      { ...base, groupAlign: 'right' },
+      {},
+    )
+    try {
+      const leftBounds = shapeBounds(
+        left.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const rightBounds = shapeBounds(
+        right.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      // The icon edge hugs the corresponding safe-area edge (1 mm inset).
+      console.log('DBG LR', leftBounds[0]![0], rightBounds[1]![0])
+      expect(leftBounds[0]![0]!).toBeCloseTo(-29, 0)
+      expect(rightBounds[1]![0]!).toBeCloseTo(29, 0)
+    } finally {
+      deleteParts(left.parts)
+      deleteParts(right.parts)
+      left.qualityShape.delete()
+      left.shape.delete()
+      right.qualityShape.delete()
+      right.shape.delete()
+    }
+  })
+
+  it('stacks the icon above a single centered text row', async () => {
+    const result = await buildOpenGridLabelCardWithParts(
+      { ...base, layout: 'stacked' },
+      {},
+    )
+    try {
+      const body = result.parts.find((part) => part.name === 'body')!
+      const accent = result.parts.find((part) => part.name === 'accent')!
+      const bodyBounds = shapeBounds(body.shape)
+      expect(bodyBounds[0]?.[1]).toBeCloseTo(-6, 1)
+      expect(bodyBounds[1]?.[1]).toBeCloseTo(6, 1)
+      const accentBounds = shapeBounds(accent.shape)
+      // Icon fills the upper safe area; the text row hugs the lower rail.
+      expect(accentBounds[1]?.[1]).toBeCloseTo(5, 0)
+      expect(accentBounds[0]?.[1]).toBeCloseTo(-5, 0)
+      assertOpenGridLabelCardShapeQuality(result.parts, {
+        ...base,
+        layout: 'stacked',
+      })
+    } finally {
+      deleteParts(result.parts)
+      result.qualityShape.delete()
+      result.shape.delete()
+    }
+  })
+
+  it('links the screw shaft length to the text designation', async () => {
+    const { measureVolume } = await import('replicad')
+    const short = await buildOpenGridLabelCardWithParts(
+      { ...base, icon: 'screw-pan', text: 'M4', layout: 'inline' },
+      {},
+    )
+    const long = await buildOpenGridLabelCardWithParts(
+      { ...base, icon: 'screw-pan', text: 'M4x16', layout: 'inline' },
+      {},
+    )
+    try {
+      const shortBounds = shapeBounds(
+        short.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const longBounds = shapeBounds(
+        long.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const shortVolume = measureVolume(
+        short.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const longVolume = measureVolume(
+        long.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      expect(longVolume).toBeGreaterThan(shortVolume + 0.2)
+    } finally {
+      deleteParts(short.parts)
+      deleteParts(long.parts)
+      short.qualityShape.delete()
+      short.shape.delete()
+      long.qualityShape.delete()
+      long.shape.delete()
+    }
+  })
+
+  it('scales screw icons with iconSize', async () => {
+    const small = await buildOpenGridLabelCardWithParts(
+      { ...base, icon: 'screw-hex', iconSize: 3 },
+      {},
+    )
+    const large = await buildOpenGridLabelCardWithParts(
+      { ...base, icon: 'screw-hex', iconSize: 8 },
+      {},
+    )
+    try {
+      const smallBounds = shapeBounds(
+        small.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const largeBounds = shapeBounds(
+        large.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const smallSpan = smallBounds[1]![1]! - smallBounds[0]![1]!
+      const largeSpan = largeBounds[1]![1]! - largeBounds[0]![1]!
+      expect(largeSpan).toBeGreaterThan(smallSpan * 1.5)
+    } finally {
+      deleteParts(small.parts)
+      deleteParts(large.parts)
+      small.qualityShape.delete()
+      small.shape.delete()
+      large.qualityShape.delete()
+      large.shape.delete()
+    }
+  })
+})
