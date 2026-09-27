@@ -14,22 +14,6 @@ import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-
 import { screwOutlinePolygon16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
 
-function pointOnSegment(
-  point: readonly [number, number],
-  mirror: readonly [number, number],
-  a: readonly [number, number],
-  b: readonly [number, number],
-): boolean {
-  const cross =
-    (b[0] - a[0]) * (mirror[1] - a[1]) - (b[1] - a[1]) * (mirror[0] - a[0])
-  if (Math.abs(cross) > 1e-6) return false
-  const dot =
-    (mirror[0] - a[0]) * (b[0] - a[0]) + (mirror[1] - a[1]) * (b[1] - a[1])
-  if (dot < -1e-6) return false
-  const lengthSquared = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
-  return dot <= lengthSquared + 1e-6
-}
-
 function segmentsCross(
   p1: readonly [number, number],
   p2: readonly [number, number],
