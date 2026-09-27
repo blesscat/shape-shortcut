@@ -104,7 +104,7 @@ In `inline` layout the icon MUST sit to the selected left or right of one or two
 
 ### Requirement: Card content leaves retaining rails clear
 
-Card accents MUST remain inside the 12 mm card height and leave at least 1 mm clear along both width edges. Both styles MUST be insertable into the same integrated organizer slot without their art touching its rails. The system MUST report text that cannot fit rather than truncate it, silently change units or shrink artwork to fit. Geometry quality validation MUST reject actual accent bounds outside the safe face and reject icon geometry that overlaps text geometry.
+Card accents MUST remain inside the 12 mm card height and leave at least 1 mm clear along both width edges. Both styles MUST be insertable into the same integrated organizer slot without their art touching its rails. The system MUST report text that cannot fit rather than truncate it, silently change units or shrink artwork to fit. Geometry quality validation MUST reject actual accent bounds outside the safe face, and generation MUST be rejected when icon geometry overlaps text geometry.
 
 #### Scenario: A one-unit card fits its slot
 

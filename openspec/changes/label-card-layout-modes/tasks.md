@@ -11,7 +11,7 @@
 ## 2. Kernel geometry
 
 - [x] 2.1 Create `screw-shape.ts`: parametric side-view screw silhouette (pan/hex head + shaft + thread teeth, single even-odd-safe contour, min feature ≥ 1.5 units) from `(headStyle, shaftRatio, depth, iconSize)`
-- [x] 2.2 Add the `M<dia>[x<len>]` text parser (clamp 4–30 mm → ratio 0.35–1.0, fallback 0.65) in `screw-shape.ts`
+- [x] 2.2 Add the `M<dia>[x<len>]` text parser (clamp 4–30 mm → ratio 0.35–1.0, fallback 0.55) in `screw-shape.ts`
 - [x] 2.3 Thread `iconSize` through `icon-shape.ts` scaling and branch screw-category ids to `screw-shape.ts` from the builder
 - [x] 2.4 Rewrite the builder layout: measure block width (widest non-empty row), compute group width, position by `groupAlign` in inline layout; stacked places icon above the centered row with 1 mm vertical gap; keep rail margins and icon/text minimum gap
 - [x] 2.5 Update `quality.ts` accent-bound checks for the 12 mm height and add an icon/text overlap rejection

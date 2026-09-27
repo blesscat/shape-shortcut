@@ -68,7 +68,7 @@ split into `src/components/cad/workspace/validation/` modules
   `screw-shape.ts` module which returns an extruded single silhouette (head +
   shaft + thread teeth) from `(style, shaftRatio, depth, iconSize)`. Text
   parsing (`/M\d+(?:x(\d+))?/i`, first non-empty row; length clamped 4–30 mm to
-  ratio 0.35–1.0, fallback 0.65) also lives there. Non-screw icons never reach
+  ratio 0.35–1.0, fallback 0.55) also lives there. Non-screw icons never reach
   this code, so general labels are unaffected. Alternatives: static per-length
   icons (rejected: manual, loses the linkage), a separate screw-tag model
   (rejected: duplicates the layout engine being built here).

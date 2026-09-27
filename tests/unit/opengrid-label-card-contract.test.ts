@@ -24,8 +24,7 @@ function pointOnSegment(
     (b[0] - a[0]) * (mirror[1] - a[1]) - (b[1] - a[1]) * (mirror[0] - a[0])
   if (Math.abs(cross) > 1e-6) return false
   const dot =
-    (mirror[0] - a[0]) * (b[0] - a[0]) +
-    (mirror[1] - a[1]) * (b[1] - a[1])
+    (mirror[0] - a[0]) * (b[0] - a[0]) + (mirror[1] - a[1]) * (b[1] - a[1])
   if (dot < -1e-6) return false
   const lengthSquared = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
   return dot <= lengthSquared + 1e-6
@@ -37,8 +36,11 @@ function segmentsCross(
   p3: readonly [number, number],
   p4: readonly [number, number],
 ): boolean {
-  const d = (a: readonly number[], b: readonly number[], c: readonly number[]) =>
-    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+  const d = (
+    a: readonly number[],
+    b: readonly number[],
+    c: readonly number[],
+  ) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
   const d1 = d(p3, p4, p1)
   const d2 = d(p3, p4, p2)
   const d3 = d(p1, p2, p3)
@@ -297,7 +299,9 @@ describe('OpenGrid Label Card contract', () => {
         if (Math.abs(cross) > 1e-6) return false
         const dot =
           (point[0] - a[0]) * (b[0] - a[0]) + (point[1] - a[1]) * (b[1] - a[1])
-        return dot >= -1e-6 && dot <= (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2 + 1e-6
+        return (
+          dot >= -1e-6 && dot <= (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2 + 1e-6
+        )
       })
 
     for (const head of ['pan', 'hex'] as const) {
@@ -326,13 +330,14 @@ describe('OpenGrid Label Card contract', () => {
         let crossings = 0
         const n = polygon.length
         for (let i = 0; i < n; i += 1) {
-          for (let j = i + 2; j < n - 1; j += 1) {
+          for (let j = i + 2; j < n; j += 1) {
+            if (j === n - 1 && i === 0) continue
             if (
               segmentsCross(
                 polygon[i]!,
-                polygon[i + 1]!,
+                polygon[(i + 1) % n]!,
                 polygon[j]!,
-                polygon[j + 1]!,
+                polygon[(j + 1) % n]!,
               )
             )
               crossings += 1
@@ -342,6 +347,8 @@ describe('OpenGrid Label Card contract', () => {
       }
     }
   })
+
+  it('renders screw gallery paths inside the 16-unit viewBox', () => {
     // Arc commands make generic bounds parsing unreliable; the screw paths
     // are pure lines, so they are checked exactly.
     for (const iconId of ['screw-pan', 'screw-hex'] as const) {
@@ -464,3 +471,4 @@ describe('OpenGrid Label Card contract', () => {
       ],
     })
   })
+})

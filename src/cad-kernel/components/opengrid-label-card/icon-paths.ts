@@ -46,12 +46,12 @@ export const LABEL_CARD_ICON_PATHS: Readonly<
   'screw-pan': {
     id: 'screw-pan',
     evenOdd: false,
-    paths: [screwOutlineSvgPath('pan', 0.65)],
+    paths: [screwOutlineSvgPath('pan', 0.55)],
   },
   'screw-hex': {
     id: 'screw-hex',
     evenOdd: false,
-    paths: [screwOutlineSvgPath('hex', 0.65)],
+    paths: [screwOutlineSvgPath('hex', 0.55)],
   },
   'hole-through': {
     id: 'hole-through',

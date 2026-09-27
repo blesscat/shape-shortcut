@@ -29,7 +29,7 @@ layout that only fits on a taller card.
 - New screw icon category `screw-pan` and `screw-hex`: bold parametric side-
   view screw silhouettes (head + shaft + thread teeth) whose shaft length
   follows the first text row's `M<dia>[x<len>]` designation (4–30 mm mapped to
-  0.35–1.0 shaft ratio, fallback 0.65). The category is isolated in
+  0.35–1.0 shaft ratio, fallback 0.55). The category is isolated in
   `screw-shape.ts`; non-screw icons keep the static path pipeline unchanged.
 - File name fingerprints gain `layout`, `groupAlign`, and `iconSize` tokens.
 - Legacy parameter snapshots without the new keys fall back to the defaults
