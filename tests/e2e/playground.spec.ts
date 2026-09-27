@@ -367,6 +367,58 @@ test('persists the camera pose per orientation and can reset it', async ({
   await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
 })
 
+test('refits only the default wall camera when framing inputs change', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await page.getByTestId('playground-mode-wall').click()
+
+  const viewport = page.getByTestId('playground-viewport')
+  await expect(viewport).toHaveAttribute('data-camera-target', '0,0,0')
+  await viewport.click({ position: { x: 20, y: 20 } })
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'default')
+  const initialPosition = await viewport.getAttribute('data-camera-position')
+  expect(initialPosition).toBeTruthy()
+
+  await page.setViewportSize({ width: 600, height: 1000 })
+  await expect(viewport).not.toHaveAttribute(
+    'data-camera-position',
+    initialPosition!,
+  )
+  const aspectRefitPosition = await viewport.getAttribute(
+    'data-camera-position',
+  )
+  expect(aspectRefitPosition).toBeTruthy()
+
+  const gridY = page.getByTestId('playground-grid-size-y')
+  await gridY.fill('80')
+  await gridY.blur()
+  await expect(viewport).toHaveAttribute('data-grid-size', '50x80')
+  await expect(viewport).not.toHaveAttribute(
+    'data-camera-position',
+    aspectRefitPosition!,
+  )
+
+  const box = (await viewport.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + 50, {
+    steps: 6,
+  })
+  await page.mouse.up()
+  await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
+  const customPosition = await viewport.getAttribute('data-camera-position')
+  expect(customPosition).toBeTruthy()
+
+  await gridY.fill('90')
+  await gridY.blur()
+  await expect(viewport).toHaveAttribute('data-grid-size', '50x90')
+  await expect(viewport).toHaveAttribute(
+    'data-camera-position',
+    customPosition!,
+  )
+})
+
 test('remembers the scene grid size across reloads', async ({ page }) => {
   await openPlayground(page)
   const gridX = page.getByTestId('playground-grid-size-x')

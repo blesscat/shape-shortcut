@@ -23,6 +23,7 @@
   import type { PlaygroundViewMode } from './store'
   import { translate, type Locale } from '../../../i18n'
   import {
+    defaultPlaygroundCameraPose,
     loadPlaygroundCameraState,
     savePlaygroundCameraState,
     type PlaygroundCameraPose,
@@ -65,6 +66,7 @@
 
   let cameraState = loadPlaygroundCameraState()
   let cameraPoseIsCustom = $state(false)
+  let renderedCameraPose: PlaygroundCameraPose | null = $state(null)
 
   let container: HTMLDivElement | undefined = $state()
   let observedTheme = $state<CadViewportTheme>(readCadViewportTheme())
@@ -89,6 +91,7 @@
   let scene: THREE.Scene | null = null
   let camera: THREE.PerspectiveCamera | null = null
   let controls: OrbitControls | null = null
+  let controlStartPose: PlaygroundCameraPose | null = null
   let contentGroup: THREE.Group | null = null
   let grid: THREE.Group | null = null
 
@@ -155,6 +158,7 @@
   const pointer = new THREE.Vector2()
 
   let appliedViewMode: PlaygroundViewMode | null = null
+  const CAMERA_POSE_CHANGE_EPSILON = 0.000001
 
   const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
     'background',
@@ -318,31 +322,32 @@
     }
   }
 
-  /**
-   * Default pose that frames the entire rendered grid for the orientation:
-   * the camera sits on the usual inspection direction at a distance that
-   * fits the rectangular extent (plus margin for the mounted pieces).
-   */
   function defaultPoseFor(mode: PlaygroundViewMode): PlaygroundCameraPose {
-    const cellsX = Math.max(Math.round(gridSize.x), 1)
-    const cellsY = Math.max(Math.round(gridSize.y), 1)
-    const sizeX = cellsX * PLAYGROUND_GRID_PITCH
-    const sizeY = cellsY * PLAYGROUND_GRID_PITCH
-    const radius = 0.5 * Math.hypot(sizeX, sizeY)
-    const distance =
-      (radius / Math.sin((CAD_VIEWPORT_CAMERA.fov * Math.PI) / 360)) * 1.15
-    if (mode === 'wall') {
-      const center = new THREE.Vector3(0, 0, sizeY / 2)
-      const direction = new THREE.Vector3(0, -0.85, 0.5).normalize()
-      return {
-        position: center.clone().addScaledVector(direction, distance).toArray(),
-        target: center.toArray(),
-      }
+    return defaultPlaygroundCameraPose({
+      mode,
+      gridSize,
+      aspect: camera?.aspect ?? 1,
+    })
+  }
+
+  function currentCameraPose(): PlaygroundCameraPose | null {
+    if (!camera || !controls) return null
+    return {
+      position: [camera.position.x, camera.position.y, camera.position.z],
+      target: [controls.target.x, controls.target.y, controls.target.z],
     }
-    const direction = new THREE.Vector3(...CAD_VIEWPORT_CAMERA.position)
-      .normalize()
-      .multiplyScalar(distance)
-    return { position: direction.toArray(), target: [0, 0, 0] }
+  }
+
+  function cameraPoseChanged(
+    before: PlaygroundCameraPose,
+    after: PlaygroundCameraPose,
+  ): boolean {
+    const valuesBefore = [...before.position, ...before.target]
+    const valuesAfter = [...after.position, ...after.target]
+    return valuesBefore.some(
+      (value, index) =>
+        Math.abs(value - valuesAfter[index]) > CAMERA_POSE_CHANGE_EPSILON,
+    )
   }
 
   function applyCameraPose(mode: PlaygroundViewMode): void {
@@ -351,6 +356,7 @@
     camera.position.set(...pose.position)
     controls.target.set(...pose.target)
     controls.update()
+    renderedCameraPose = currentCameraPose()
     // A restored pose counts as custom: it must survive further reloads.
     cameraPoseIsCustom = cameraState[mode] != null
   }
@@ -369,6 +375,11 @@
     delete cameraState[viewMode]
     savePlaygroundCameraState(cameraState)
     cameraPoseIsCustom = false
+    applyCameraPose(viewMode)
+  }
+
+  function refitDefaultWallCamera(): void {
+    if (viewMode !== 'wall' || cameraPoseIsCustom) return
     applyCameraPose(viewMode)
   }
 
@@ -473,16 +484,20 @@
 
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
+    controls.addEventListener('start', () => {
+      controlStartPose = currentCameraPose()
+    })
     controls.addEventListener('end', () => {
-      if (!camera) return
+      const pose = currentCameraPose()
+      const startPose = controlStartPose
+      controlStartPose = null
+      if (!pose || (startPose && !cameraPoseChanged(startPose, pose))) return
       cameraState = {
         ...cameraState,
-        [viewMode]: {
-          position: camera.position.toArray(),
-          target: controls.target.toArray(),
-        },
+        [viewMode]: pose,
       }
       savePlaygroundCameraState(cameraState)
+      renderedCameraPose = pose
       cameraPoseIsCustom = true
     })
 
@@ -525,6 +540,7 @@
       renderer.setSize(width, height)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
+      refitDefaultWallCamera()
     })
     resizeObserver.observe(container)
 
@@ -548,6 +564,7 @@
       resizeObserver = null
       controls?.dispose()
       controls = null
+      controlStartPose = null
       unobserveTheme?.()
       unobserveTheme = null
       for (const group of instancedGroups) {
@@ -604,6 +621,7 @@
       viewMode,
     )
     scene.add(grid)
+    refitDefaultWallCamera()
   })
 </script>
 
@@ -614,6 +632,8 @@
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
   data-camera-pose={cameraPoseIsCustom ? 'custom' : 'default'}
+  data-camera-position={renderedCameraPose?.position.join(',') ?? ''}
+  data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   onclick={handleClick}
