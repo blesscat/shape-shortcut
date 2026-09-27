@@ -221,12 +221,28 @@ test.describe('OpenGrid playground planner', () => {
   })
 })
 
-test('loads the localized playground route for every locale', async ({
-  page,
-}) => {
-  await page.goto(localizedPathFor('en', '/cad/playground'))
-  await expect(page.getByTestId('playground')).toBeVisible({ timeout: 30_000 })
-})
+const localizedCameraResetLabels: ReadonlyArray<{
+  locale: Locale
+  label: string
+}> = [
+  { locale: 'zh-Hant', label: '恢復視角' },
+  { locale: 'en', label: 'Reset view' },
+]
+
+for (const { locale, label } of localizedCameraResetLabels) {
+  test(`loads the initialized playground viewport in ${locale}`, async ({
+    page,
+  }) => {
+    await page.goto(localizedPathFor(locale, '/cad/playground'))
+
+    await expect(page.getByTestId('playground-viewport')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      page.getByRole('button', { name: label, exact: true }),
+    ).toBeVisible()
+  })
+}
 
 test('switches the scene between desktop and wall orientations', async ({
   page,

@@ -337,6 +337,7 @@
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
         gridSize={snapshot.gridSize}
+        {locale}
         onSelect={(instanceId) => store?.select(instanceId)}
       />
     </div>

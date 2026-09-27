@@ -36,6 +36,13 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 - **AND** wall-mount components MUST render with their OpenConnect interface face directly against the wall board (no full-scene rotation)
 - **AND** placements, occupancy, and selection MUST be unchanged
 
+#### Scenario: Camera pose persists and can be reset
+
+- **WHEN** the user orbits or zooms the scene and then revisits the playground or switches orientations
+- **THEN** the camera pose for that orientation MUST be restored from browser persistence
+- **AND** the selected locale MUST provide a visible reset action that restores the orientation's default pose
+- **AND** the reset default pose MUST frame the currently rendered grid
+
 #### Scenario: Scene grid extent is user-selectable and remembered
 
 - **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 50×50)
