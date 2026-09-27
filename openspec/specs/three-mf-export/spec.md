@@ -56,7 +56,7 @@ path MUST not be an export target.
 - **AND** the main thread MUST receive one validated `.3mf` download named
   after `opengrid-label-tag`
 
-### Scenario: Unsupported 3MF export is rejected
+#### Scenario: Unsupported 3MF export is rejected
 
 - **WHEN** the user requests 3MF for a revision without supported multipart
   data, including an `opengrid-snap` revision, a supported container or
