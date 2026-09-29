@@ -36,7 +36,9 @@ routes, persisted entries, generators, and export names MUST remain unchanged.
 The normalized parameter snapshot MUST contain exactly `holeCountX`,
 `holeCountY`, `holeSpacingMode`, `holeSpacingX`, `holeSpacingY`, `holeShape`,
 `holeDiameter`, `holeWidth`, `holeHeight`, `holeCornerRadius`, `holeDepth`,
-`bottomThickness`, `edgeThickness`, `tiltAngle`, `openConnectHorizontalAlignment`, and `openConnectVerticalAlignment`.
+`bottomThickness`, `edgeThickness`, `tiltAngle`, `openConnectHorizontalAlignment`,
+`openConnectVerticalAlignment`, `labelSlotEnabled`, and `labelGridUnits`.
+`labelSlotEnabled` MUST be boolean and `labelGridUnits` MUST be an integer from 1 through 10.
 `holeSpacingMode` MUST be either `linked` or `independent`, and `holeShape`
 MUST be one of `circle`, `triangle`, `square`, `pentagon`, `hexagon`,
 `rectangle`, or `ellipse`.

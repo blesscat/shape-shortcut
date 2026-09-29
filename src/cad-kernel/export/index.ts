@@ -104,5 +104,9 @@ function encodeBinaryStl(mesh: MeshData): ArrayBuffer {
 export {
   exportThreeMfBytes,
   isThreeMfPackage,
+  threeMfExpectationFor,
+  threeMfMetaFor,
+  THREE_MF_WALL_COVER_META,
+  type ThreeMfPackageMeta,
   type ThreeMfShapePart,
 } from './three-mf'

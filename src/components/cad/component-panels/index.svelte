@@ -1,5 +1,6 @@
 <script lang="ts">
   import TissueBoxComponentPanel from './opengrid-openconnect-tissue-box/TissueBoxComponentPanel.svelte'
+  import OpenGridLabelSlotTestComponentPanel from './opengrid-label-slot-test/OpenGridLabelSlotTestComponentPanel.svelte'
   import type {
     ModelId,
     ModelParameterValues,
@@ -22,6 +23,7 @@
   import OpenGridOpenConnectShelfComponentPanel from './opengrid-openconnect-shelf/OpenGridOpenConnectShelfComponentPanel.svelte'
   import OpenGridOpenConnectOrganizerComponentPanel from './opengrid-openconnect-organizer/OpenGridOpenConnectOrganizerComponentPanel.svelte'
   import OpenGridWallCoverComponentPanel from './opengrid-wall-cover/OpenGridWallCoverComponentPanel.svelte'
+  import OpenGridLabelCardComponentPanel from './opengrid-label-card/OpenGridLabelCardComponentPanel.svelte'
   import type { ComponentPanelProps } from './types'
 
   type Props = ComponentPanelProps & {
@@ -154,6 +156,20 @@
   />
 {:else if modelId === 'opengrid-wall-cover'}
   <OpenGridWallCoverComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-card'}
+  <OpenGridLabelCardComponentPanel
+    {locale}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+  />
+{:else if modelId === 'opengrid-label-slot-test'}
+  <OpenGridLabelSlotTestComponentPanel
     {locale}
     {rawParameters}
     {fieldErrors}

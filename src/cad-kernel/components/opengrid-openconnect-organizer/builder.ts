@@ -1,3 +1,5 @@
+import { openGridLabelSlotLayoutFor } from '../../../cad-contract/units/opengrid-label-shared'
+import { buildOrganizerLabelSlot } from './label-slot'
 import {
   drawEllipse,
   getOC,
@@ -590,6 +592,15 @@ export async function buildOpenGridOpenConnectOrganizer(
     await yieldAtSafeBoundary(context)
 
     current = orientForPrint(current, normalized)
+    if (normalized.labelSlotEnabled) {
+      current = fuseOpenGridOpenConnectOrganizerOwnedShapes(
+        current,
+        buildOrganizerLabelSlot(
+          openGridLabelSlotLayoutFor(layout, normalized.labelGridUnits),
+        ),
+        context.booleanOperations,
+      )
+    }
     completed += 1
     reportProgress(context, completed, totalSteps)
     assertGenerationCurrent(context)

@@ -10,12 +10,14 @@ import {
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_WALL_COVER_CONFIGURATION,
   OPENGRID_LOCATING_SEAT_MODES,
   normalizeOpenGridLocatingSeatMode,
   type HexagonalColumnParameters,
   type ModelParameterValues,
   type OpenGridOpenConnectOrganizerParameters,
+  type OpenGridLabelCardParameters,
   type OpenGridOpenConnectShelfParameters,
   type OpenGridOpenShelfParameters,
   type OpenGridOrganizerBoxParameters,
@@ -42,6 +44,42 @@ export function rawFromParameters(
       TISSUE_BOX_KEYS.map((key) => [key, String(normalized[key])]),
     ) as RawParameters
   }
+
+  if ('style' in parameters) {
+    const labelCardParameters = parameters as OpenGridLabelCardParameters
+    const raw: RawParameters = {
+      gridUnits: String(labelCardParameters.gridUnits),
+      style: labelCardParameters.style,
+      icon: labelCardParameters.icon,
+      textHeight: String(labelCardParameters.textHeight ?? 7),
+      iconPosition: labelCardParameters.iconPosition ?? 'left',
+      textLine2: labelCardParameters.textLine2 ?? '',
+      textAlignment: labelCardParameters.textAlignment ?? 'center',
+      textLine2Alignment: labelCardParameters.textLine2Alignment ?? 'center',
+      layout: labelCardParameters.layout ?? 'inline',
+      groupAlign: labelCardParameters.groupAlign ?? 'center',
+      iconSize: String(labelCardParameters.iconSize ?? 6),
+      screwMode: String(labelCardParameters.screwMode ?? false),
+      screwHead:
+        labelCardParameters.screwHead ??
+        OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultHead,
+      screwDiameter: String(
+        labelCardParameters.screwDiameter ??
+          OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultDiameter,
+      ),
+      screwLength: String(
+        labelCardParameters.screwLength ??
+          OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultLength,
+      ),
+    }
+    if (labelCardParameters.text !== undefined) {
+      raw.text = labelCardParameters.text
+    }
+    return raw
+  }
+
+  if ('gridUnits' in parameters)
+    return { gridUnits: String(parameters.gridUnits) }
 
   if ('text' in parameters) {
     const wallCoverParameters = parameters as OpenGridWallCoverParameters
@@ -116,6 +154,16 @@ export function rawFromParameters(
         'topRimHeight' in organizerParameters
           ? organizerParameters.topRimHeight
           : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.topRimHeight,
+      ),
+      labelSlotEnabled: String(
+        'labelSlotEnabled' in organizerParameters
+          ? organizerParameters.labelSlotEnabled
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelSlotEnabled,
+      ),
+      labelGridUnits: String(
+        'labelGridUnits' in organizerParameters
+          ? organizerParameters.labelGridUnits
+          : OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits,
       ),
     }
   }

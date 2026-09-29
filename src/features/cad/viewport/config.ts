@@ -10,6 +10,8 @@ export const CAD_VIEWPORT_CONFIG = {
     body: DEFAULT_MODEL_COLORS.primary,
     text: DEFAULT_MODEL_COLORS.secondary,
     rim: DEFAULT_MODEL_COLORS.secondary,
+    icon: DEFAULT_MODEL_COLORS.secondary,
+    accent: DEFAULT_MODEL_COLORS.secondary,
   },
   modelEmissiveIntensity: 0.2,
   edgeThresholdAngle: 20,

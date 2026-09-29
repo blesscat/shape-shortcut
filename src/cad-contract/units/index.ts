@@ -450,6 +450,8 @@ export {
   isOpenGridDividerModelParameters,
   isOpenGridModelParameters,
   isOpenGridOpenConnectOrganizerModelParameters,
+  isOpenGridLabelCardModelParameters,
+  isOpenGridLabelSlotTestModelParameters,
   isOpenGridOpenConnectShelfModelParameters,
   isOpenGridOpenShelfModelParameters,
   isOpenGridOrganizerBoxModelParameters,
@@ -479,3 +481,50 @@ export type {
   ScalarModelParameterKey,
   ValidationIssue,
 } from './model'
+
+export {
+  boundsForOpenGridLabelCard,
+  isOpenGridLabelCardParameters,
+  isOpenGridLabelCardStyle,
+  normalizeOpenGridLabelCardText,
+  openGridLabelCardFileName,
+  openGridLabelCardStlFileName,
+  openGridLabelCardThreeMfFileName,
+  openGridLabelCardScrewDesignation,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
+  OPENGRID_LABEL_CARD_STYLES,
+  OPENGRID_LABEL_CARD_ICON_IDS,
+  OPENGRID_LABEL_SCREW_ICON_IDS,
+  isOpenGridLabelScrewIconId,
+  OPENGRID_LABEL_CARD_LAYOUTS,
+  OPENGRID_LABEL_CARD_STACKED_GAP,
+  OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT,
+  OPENGRID_LABEL_CARD_SCREW_HEADS,
+  OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_DIAMETERS,
+  OPENGRID_LABEL_CARD_SCREW_LENGTH,
+  validateOpenGridLabelCardParameters,
+} from './opengrid-label-card'
+
+export {
+  OPENGRID_LABEL_WIDTH_TIERS,
+  OPENGRID_LABEL_CARD_HEIGHT,
+  OPENGRID_LABEL_CARD_INSERTION_THICKNESS,
+  OPENGRID_LABEL_ACCENT_DEPTH,
+  OPENGRID_LABEL_CARD_RAISED_HEIGHT,
+  OPENGRID_LABEL_CARD_POCKET_PROUD,
+  isOpenGridLabelWidthTier,
+  type OpenGridLabelWidthTier,
+} from './opengrid-label-shared'
+export * from './opengrid-label-slot-test'
+
+export type {
+  OpenGridLabelCardParameterKey,
+  OpenGridLabelCardParameters,
+  OpenGridLabelCardStyle,
+  OpenGridLabelCardValidation,
+  OpenGridLabelCardLayout,
+  OpenGridLabelCardGroupAlign,
+  OpenGridLabelCardScrewHead,
+} from './opengrid-label-card'

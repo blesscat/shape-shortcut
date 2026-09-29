@@ -1,4 +1,9 @@
 import {
+  isOpenGridLabelGridUnits,
+  openGridLabelSlotLayoutFor,
+  openGridLabelSlotPointsFor,
+} from './opengrid-label-shared'
+import {
   OPENCONNECT_ALIGNMENT_KEYS,
   OPENCONNECT_ALIGNMENT_DEFAULTS,
   openConnectAlignmentIssues,
@@ -38,6 +43,8 @@ export type OpenGridOpenConnectOrganizerParameterKey =
   | 'tiltAngle'
   | 'topRimEnabled'
   | 'topRimHeight'
+  | 'labelSlotEnabled'
+  | 'labelGridUnits'
 
 export type OpenGridOpenConnectOrganizerParameters =
   OpenConnectAlignmentParameters & {
@@ -57,6 +64,8 @@ export type OpenGridOpenConnectOrganizerParameters =
     tiltAngle: number
     topRimEnabled: boolean
     topRimHeight: number
+    labelSlotEnabled: boolean
+    labelGridUnits: number
   }
 
 export type OpenGridOpenConnectOrganizerPoint2D = [number, number]
@@ -151,6 +160,8 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION = {
   defaultTopRimEnabled: false,
   defaultTopRimHeight: 2,
   minTopRimHeight: 1,
+  defaultLabelSlotEnabled: false,
+  defaultLabelGridUnits: 3,
 } as const
 
 export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConnectOrganizerParameters =
@@ -181,6 +192,10 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS: OpenGridOpenConn
       OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTopRimEnabled,
     topRimHeight:
       OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTopRimHeight,
+    labelSlotEnabled:
+      OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultLabelSlotEnabled,
+    labelGridUnits:
+      OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultLabelGridUnits,
   }
 
 const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
@@ -200,6 +215,8 @@ const PARAMETER_KEYS: readonly OpenGridOpenConnectOrganizerParameterKey[] = [
   'tiltAngle',
   'topRimEnabled',
   'topRimHeight',
+  'labelSlotEnabled',
+  'labelGridUnits',
 ]
 
 const POLYGON_SIDES: Record<
@@ -547,6 +564,17 @@ function installedBoundsForUnchecked(
     for (const [y, z] of transitionProfile) points.push([x, y, z])
   }
 
+  if (parameters.labelSlotEnabled) {
+    const slot = openGridLabelSlotLayoutFor(layout, parameters.labelGridUnits)
+    for (const [x, y, z] of openGridLabelSlotPointsFor(slot)) {
+      points.push([
+        x,
+        y * cosine - z * sine,
+        y * sine + z * cosine + layout.installedBodyPivotZ,
+      ])
+    }
+  }
+
   return boundsForPoints(points)
 }
 
@@ -574,6 +602,13 @@ function boundsForUnchecked(
     ...bodyCorners,
     ...printInterfaceCornersFor(parameters, layout),
   ]
+  if (parameters.labelSlotEnabled) {
+    points.push(
+      ...openGridLabelSlotPointsFor(
+        openGridLabelSlotLayoutFor(layout, parameters.labelGridUnits),
+      ),
+    )
+  }
   return boundsForPoints(points)
 }
 
@@ -625,10 +660,21 @@ export function validateOpenGridOpenConnectOrganizerParameters(
     return { valid: false, issues: [issue('parameters')] }
   }
 
+  if (
+    !Object.hasOwn(value, 'labelSlotEnabled') &&
+    !Object.hasOwn(value, 'labelGridUnits')
+  ) {
+    value = { ...value, labelSlotEnabled: false, labelGridUnits: 3 }
+  }
+  if (!isRecord(value)) return { valid: false, issues: [issue('parameters')] }
   const configuration = OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION
   const issues: OpenGridOpenConnectOrganizerValidationIssue[] =
     openConnectAlignmentIssues(value)
   if (!hasExactKeys(value)) issues.push(issue('parameters'))
+  if (typeof value.labelSlotEnabled !== 'boolean')
+    issues.push(issue('labelSlotEnabled'))
+  if (!isOpenGridLabelGridUnits(value.labelGridUnits))
+    issues.push(issue('labelGridUnits'))
 
   for (const field of ['holeCountX', 'holeCountY'] as const) {
     if (
@@ -782,6 +828,23 @@ export function validateOpenGridOpenConnectOrganizerParameters(
       : configuration.defaultTopRimEnabled,
     topRimHeight,
   }
+  if (normalizedParameters.labelSlotEnabled) {
+    const slot = openGridLabelSlotLayoutFor(
+      layoutForUnchecked(normalizedParameters),
+      normalizedParameters.labelGridUnits,
+    )
+    if (!slot.fits) {
+      return {
+        valid: false,
+        issues: [
+          {
+            field: 'labelGridUnits',
+            messageId: 'validation.labelSlotDoesNotFit',
+          },
+        ],
+      }
+    }
+  }
   if (layoutExceedsWorkspace(normalizedParameters)) {
     return { valid: false, issues: [issue('parameters')] }
   }
@@ -816,6 +879,7 @@ function fileStem(parameters: OpenGridOpenConnectOrganizerParameters): string {
     `b${parameters.bottomThickness}`,
     `e${parameters.edgeThickness}`,
     `a${parameters.tiltAngle}`,
+    parameters.labelSlotEnabled ? `label${parameters.labelGridUnits}` : null,
   ]
     .filter((token): token is string => token !== null)
     .join('-')

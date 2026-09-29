@@ -18,6 +18,8 @@ import {
 } from '../../../cad-contract/units'
 import { applyOpenGridOpenConnectOrganizerOwnedTransforms } from './builder'
 import { placeOpenGridOpenConnectShelfLockedSlot } from '../opengrid-openconnect-shelf/slot'
+import { openGridLabelSlotLayoutFor } from '../../../cad-contract/units/opengrid-label-shared'
+import { inspectOrganizerLabelSlot } from './label-slot'
 
 type MeshLike = {
   bounds: { min: number[]; max: number[] }
@@ -643,6 +645,17 @@ export async function inspectOpenGridOpenConnectOrganizerShapeQuality(
   if (!boundsMatch(meshBounds, expectedBounds)) failures.push('mesh-bounds')
 
   const volume = measureVolume(shape)
+  if (parameters.labelSlotEnabled) {
+    failures.push(
+      ...inspectOrganizerLabelSlot(
+        shape,
+        openGridLabelSlotLayoutFor(
+          openGridOpenConnectOrganizerLayoutFor(parameters),
+          parameters.labelGridUnits,
+        ),
+      ),
+    )
+  }
   if (!(volume > 0)) failures.push('positive-volume')
   const solidCount = countSolids(shape)
   if (solidCount !== 1) failures.push('single-solid')

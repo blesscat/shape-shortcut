@@ -1,5 +1,7 @@
 import { isTissueBoxParameters } from '../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { buildTissueBox } from '../components/opengrid-openconnect-tissue-box/builder'
+import { buildOpenGridLabelSlotTest } from '../components/opengrid-label-slot-test/builder'
+import { isOpenGridLabelSlotTestParameters } from '../../cad-contract/units/opengrid-label-slot-test'
 import type { Shape3D } from 'replicad'
 import type { ProgressUnit } from '../../cad-contract/messages'
 import type { BooleanOperationReporter } from '../boolean-progress'
@@ -64,6 +66,11 @@ import {
   buildOpenGridWallCover,
   buildOpenGridWallCoverWithFlatText,
 } from '../components/opengrid-wall-cover/builder'
+import {
+  buildOpenGridLabelCard,
+  buildOpenGridLabelCardWithParts,
+} from '../components/opengrid-label-card/builder'
+import { isOpenGridLabelCardParameters } from '../../cad-contract/units'
 import { buildOpenGridSnapRemover } from '../components/opengrid-snap-remover/builder'
 import { buildPillar } from '../components/opengrid-pillar/builder'
 import { buildOpenGridOpenShelf } from '../components/opengrid-open-shelf/builder'
@@ -286,6 +293,19 @@ async function buildOpenGridWallCoverModel(
     isGenerationCurrent: context.isGenerationCurrent,
     booleanOperations: context.booleanOperations,
     reportProgress: context.reportProgress,
+  })
+}
+
+async function buildOpenGridLabelCardModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<Shape3D> {
+  if (!isOpenGridLabelCardParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+  }
+  return buildOpenGridLabelCard(parameters, {
+    yieldToEventLoop: context.yieldToEventLoop,
+    isGenerationCurrent: context.isGenerationCurrent,
   })
 }
 
@@ -584,6 +604,20 @@ export const opengridDividerKernelDefinition: KernelModelDefinition = {
   build: buildOpenGridDividerModel,
 }
 
+export const opengridLabelCardKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-card',
+  build: buildOpenGridLabelCardModel,
+}
+
+export const opengridLabelSlotTestKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-slot-test',
+  async build(parameters, context) {
+    if (!isOpenGridLabelSlotTestParameters(parameters))
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
+    return buildOpenGridLabelSlotTest(parameters, context)
+  },
+}
+
 export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   boxKernelDefinition,
   modularGridBaseKernelDefinition,
@@ -614,6 +648,8 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridWallCoverKernelDefinition,
   openGridSnapRemoverKernelDefinition,
   opengridDividerKernelDefinition,
+  opengridLabelCardKernelDefinition,
+  opengridLabelSlotTestKernelDefinition,
 ]
 
 export function getKernelModelDefinition(
@@ -791,6 +827,16 @@ export async function buildModelBRepWithParts(
       isGenerationCurrent: context.isGenerationCurrent,
       reportProgress: context.reportProgress,
       booleanOperations: context.booleanOperations,
+    })
+  }
+
+  if (modelId === 'opengrid-label-card') {
+    if (!isOpenGridLabelCardParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-card')
+    }
+    return buildOpenGridLabelCardWithParts(parameters, {
+      yieldToEventLoop: context.yieldToEventLoop,
+      isGenerationCurrent: context.isGenerationCurrent,
     })
   }
 

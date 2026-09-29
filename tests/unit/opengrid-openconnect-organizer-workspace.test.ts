@@ -77,6 +77,8 @@ describe('OpenGrid OpenConnect organizer workspace integration', () => {
       tiltAngle: '22',
       topRimEnabled: 'false',
       topRimHeight: '2',
+      labelSlotEnabled: 'false',
+      labelGridUnits: '3',
     })
     expect(parseRawParameters(raw, 'opengrid-openconnect-organizer')).toEqual({
       valid: true,

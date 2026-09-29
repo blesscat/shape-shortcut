@@ -155,6 +155,7 @@ describe('OpenGrid system entry context', () => {
       'opengrid-stackable-cylinder',
       'opengrid-snap-remover',
       'opengrid-open-shelf',
+      'opengrid-label-card',
     ])
     expect(
       openGrid?.subgroups
@@ -167,6 +168,8 @@ describe('OpenGrid system entry context', () => {
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-label-card',
+      'opengrid-label-slot-test',
     ])
 
     const deskSnap = openGrid?.subgroups?.[0]?.definitions[1]
@@ -189,4 +192,14 @@ describe('OpenGrid system entry context', () => {
       '/cad/opengrid-snap?system=wall',
     )
   })
+})
+
+describe('replaceable labels in wall context', () => {
+  it.each(['opengrid-label-card'] as const)(
+    'retains the wall preference scope for %s',
+    (modelId) => {
+      expect(systemContextForModel(modelId, 'wall')).toBe('wall')
+      expect(systemContextForModel(modelId, 'desk')).toBe('desk')
+    },
+  )
 })

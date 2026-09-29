@@ -114,6 +114,8 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] 
     'tiltAngle',
     'topRimEnabled',
     'topRimHeight',
+    'labelSlotEnabled',
+    'labelGridUnits',
   ]
 
 export function parameterKeysForModel(
@@ -133,6 +135,27 @@ export function parameterKeysForModel(
   if (modelId === 'opengrid-openconnect-organizer') {
     return OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS
   }
+  if (modelId === 'opengrid-label-card') {
+    return [
+      'gridUnits',
+      'style',
+      'icon',
+      'text',
+      'iconPosition',
+      'textHeight',
+      'textLine2',
+      'textAlignment',
+      'textLine2Alignment',
+      'layout',
+      'groupAlign',
+      'iconSize',
+      'screwMode',
+      'screwHead',
+      'screwDiameter',
+      'screwLength',
+    ]
+  }
+  if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
   if (modelId === 'opengrid-stackable-cylinder') {
     return OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS
   }
