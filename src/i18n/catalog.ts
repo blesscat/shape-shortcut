@@ -594,6 +594,10 @@ export const zhHantMessages = {
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
   'parameter.gridUnits': '標籤格數',
+  'parameter.screwMode': '卡片模式',
+  'parameter.screwHead': '頭型',
+  'parameter.screwDiameter': '規格',
+  'parameter.screwLength': '長度',
   'parameter.labelGridUnits': '標籤格數',
   'parameter.labelSlotEnabled': '正面標籤卡槽',
   'panel.labelCard.unitWidth': '{width} mm · 每格 10 mm · 1–{max} 格',
@@ -607,6 +611,15 @@ export const zhHantMessages = {
   'panel.labelCard.groupAlign.center': '置中',
   'panel.labelCard.groupAlign.right': '靠右',
   'panel.labelCard.iconSize': 'icon 尺寸',
+  'panel.labelCard.screwMode': '卡片模式',
+  'panel.labelCard.screwMode.off': '標準',
+  'panel.labelCard.screwMode.on': '螺絲',
+  'panel.labelCard.screwHead': '頭型',
+  'panel.labelCard.screwHead.phillips': '十字 PH',
+  'panel.labelCard.screwHead.torx': '星形 Torx',
+  'panel.labelCard.screwHead.hex': '六角 Hex',
+  'panel.labelCard.screwDiameter': '規格',
+  'panel.labelCard.screwLength': '長度',
   'validation.labelCardStackedSingleRow': 'icon 上／文字下版式只支援一排文字。',
   'validation.labelCardStackedNeedsIcon':
     'icon 上／文字下版式需要選擇一個 icon。',
@@ -619,6 +632,8 @@ export const zhHantMessages = {
   'validation.labelGridUnitsInvalid': '標籤格數必須是 1 至 10 的整數。',
   'validation.labelCardTextTooWide':
     '文字超出卡片可用寬度，請縮短文字或增加格數。',
+  'validation.labelCardScrewTooWide':
+    '螺絲圖示與規格文字超出卡片可用寬度，請增加格數或縮小 icon／文字。',
   'validation.labelSlotDoesNotFit':
     '卡槽超出正面可用寬度或高度，請減少標籤格數、增加本體尺寸或關閉卡槽。',
   'validation.labelCardWidthTierInvalid': '{field} 必須是 {values} 之一。',
@@ -1614,6 +1629,10 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
   'validation.wallCoverTextTooLong': '{field} cannot exceed {max} characters.',
   'parameter.gridUnits': 'Label units',
+  'parameter.screwMode': 'Card mode',
+  'parameter.screwHead': 'Head type',
+  'parameter.screwDiameter': 'Diameter',
+  'parameter.screwLength': 'Length',
   'parameter.labelGridUnits': 'Label units',
   'parameter.labelSlotEnabled': 'Front label slot',
   'panel.labelCard.unitWidth': '{width} mm · 10 mm per unit · 1–{max} units',
@@ -1627,6 +1646,15 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'panel.labelCard.groupAlign.center': 'Center',
   'panel.labelCard.groupAlign.right': 'Right',
   'panel.labelCard.iconSize': 'Icon size',
+  'panel.labelCard.screwMode': 'Card mode',
+  'panel.labelCard.screwMode.off': 'Standard',
+  'panel.labelCard.screwMode.on': 'Screw',
+  'panel.labelCard.screwHead': 'Head type',
+  'panel.labelCard.screwHead.phillips': 'Phillips PH',
+  'panel.labelCard.screwHead.torx': 'Torx',
+  'panel.labelCard.screwHead.hex': 'Hex',
+  'panel.labelCard.screwDiameter': 'Diameter',
+  'panel.labelCard.screwLength': 'Length',
   'validation.labelCardStackedSingleRow':
     'The icon-above-text layout supports a single text row.',
   'validation.labelCardStackedNeedsIcon':
@@ -1641,6 +1669,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
     'Label units must be a whole number from 1 to 10.',
   'validation.labelCardTextTooWide':
     'Text exceeds the usable card width. Shorten the text or increase label units.',
+  'validation.labelCardScrewTooWide':
+    'The screw icons and designation exceed the usable card width. Increase label units or shrink the icons or text.',
   'validation.labelSlotDoesNotFit':
     'The slot exceeds the flat front width or height. Reduce label units, enlarge the organizer, or disable the slot.',
   'validation.labelCardWidthTierInvalid': '{field} must be one of {values}.',

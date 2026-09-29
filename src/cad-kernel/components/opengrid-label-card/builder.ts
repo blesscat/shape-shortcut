@@ -12,8 +12,13 @@ import { makeLabelCardIconShape } from '../opengrid-label-card/icon-shape'
 import {
   makeOpenGridLabelScrewShape,
   parseOpenGridLabelScrewShaftRatio,
+  ratioForOpenGridLabelScrewLength,
 } from '../opengrid-label-card/screw-shape'
 import { isOpenGridLabelScrewIconId } from '../../../cad-contract/units'
+import {
+  OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS,
+} from '../../../cad-contract/units'
 import { makeOpenGridLabelCardTextShape } from '../opengrid-label-card/flat-text'
 
 export type OpenGridLabelCardNativePart = {
@@ -109,6 +114,7 @@ export async function buildOpenGridLabelCardWithParts(
   let accent: Shape3D | null = null
   let quality: Shape3D | null = null
   try {
+    const screwMode = validation.value.screwMode === true
     const rows = [
       {
         field: 'text' as const,
@@ -124,13 +130,16 @@ export async function buildOpenGridLabelCardWithParts(
     const textHeight = validation.value.textHeight ?? config.textHeight.default
     const accentDepth = raised ? config.raisedHeight : config.accentDepth
     const accentZ = raised ? plateTop : plateTop - accentDepth
-    const hasIcon = validation.value.icon !== 'none'
+    const hasIcon = !screwMode && validation.value.icon !== 'none'
     const safeHalfWidth = halfWidth - OPENGRID_LABEL_GRID.artworkSideInset
     const safeWidth = safeHalfWidth * 2
     const safeHalfHeight =
       config.cardHeight / 2 - OPENGRID_LABEL_GRID.artworkSideInset
     const iconSize = validation.value.iconSize ?? config.iconSize.default
-    const layout = validation.value.layout ?? 'inline'
+    const screwHead = validation.value.screwHead ?? config.screwMode.defaultHead
+    const layout = screwMode
+      ? ('stacked' as const)
+      : (validation.value.layout ?? 'inline')
     const groupAlign = validation.value.groupAlign ?? 'center'
 
     // First pass: build every text row and measure it so the widest
@@ -150,7 +159,7 @@ export async function buildOpenGridLabelCardWithParts(
       try {
         textShape = await makeOpenGridLabelCardTextShape(row.text!, {
           depth: accentDepth,
-          maxLength: config.maxTextLength,
+          maxLength: screwMode ? row.text!.length : config.maxTextLength,
           textHeight,
         })
       } catch (error) {
@@ -324,6 +333,80 @@ export async function buildOpenGridLabelCardWithParts(
         }
       } catch (error) {
         deleteShape(iconShape)
+        throw error
+      }
+    }
+
+    if (screwMode) {
+      const frontIconId = OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS[screwHead]
+      const sideIconId = OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS[screwHead]
+      const pairY = safeHalfHeight - iconSize / 2
+      let frontIcon: Shape3D | null = null
+      let sideIcon: Shape3D | null = null
+      try {
+        frontIcon = makeLabelCardIconShape(frontIconId, accentDepth, iconSize)
+        sideIcon = makeOpenGridLabelScrewShape({
+          iconId: sideIconId,
+          shaftRatio: ratioForOpenGridLabelScrewLength(
+            validation.value.screwLength ?? config.screwMode.defaultLength,
+          ),
+          size: iconSize,
+          depth: accentDepth,
+        })
+        const frontBox = frontIcon.boundingBox
+        const sideBox = sideIcon.boundingBox
+        let placements: { shape: Shape3D; x: number }[]
+        try {
+          const frontWidth = frontBox.bounds[1][0]! - frontBox.bounds[0][0]!
+          const sideWidth = sideBox.bounds[1][0]! - sideBox.bounds[0][0]!
+          const pairWidth =
+            frontWidth + OPENGRID_LABEL_GRID.iconTextGap + sideWidth
+          placements = [
+            {
+              shape: frontIcon,
+              x: -pairWidth / 2 - frontBox.bounds[0][0]!,
+            },
+            {
+              shape: sideIcon,
+              x: pairWidth / 2 - sideBox.bounds[1][0]!,
+            },
+          ]
+        } finally {
+          frontBox.delete()
+          sideBox.delete()
+        }
+        for (const piece of placements) {
+          const translated = piece.shape.translate(piece.x, pairY, accentZ)
+          try {
+            const iconBox = translated.boundingBox
+            try {
+              for (const row of builtRows) {
+                if (
+                  iconBox.bounds[0][0] < row.maxX &&
+                  iconBox.bounds[1][0] > row.minX &&
+                  iconBox.bounds[0][1] < row.maxY &&
+                  iconBox.bounds[1][1] > row.minY
+                ) {
+                  throw new Error('LABEL_CARD_ICON_TEXT_OVERLAP')
+                }
+              }
+            } finally {
+              iconBox.delete()
+            }
+            if (accent) {
+              const fused = makeCompound([accent, translated]).asShape3D()
+              deleteShape(accent)
+              accent = fused
+            } else {
+              accent = translated
+            }
+          } finally {
+            if (translated !== (accent as unknown)) deleteShape(translated)
+          }
+        }
+      } catch (error) {
+        deleteShape(frontIcon)
+        deleteShape(sideIcon)
         throw error
       }
     }

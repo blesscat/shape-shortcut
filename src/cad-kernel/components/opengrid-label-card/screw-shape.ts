@@ -13,18 +13,10 @@ export const OPENGRID_LABEL_SCREW_SHAFT_RATIO = {
 } as const
 
 /**
- * Parses the first `M<dia>[x<len>]` screw designation out of a text row and
- * maps its length to a shaft ratio. Text without a designation or without a
- * length falls back to the medium ratio.
+ * Maps a screw length in millimetres to the shaft ratio, clamped to the
+ * documented 4–30 mm range.
  */
-export function parseOpenGridLabelScrewShaftRatio(
-  text: string | undefined,
-): number {
-  if (!text) return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
-  const match = /M\s*(\d+)(?:\s*[x×]\s*(\d+))?/i.exec(text)
-  const length = match?.[2] ? Number(match[2]) : undefined
-  if (length === undefined || !Number.isFinite(length) || length <= 0)
-    return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
+export function ratioForOpenGridLabelScrewLength(length: number): number {
   const clamped = Math.min(
     OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMax,
     Math.max(OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMin, length),
@@ -40,6 +32,22 @@ export function parseOpenGridLabelScrewShaftRatio(
           OPENGRID_LABEL_SCREW_SHAFT_RATIO.min)
     ).toFixed(4),
   )
+}
+
+/**
+ * Parses the first `M<dia>[x<len>]` screw designation out of a text row and
+ * maps its length to a shaft ratio. Text without a designation or without a
+ * length falls back to the medium ratio.
+ */
+export function parseOpenGridLabelScrewShaftRatio(
+  text: string | undefined,
+): number {
+  if (!text) return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
+  const match = /M\s*(\d+)(?:\s*[x×]\s*(\d+))?/i.exec(text)
+  const length = match?.[2] ? Number(match[2]) : undefined
+  if (length === undefined || !Number.isFinite(length) || length <= 0)
+    return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
+  return ratioForOpenGridLabelScrewLength(length)
 }
 
 function isScrewHead(value: string): value is ScrewHeadStyle {

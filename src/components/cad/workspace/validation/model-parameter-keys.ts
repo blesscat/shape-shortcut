@@ -149,6 +149,10 @@ export function parameterKeysForModel(
       'layout',
       'groupAlign',
       'iconSize',
+      'screwMode',
+      'screwHead',
+      'screwDiameter',
+      'screwLength',
     ]
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']

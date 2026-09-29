@@ -13,7 +13,8 @@ import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
 import { screwOutlinePolygon16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
-
+import { parseOpenGridLabelCardRawParameters } from '../../src/components/cad/workspace/validation/model-raw-parsers/label-card'
+import { rawFromParameters } from '../../src/components/cad/workspace/validation/raw-from-parameters'
 function segmentsCross(
   p1: readonly [number, number],
   p2: readonly [number, number],
@@ -89,6 +90,10 @@ describe('OpenGrid Label Card contract', () => {
         layout: 'inline',
         groupAlign: 'center',
         iconSize: 6,
+        screwMode: false,
+        screwHead: 'phillips',
+        screwDiameter: 4,
+        screwLength: 16,
       },
     })
     expect(
@@ -113,6 +118,10 @@ describe('OpenGrid Label Card contract', () => {
         layout: 'inline',
         groupAlign: 'center',
         iconSize: 6,
+        screwMode: false,
+        screwHead: 'phillips',
+        screwDiameter: 4,
+        screwLength: 16,
       },
     })
     expect(
@@ -206,6 +215,10 @@ describe('OpenGrid Label Card contract', () => {
           layout: 'inline',
           groupAlign: 'center',
           iconSize: 6,
+          screwMode: false,
+          screwHead: 'phillips',
+          screwDiameter: 4,
+          screwLength: 16,
         },
       },
     })
@@ -453,6 +466,271 @@ describe('OpenGrid Label Card contract', () => {
       issues: [
         { field: 'iconSize', messageId: 'validation.labelCardStackedHeight' },
       ],
+    })
+  })
+})
+
+describe('OpenGrid Label Card screw mode', () => {
+  it('hydrates legacy snapshots with screw mode off', () => {
+    const validation = validateOpenGridLabelCardParameters({
+      gridUnits: 4,
+      style: 'raised',
+      iconPosition: 'left',
+      icon: 'gear-fill',
+    })
+    expect(validation).toMatchObject({
+      valid: true,
+      value: {
+        screwMode: false,
+        screwHead: 'phillips',
+        screwDiameter: 4,
+        screwLength: 16,
+      },
+    })
+  })
+
+  it('derives the composition and ignores stale manual values', () => {
+    const validation = validateOpenGridLabelCardParameters({
+      gridUnits: 4,
+      style: 'raised',
+      iconPosition: 'right',
+      icon: 'gear-fill',
+      text: 'manual',
+      textLine2: 'stuff',
+      layout: 'stacked',
+      groupAlign: 'right',
+      screwMode: true,
+      screwHead: 'torx',
+      screwDiameter: 5,
+      screwLength: 20,
+    })
+    expect(validation).toMatchObject({
+      valid: true,
+      value: {
+        icon: 'screw-pan',
+        text: 'M5x20',
+        layout: 'inline',
+        groupAlign: 'center',
+        iconPosition: 'left',
+        screwMode: true,
+        screwHead: 'torx',
+        screwDiameter: 5,
+        screwLength: 20,
+        textHeight: 3,
+      },
+    })
+    expect(validation.valid && validation.value.textLine2).toBeUndefined()
+  })
+
+  it('maps hex heads to the hex side view and phillips to the pan side view', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        iconPosition: 'left',
+        screwMode: true,
+        screwHead: 'hex',
+      }),
+    ).toMatchObject({ valid: true, value: { icon: 'screw-hex' } })
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 4,
+        style: 'raised',
+        iconPosition: 'left',
+        screwMode: true,
+        screwHead: 'phillips',
+      }),
+    ).toMatchObject({ valid: true, value: { icon: 'screw-pan' } })
+  })
+
+  it('accepts decimal designations beyond the manual six-character cap', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 5,
+        style: 'raised',
+        iconPosition: 'left',
+        screwMode: true,
+        screwDiameter: 2.5,
+        screwLength: 30,
+      }),
+    ).toMatchObject({ valid: true, value: { text: 'M2.5x30' } })
+  })
+
+  it('rejects compositions that cannot fit the card width', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 1,
+        style: 'raised',
+        iconPosition: 'left',
+        screwMode: true,
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [
+        {
+          field: 'screwDiameter',
+          messageId: 'validation.labelCardScrewTooWide',
+        },
+      ],
+    })
+  })
+
+  it('rejects explicit heights that break the screw composition', () => {
+    expect(
+      validateOpenGridLabelCardParameters({
+        gridUnits: 5,
+        style: 'raised',
+        iconPosition: 'left',
+        screwMode: true,
+        textHeight: 7,
+      }),
+    ).toMatchObject({
+      valid: false,
+      issues: [
+        { field: 'iconSize', messageId: 'validation.labelCardStackedHeight' },
+      ],
+    })
+  })
+
+  it('rejects invalid screw picker values per field', () => {
+    const base = {
+      gridUnits: 4,
+      style: 'raised',
+      iconPosition: 'left',
+      icon: 'gear-fill',
+    }
+    expect(
+      validateOpenGridLabelCardParameters({
+        ...base,
+        screwMode: 'yes',
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'screwMode' }] })
+    expect(
+      validateOpenGridLabelCardParameters({
+        ...base,
+        screwHead: 'square',
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'screwHead' }] })
+    expect(
+      validateOpenGridLabelCardParameters({
+        ...base,
+        screwDiameter: 7,
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'screwDiameter' }] })
+    expect(
+      validateOpenGridLabelCardParameters({
+        ...base,
+        screwLength: 31,
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'screwLength' }] })
+    expect(
+      validateOpenGridLabelCardParameters({
+        ...base,
+        screwLength: 12.5,
+      }),
+    ).toMatchObject({ valid: false, issues: [{ field: 'screwLength' }] })
+  })
+
+  it('encodes screw tokens into export file names without collisions', () => {
+    const screwCard = {
+      gridUnits: 4,
+      style: 'raised',
+      iconPosition: 'left',
+      icon: 'gear-fill',
+      screwMode: true,
+      screwHead: 'phillips',
+      screwDiameter: 4,
+      screwLength: 16,
+    } as const
+    const name = openGridLabelCardThreeMfFileName(screwCard)
+    expect(name).toContain('-sm-phillips-d4-l16.3mf')
+    const wider = openGridLabelCardThreeMfFileName({
+      ...screwCard,
+      screwDiameter: 5,
+    })
+    expect(wider).toContain('-sm-phillips-d5-l16.3mf')
+    expect(wider).not.toBe(name)
+    const manualCard = {
+      gridUnits: 6,
+      style: 'raised' as const,
+      iconPosition: 'left' as const,
+      icon: 'screw-pan' as const,
+      text: 'M4x16',
+    }
+    expect(openGridLabelCardThreeMfFileName(manualCard)).not.toBe(name)
+  })
+
+  it('reports screw-mode bounds as a non-blank raised card', () => {
+    expect(
+      boundsForOpenGridLabelCard({
+        gridUnits: 4,
+        style: 'raised',
+        iconPosition: 'left',
+        icon: 'gear-fill',
+        screwMode: true,
+      }),
+    ).toEqual({ min: [-20, -6, 0], max: [20, 6, 1] })
+  })
+
+  it('round-trips screw-mode parameters through the workspace raw layer', () => {
+    const raw = {
+      gridUnits: '5',
+      style: 'raised',
+      iconPosition: 'left',
+      textHeight: '3',
+      screwMode: 'true',
+      screwHead: 'torx',
+      screwDiameter: '2.5',
+      screwLength: '12',
+    }
+    const parsed = parseOpenGridLabelCardRawParameters(raw)
+    expect(parsed).toMatchObject({
+      valid: true,
+      value: {
+        screwMode: true,
+        screwHead: 'torx',
+        screwDiameter: 2.5,
+        screwLength: 12,
+        text: 'M2.5x12',
+      },
+    })
+    const serialized = rawFromParameters(parsed.valid ? parsed.value : {})
+    expect(serialized.screwMode).toBe('true')
+    expect(serialized.screwHead).toBe('torx')
+    expect(serialized.screwDiameter).toBe('2.5')
+    expect(serialized.screwLength).toBe('12')
+    expect(parseOpenGridLabelCardRawParameters(serialized)).toMatchObject({
+      valid: true,
+    })
+    expect(
+      parseOpenGridLabelCardRawParameters({
+        ...raw,
+        bogus: 'x',
+      } as Record<string, string>),
+    ).toMatchObject({ valid: false })
+    expect(
+      parseOpenGridLabelCardRawParameters({ ...raw, screwMode: 'yes' }),
+    ).toMatchObject({ valid: false })
+    const absentHeight = parseOpenGridLabelCardRawParameters({
+      gridUnits: '5',
+      style: 'raised',
+      iconPosition: 'left',
+      screwMode: 'true',
+      screwHead: 'hex',
+      screwDiameter: '8',
+      screwLength: '4',
+      layout: 'diagonal',
+      groupAlign: 'sideways',
+    })
+    expect(absentHeight).toMatchObject({
+      valid: true,
+      value: {
+        textHeight: 3,
+        icon: 'screw-hex',
+        text: 'M8x4',
+        layout: 'inline',
+        groupAlign: 'center',
+      },
     })
   })
 })

@@ -490,6 +490,7 @@ export {
   openGridLabelCardFileName,
   openGridLabelCardStlFileName,
   openGridLabelCardThreeMfFileName,
+  openGridLabelCardScrewDesignation,
   OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_LABEL_CARD_STYLES,
   OPENGRID_LABEL_CARD_ICON_IDS,
@@ -498,6 +499,11 @@ export {
   OPENGRID_LABEL_CARD_LAYOUTS,
   OPENGRID_LABEL_CARD_STACKED_GAP,
   OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT,
+  OPENGRID_LABEL_CARD_SCREW_HEADS,
+  OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_DIAMETERS,
+  OPENGRID_LABEL_CARD_SCREW_LENGTH,
   validateOpenGridLabelCardParameters,
 } from './opengrid-label-card'
 
@@ -520,4 +526,5 @@ export type {
   OpenGridLabelCardValidation,
   OpenGridLabelCardLayout,
   OpenGridLabelCardGroupAlign,
+  OpenGridLabelCardScrewHead,
 } from './opengrid-label-card'

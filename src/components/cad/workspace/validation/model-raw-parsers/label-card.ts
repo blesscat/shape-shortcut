@@ -1,5 +1,8 @@
 import {
   OPENGRID_LABEL_CARD_CONFIGURATION,
+  OPENGRID_LABEL_CARD_SCREW_DIAMETERS,
+  OPENGRID_LABEL_CARD_SCREW_HEADS,
+  OPENGRID_LABEL_CARD_SCREW_LENGTH,
   normalizeOpenGridLabelCardText,
   parseDimensionInput,
   validateModelParameters,
@@ -57,12 +60,27 @@ export function parseOpenGridLabelCardRawParameters(raw: RawParameters):
       field: 'iconSize',
     }
   }
-  const layout = raw.layout ?? 'inline'
-  if (layout !== 'inline' && layout !== 'stacked') {
+  const screwModeRaw = raw.screwMode
+  if (
+    screwModeRaw !== undefined &&
+    screwModeRaw !== '' &&
+    screwModeRaw !== 'true' &&
+    screwModeRaw !== 'false'
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'screwMode',
+    }
+  }
+  const screwMode = screwModeRaw === 'true'
+  const layout = screwMode ? 'inline' : (raw.layout ?? 'inline')
+  if (!screwMode && layout !== 'inline' && layout !== 'stacked') {
     return { valid: false, messageId: 'validation.invalid', field: 'layout' }
   }
-  const groupAlign = raw.groupAlign ?? 'center'
+  const groupAlign = screwMode ? 'center' : (raw.groupAlign ?? 'center')
   if (
+    !screwMode &&
     groupAlign !== 'left' &&
     groupAlign !== 'center' &&
     groupAlign !== 'right'
@@ -73,17 +91,71 @@ export function parseOpenGridLabelCardRawParameters(raw: RawParameters):
       field: 'groupAlign',
     }
   }
+  const screwHead =
+    raw.screwHead ?? OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultHead
+  if (
+    typeof screwHead !== 'string' ||
+    !OPENGRID_LABEL_CARD_SCREW_HEADS.includes(
+      screwHead as (typeof OPENGRID_LABEL_CARD_SCREW_HEADS)[number],
+    )
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'screwHead',
+    }
+  }
+  const screwDiameter = Number(
+    raw.screwDiameter ??
+      OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultDiameter,
+  )
+  if (
+    !Number.isFinite(screwDiameter) ||
+    !OPENGRID_LABEL_CARD_SCREW_DIAMETERS.includes(screwDiameter)
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'screwDiameter',
+    }
+  }
+  const screwLength = Number(
+    raw.screwLength ??
+      OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultLength,
+  )
+  if (
+    !Number.isInteger(screwLength) ||
+    screwLength < OPENGRID_LABEL_CARD_SCREW_LENGTH.min ||
+    screwLength > OPENGRID_LABEL_CARD_SCREW_LENGTH.max
+  ) {
+    return {
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'screwLength',
+    }
+  }
   const normalizedRaw: Record<string, unknown> = {
     gridUnits,
     style,
-    textHeight: Number(raw.textHeight ?? 7),
-    iconPosition: raw.iconPosition ?? 'left',
-    textLine2: raw.textLine2 ?? '',
-    textAlignment: raw.textAlignment ?? 'center',
-    textLine2Alignment: raw.textLine2Alignment ?? 'center',
+    textHeight: Number(
+      raw.textHeight ??
+        (screwMode
+          ? OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.textHeight
+          : 7),
+    ),
+    iconPosition: screwMode ? 'left' : (raw.iconPosition ?? 'left'),
+    textLine2: screwMode ? '' : (raw.textLine2 ?? ''),
+    textAlignment: screwMode ? 'center' : (raw.textAlignment ?? 'center'),
+    textLine2Alignment: screwMode
+      ? 'center'
+      : (raw.textLine2Alignment ?? 'center'),
     layout,
     groupAlign,
     iconSize,
+    screwMode,
+    screwHead,
+    screwDiameter,
+    screwLength,
   }
   if (raw.icon !== undefined) normalizedRaw.icon = raw.icon
   if (text !== undefined)

@@ -30,6 +30,10 @@ export type OpenGridLabelCardParameterKey =
   | 'layout'
   | 'groupAlign'
   | 'iconSize'
+  | 'screwMode'
+  | 'screwHead'
+  | 'screwDiameter'
+  | 'screwLength'
 
 export const OPENGRID_LABEL_CARD_STYLES = ['flat', 'raised'] as const
 
@@ -61,6 +65,44 @@ export const OPENGRID_LABEL_CARD_STACKED_GAP = 1
 export const OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT =
   OPENGRID_LABEL_CARD_HEIGHT - 2 * OPENGRID_LABEL_GRID.artworkSideInset
 
+export type OpenGridLabelCardScrewHead = 'phillips' | 'torx' | 'hex'
+
+export const OPENGRID_LABEL_CARD_SCREW_HEADS: readonly OpenGridLabelCardScrewHead[] =
+  ['phillips', 'torx', 'hex']
+
+/** Front-view head symbol per screw head selection. */
+export const OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS = {
+  phillips: 'drive-phillips',
+  torx: 'drive-torx',
+  hex: 'drive-hex',
+} as const
+
+/** Side-view screw silhouette per screw head selection. */
+export const OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS = {
+  phillips: 'screw-pan',
+  torx: 'screw-pan',
+  hex: 'screw-hex',
+} as const
+
+/** Selectable screw diameters in millimetres. */
+export const OPENGRID_LABEL_CARD_SCREW_DIAMETERS: readonly number[] = [
+  2, 2.5, 3, 3.5, 4, 5, 6, 8,
+]
+
+/** Selectable screw length range in millimetres. */
+export const OPENGRID_LABEL_CARD_SCREW_LENGTH = {
+  min: 4,
+  max: 30,
+  default: 16,
+} as const
+
+export function openGridLabelCardScrewDesignation(
+  diameter: number,
+  length: number,
+): string {
+  return `M${diameter}x${length}`
+}
+
 export type OpenGridLabelCardParameters = {
   gridUnits: number
   textHeight?: number
@@ -74,6 +116,10 @@ export type OpenGridLabelCardParameters = {
   layout?: OpenGridLabelCardLayout
   groupAlign?: OpenGridLabelCardGroupAlign
   iconSize?: number
+  screwMode?: boolean
+  screwHead?: OpenGridLabelCardScrewHead
+  screwDiameter?: number
+  screwLength?: number
 }
 
 export const OPENGRID_LABEL_CARD_CONFIGURATION = {
@@ -85,6 +131,12 @@ export const OPENGRID_LABEL_CARD_CONFIGURATION = {
   textRowGap: 0.5,
   iconSize: { min: 3, max: 8, default: 6, step: 0.5 },
   maxTextLength: 6,
+  screwMode: {
+    defaultHead: 'phillips',
+    defaultDiameter: 4,
+    defaultLength: 16,
+    textHeight: 3,
+  },
   defaultGridUnits: 4,
   defaultStyle: 'raised',
   defaultIcon: 'gear-fill',
@@ -176,6 +228,10 @@ export function validateOpenGridLabelCardParameters(
     'layout',
     'groupAlign',
     'iconSize',
+    'screwMode',
+    'screwHead',
+    'screwDiameter',
+    'screwLength',
   ]
   if (keys.some((key) => !knownKeys.includes(key as never))) {
     return invalid('parameters')
@@ -196,8 +252,46 @@ export function validateOpenGridLabelCardParameters(
     return invalid('gridUnits', 'validation.labelGridUnitsInvalid')
   }
 
+  const screwMode = value.screwMode ?? false
+  if (typeof screwMode !== 'boolean') return invalid('screwMode')
+  const rawScrewHead =
+    value.screwHead ?? OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultHead
+  if (
+    typeof rawScrewHead !== 'string' ||
+    !OPENGRID_LABEL_CARD_SCREW_HEADS.includes(
+      rawScrewHead as OpenGridLabelCardScrewHead,
+    )
+  ) {
+    return invalid('screwHead')
+  }
+  const screwHead = rawScrewHead as OpenGridLabelCardScrewHead
+  const screwDiameter =
+    value.screwDiameter ??
+    OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultDiameter
+  if (
+    typeof screwDiameter !== 'number' ||
+    !Number.isFinite(screwDiameter) ||
+    !OPENGRID_LABEL_CARD_SCREW_DIAMETERS.includes(screwDiameter)
+  ) {
+    return invalid('screwDiameter')
+  }
+  const screwLength =
+    value.screwLength ??
+    OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultLength
+  if (
+    typeof screwLength !== 'number' ||
+    !Number.isInteger(screwLength) ||
+    screwLength < OPENGRID_LABEL_CARD_SCREW_LENGTH.min ||
+    screwLength > OPENGRID_LABEL_CARD_SCREW_LENGTH.max
+  ) {
+    return invalid('screwLength')
+  }
+
   const textHeight =
-    value.textHeight ?? OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default
+    value.textHeight ??
+    (screwMode
+      ? OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.textHeight
+      : OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.default)
   if (
     typeof textHeight !== 'number' ||
     !Number.isFinite(textHeight) ||
@@ -206,16 +300,25 @@ export function validateOpenGridLabelCardParameters(
   )
     return invalid('textHeight')
 
-  const iconPosition = value.iconPosition ?? 'left'
-  if (iconPosition !== 'left' && iconPosition !== 'right')
+  const iconPosition: 'left' | 'right' = screwMode
+    ? 'left'
+    : ((value.iconPosition ?? 'left') as 'left' | 'right')
+  if (!screwMode && iconPosition !== 'left' && iconPosition !== 'right')
     return invalid('iconPosition')
 
-  const layout = value.layout ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultLayout
-  if (layout !== 'inline' && layout !== 'stacked') return invalid('layout')
+  const layout: OpenGridLabelCardLayout = screwMode
+    ? OPENGRID_LABEL_CARD_CONFIGURATION.defaultLayout
+    : ((value.layout ??
+        OPENGRID_LABEL_CARD_CONFIGURATION.defaultLayout) as OpenGridLabelCardLayout)
+  if (!screwMode && layout !== 'inline' && layout !== 'stacked')
+    return invalid('layout')
 
-  const groupAlign =
-    value.groupAlign ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultGroupAlign
+  const groupAlign: OpenGridLabelCardGroupAlign = screwMode
+    ? OPENGRID_LABEL_CARD_CONFIGURATION.defaultGroupAlign
+    : ((value.groupAlign ??
+        OPENGRID_LABEL_CARD_CONFIGURATION.defaultGroupAlign) as OpenGridLabelCardGroupAlign)
   if (
+    !screwMode &&
     groupAlign !== 'left' &&
     groupAlign !== 'center' &&
     groupAlign !== 'right'
@@ -241,9 +344,12 @@ export function validateOpenGridLabelCardParameters(
     return invalid('style', 'validation.labelCardStyleInvalid')
   }
 
-  const rawIcon =
-    value.icon ?? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.icon
-  if (!isOpenGridLabelCardIconId(rawIcon)) {
+  const rawIcon: OpenGridLabelCardIconId = screwMode
+    ? OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters.icon
+    : ((value.icon ??
+        OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters
+          .icon) as OpenGridLabelCardIconId)
+  if (!screwMode && !isOpenGridLabelCardIconId(rawIcon)) {
     return invalid('icon', 'validation.labelCardIconUnknown')
   }
 
@@ -258,61 +364,102 @@ export function validateOpenGridLabelCardParameters(
     iconSize,
   }
   for (const field of ['textAlignment', 'textLine2Alignment'] as const) {
-    const alignment = value[field] ?? 'center'
-    if (alignment !== 'left' && alignment !== 'center' && alignment !== 'right')
+    const alignment: LabelCardTextAlignment = screwMode
+      ? 'center'
+      : ((value[field] ?? 'center') as LabelCardTextAlignment)
+    if (
+      !screwMode &&
+      alignment !== 'left' &&
+      alignment !== 'center' &&
+      alignment !== 'right'
+    )
       return invalid(field)
     parameters[field] = alignment
   }
-  for (const field of ['text', 'textLine2'] as const) {
-    const rawText = value[field] === undefined ? '' : value[field]
-    if (typeof rawText !== 'string') return invalid(field)
-    const text = normalizeOpenGridLabelCardText(rawText)
-    const textLength = Array.from(text).length
-    if (textLength > OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength) {
-      return invalid(field, 'validation.labelCardTextTooLong', {
-        max: OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength,
-      })
-    }
-    const textWidth =
-      (Math.max(0, textLength - 1) * OPENGRID_LABEL_GRID.textSpacing +
-        OPENGRID_LABEL_GRID.textFontSize) *
-      (textHeight / OPENGRID_LABEL_GRID.textFontSize)
-    let requiredWidth = textWidth
-    if (rawIcon !== 'none') {
-      if (layout === 'stacked') {
-        if (field === 'textLine2' && textLength > 0)
-          return invalid('textLine2', 'validation.labelCardStackedSingleRow')
-        requiredWidth = Math.max(requiredWidth, iconSize)
-      } else {
-        requiredWidth += iconSize + OPENGRID_LABEL_GRID.iconTextGap
+  if (!screwMode) {
+    for (const field of ['text', 'textLine2'] as const) {
+      const rawText = value[field] === undefined ? '' : value[field]
+      if (typeof rawText !== 'string') return invalid(field)
+      const text = normalizeOpenGridLabelCardText(rawText)
+      const textLength = Array.from(text).length
+      if (textLength > OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength) {
+        return invalid(field, 'validation.labelCardTextTooLong', {
+          max: OPENGRID_LABEL_CARD_CONFIGURATION.maxTextLength,
+        })
       }
+      const textWidth =
+        (Math.max(0, textLength - 1) * OPENGRID_LABEL_GRID.textSpacing +
+          OPENGRID_LABEL_GRID.textFontSize) *
+        (textHeight / OPENGRID_LABEL_GRID.textFontSize)
+      let requiredWidth = textWidth
+      if (rawIcon !== 'none') {
+        if (layout === 'stacked') {
+          if (field === 'textLine2' && textLength > 0)
+            return invalid('textLine2', 'validation.labelCardStackedSingleRow')
+          requiredWidth = Math.max(requiredWidth, iconSize)
+        } else {
+          requiredWidth += iconSize + OPENGRID_LABEL_GRID.iconTextGap
+        }
+      }
+      if (
+        textLength > 0 &&
+        requiredWidth >
+          openGridLabelWidthFor(gridUnits) -
+            2 * OPENGRID_LABEL_GRID.artworkSideInset
+      )
+        return invalid(field, 'validation.labelCardTextTooWide')
+      if (textLength > 0) parameters[field] = text
     }
     if (
-      textLength > 0 &&
-      requiredWidth >
-        openGridLabelWidthFor(gridUnits) -
-          2 * OPENGRID_LABEL_GRID.artworkSideInset
+      parameters.text &&
+      parameters.textLine2 &&
+      textHeight > OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.twoRowMax
     )
-      return invalid(field, 'validation.labelCardTextTooWide')
-    if (textLength > 0) parameters[field] = text
+      return invalid('textHeight', 'validation.labelCardTwoRowHeight')
+    if (layout === 'stacked' && parameters.icon === 'none')
+      return invalid('layout', 'validation.labelCardStackedNeedsIcon')
+    if (
+      layout === 'stacked' &&
+      (parameters.text || parameters.textLine2 || parameters.icon !== 'none') &&
+      iconSize +
+        OPENGRID_LABEL_CARD_STACKED_GAP +
+        (parameters.text || parameters.textLine2 ? textHeight : 0) >
+        OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
+    )
+      return invalid('iconSize', 'validation.labelCardStackedHeight')
   }
-  if (
-    parameters.text &&
-    parameters.textLine2 &&
-    textHeight > OPENGRID_LABEL_CARD_CONFIGURATION.textHeight.twoRowMax
-  )
-    return invalid('textHeight', 'validation.labelCardTwoRowHeight')
-  if (layout === 'stacked' && parameters.icon === 'none')
-    return invalid('layout', 'validation.labelCardStackedNeedsIcon')
-  if (
-    layout === 'stacked' &&
-    (parameters.text || parameters.textLine2 || parameters.icon !== 'none') &&
-    iconSize +
-      OPENGRID_LABEL_CARD_STACKED_GAP +
-      (parameters.text || parameters.textLine2 ? textHeight : 0) >
+  parameters.screwMode = screwMode
+  parameters.screwHead = screwHead
+  parameters.screwDiameter = screwDiameter
+  parameters.screwLength = screwLength
+  if (screwMode) {
+    // Screw mode derives the effective icon, text, and inert layout keys from
+    // the picker values; stored manual values are ignored, not rejected.
+    const designation = openGridLabelCardScrewDesignation(
+      screwDiameter,
+      screwLength,
+    )
+    const letters = Array.from(designation).length
+    const designationWidth =
+      (Math.max(0, letters - 1) * OPENGRID_LABEL_GRID.textSpacing +
+        OPENGRID_LABEL_GRID.textFontSize) *
+      (textHeight / OPENGRID_LABEL_GRID.textFontSize)
+    const pairWidth = 2 * iconSize + OPENGRID_LABEL_GRID.iconTextGap
+    if (
+      Math.max(pairWidth, designationWidth) >
+      openGridLabelWidthFor(gridUnits) -
+        2 * OPENGRID_LABEL_GRID.artworkSideInset
+    )
+      return invalid('screwDiameter', 'validation.labelCardScrewTooWide')
+    if (
+      iconSize + OPENGRID_LABEL_CARD_STACKED_GAP + textHeight >
       OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
-  )
-    return invalid('iconSize', 'validation.labelCardStackedHeight')
+    )
+      return invalid('iconSize', 'validation.labelCardStackedHeight')
+    parameters.text = designation
+    delete parameters.textLine2
+    parameters.icon = OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS[screwHead]
+  }
   return { valid: true, value: parameters }
 }
 
@@ -366,7 +513,9 @@ export function boundsForOpenGridLabelCard(
 }
 
 function parameterSuffixFor(parameters: OpenGridLabelCardParameters): string {
-  return `w${openGridLabelWidthFor(parameters.gridUnits)}-${parameters.style}-${parameters.icon}-${parameters.iconPosition ?? 'left'}-l${parameters.layout}-g${parameters.groupAlign}-i${parameters.iconSize}`
+  const base = `w${openGridLabelWidthFor(parameters.gridUnits)}-${parameters.style}-${parameters.icon}-${parameters.iconPosition ?? 'left'}-l${parameters.layout}-g${parameters.groupAlign}-i${parameters.iconSize}`
+  if (!parameters.screwMode) return base
+  return `${base}-sm-${parameters.screwHead}-d${parameters.screwDiameter}-l${parameters.screwLength}`
 }
 
 function fileNameFor(

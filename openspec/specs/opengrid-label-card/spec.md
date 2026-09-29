@@ -222,4 +222,63 @@ The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbol
 - **WHEN** the user changes `iconSize` while a screw side-view icon is selected
 - **THEN** the generated screw geometry MUST scale to the selected size while keeping every feature at least 1.5 viewport units thick
 
+### Requirement: Screw mode dedicated composition
+
+The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, icon size, and text height controls. The card composition MUST be fixed: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) and the side-view screw silhouette (`screw-pan` for phillips and torx, `screw-hex` for hex) MUST sit side by side, centered as a pair in the upper safe zone sharing `iconSize` and separated by the existing icon/text gap, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The side-view shaft length MUST follow the selected length through the existing 4–30 mm to 0.35–1.0 shaft ratio mapping, independent of text parsing. `gridUnits`, `style`, `iconSize`, and `textHeight` MUST keep their existing ranges and remain adjustable.
+
+#### Scenario: Enable screw mode
+
+- **WHEN** the user enables screw mode on a manual card
+- **THEN** the panel MUST show only the head, diameter, and length pickers alongside width, style, icon size, and text height
+- **AND** the card MUST generate the dual-icon composition with the generated designation instead of any manual icon or text
+
+#### Scenario: Head choice derives both icons
+
+- **WHEN** the user selects hex as the head with any diameter and length
+- **THEN** the composition MUST use the `drive-hex` front symbol beside a `screw-hex` side view
+- **AND** selecting phillips or torx MUST pair the matching drive symbol with a `screw-pan` side view
+
+#### Scenario: Shaft length follows the selected length
+
+- **WHEN** two screw-mode cards differ only in length, 8 mm versus 28 mm
+- **THEN** the 28 mm card MUST render a visibly longer shaft within the same `iconSize`
+
+### Requirement: Screw mode derives text and icon values
+
+While `screwMode` is enabled, validation MUST derive the effective icon from the selected head (side-view id), MUST overwrite the effective text with the generated `M<diameter>x<length>` designation, and MUST ignore any stored manual `text`, `textLine2`, `layout`, `groupAlign`, `iconPosition`, and text-alignment values rather than rejecting or surfacing them. An absent text height MUST hydrate to the 3 mm screw-mode default instead of the manual 7 mm default. The generated designation MUST be exempt from the six-character manual input cap; width validation MUST instead evaluate the full composition (icon pair + gap + designation at the selected text height) against the safe face and return a field-specific diagnostic that prevents generation and export. Screw mode MUST enforce `iconSize + 1 + textHeight` within the 10 mm safe height with a field-specific diagnostic, and enabling screw mode on a card whose text height violates the constraint MUST reduce the text height to 3 mm. Toggling screw mode off MUST restore the manual controls with empty text rows.
+
+#### Scenario: Stale manual values are ignored
+
+- **WHEN** a snapshot with manual icon, text, and layout values enables `screwMode`
+- **THEN** the hydrated card MUST generate only the derived composition and designation without validation errors for the manual values
+
+#### Scenario: Decimal designation generates on a wide card
+
+- **WHEN** the user selects diameter M2.5 with length 30 on a card wide enough for the composition
+- **THEN** the designation `M2.5x30` MUST generate without a text-length rejection
+
+#### Scenario: Composition too wide is rejected
+
+- **WHEN** the icon pair plus designation cannot fit the selected card width
+- **THEN** a field-specific width diagnostic MUST prevent generation and export
+
+#### Scenario: Screw mode clamps an impossible text height
+
+- **WHEN** screw mode is enabled while text height is 7 mm and icon size is 6 mm
+- **THEN** the effective text height MUST be reduced to 3 mm so the composition fits the safe height
+
+### Requirement: Screw mode persistence and export fingerprints
+
+`mode`, head, diameter, and length choices MUST persist across reloads as canonical parameter keys, and a screw-mode snapshot MUST regenerate the identical composition. Export file names MUST include screw-mode tokens covering the head, diameter, and length (for example `sm-phillips-d4-l16`) such that no screw-mode export can collide with a manual card or a different screw selection. Screw-mode cards MUST export STEP and STL combined geometry and the two-color 3MF package under the existing lifecycle gates.
+
+#### Scenario: Screw selections persist
+
+- **WHEN** the user reloads a screw-mode card with torx, M5, 20 mm
+- **THEN** the panel MUST restore torx, M5, and 20 mm and regenerate the identical composition
+
+#### Scenario: File names distinguish screw selections
+
+- **WHEN** the user exports 3MF for screw-mode cards differing only in diameter
+- **THEN** the file names MUST differ in the screw tokens while following the existing naming pattern
+
 

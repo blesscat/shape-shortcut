@@ -3,6 +3,12 @@
     OPENGRID_LABEL_CARD_CONFIGURATION,
     OPENGRID_LABEL_CARD_ICON_IDS,
     OPENGRID_LABEL_CARD_LAYOUTS,
+    OPENGRID_LABEL_CARD_SCREW_DIAMETERS,
+    OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
+    OPENGRID_LABEL_CARD_SCREW_HEADS,
+    OPENGRID_LABEL_CARD_SCREW_LENGTH,
+    OPENGRID_LABEL_CARD_STACKED_GAP,
+    OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT,
     OPENGRID_LABEL_CARD_STYLES,
     normalizeOpenGridLabelCardText,
   } from '../../../../cad-contract/units'
@@ -54,6 +60,16 @@
   let rawIconSize = $derived(
     rawParameters.iconSize ?? String(config.defaultParameters.iconSize),
   )
+  let screwMode = $derived(rawParameters.screwMode === 'true')
+  let rawScrewHead = $derived(
+    rawParameters.screwHead ?? config.screwMode.defaultHead,
+  )
+  let rawScrewDiameter = $derived(
+    rawParameters.screwDiameter ?? String(config.screwMode.defaultDiameter),
+  )
+  let rawScrewLength = $derived(
+    rawParameters.screwLength ?? String(config.screwMode.defaultLength),
+  )
   let stacked = $derived(rawLayout === 'stacked')
   let hasTwoRows = $derived(
     Boolean(
@@ -61,8 +77,20 @@
       normalizeOpenGridLabelCardText(rawParameters.textLine2 ?? ''),
     ),
   )
+  let screwMaxTextHeight = $derived(
+    OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
+      OPENGRID_LABEL_CARD_STACKED_GAP -
+      Number(rawIconSize),
+  )
   let maxTextHeight = $derived(
-    hasTwoRows ? config.textHeight.twoRowMax : config.textHeight.max,
+    screwMode
+      ? Math.max(
+          config.textHeight.min,
+          Math.min(config.textHeight.max, screwMaxTextHeight),
+        )
+      : hasTwoRows
+        ? config.textHeight.twoRowMax
+        : config.textHeight.max,
   )
 
   function handleStyleInput(style: string): void {
@@ -78,6 +106,21 @@
     if (nextLayout === 'stacked') {
       // Stacked layout only supports a single text row.
       onInputChange('textLine2', '')
+    }
+  }
+
+  function handleScrewModeInput(nextScrewMode: boolean): void {
+    onInputChange('screwMode', nextScrewMode ? 'true' : 'false')
+    if (!nextScrewMode) return
+    onInputChange('text', '')
+    onInputChange('textLine2', '')
+    const height = Number(rawParameters.textHeight ?? config.textHeight.default)
+    const size = Number(rawIconSize)
+    if (
+      size + OPENGRID_LABEL_CARD_STACKED_GAP + height >
+      OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
+    ) {
+      onInputChange('textHeight', String(config.screwMode.textHeight))
     }
   }
 
@@ -147,59 +190,196 @@
 
   <div class="grid gap-1">
     <span class="text-sm text-ink">
-      {translate(locale, 'panel.labelCard.layout')}
+      {translate(locale, 'panel.labelCard.screwMode')}
     </span>
     <div
       class="flex flex-wrap gap-2"
       role="radiogroup"
-      aria-label={translate(locale, 'panel.labelCard.layout')}
-      data-testid="opengrid-label-card-layout"
+      aria-label={translate(locale, 'panel.labelCard.screwMode')}
+      data-testid="opengrid-label-card-screw-mode"
     >
-      {#each OPENGRID_LABEL_CARD_LAYOUTS as layoutOption (layoutOption)}
-        <button
-          type="button"
-          class="rounded-lg border px-3 py-1 text-sm"
-          class:border-primary={rawLayout === layoutOption}
-          aria-pressed={rawLayout === layoutOption}
-          data-testid={`opengrid-label-card-layout-${layoutOption}`}
-          onclick={() => handleLayoutInput(layoutOption)}
-        >
-          {translate(locale, `panel.labelCard.layout.${layoutOption}`)}
-        </button>
-      {/each}
+      <button
+        type="button"
+        class="rounded-lg border px-3 py-1 text-sm"
+        class:border-primary={!screwMode}
+        aria-pressed={!screwMode}
+        data-testid="opengrid-label-card-screw-mode-off"
+        onclick={() => handleScrewModeInput(false)}
+      >
+        {translate(locale, 'panel.labelCard.screwMode.off')}
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border px-3 py-1 text-sm"
+        class:border-primary={screwMode}
+        aria-pressed={screwMode}
+        data-testid="opengrid-label-card-screw-mode-on"
+        onclick={() => handleScrewModeInput(true)}
+      >
+        {translate(locale, 'panel.labelCard.screwMode.on')}
+      </button>
     </div>
-    {#if fieldErrors.layout}
+    {#if fieldErrors.screwMode}
       <span class="text-sm text-error" role="alert"
-        >{formatValidationIssue(locale, fieldErrors.layout)}</span
+        >{formatValidationIssue(locale, fieldErrors.screwMode)}</span
       >
     {/if}
   </div>
 
-  {#if rawLayout === 'inline'}
+  {#if screwMode}
     <div class="grid gap-1">
       <span class="text-sm text-ink">
-        {translate(locale, 'panel.labelCard.groupAlign')}
+        {translate(locale, 'panel.labelCard.screwHead')}
       </span>
       <div
         class="flex flex-wrap gap-2"
         role="radiogroup"
-        aria-label={translate(locale, 'panel.labelCard.groupAlign')}
-        data-testid="opengrid-label-card-group-align"
+        aria-label={translate(locale, 'panel.labelCard.screwHead')}
+        data-testid="opengrid-label-card-screw-head"
       >
-        {#each alignments as align (align)}
+        {#each OPENGRID_LABEL_CARD_SCREW_HEADS as head (head)}
+          {@const iconPath =
+            LABEL_CARD_ICON_PATHS[OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS[head]]}
           <button
             type="button"
-            class="rounded-lg border px-3 py-1 text-sm"
-            class:border-primary={rawGroupAlign === align}
-            aria-pressed={rawGroupAlign === align}
-            data-testid={`opengrid-label-card-group-align-${align}`}
-            onclick={() => onInputChange('groupAlign', align)}
+            class="flex flex-col items-center gap-1 rounded-lg border p-2"
+            class:border-primary={rawScrewHead === head}
+            aria-pressed={rawScrewHead === head}
+            data-testid={`opengrid-label-card-screw-head-${head}`}
+            onclick={() => onInputChange('screwHead', head)}
           >
-            {translate(locale, `panel.labelCard.groupAlign.${align}`)}
+            <svg
+              viewBox="0 0 16 16"
+              width="24"
+              height="24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              {#each iconPath?.paths ?? [] as pathData (pathData)}
+                <path
+                  d={pathData}
+                  fill-rule={iconPath?.evenOdd ? 'evenodd' : undefined}
+                />
+              {/each}
+            </svg>
+            <span class="text-xs">
+              {translate(locale, `panel.labelCard.screwHead.${head}`)}
+            </span>
           </button>
         {/each}
       </div>
+      {#if fieldErrors.screwHead}
+        <span class="text-sm text-error" role="alert"
+          >{formatValidationIssue(locale, fieldErrors.screwHead)}</span
+        >
+      {/if}
     </div>
+
+    <div class="grid gap-1">
+      <label for="label-card-screw-diameter" class="text-sm text-ink"
+        >{translate(locale, 'panel.labelCard.screwDiameter')}</label
+      >
+      <select
+        id="label-card-screw-diameter"
+        class="rounded-lg border border-border-field bg-panel px-3 py-2"
+        value={rawScrewDiameter}
+        aria-invalid={Boolean(fieldErrors.screwDiameter)}
+        data-testid="opengrid-label-card-screw-diameter"
+        onchange={(event) =>
+          onInputChange('screwDiameter', event.currentTarget.value)}
+      >
+        {#each OPENGRID_LABEL_CARD_SCREW_DIAMETERS as diameter (diameter)}
+          <option value={String(diameter)}>M{diameter}</option>
+        {/each}
+      </select>
+      {#if fieldErrors.screwDiameter}
+        <span class="text-sm text-error" role="alert"
+          >{formatValidationIssue(locale, fieldErrors.screwDiameter)}</span
+        >
+      {/if}
+    </div>
+
+    <div class="grid gap-1">
+      <label for="label-card-screw-length" class="text-sm text-ink"
+        >{translate(locale, 'panel.labelCard.screwLength')} · {rawScrewLength}
+        mm</label
+      >
+      <input
+        id="label-card-screw-length"
+        type="range"
+        min={OPENGRID_LABEL_CARD_SCREW_LENGTH.min}
+        max={OPENGRID_LABEL_CARD_SCREW_LENGTH.max}
+        step="1"
+        value={rawScrewLength}
+        data-testid="opengrid-label-card-screw-length"
+        aria-invalid={Boolean(fieldErrors.screwLength)}
+        class="min-w-0 w-full accent-primary"
+        oninput={(event) =>
+          onInputChange('screwLength', event.currentTarget.value)}
+      />
+      {#if fieldErrors.screwLength}
+        <span class="text-sm text-error" role="alert"
+          >{formatValidationIssue(locale, fieldErrors.screwLength)}</span
+        >
+      {/if}
+    </div>
+  {:else}
+    <div class="grid gap-1">
+      <span class="text-sm text-ink">
+        {translate(locale, 'panel.labelCard.layout')}
+      </span>
+      <div
+        class="flex flex-wrap gap-2"
+        role="radiogroup"
+        aria-label={translate(locale, 'panel.labelCard.layout')}
+        data-testid="opengrid-label-card-layout"
+      >
+        {#each OPENGRID_LABEL_CARD_LAYOUTS as layoutOption (layoutOption)}
+          <button
+            type="button"
+            class="rounded-lg border px-3 py-1 text-sm"
+            class:border-primary={rawLayout === layoutOption}
+            aria-pressed={rawLayout === layoutOption}
+            data-testid={`opengrid-label-card-layout-${layoutOption}`}
+            onclick={() => handleLayoutInput(layoutOption)}
+          >
+            {translate(locale, `panel.labelCard.layout.${layoutOption}`)}
+          </button>
+        {/each}
+      </div>
+      {#if fieldErrors.layout}
+        <span class="text-sm text-error" role="alert"
+          >{formatValidationIssue(locale, fieldErrors.layout)}</span
+        >
+      {/if}
+    </div>
+
+    {#if rawLayout === 'inline'}
+      <div class="grid gap-1">
+        <span class="text-sm text-ink">
+          {translate(locale, 'panel.labelCard.groupAlign')}
+        </span>
+        <div
+          class="flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label={translate(locale, 'panel.labelCard.groupAlign')}
+          data-testid="opengrid-label-card-group-align"
+        >
+          {#each alignments as align (align)}
+            <button
+              type="button"
+              class="rounded-lg border px-3 py-1 text-sm"
+              class:border-primary={rawGroupAlign === align}
+              aria-pressed={rawGroupAlign === align}
+              data-testid={`opengrid-label-card-group-align-${align}`}
+              onclick={() => onInputChange('groupAlign', align)}
+            >
+              {translate(locale, `panel.labelCard.groupAlign.${align}`)}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
   {/if}
 
   <div class="grid gap-1">
@@ -211,7 +391,11 @@
       id="label-card-icon-size"
       type="range"
       min={config.iconSize.min}
-      max={config.iconSize.max}
+      max={screwMode
+        ? OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
+          OPENGRID_LABEL_CARD_STACKED_GAP -
+          config.textHeight.min
+        : config.iconSize.max}
       step={config.iconSize.step}
       value={rawIconSize}
       data-testid="opengrid-label-card-icon-size"
@@ -231,26 +415,28 @@
     {/if}
   </div>
 
-  <div class="grid gap-1">
-    <label for="label-card-icon-position"
-      >{translate(locale, 'panel.labelCard.iconPosition')}</label
-    >
-    <select
-      id="label-card-icon-position"
-      disabled={rawIcon === 'none'}
-      class="rounded-lg border border-border-field bg-panel px-3 py-2"
-      value={rawParameters.iconPosition ?? 'left'}
-      onchange={(event) =>
-        onInputChange('iconPosition', event.currentTarget.value)}
-    >
-      <option value="left"
-        >{translate(locale, 'panel.labelCard.iconPosition.left')}</option
+  {#if !screwMode}
+    <div class="grid gap-1">
+      <label for="label-card-icon-position"
+        >{translate(locale, 'panel.labelCard.iconPosition')}</label
       >
-      <option value="right"
-        >{translate(locale, 'panel.labelCard.iconPosition.right')}</option
+      <select
+        id="label-card-icon-position"
+        disabled={rawIcon === 'none'}
+        class="rounded-lg border border-border-field bg-panel px-3 py-2"
+        value={rawParameters.iconPosition ?? 'left'}
+        onchange={(event) =>
+          onInputChange('iconPosition', event.currentTarget.value)}
       >
-    </select>
-  </div>
+        <option value="left"
+          >{translate(locale, 'panel.labelCard.iconPosition.left')}</option
+        >
+        <option value="right"
+          >{translate(locale, 'panel.labelCard.iconPosition.right')}</option
+        >
+      </select>
+    </div>
+  {/if}
 
   <div class="grid gap-1">
     <span class="text-sm text-ink">
@@ -282,58 +468,61 @@
     {/if}
   </div>
 
-  <div class="grid gap-1">
-    <span class="text-sm text-ink">
-      {translate(locale, 'panel.labelCard.icon')}
-    </span>
-    <div
-      class="grid grid-cols-4 gap-2 sm:grid-cols-5"
-      role="radiogroup"
-      aria-label={translate(locale, 'panel.labelCard.icon')}
-      data-testid="opengrid-label-card-icon-gallery"
-    >
-      {#each OPENGRID_LABEL_CARD_ICON_IDS as iconId (iconId)}
-        {@const iconPath = LABEL_CARD_ICON_PATHS[iconId]}
-        <button
-          type="button"
-          class="flex flex-col items-center gap-1 rounded-lg border p-2"
-          class:border-primary={rawIcon === iconId}
-          aria-pressed={rawIcon === iconId}
-          aria-label={translate(locale, `panel.labelCard.icon.${iconId}`)}
-          data-testid={`opengrid-label-card-icon-${iconId}`}
-          onclick={() => handleIconInput(iconId)}
-        >
-          <svg
-            viewBox="0 0 16 16"
-            width="24"
-            height="24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            {#each iconPath?.paths ?? [] as pathData (pathData)}
-              <path
-                d={pathData}
-                fill-rule={iconPath?.evenOdd ? 'evenodd' : undefined}
-              />
-            {/each}
-          </svg>
-          <span class="text-xs">
-            {translate(locale, `panel.labelCard.icon.${iconId}`)}
-          </span>
-        </button>
-      {/each}
-    </div>
-    {#if fieldErrors.icon}
-      <span class="text-sm text-error" role="alert"
-        >{formatValidationIssue(locale, fieldErrors.icon)}</span
+  {#if !screwMode}
+    <div class="grid gap-1">
+      <span class="text-sm text-ink">
+        {translate(locale, 'panel.labelCard.icon')}
+      </span>
+      <div
+        class="grid grid-cols-4 gap-2 sm:grid-cols-5"
+        role="radiogroup"
+        aria-label={translate(locale, 'panel.labelCard.icon')}
+        data-testid="opengrid-label-card-icon-gallery"
       >
-    {/if}
-  </div>
+        {#each OPENGRID_LABEL_CARD_ICON_IDS as iconId (iconId)}
+          {@const iconPath = LABEL_CARD_ICON_PATHS[iconId]}
+          <button
+            type="button"
+            class="flex flex-col items-center gap-1 rounded-lg border p-2"
+            class:border-primary={rawIcon === iconId}
+            aria-pressed={rawIcon === iconId}
+            aria-label={translate(locale, `panel.labelCard.icon.${iconId}`)}
+            data-testid={`opengrid-label-card-icon-${iconId}`}
+            onclick={() => handleIconInput(iconId)}
+          >
+            <svg
+              viewBox="0 0 16 16"
+              width="24"
+              height="24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              {#each iconPath?.paths ?? [] as pathData (pathData)}
+                <path
+                  d={pathData}
+                  fill-rule={iconPath?.evenOdd ? 'evenodd' : undefined}
+                />
+              {/each}
+            </svg>
+            <span class="text-xs">
+              {translate(locale, `panel.labelCard.icon.${iconId}`)}
+            </span>
+          </button>
+        {/each}
+      </div>
+      {#if fieldErrors.icon}
+        <span class="text-sm text-error" role="alert"
+          >{formatValidationIssue(locale, fieldErrors.icon)}</span
+        >
+      {/if}
+    </div>
+  {/if}
 
   <div class="grid gap-1">
     <label for="label-card-text-height" class="text-sm text-ink"
       >{translate(locale, 'panel.labelCard.textHeight')} · {rawParameters.textHeight ??
-        config.textHeight.default} mm</label
+        (screwMode ? config.screwMode.textHeight : config.textHeight.default)}
+      mm</label
     >
     <input
       id="label-card-text-height"
@@ -341,7 +530,8 @@
       min={config.textHeight.min}
       max={maxTextHeight}
       step={config.textHeight.step}
-      value={rawParameters.textHeight ?? config.textHeight.default}
+      value={rawParameters.textHeight ??
+        (screwMode ? config.screwMode.textHeight : config.textHeight.default)}
       class="min-w-0 w-full accent-primary"
       oninput={(event) =>
         onInputChange('textHeight', event.currentTarget.value)}
@@ -354,67 +544,69 @@
       >{/if}
   </div>
 
-  {#each rowFields as row (row.key)}
-    {#if !(stacked && row.key === 'textLine2')}
-      {@const rawText = rawParameters[row.key] ?? ''}
-      {@const textLength = Array.from(
-        normalizeOpenGridLabelCardText(rawText),
-      ).length}
-      <ParameterField
-        {locale}
-        label={translate(locale, row.label)}
-        changed={rawText !== ''}
-        error={fieldErrors[row.key]}
-        errorId={`opengrid-label-card-${row.key}-error`}
-        restoreLabel={translate(locale, row.label)}
-        onRestore={() => onInputChange(row.key, '')}
-      >
-        <div class="grid gap-1">
-          <input
-            aria-describedby="opengrid-label-card-text-help"
-            aria-invalid={fieldErrors[row.key] ? 'true' : undefined}
-            aria-label={translate(locale, row.aria)}
-            autocomplete="off"
-            class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
-            data-testid={`opengrid-label-card-${row.key}`}
-            spellcheck="false"
-            type="text"
-            value={rawText}
-            oninput={(event) => handleTextInput(row.key, event)}
-          />
-          <span
-            aria-live="polite"
-            class="text-right text-sm text-muted-foreground"
-            data-testid={`opengrid-label-card-${row.key}-count`}
-          >
-            {translate(locale, 'panel.labelCard.characterCount', {
-              count: textLength,
-              max: config.maxTextLength,
-            })}
-          </span>
-          {#if !stacked}
-            <label for={`label-card-${row.key}-alignment`}
-              >{translate(locale, 'panel.labelCard.alignment')}</label
+  {#if !screwMode}
+    {#each rowFields as row (row.key)}
+      {#if !(stacked && row.key === 'textLine2')}
+        {@const rawText = rawParameters[row.key] ?? ''}
+        {@const textLength = Array.from(
+          normalizeOpenGridLabelCardText(rawText),
+        ).length}
+        <ParameterField
+          {locale}
+          label={translate(locale, row.label)}
+          changed={rawText !== ''}
+          error={fieldErrors[row.key]}
+          errorId={`opengrid-label-card-${row.key}-error`}
+          restoreLabel={translate(locale, row.label)}
+          onRestore={() => onInputChange(row.key, '')}
+        >
+          <div class="grid gap-1">
+            <input
+              aria-describedby="opengrid-label-card-text-help"
+              aria-invalid={fieldErrors[row.key] ? 'true' : undefined}
+              aria-label={translate(locale, row.aria)}
+              autocomplete="off"
+              class="min-w-0 rounded-lg border border-border-field bg-page px-3 py-2 text-base text-ink outline-none focus:border-primary"
+              data-testid={`opengrid-label-card-${row.key}`}
+              spellcheck="false"
+              type="text"
+              value={rawText}
+              oninput={(event) => handleTextInput(row.key, event)}
+            />
+            <span
+              aria-live="polite"
+              class="text-right text-sm text-muted-foreground"
+              data-testid={`opengrid-label-card-${row.key}-count`}
             >
-            <select
-              id={`label-card-${row.key}-alignment`}
-              value={rawParameters[row.alignment] ?? 'center'}
-              class="rounded-lg border border-border-field bg-panel px-3 py-2"
-              onchange={(event) =>
-                onInputChange(row.alignment, event.currentTarget.value)}
-            >
-              {#each alignments as alignment}<option value={alignment}
-                  >{translate(
-                    locale,
-                    `panel.labelCard.align.${alignment}`,
-                  )}</option
-                >{/each}
-            </select>
-          {/if}
-        </div>
-      </ParameterField>
-    {/if}
-  {/each}
+              {translate(locale, 'panel.labelCard.characterCount', {
+                count: textLength,
+                max: config.maxTextLength,
+              })}
+            </span>
+            {#if !stacked}
+              <label for={`label-card-${row.key}-alignment`}
+                >{translate(locale, 'panel.labelCard.alignment')}</label
+              >
+              <select
+                id={`label-card-${row.key}-alignment`}
+                value={rawParameters[row.alignment] ?? 'center'}
+                class="rounded-lg border border-border-field bg-panel px-3 py-2"
+                onchange={(event) =>
+                  onInputChange(row.alignment, event.currentTarget.value)}
+              >
+                {#each alignments as alignment}<option value={alignment}
+                    >{translate(
+                      locale,
+                      `panel.labelCard.align.${alignment}`,
+                    )}</option
+                  >{/each}
+              </select>
+            {/if}
+          </div>
+        </ParameterField>
+      {/if}
+    {/each}
+  {/if}
 
   <p
     id="opengrid-label-card-text-help"

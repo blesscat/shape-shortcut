@@ -10,6 +10,7 @@ import {
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
+  OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_WALL_COVER_CONFIGURATION,
   OPENGRID_LOCATING_SEAT_MODES,
   normalizeOpenGridLocatingSeatMode,
@@ -58,6 +59,18 @@ export function rawFromParameters(
       layout: labelCardParameters.layout ?? 'inline',
       groupAlign: labelCardParameters.groupAlign ?? 'center',
       iconSize: String(labelCardParameters.iconSize ?? 6),
+      screwMode: String(labelCardParameters.screwMode ?? false),
+      screwHead:
+        labelCardParameters.screwHead ??
+        OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultHead,
+      screwDiameter: String(
+        labelCardParameters.screwDiameter ??
+          OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultDiameter,
+      ),
+      screwLength: String(
+        labelCardParameters.screwLength ??
+          OPENGRID_LABEL_CARD_CONFIGURATION.screwMode.defaultLength,
+      ),
     }
     if (labelCardParameters.text !== undefined) {
       raw.text = labelCardParameters.text

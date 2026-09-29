@@ -696,3 +696,140 @@ describe('label card layout modes', () => {
     }
   })
 })
+
+describe('label card screw mode geometry', () => {
+  const screwBase = {
+    gridUnits: 5,
+    style: 'raised',
+    iconPosition: 'left',
+    icon: 'gear-fill',
+    screwMode: true,
+    screwHead: 'phillips',
+    screwDiameter: 4,
+    screwLength: 16,
+  } as const
+
+  it('builds the dual-icon composition above the designation', async () => {
+    const { makeBox, measureVolume } = await import('replicad')
+    const result = await buildOpenGridLabelCardWithParts(screwBase, {})
+    try {
+      assertOpenGridLabelCardShapeQuality(result.parts, screwBase)
+      const accent = result.parts.find((part) => part.name === 'accent')!.shape
+      const bounds = shapeBounds(accent)
+      // Icon pair fills the upper safe zone; the 3 mm designation hugs the
+      // lower rail.
+      expect(bounds[1]![1]!).toBeCloseTo(5, 0)
+      expect(bounds[0]![1]!).toBeCloseTo(-5, 0)
+      expect((bounds[0]![0]! + bounds[1]![0]!) / 2).toBeCloseTo(0, 1)
+      const frontProbe = makeBox([-3.6, 1, 0.65], [-1.9, 4, 0.95])
+      const sideProbe = makeBox([3.5, 1.5, 0.65], [4.5, 2.5, 0.95])
+      const gapProbe = makeBox([0.6, 0.5, 0.65], [2, 4, 0.95])
+      const textProbe = makeBox([-5.5, -5, 0.65], [5.5, -2.2, 0.95])
+      try {
+        for (const [probe, occupied] of [
+          [frontProbe, true],
+          [sideProbe, true],
+          [gapProbe, false],
+          [textProbe, true],
+        ] as const) {
+          const intersection = accent.intersect(probe)
+          try {
+            const volume = Math.abs(measureVolume(intersection))
+            if (occupied) expect(volume).toBeGreaterThan(0.01)
+            else expect(volume).toBeLessThan(0.02)
+          } finally {
+            intersection.delete()
+          }
+        }
+      } finally {
+        frontProbe.delete()
+        sideProbe.delete()
+        gapProbe.delete()
+        textProbe.delete()
+      }
+      const body = result.parts.find((part) => part.name === 'body')!
+      const bodyBounds = shapeBounds(body.shape)
+      expect(bodyBounds[1]![2]!).toBeCloseTo(0.6, 2)
+    } finally {
+      deleteParts(result.parts)
+      result.qualityShape.delete()
+      result.shape.delete()
+    }
+  })
+
+  it('renders longer shafts for longer selected lengths', async () => {
+    const { measureVolume } = await import('replicad')
+    const short = await buildOpenGridLabelCardWithParts(
+      { ...screwBase, screwLength: 8 },
+      {},
+    )
+    const long = await buildOpenGridLabelCardWithParts(
+      { ...screwBase, screwLength: 28 },
+      {},
+    )
+    try {
+      const shortVolume = measureVolume(
+        short.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      const longVolume = measureVolume(
+        long.parts.find((part) => part.name === 'accent')!.shape,
+      )
+      expect(longVolume).toBeGreaterThan(shortVolume + 0.2)
+    } finally {
+      deleteParts(short.parts)
+      deleteParts(long.parts)
+      short.qualityShape.delete()
+      short.shape.delete()
+      long.qualityShape.delete()
+      long.shape.delete()
+    }
+  })
+
+  it('extrudes all three heads as non-empty screw-mode accents', async () => {
+    for (const screwHead of ['phillips', 'torx', 'hex'] as const) {
+      const parameters = { ...screwBase, screwHead }
+      const result = await buildOpenGridLabelCardWithParts(parameters, {})
+      try {
+        assertOpenGridLabelCardShapeQuality(result.parts, parameters)
+      } finally {
+        deleteParts(result.parts)
+        result.qualityShape.delete()
+        result.shape.delete()
+      }
+    }
+  })
+
+  it('builds decimal designations beyond the manual six-character cap', async () => {
+    const parameters = {
+      ...screwBase,
+      gridUnits: 6,
+      screwDiameter: 2.5,
+      screwLength: 30,
+    }
+    const result = await buildOpenGridLabelCardWithParts(parameters, {})
+    try {
+      assertOpenGridLabelCardShapeQuality(result.parts, parameters)
+      const accent = result.parts.find((part) => part.name === 'accent')!.shape
+      const bounds = shapeBounds(accent)
+      expect(bounds[1]![1]!).toBeCloseTo(5, 0)
+      expect(bounds[0]![1]!).toBeCloseTo(-5, 0)
+    } finally {
+      deleteParts(result.parts)
+      result.qualityShape.delete()
+      result.shape.delete()
+    }
+  })
+
+  it('exports a structurally valid screw-mode 3MF package', async () => {
+    const result = await buildOpenGridLabelCardWithParts(screwBase, {})
+    try {
+      const meta = threeMfMetaFor('opengrid-label-card', 'screw.3mf')
+      const bytes = await exportThreeMfBytes(result.parts, undefined, meta)
+      expect(isThreeMfPackage(bytes, threeMfExpectationFor(meta))).toBe(true)
+    } finally {
+      deleteParts(result.parts)
+      result.qualityShape.delete()
+      result.shape.delete()
+    }
+  })
+})
