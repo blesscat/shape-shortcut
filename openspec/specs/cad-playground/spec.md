@@ -61,7 +61,7 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 
 #### Scenario: Scene grid extent is user-selectable and remembered
 
-- **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 50×50)
+- **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 20×20)
 - **THEN** the rendered guide grid MUST cover that rectangular extent in both orientations
 - **AND** the values MUST be remembered in this browser and restored on the next visit
 - **AND** the logical placement space MUST remain unbounded regardless of the rendered extent
@@ -78,7 +78,7 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 
 The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update the same placement state and coordinate inputs used by typed placement, and placement-only dragging MUST NOT request new CAD geometry.
 
-The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing on a valid candidate MUST commit that placement. Releasing on an invalid candidate MUST restore the original placement and show the existing placement-conflict diagnostic. Cancelling the pointer interaction MUST restore the original placement without committing the candidate.
+The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing a drag MUST commit the snapped candidate placement regardless of whether it overlaps another instance; a committed overlapping placement MUST be flagged with the conflict color and persistent warning instead of being reverted. Cancelling the pointer interaction MUST restore the original placement without committing the candidate.
 
 Pointer gesture routing MUST depend on where the gesture starts. A primary-pointer drag that starts on an instance MUST manipulate that instance without orbiting or changing the persisted camera pose. A primary-pointer drag that starts on empty viewport space MUST retain the existing camera orbit behavior. A primary press and release on an instance without a drag MUST select it without moving it. For touch input, one contact that starts on an instance MUST move it, one contact that starts on empty space MUST orbit, and a second concurrent contact MUST cancel an active instance preview before the multi-touch camera gesture proceeds.
 
@@ -102,18 +102,18 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 #### Scenario: Drag pending placeholder
 
 - **GIVEN** an instance whose proxy mesh is still pending and whose placeholder is visible
-- **WHEN** the user drags and validly drops that placeholder
+- **WHEN** the user drags and drops that placeholder
 - **THEN** the new snapped placement MUST be committed
 - **AND** the generated proxy MUST appear at that placement when generation completes
 
-#### Scenario: Invalid drag candidate is rejected
+#### Scenario: Overlapping drag commits with a warning
 
 - **GIVEN** two placed instances with non-overlapping footprints
-- **WHEN** the user drags one instance to a candidate whose footprint overlaps the other
-- **THEN** the candidate MUST be visibly marked invalid while it is previewed
-- **AND** releasing it MUST restore the dragged instance's original placement
+- **WHEN** the user drags one instance to a candidate whose footprint overlaps the other and releases
+- **THEN** the dropped placement MUST be committed at the snapped cells
+- **AND** both overlapping instances MUST render with the conflict color
+- **AND** the persistent overlap warning MUST be visible
 - **AND** the camera position, target, and persisted pose state MUST remain unchanged
-- **AND** the playground MUST show the placement-conflict diagnostic
 
 #### Scenario: Cancelled drag restores placement
 
@@ -144,19 +144,38 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 
 ### Requirement: 格子佔用驗證
 
-The system MUST prevent two instances in the same scene from occupying overlapping ground footprints. Occupancy MUST be derived from each instance's component footprint in grid cells at its current rotation. A placement that would overlap another instance MUST be rejected with a visible diagnostic and MUST NOT be applied.
+The system MUST derive occupancy from each instance's component footprint in grid cells at its current rotation. A placement or parameter change that makes two instances' footprints overlap MUST be applied; overlap MUST NOT cancel, revert, or block any change. While two instances overlap, every instance participating in an overlap MUST render with the conflict (error) color in place of its normal color, and a persistent visible text warning MUST be shown. The conflict color MUST take precedence over selection and hover color emphasis for the instances it marks. The warning state MUST clear automatically for each instance whose overlap is resolved. Overlap is derived state; it MUST NOT be persisted in the scene JSON.
 
-#### Scenario: Overlap rejected
+#### Scenario: Overlap applied and flagged
 
 - **GIVEN** the scene contains an instance occupying grid cells (0,0) through (1,0)
 - **WHEN** the user places another instance overlapping any of those cells
-- **THEN** the placement MUST be rejected with a visible diagnostic
-- **AND** the overlapping instance MUST keep its previous valid placement
+- **THEN** the placement MUST be applied and remain at the overlapping cells
+- **AND** both overlapping instances MUST render with the conflict color
+- **AND** a persistent text warning MUST be visible while the overlap exists
+
+#### Scenario: Warning clears when overlap resolves
+
+- **GIVEN** two instances render flagged with the conflict color
+- **WHEN** the user moves, shrinks, or deletes one so the footprints no longer overlap
+- **THEN** the affected instances MUST return to their normal colors
+- **AND** the persistent warning MUST disappear when no overlap remains
+
+#### Scenario: Conflict color takes precedence
+
+- **GIVEN** an instance renders flagged with the conflict color
+- **WHEN** the user selects or hovers that instance
+- **THEN** the instance MUST keep the conflict color while flagged
 
 #### Scenario: Adjacent placement accepted
 
 - **WHEN** the user places an instance on grid cells that touch but do not overlap existing instances
-- **THEN** the placement MUST be accepted
+- **THEN** the placement MUST be accepted with no conflict marking
+
+#### Scenario: Overlap does not block export
+
+- **GIVEN** an overlapping instance with a ready model
+- **THEN** its STL and STEP export actions MUST remain available
 
 ### Requirement: Instance 數量上限
 
@@ -171,13 +190,21 @@ A single scene MUST hold at most 100 instances. Adding or importing beyond the l
 
 ### Requirement: Schema 驅動的 instance 參數編輯
 
-The playground MUST let the user edit the selected instance's parameters through a generic form generated from that component's parameter schema. The form MUST show the same component help text as the component's own workspace panel, falling back to the component's catalog description. Parameter input MUST reuse the component definition's validation; an invalid value MUST show the component's field diagnostic and MUST NOT be sent for generation. Editing parameters MUST NOT change other instances of the same component.
+The playground MUST let the user edit the selected instance's parameters through a generic form generated from that component's parameter schema. The form MUST show the same component help text as the component's own workspace panel, falling back to the component's catalog description. Parameter input MUST reuse the component definition's validation; an invalid value MUST show the component's field diagnostic and MUST NOT be sent for generation. Editing parameters MUST NOT change other instances of the same component. A parameter change that grows the instance's footprint into an overlap with another instance MUST be applied and flagged with the conflict color and persistent warning; it MUST NOT be blocked or reverted.
 
 #### Scenario: Edit instance parameters
 
 - **WHEN** the user changes a parameter of the selected instance to a valid value
 - **THEN** only that instance MUST regenerate with the new value
 - **AND** other instances with unchanged parameters MUST NOT regenerate
+
+#### Scenario: Parameter growth into overlap is flagged
+
+- **GIVEN** two instances whose footprints do not overlap
+- **WHEN** the user increases a size parameter of one instance so its footprint overlaps the other
+- **THEN** the parameter change MUST be applied and generation MUST proceed
+- **AND** both overlapping instances MUST render with the conflict color
+- **AND** the persistent overlap warning MUST be visible
 
 #### Scenario: Invalid input blocked
 
@@ -260,12 +287,20 @@ Each scene MUST have a primary/secondary palette used as the default for its ins
 
 ### Requirement: 場景 JSON 匯入
 
-The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, and a list of instances. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
+The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, and a list of instances. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported overlapping instances MUST be flagged with the conflict color and persistent warning. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
 
 #### Scenario: Valid scene import
 
 - **WHEN** the user imports a well-formed scene file whose instances all reference registered components with valid parameters
 - **THEN** the scene MUST contain those instances with their placements and colors
+
+#### Scenario: In-file placement conflicts import with warnings
+
+- **GIVEN** a well-formed scene file whose instances include overlapping placements
+- **WHEN** the file is imported
+- **THEN** the scene MUST contain those instances at their file placements
+- **AND** the overlapping instances MUST render with the conflict color
+- **AND** the persistent overlap warning MUST be visible
 
 #### Scenario: Unknown model rejected
 

@@ -526,7 +526,6 @@ export const zhHantMessages = {
     '場景檔中 {modelId} 的參數無效，無法匯入。',
   'diagnostic.sceneInvalidPlacement': '擺放位置無效。',
   'diagnostic.sceneTooManyInstances': '場景最多 {max} 個元件，已超過上限。',
-  'diagnostic.scenePlacementConflict': '擺放位置與其他元件重疊，已取消變更。',
   'playground.title': 'OpenGrid Playground 規劃器',
   'playground.viewMode.title': '場景方向',
   'playground.camera.reset': '恢復視角',
@@ -559,6 +558,7 @@ export const zhHantMessages = {
   'playground.placement.rotation': '旋轉',
   'playground.placement.stepDown': '{axis} 減 1',
   'playground.placement.stepUp': '{axis} 加 1',
+  'playground.overlapWarning': '有 {count} 個元件重疊，請調整擺放位置。',
   'playground.parameters.title': '參數',
   'playground.colors.title': '顏色',
   'playground.export.step': '下載 STEP',
@@ -1476,8 +1476,6 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'diagnostic.sceneInvalidPlacement': 'The placement is invalid.',
   'diagnostic.sceneTooManyInstances':
     'A scene holds at most {max} components; the limit was exceeded.',
-  'diagnostic.scenePlacementConflict':
-    'The placement overlaps another component; the change was canceled.',
   'playground.title': 'OpenGrid Playground Planner',
   'playground.viewMode.title': 'Scene orientation',
   'playground.camera.reset': 'Reset view',
@@ -1511,6 +1509,8 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'playground.placement.rotation': 'Rotation',
   'playground.placement.stepDown': 'Decrease {axis} by 1',
   'playground.placement.stepUp': 'Increase {axis} by 1',
+  'playground.overlapWarning':
+    '{count} instance(s) overlap; adjust their placements.',
   'playground.parameters.title': 'Parameters',
   'playground.colors.title': 'Colors',
   'playground.export.step': 'Download STEP',

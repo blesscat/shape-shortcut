@@ -1,5 +1,6 @@
 <script lang="ts">
   import PlaygroundViewport from '../../../features/cad/playground/PlaygroundViewport.svelte'
+  import { PLAYGROUND_GRID_CELLS_DEFAULT } from '../../../features/cad/playground/grid-size'
   import PlaygroundInstancePanel from './PlaygroundInstancePanel.svelte'
   import { PLAYGROUND_SCENE_MAX_INSTANCES } from '../../../cad-contract/scene'
   import {
@@ -149,15 +150,15 @@
           type="text"
           data-testid="playground-grid-size-x"
           aria-label={t('playground.grid.axisX')}
-          value={snapshot?.gridSize.x ?? 50}
+          value={snapshot?.gridSize.x ?? PLAYGROUND_GRID_CELLS_DEFAULT}
           onchange={(event) => {
             if (!(event.currentTarget instanceof HTMLInputElement)) return
             store?.setGridSize({
               x: Number(event.currentTarget.value),
-              y: snapshot?.gridSize.y ?? 50,
+              y: snapshot?.gridSize.y ?? PLAYGROUND_GRID_CELLS_DEFAULT,
             })
             event.currentTarget.value = String(
-              store?.getSnapshot().gridSize.x ?? 50,
+              store?.getSnapshot().gridSize.x ?? PLAYGROUND_GRID_CELLS_DEFAULT,
             )
           }}
         />
@@ -169,15 +170,15 @@
           type="text"
           data-testid="playground-grid-size-y"
           aria-label={t('playground.grid.axisY')}
-          value={snapshot?.gridSize.y ?? 50}
+          value={snapshot?.gridSize.y ?? PLAYGROUND_GRID_CELLS_DEFAULT}
           onchange={(event) => {
             if (!(event.currentTarget instanceof HTMLInputElement)) return
             store?.setGridSize({
-              x: snapshot?.gridSize.x ?? 50,
+              x: snapshot?.gridSize.x ?? PLAYGROUND_GRID_CELLS_DEFAULT,
               y: Number(event.currentTarget.value),
             })
             event.currentTarget.value = String(
-              store?.getSnapshot().gridSize.y ?? 50,
+              store?.getSnapshot().gridSize.y ?? PLAYGROUND_GRID_CELLS_DEFAULT,
             )
           }}
         />
@@ -210,6 +211,18 @@
   {#if snapshot?.diagnostic}
     <p class="m-0 text-error" role="alert" data-testid="playground-diagnostic">
       {t(snapshot.diagnostic.messageId, snapshot.diagnostic.params)}
+    </p>
+  {/if}
+
+  {#if (snapshot?.overlappingInstanceIds.length ?? 0) > 0}
+    <p
+      class="m-0 text-error"
+      aria-live="polite"
+      data-testid="playground-overlap-warning"
+    >
+      {t('playground.overlapWarning', {
+        count: snapshot!.overlappingInstanceIds.length,
+      })}
     </p>
   {/if}
 
@@ -333,6 +346,8 @@
           placement: instance.placement,
           colorPrimary: instance.colors.primary,
           meshState: instance.meshState,
+          overlapping:
+            snapshot?.overlappingInstanceIds.includes(instance.id) ?? false,
         }))}
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
@@ -345,7 +360,7 @@
             placement.cellX,
             placement.cellY,
             placement.rotation,
-          ).ok ?? false}
+          ) ?? false}
         onCommitPlacement={(instanceId, placement) => {
           store?.setPlacement(
             instanceId,

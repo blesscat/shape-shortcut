@@ -2,7 +2,7 @@ import { PLAYGROUND_GRID_PITCH } from '../../../cad-contract/scene'
 
 export type PlaygroundGridSize = { x: number; y: number }
 
-export const PLAYGROUND_GRID_CELLS_DEFAULT = 50
+export const PLAYGROUND_GRID_CELLS_DEFAULT = 20
 export const PLAYGROUND_GRID_CELLS_MIN = 1
 export const PLAYGROUND_GRID_CELLS_MAX = 200
 
@@ -52,7 +52,7 @@ function browserStorage(): GridStorage | undefined {
 
 /**
  * Reads the persisted visual grid extent (whole cells per axis) for this
- * browser; missing, corrupt, or out-of-range values fall back to the 50×50
+ * browser; missing, corrupt, or out-of-range values fall back to the 20×20
  * default. The logical scene stays unbounded regardless of this value.
  */
 export function loadPlaygroundGridSize(

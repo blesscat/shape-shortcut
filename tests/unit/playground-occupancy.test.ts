@@ -10,6 +10,7 @@ import {
   cellsForInstance,
   findFreeAnchorCell,
   firstPlacementConflict,
+  overlappingInstanceIds,
   rotatedFootprintAABB,
 } from '../../src/features/cad/playground/occupancy'
 
@@ -134,6 +135,36 @@ describe('playground occupancy', () => {
         { id: 'b', bounds, placement: placement(1, 0) },
       ]),
     ).toBeNull()
+  })
+
+  it('flags both sides of each overlap', () => {
+    const bounds = boxBounds(28, 28, 10)
+    const flagged = overlappingInstanceIds([
+      { id: 'a', bounds, placement: placement(0, 0) },
+      { id: 'b', bounds, placement: placement(0, 0) },
+      { id: 'c', bounds, placement: placement(5, 5) },
+    ])
+    expect([...flagged].sort()).toEqual(['a', 'b'])
+  })
+
+  it('flags every instance in an overlap chain', () => {
+    const bounds = boxBounds(56, 28, 10)
+    const flagged = overlappingInstanceIds([
+      { id: 'a', bounds, placement: placement(0, 0) },
+      { id: 'b', bounds, placement: placement(1, 0) },
+      { id: 'c', bounds, placement: placement(2, 0) },
+    ])
+    expect([...flagged].sort()).toEqual(['a', 'b', 'c'])
+  })
+
+  it('leaves adjacent and disjoint instances unflagged', () => {
+    const bounds = boxBounds(28, 28, 10)
+    const flagged = overlappingInstanceIds([
+      { id: 'a', bounds, placement: placement(0, 0) },
+      { id: 'b', bounds, placement: placement(1, 0) },
+      { id: 'c', bounds, placement: placement(-3, -3) },
+    ])
+    expect(flagged.size).toBe(0)
   })
 
   it('finds a free anchor cell next to existing instances', () => {

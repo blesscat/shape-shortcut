@@ -23,6 +23,7 @@
   } from '../viewport/coordinates'
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
   import { sceneProxyCacheKey } from './filenames'
+  import { instanceDisplayColor } from './instance-colors'
   import type { PlaygroundViewMode } from './store'
   import { translate, type Locale } from '../../../i18n'
   import {
@@ -49,6 +50,8 @@
     placement: ScenePlacement | null
     colorPrimary: string
     meshState: 'pending' | 'ready' | 'failed'
+    /** Derived footprint-overlap flag; renders with the conflict color. */
+    overlapping: boolean
   }
 
   type Props = {
@@ -281,13 +284,18 @@
     colorHex: string,
     theme: CadViewportTheme,
   ): string {
-    if (dragPreview?.instanceId === instanceId) {
-      return dragPreview.valid ? theme.faceHighlight : invalidPreviewColor()
-    }
-    if (instanceId === selectedInstanceId || instanceId === hoveredInstanceId) {
-      return theme.faceHighlight
-    }
-    return colorHex
+    return instanceDisplayColor({
+      dragPreviewActive: dragPreview?.instanceId === instanceId,
+      dragPreviewValid: dragPreview?.valid ?? false,
+      overlapping: instances.some(
+        (instance) => instance.id === instanceId && instance.overlapping,
+      ),
+      emphasized:
+        instanceId === selectedInstanceId || instanceId === hoveredInstanceId,
+      colorHex,
+      faceHighlight: theme.faceHighlight,
+      conflictColor: invalidPreviewColor(),
+    })
   }
 
   function applyColors(theme: CadViewportTheme): void {
@@ -762,13 +770,19 @@
   )
 
   let viewportCursor = $derived.by(() => {
-    if (dragPreview) {
-      if (dragPreview.valid) return 'grabbing'
-      return 'not-allowed'
-    }
+    // An overlapping preview still drops (with the conflict flag), so the
+    // cursor stays a grab; the red preview marks the overlap instead.
+    if (dragPreview) return 'grabbing'
     if (hoveredInstanceId) return 'grab'
     return 'auto'
   })
+
+  let overlapInstanceIds = $derived(
+    instances
+      .filter((instance) => instance.overlapping)
+      .map((instance) => instance.id)
+      .join(','),
+  )
 
   onMount(() => {
     if (!container) return
@@ -992,6 +1006,7 @@
   data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
+  data-overlap-instances={overlapInstanceIds}
   data-pointer-instance={pointerPress?.instanceId ?? ''}
   data-drag-instance={dragPreview?.instanceId ?? ''}
   data-drag-valid={dragPreview ? String(dragPreview.valid) : ''}

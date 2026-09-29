@@ -93,6 +93,27 @@ export function firstPlacementConflict(
 }
 
 /**
+ * Returns the ids of every instance participating in at least one pairwise
+ * footprint overlap — both sides of each conflict, including chains.
+ */
+export function overlappingInstanceIds(
+  instances: ReadonlyArray<PlaygroundOccupancyInput & { id: string }>,
+): Set<string> {
+  const overlapping = new Set<string>()
+  for (let a = 0; a < instances.length; a += 1) {
+    for (let b = a + 1; b < instances.length; b += 1) {
+      const rangeA = cellsForInstance(instances[a]!)
+      const rangeB = cellsForInstance(instances[b]!)
+      if (rangesOverlap(rangeA, rangeB)) {
+        overlapping.add(instances[a]!.id)
+        overlapping.add(instances[b]!.id)
+      }
+    }
+  }
+  return overlapping
+}
+
+/**
  * Finds an unoccupied anchor cell near the origin for a new instance with
  * the given footprint, scanning outward in square rings.
  */
