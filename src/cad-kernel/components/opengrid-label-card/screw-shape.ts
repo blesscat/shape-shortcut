@@ -3,55 +3,41 @@ import { extrudeContourGroup } from './icon-shape'
 import type { PathPolygon } from './svg-path'
 import { screwOutlinePolygon16, type ScrewHeadStyle } from './screw-outline'
 
-/** Shaft-length ratio range mapped from the `M<dia>x<len>` designation. */
-export const OPENGRID_LABEL_SCREW_SHAFT_RATIO = {
-  min: 0.35,
-  max: 1,
-  fallback: 0.55,
+/** Shaft-length mapping from the `M<dia>x<len>` designation to grid units. */
+export const OPENGRID_LABEL_SCREW_SHAFT = {
+  perMillimetre: 0.375,
+  stub: 1.2,
   lengthMin: 4,
   lengthMax: 30,
 } as const
 
 /**
- * Maps a screw length in millimetres to the shaft ratio, clamped to the
- * documented 4–30 mm range.
+ * Maps a screw length in millimetres to the shaft length in 16-unit grid
+ * units measured from the head's join edge, clamped to the documented
+ * 4–30 mm range.
  */
-export function ratioForOpenGridLabelScrewLength(length: number): number {
+export function shaftUnitsForOpenGridLabelScrewLength(length: number): number {
   const clamped = Math.min(
-    OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMax,
-    Math.max(OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMin, length),
+    OPENGRID_LABEL_SCREW_SHAFT.lengthMax,
+    Math.max(OPENGRID_LABEL_SCREW_SHAFT.lengthMin, length),
   )
-  const span =
-    OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMax -
-    OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMin
-  return Number(
-    (
-      OPENGRID_LABEL_SCREW_SHAFT_RATIO.min +
-      ((clamped - OPENGRID_LABEL_SCREW_SHAFT_RATIO.lengthMin) / span) *
-        (OPENGRID_LABEL_SCREW_SHAFT_RATIO.max -
-          OPENGRID_LABEL_SCREW_SHAFT_RATIO.min)
-    ).toFixed(4),
-  )
+  return Number((clamped * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre).toFixed(4))
 }
 
 /**
  * Parses the first `M<dia>[x<len>]` screw designation out of a text row and
- * maps its length to a shaft ratio. Text without a designation or without a
- * length falls back to the medium ratio.
+ * maps its length to a shaft length. Text without a designation or without a
+ * length falls back to the stub shaft.
  */
-export function parseOpenGridLabelScrewShaftRatio(
+export function parseOpenGridLabelScrewShaftUnits(
   text: string | undefined,
 ): number {
-  if (!text) return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
+  if (!text) return OPENGRID_LABEL_SCREW_SHAFT.stub
   const match = /M\s*(\d+)(?:\s*[x×]\s*(\d+))?/i.exec(text)
   const length = match?.[2] ? Number(match[2]) : undefined
   if (length === undefined || !Number.isFinite(length) || length <= 0)
-    return OPENGRID_LABEL_SCREW_SHAFT_RATIO.fallback
-  return ratioForOpenGridLabelScrewLength(length)
-}
-
-function isScrewHead(value: string): value is ScrewHeadStyle {
-  return value === 'pan' || value === 'hex'
+    return OPENGRID_LABEL_SCREW_SHAFT.stub
+  return shaftUnitsForOpenGridLabelScrewLength(length)
 }
 
 /**
@@ -60,14 +46,14 @@ function isScrewHead(value: string): value is ScrewHeadStyle {
  */
 export function makeOpenGridLabelScrewShape(options: {
   iconId: string
-  shaftRatio: number
+  shaftLength: number
   size: number
   depth: number
 }): Shape3D {
   const head: ScrewHeadStyle = options.iconId === 'screw-hex' ? 'hex' : 'pan'
   const polygon: PathPolygon = screwOutlinePolygon16(
     head,
-    options.shaftRatio,
+    options.shaftLength,
   ).map(([x, y]) => [
     Number(((x * options.size) / 16).toFixed(4)),
     Number(((y * options.size) / 16).toFixed(4)),

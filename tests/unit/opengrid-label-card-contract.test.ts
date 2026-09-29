@@ -12,6 +12,11 @@ import {
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
 import { screwOutlinePolygon16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
+import {
+  OPENGRID_LABEL_SCREW_SHAFT,
+  parseOpenGridLabelScrewShaftUnits,
+  shaftUnitsForOpenGridLabelScrewLength,
+} from '../../src/cad-kernel/components/opengrid-label-card/screw-shape'
 import { OPENGRID_LABEL_CARD_ICON_IDS } from '../../src/cad-contract/units'
 import { parseOpenGridLabelCardRawParameters } from '../../src/components/cad/workspace/validation/model-raw-parsers/label-card'
 import { rawFromParameters } from '../../src/components/cad/workspace/validation/raw-from-parameters'
@@ -284,7 +289,7 @@ describe('OpenGrid Label Card contract', () => {
     }
   })
 
-  it('keeps the screw silhouette symmetric and free of self-intersections', () => {
+  it('draws a horizontal smooth screw silhouette', () => {
     const onOutline = (
       point: readonly [number, number],
       polygon: readonly (readonly [number, number])[],
@@ -302,24 +307,32 @@ describe('OpenGrid Label Card contract', () => {
       })
 
     for (const head of ['pan', 'hex'] as const) {
-      for (const ratio of [0.35, 0.55, 0.65, 0.87, 1]) {
-        const polygon = screwOutlinePolygon16(head, ratio)
+      for (const shaftLength of [
+        OPENGRID_LABEL_SCREW_SHAFT.stub,
+        1.5,
+        3,
+        6,
+        7.5,
+        11.25,
+      ]) {
+        const polygon = screwOutlinePolygon16(head, shaftLength)
 
-        // x-symmetric about the icon origin
-        const xs = polygon.map((point) => point[0])
+        // y-symmetric about the icon origin
+        const ys = polygon.map((point) => point[1])
         expect(
-          Math.abs(Math.min(...xs) + Math.max(...xs)),
-          `${head} ${ratio} x-symmetry`,
+          Math.abs(Math.min(...ys) + Math.max(...ys)),
+          `${head} ${shaftLength} y-symmetry`,
         ).toBeLessThan(1e-6)
 
-        // every vertex and its x-mirror lie on the outline
+        // every vertex and its y-mirror lie on the outline
         for (const [px, py] of polygon) {
-          expect(onOutline([px, py], polygon), `${head} ${ratio} vertex`).toBe(
-            true,
-          )
           expect(
-            onOutline([-px, py], polygon),
-            `${head} ${ratio} mirror of ${px},${py}`,
+            onOutline([px, py], polygon),
+            `${head} ${shaftLength} vertex`,
+          ).toBe(true)
+          expect(
+            onOutline([px, -py], polygon),
+            `${head} ${shaftLength} mirror of ${px},${py}`,
           ).toBe(true)
         }
 
@@ -340,9 +353,76 @@ describe('OpenGrid Label Card contract', () => {
               crossings += 1
           }
         }
-        expect(crossings).toBe(0)
+        expect(crossings, `${head} ${shaftLength} self-intersection`).toBe(0)
+
+        // smooth shaft: exactly two vertices share the flat tip at max x,
+        // and nothing right of the head oscillates like thread teeth
+        const xs = polygon.map((point) => point[0])
+        const maxX = Math.max(...xs)
+        const tip = polygon.filter(([px]) => Math.abs(px - maxX) < 1e-6)
+        expect(tip.length, `${head} ${shaftLength} flat tip`).toBe(2)
+        expect(
+          Math.abs(tip[0]![1] - tip[1]![1]),
+          `${head} ${shaftLength} shaft thickness`,
+        ).toBeGreaterThanOrEqual(1.5)
+
+        // whole glyph stays inside the 16-unit icon grid
+        expect(
+          maxX - Math.min(...xs),
+          `${head} ${shaftLength} width`,
+        ).toBeLessThanOrEqual(16 + 1e-6)
+        expect(
+          Math.max(...ys) - Math.min(...ys),
+          `${head} ${shaftLength} height`,
+        ).toBeLessThanOrEqual(16 + 1e-6)
       }
     }
+  })
+
+  it('scales the shaft proportionally with the screw length', () => {
+    const width = (head: 'pan' | 'hex', length: number): number => {
+      const polygon = screwOutlinePolygon16(head, length)
+      const xs = polygon.map((point) => point[0])
+      return Math.max(...xs) - Math.min(...xs)
+    }
+    const shaft = (head: 'pan' | 'hex', length: number): number => {
+      const headWidth =
+        width(head, OPENGRID_LABEL_SCREW_SHAFT.stub) -
+        OPENGRID_LABEL_SCREW_SHAFT.stub
+      return width(head, length) - headWidth
+    }
+
+    for (const head of ['pan', 'hex'] as const) {
+      const units = (millimetres: number) =>
+        shaftUnitsForOpenGridLabelScrewLength(millimetres)
+
+      // linear in millimetres: 0.375 units per mm
+      expect(shaft(head, units(8)) - shaft(head, units(4))).toBeCloseTo(1.5, 6)
+      expect(shaft(head, units(30)) - shaft(head, units(20))).toBeCloseTo(
+        3.75,
+        6,
+      )
+
+      // 20 mm is at least twice as long as 8 mm
+      expect(shaft(head, units(20))).toBeGreaterThanOrEqual(
+        2 * shaft(head, units(8)),
+      )
+
+      // clamped to the documented 4-30 mm range
+      expect(units(31)).toBe(30 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
+      expect(units(2)).toBe(4 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
+    }
+  })
+
+  it('falls back to the stub shaft without a designation length', () => {
+    const stub = OPENGRID_LABEL_SCREW_SHAFT.stub
+    expect(parseOpenGridLabelScrewShaftUnits('M4')).toBe(stub)
+    expect(parseOpenGridLabelScrewShaftUnits(undefined)).toBe(stub)
+    expect(parseOpenGridLabelScrewShaftUnits('camera')).toBe(stub)
+    expect(parseOpenGridLabelScrewShaftUnits('M4x16')).toBeCloseTo(6, 6)
+
+    // the stub shaft stays no longer than the pan head radius
+    expect(stub).toBeLessThanOrEqual(2.3)
   })
 
   it('renders screw gallery paths inside the 16-unit viewBox', () => {

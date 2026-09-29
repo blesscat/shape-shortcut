@@ -46,12 +46,13 @@ export const LABEL_CARD_ICON_PATHS: Readonly<
   'screw-pan': {
     id: 'screw-pan',
     evenOdd: false,
-    paths: [screwOutlineSvgPath('pan', 0.55)],
+    // 16 mm designation (M4x16) at the 0.375 units/mm shaft mapping.
+    paths: [screwOutlineSvgPath('pan', 6)],
   },
   'screw-hex': {
     id: 'screw-hex',
     evenOdd: false,
-    paths: [screwOutlineSvgPath('hex', 0.55)],
+    paths: [screwOutlineSvgPath('hex', 6)],
   },
   'hole-through': {
     id: 'hole-through',

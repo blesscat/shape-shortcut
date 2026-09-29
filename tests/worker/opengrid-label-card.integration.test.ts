@@ -22,6 +22,7 @@ import {
   OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_LABEL_CARD_ICON_IDS,
 } from '../../src/cad-contract/units'
+import type { OpenGridLabelCardIconId } from '../../src/cad-contract/units/opengrid-label-icons'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -668,32 +669,30 @@ describe('label card layout modes', () => {
   })
 
   it('scales screw icons with iconSize', async () => {
-    const small = await buildOpenGridLabelCardWithParts(
-      { ...base, icon: 'screw-hex', iconSize: 3 },
-      {},
-    )
-    const large = await buildOpenGridLabelCardWithParts(
-      { ...base, icon: 'screw-hex', iconSize: 8 },
-      {},
-    )
-    try {
-      const smallBounds = shapeBounds(
-        small.parts.find((part) => part.name === 'accent')!.shape,
+    // The side-view screw glyph is a horizontal head-plus-shaft bar, so its
+    // size shows along X; the shared text width is subtracted via a baseline.
+    const accentWidth = async (
+      icon: OpenGridLabelCardIconId,
+      iconSize: number,
+    ) => {
+      const built = await buildOpenGridLabelCardWithParts(
+        { ...base, icon, iconSize },
+        {},
       )
-      const largeBounds = shapeBounds(
-        large.parts.find((part) => part.name === 'accent')!.shape,
-      )
-      const smallSpan = smallBounds[1]![1]! - smallBounds[0]![1]!
-      const largeSpan = largeBounds[1]![1]! - largeBounds[0]![1]!
-      expect(largeSpan).toBeGreaterThan(smallSpan * 1.5)
-    } finally {
-      deleteParts(small.parts)
-      deleteParts(large.parts)
-      small.qualityShape.delete()
-      small.shape.delete()
-      large.qualityShape.delete()
-      large.shape.delete()
+      try {
+        const accent = built.parts.find((part) => part.name === 'accent')!.shape
+        const bounds = shapeBounds(accent)
+        return bounds[1]![0]! - bounds[0]![0]!
+      } finally {
+        deleteParts(built.parts)
+        built.qualityShape.delete()
+        built.shape.delete()
+      }
     }
+    const textOnly = await accentWidth('none', 4.5)
+    const small = (await accentWidth('screw-hex', 3)) - textOnly
+    const large = (await accentWidth('screw-hex', 8)) - textOnly
+    expect(large).toBeGreaterThan(small * 1.5)
   })
 })
 

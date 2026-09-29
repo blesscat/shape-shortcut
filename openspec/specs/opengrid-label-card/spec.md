@@ -204,18 +204,28 @@ The card MUST offer optional upper and lower text inputs, each with left, center
 
 
 ### Requirement: Fastener symbol choices
-The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. The screw side-view icons MUST be drawn as bold solid silhouettes — pan or hex head plus a shaft with thread teeth — whose minimum feature stays at least 1.5 viewport units at the 16-unit grid, and MUST scale with `iconSize`. For the screw side-view category the shaft length MUST follow the first text row: a `M<dia>x<len>` designation maps a 4–30 mm length to a 0.35–1.0 shaft ratio, and a designation without a length or a non-matching text MUST use the 0.55 fallback ratio. All icons MUST support both card styles and multipart export, and labels MUST be localized.
+The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. The screw side-view icons MUST be drawn as bold solid horizontal silhouettes — a pan or hex head on the left plus one smooth solid rectangular shaft extending to the right with a flat tip and no thread teeth — whose minimum feature thickness stays at least 1.5 viewport units at the 16-unit grid, and MUST scale with `iconSize`. The head MUST keep a fixed size regardless of the designated length, and the whole glyph MUST stay within the 16-unit icon grid. For the screw side-view category the shaft length MUST follow the first text row: a `M<dia>x<len>` designation MUST map the shaft length linearly so that it is proportional to the designated length in millimetres, and a designation without a length or a non-matching text MUST render a short stub shaft no longer than the head radius. All icons MUST support both card styles and multipart export, and labels MUST be localized.
 
 #### Scenario: Select a fastener symbol
 
 - **WHEN** a user chooses a fastener symbol
 - **THEN** the preview and exported card MUST contain the chosen upright geometry with the spacing rules of its layout
 
+#### Scenario: Screw side view is horizontal with a smooth shaft
+
+- **WHEN** a card uses the `screw-pan` or `screw-hex` icon
+- **THEN** the rendered silhouette MUST show the head on the left and the shaft extending to the right with a smooth solid outline and no thread teeth
+
 #### Scenario: Screw shaft length follows the text designation
 
 - **WHEN** a card uses the `screw-pan` icon with text `M4x16` and another uses `M4`
 - **THEN** the `M4x16` card MUST render a visibly longer shaft than the `M4` card within the same icon size
-- **AND** text without a `M<dia>[x<len>]` designation MUST fall back to the medium shaft ratio
+- **AND** text without a `M<dia>[x<len>]` designation MUST fall back to the short stub shaft
+
+#### Scenario: Shaft length scales proportionally with the designated length
+
+- **WHEN** two cards of the same icon size use `M2x8` and `M2x20`
+- **THEN** the `M2x20` card MUST render a shaft at least twice as long as the `M2x8` card
 
 #### Scenario: Screw icons scale with icon size
 
@@ -224,7 +234,7 @@ The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbol
 
 ### Requirement: Screw mode dedicated composition
 
-The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, icon size, and text height controls. The card composition MUST be fixed: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) and the side-view screw silhouette (`screw-pan` for phillips and torx, `screw-hex` for hex) MUST sit side by side, centered as a pair in the upper safe zone sharing `iconSize` and separated by the existing icon/text gap, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The side-view shaft length MUST follow the selected length through the existing 4–30 mm to 0.35–1.0 shaft ratio mapping, independent of text parsing. `gridUnits`, `style`, `iconSize`, and `textHeight` MUST keep their existing ranges and remain adjustable.
+The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, icon size, and text height controls. The card composition MUST be fixed: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) and the side-view screw silhouette (`screw-pan` for phillips and torx, `screw-hex` for hex) MUST sit side by side, centered as a pair in the upper safe zone sharing `iconSize` and separated by the existing icon/text gap, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The side-view shaft length MUST follow the selected length through the same length-proportional shaft mapping as the text-driven screw icons, independent of text parsing. `gridUnits`, `style`, `iconSize`, and `textHeight` MUST keep their existing ranges and remain adjustable.
 
 #### Scenario: Enable screw mode
 

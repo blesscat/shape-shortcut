@@ -11,8 +11,8 @@ import {
 import { makeLabelCardIconShape } from '../opengrid-label-card/icon-shape'
 import {
   makeOpenGridLabelScrewShape,
-  parseOpenGridLabelScrewShaftRatio,
-  ratioForOpenGridLabelScrewLength,
+  parseOpenGridLabelScrewShaftUnits,
+  shaftUnitsForOpenGridLabelScrewLength,
 } from '../opengrid-label-card/screw-shape'
 import { isOpenGridLabelScrewIconId } from '../../../cad-contract/units'
 import {
@@ -289,7 +289,7 @@ export async function buildOpenGridLabelCardWithParts(
         if (isOpenGridLabelScrewIconId(validation.value.icon)) {
           iconShape = makeOpenGridLabelScrewShape({
             iconId: validation.value.icon,
-            shaftRatio: parseOpenGridLabelScrewShaftRatio(
+            shaftLength: parseOpenGridLabelScrewShaftUnits(
               validation.value.text,
             ),
             size: iconSize,
@@ -347,7 +347,7 @@ export async function buildOpenGridLabelCardWithParts(
         frontIcon = makeLabelCardIconShape(frontIconId, accentDepth, iconSize)
         sideIcon = makeOpenGridLabelScrewShape({
           iconId: sideIconId,
-          shaftRatio: ratioForOpenGridLabelScrewLength(
+          shaftLength: shaftUnitsForOpenGridLabelScrewLength(
             validation.value.screwLength ?? config.screwMode.defaultLength,
           ),
           size: iconSize,

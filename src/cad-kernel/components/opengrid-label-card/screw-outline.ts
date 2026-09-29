@@ -5,8 +5,8 @@ import type { PathPolygon } from './svg-path'
  * centered on the icon origin so every head style scales consistently.
  * Pure math so both the gallery SVG paths and the extruded kernel geometry
  * derive from the same definition. The silhouette is one continuous contour
- * (head flows into the sawtooth shaft and tip), so it is safe under even-odd
- * fill and under direct polygon extrusion.
+ * (head flowing into a smooth solid shaft with a flat tip), so it is safe
+ * under even-odd fill and under direct polygon extrusion.
  */
 
 export type ScrewPoint = [number, number]
@@ -14,25 +14,14 @@ export type ScrewOutline = readonly ScrewPoint[]
 
 export type ScrewHeadStyle = 'pan' | 'hex'
 
-const TOOTH_DEPTH = 1.6
-const TOOTH_MIN_COUNT = 2
-const TOOTH_MIN_PITCH = 1.5
-const TOOTH_PITCH = 1.8
-
-const CENTER_Y = -3.4
-
 const PAN = {
-  radius: 4.6,
-  shaftHalf: 2.2,
-  base: 1.6,
-  perRatio: 5.1,
+  radius: 2.3,
+  shaftHalf: 1,
 } as const
 
 const HEX = {
-  circumradius: 5.3,
-  shaftHalf: 2.65,
-  base: 1.3,
-  perRatio: 4.8,
+  circumradius: 2.6,
+  shaftHalf: 1.2,
 } as const
 
 function circleArc(
@@ -52,87 +41,64 @@ function circleArc(
 }
 
 /**
- * Head traversal starting at the head's bottom-most point and ending at the
- * shaft's right base. The pan dome is swept symmetrically so both sides of
- * the head are round.
+ * Head traversal starting at the shaft's top join point, wrapping the head's
+ * left side, and ending at the shaft's bottom join point. The pan dome sweeps
+ * the circle arc between the tangent joins; the hexagon lists the vertices
+ * between the joins where the shaft meets its upper-right edge.
  */
 function headOutline(head: ScrewHeadStyle): {
   start: ScrewPoint[]
   shaftHalf: number
-  baseY: number
+  joinX: number
 } {
   if (head === 'pan') {
-    const angle = Math.asin(PAN.shaftHalf / PAN.radius)
+    const joinX = Math.sqrt(PAN.radius ** 2 - PAN.shaftHalf ** 2)
+    const joinAngle = Math.asin(joinX / PAN.radius)
     const arc = circleArc(
       0,
-      CENTER_Y,
+      0,
       PAN.radius,
-      -(Math.PI - angle),
-      Math.PI - angle,
+      Math.PI - joinAngle,
+      Math.PI * 2 + joinAngle,
       14,
     )
-    return {
-      start: arc,
-      shaftHalf: PAN.shaftHalf,
-      baseY: arc[arc.length - 1]![1]!,
-    }
+    return { start: arc, shaftHalf: PAN.shaftHalf, joinX }
   }
   const r = HEX.circumradius
   const half = r / 2
-  const top = CENTER_Y + (r * Math.sqrt(3)) / 2
-  const bottom = CENTER_Y - (r * Math.sqrt(3)) / 2
+  const halfHeight = (r * Math.sqrt(3)) / 2
+  const joinX = half * (2 - HEX.shaftHalf / halfHeight)
   return {
     start: [
-      [half, bottom],
-      [r, CENTER_Y],
-      [half, top],
+      [joinX, HEX.shaftHalf],
+      [half, halfHeight],
+      [-half, halfHeight],
+      [-r, 0],
+      [-half, -halfHeight],
+      [half, -halfHeight],
+      [joinX, -HEX.shaftHalf],
     ],
-    shaftHalf: half,
-    baseY: top,
+    shaftHalf: HEX.shaftHalf,
+    joinX,
   }
 }
 
 /**
- * Full screw silhouette on the 16-unit grid: head at the bottom, sawtooth
- * shaft rising with the given ratio (0..1), flat tip, bounding box centered
- * on the icon origin. One closed contour. The pan dome sweeps symmetrically
- * through the bottom from the left shaft base to the right shaft base, and
- * the final left-descent vertex is omitted to avoid a degenerate closure.
+ * Full screw silhouette on the 16-unit grid: head on the left and a smooth
+ * solid shaft extending to the right for the given length in grid units
+ * measured from the head's join edge, flat tip, bounding box centered on the
+ * icon origin. One closed contour; the closing edge is the shaft's top side.
  */
 export function screwOutlinePolygon16(
   head: ScrewHeadStyle,
-  shaftRatio: number,
+  shaftLength: number,
 ): PathPolygon {
-  const { start, shaftHalf, baseY } = headOutline(head)
-  const ratio = Math.min(1, Math.max(0, shaftRatio))
-  const span =
-    head === 'pan'
-      ? PAN.base + PAN.perRatio * ratio
-      : HEX.base + HEX.perRatio * ratio
-  const tip = baseY + span
-  let teeth = Math.max(TOOTH_MIN_COUNT, Math.floor(span / TOOTH_PITCH))
-  if (teeth % 2 !== 0) teeth += 1
-  while (teeth > TOOTH_MIN_COUNT && span / teeth < TOOTH_MIN_PITCH) teeth -= 2
-  const step = span / teeth
+  const { start, shaftHalf, joinX } = headOutline(head)
+  const tipX = joinX + Math.max(0, shaftLength)
 
   const points: ScrewPoint[] = [...start]
-  for (let k = 1; k <= teeth; k += 1) {
-    const offset = k % 2 === 1 ? TOOTH_DEPTH : 0
-    points.push([shaftHalf + offset, baseY + k * step])
-  }
-  points.push([-shaftHalf, tip])
-  const leftStop = head === 'pan' ? 1 : 0
-  for (let k = teeth - 1; k >= leftStop; k -= 1) {
-    const offset = k % 2 === 1 ? TOOTH_DEPTH : 0
-    points.push([-(shaftHalf + offset), baseY + k * step])
-  }
-  if (head === 'hex') {
-    points.push([-HEX.circumradius, CENTER_Y])
-    points.push([
-      -HEX.circumradius / 2,
-      CENTER_Y - (HEX.circumradius * Math.sqrt(3)) / 2,
-    ])
-  }
+  points.push([tipX, -shaftHalf])
+  points.push([tipX, shaftHalf])
 
   // Center the silhouette on the icon origin like every static icon.
   let minX = Infinity
@@ -157,9 +123,9 @@ export function screwOutlinePolygon16(
  */
 export function screwOutlineSvgPath(
   head: ScrewHeadStyle,
-  shaftRatio: number,
+  shaftLength: number,
 ): string {
-  const polygon = screwOutlinePolygon16(head, shaftRatio)
+  const polygon = screwOutlinePolygon16(head, shaftLength)
   return (
     polygon
       .map(
