@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import * as THREE from 'three'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   import type { MeshSnapshot } from '../../../cad-contract/messages'
@@ -7,7 +7,10 @@
     ModelBounds,
     ModelParameterValues,
   } from '../../../cad-contract/units'
-  import { PLAYGROUND_GRID_PITCH } from '../../../cad-contract/scene'
+  import {
+    PLAYGROUND_GRID_PITCH,
+    type ScenePlacement,
+  } from '../../../cad-contract/scene'
   import { createViewportBaseGeometry } from '../viewport/base-geometry'
   import {
     observeCadViewportTheme,
@@ -30,6 +33,11 @@
     savePlaygroundCameraState,
     type PlaygroundCameraPose,
   } from './camera-pose'
+  import {
+    gridPointFromWorld,
+    snappedPlacementForDrag,
+    type PlaygroundGridPoint,
+  } from './drag-placement'
 
   type PlaygroundViewportInstance = {
     id: string
@@ -38,12 +46,7 @@
     parameters: ModelParameterValues
     mesh: MeshSnapshot | null
     bounds: ModelBounds | null
-    placement: {
-      cellX: number
-      cellY: number
-      rotation: number
-      supportedBy: string | null
-    } | null
+    placement: ScenePlacement | null
     colorPrimary: string
     meshState: 'pending' | 'ready' | 'failed'
   }
@@ -55,6 +58,11 @@
     gridSize: { x: number; y: number }
     locale: Locale
     onSelect: (instanceId: string | null) => void
+    onValidatePlacement: (
+      instanceId: string,
+      placement: ScenePlacement,
+    ) => boolean
+    onCommitPlacement: (instanceId: string, placement: ScenePlacement) => void
   }
 
   let {
@@ -64,6 +72,8 @@
     gridSize,
     locale,
     onSelect,
+    onValidatePlacement,
+    onCommitPlacement,
   }: Props = $props()
 
   let cameraState = loadPlaygroundCameraState()
@@ -77,6 +87,32 @@
   let hoveredInstanceId: string | null = $state(null)
   let pointerX = $state(0)
   let pointerY = $state(0)
+
+  type PointerPress = {
+    pointerId: number
+    pointerType: string
+    startClientX: number
+    startClientY: number
+    instanceId: string | null
+    originalPlacement: ScenePlacement | null
+    startGridPoint: PlaygroundGridPoint | null
+  }
+
+  type DragPreview = {
+    instanceId: string
+    placement: ScenePlacement
+    valid: boolean
+  }
+
+  type SuspendedControlState = {
+    enableRotate: boolean
+    enablePan: boolean
+    enableZoom: boolean
+  }
+
+  let pointerPress = $state<PointerPress | null>(null)
+  let dragPreview = $state<DragPreview | null>(null)
+  let suspendedControlState: SuspendedControlState | null = null
 
   type InstancedEntry = {
     instanceId: string
@@ -160,9 +196,14 @@
   let placeholderMeshes: THREE.Mesh[] = []
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
+  const projectedWorldPoint = new THREE.Vector3()
+  const desktopDragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)
+  const wallDragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 
   let appliedViewMode: PlaygroundViewMode | null = null
   const CAMERA_POSE_CHANGE_EPSILON = 0.000001
+  const CLICK_DRAG_THRESHOLD_PX = 5
+  const INVALID_PREVIEW_COLOR_FALLBACK = '#c44747'
 
   const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
     'background',
@@ -227,18 +268,49 @@
     return matrix
   }
 
+  function invalidPreviewColor(): string {
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-error-border')
+        .trim() || INVALID_PREVIEW_COLOR_FALLBACK
+    )
+  }
+
+  function displayColorFor(
+    instanceId: string,
+    colorHex: string,
+    theme: CadViewportTheme,
+  ): string {
+    if (dragPreview?.instanceId === instanceId) {
+      return dragPreview.valid ? theme.faceHighlight : invalidPreviewColor()
+    }
+    if (instanceId === selectedInstanceId || instanceId === hoveredInstanceId) {
+      return theme.faceHighlight
+    }
+    return colorHex
+  }
+
   function applyColors(theme: CadViewportTheme): void {
     for (const group of instancedGroups) {
       group.entries.forEach((entry, index) => {
-        const emphasized =
-          entry.instanceId === selectedInstanceId ||
-          entry.instanceId === hoveredInstanceId
         group.mesh.setColorAt(
           index,
-          new THREE.Color(emphasized ? theme.faceHighlight : entry.colorHex),
+          new THREE.Color(
+            displayColorFor(entry.instanceId, entry.colorHex, theme),
+          ),
         )
       })
       if (group.mesh.instanceColor) group.mesh.instanceColor.needsUpdate = true
+    }
+
+    for (const placeholder of placeholderMeshes) {
+      const instanceId = placeholder.userData.playgroundInstanceId
+      const colorHex = placeholder.userData.playgroundColorHex
+      if (typeof instanceId !== 'string' || typeof colorHex !== 'string') {
+        continue
+      }
+      const material = placeholder.material as THREE.MeshBasicMaterial
+      material.color.set(displayColorFor(instanceId, colorHex, theme))
     }
   }
 
@@ -303,8 +375,6 @@
         entries: group.entries,
       })
     }
-    applyColors(theme)
-
     for (const instance of instances) {
       if (instance.meshState !== 'pending' || !instance.bounds) continue
       const bounds = instance.bounds
@@ -319,11 +389,14 @@
         opacity: 0.25,
       })
       const placeholder = new THREE.Mesh(geometry, material)
-      placeholder.applyMatrix4(matrixFor(instance, viewMode))
+      placeholder.matrixAutoUpdate = false
+      placeholder.matrix.copy(matrixFor(instance, viewMode))
       placeholder.userData.playgroundInstanceId = instance.id
+      placeholder.userData.playgroundColorHex = instance.colorPrimary
       contentGroup.add(placeholder)
       placeholderMeshes.push(placeholder)
     }
+    applyColors(theme)
   }
 
   function defaultPoseFor(mode: PlaygroundViewMode): PlaygroundCameraPose {
@@ -362,6 +435,31 @@
     controls.enableDamping = false
     controls.update()
     controls.enableDamping = dampingWasEnabled
+  }
+
+  function freezeCameraMomentum(): void {
+    if (!camera || !controls) return
+    const pose = currentCameraPose()
+    if (!pose) return
+
+    const dampingWasEnabled = controls.enableDamping
+    controls.enableDamping = false
+    controls.update()
+    camera.position.set(...pose.position)
+    controls.target.set(...pose.target)
+    controls.update()
+    controls.enableDamping = dampingWasEnabled
+    renderedCameraPose = pose
+
+    const mode = pendingCameraMode
+    if (!mode) return
+    pendingCameraMode = null
+    cameraState = {
+      ...cameraState,
+      [mode]: pose,
+    }
+    savePlaygroundCameraState(cameraState)
+    cameraPoseIsCustom = true
   }
 
   function persistPendingCameraPose(): void {
@@ -419,12 +517,18 @@
     applyCameraPose(viewMode)
   }
 
-  function pickInstance(clientX: number, clientY: number): string | null {
-    if (!container || !camera) return null
+  function setPointerRay(clientX: number, clientY: number): boolean {
+    if (!container || !camera) return false
     const rect = container.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return false
     pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
     raycaster.setFromCamera(pointer, camera)
+    return true
+  }
+
+  function pickInstance(clientX: number, clientY: number): string | null {
+    if (!setPointerRay(clientX, clientY)) return null
     const instancedHit = raycaster.intersectObjects(
       instancedGroups.map((group) => group.mesh),
       false,
@@ -445,43 +549,202 @@
     return null
   }
 
-  /**
-   * Selection only happens on a true click: drags are view manipulation
-   * (orbit) and must leave the current selection untouched.
-   */
-  const CLICK_DRAG_THRESHOLD_PX = 5
-  let pointerDownX = 0
-  let pointerDownY = 0
-  let pointerDownValid = false
+  function pointerGridPoint(
+    clientX: number,
+    clientY: number,
+  ): PlaygroundGridPoint | null {
+    if (!setPointerRay(clientX, clientY)) return null
+    const plane = viewMode === 'wall' ? wallDragPlane : desktopDragPlane
+    const intersection = raycaster.ray.intersectPlane(
+      plane,
+      projectedWorldPoint,
+    )
+    if (!intersection) return null
+    return gridPointFromWorld(intersection, viewMode)
+  }
 
-  function handlePointerDown(event: MouseEvent): void {
-    if (event.button !== 0) {
-      pointerDownValid = false
+  function renderPlacement(
+    instanceId: string,
+    placement: ScenePlacement,
+  ): void {
+    const instance = instances.find((candidate) => candidate.id === instanceId)
+    if (!instance) return
+    const matrix = matrixFor({ ...instance, placement }, viewMode)
+
+    for (const group of instancedGroups) {
+      const index = group.entries.findIndex(
+        (entry) => entry.instanceId === instanceId,
+      )
+      if (index < 0) continue
+      group.mesh.setMatrixAt(index, matrix)
+      group.mesh.instanceMatrix.needsUpdate = true
       return
     }
-    pointerDownX = event.clientX
-    pointerDownY = event.clientY
-    pointerDownValid = true
+
+    const placeholder = placeholderMeshes.find(
+      (candidate) => candidate.userData.playgroundInstanceId === instanceId,
+    )
+    if (!placeholder) return
+    placeholder.matrix.copy(matrix)
+    placeholder.matrixWorldNeedsUpdate = true
   }
 
-  function handleClick(event: MouseEvent): void {
-    const isClick =
-      pointerDownValid &&
-      Math.hypot(event.clientX - pointerDownX, event.clientY - pointerDownY) <=
-        CLICK_DRAG_THRESHOLD_PX
-    pointerDownValid = false
-    if (!isClick) return
-    onSelect(pickInstance(event.clientX, event.clientY))
+  function suspendCameraControls(): void {
+    if (!controls || suspendedControlState) return
+    suspendedControlState = {
+      enableRotate: controls.enableRotate,
+      enablePan: controls.enablePan,
+      enableZoom: controls.enableZoom,
+    }
+    controls.enableRotate = false
+    controls.enablePan = false
+    controls.enableZoom = false
   }
 
-  function handlePointerMove(event: MouseEvent): void {
+  function restoreCameraControls(): void {
+    if (!controls || !suspendedControlState) return
+    controls.enableRotate = suspendedControlState.enableRotate
+    controls.enablePan = suspendedControlState.enablePan
+    controls.enableZoom = suspendedControlState.enableZoom
+    suspendedControlState = null
+  }
+
+  function restorePressedInstance(): void {
+    if (!pointerPress?.instanceId || !pointerPress.originalPlacement) return
+    renderPlacement(pointerPress.instanceId, pointerPress.originalPlacement)
+  }
+
+  function cancelPointerInteraction(): void {
+    restorePressedInstance()
+    pointerPress = null
+    dragPreview = null
+    restoreCameraControls()
+    applyColors(observedTheme)
+  }
+
+  function pointerMovedPastThreshold(
+    event: Pick<PointerEvent, 'clientX' | 'clientY'>,
+    press: PointerPress,
+  ): boolean {
+    return (
+      Math.hypot(
+        event.clientX - press.startClientX,
+        event.clientY - press.startClientY,
+      ) > CLICK_DRAG_THRESHOLD_PX
+    )
+  }
+
+  function handlePointerDownCapture(event: PointerEvent): void {
+    const target = event.target
+    if (target instanceof Element && target.closest('button')) return
+
+    if (
+      event.pointerType === 'touch' &&
+      pointerPress?.instanceId &&
+      event.pointerId !== pointerPress.pointerId
+    ) {
+      cancelPointerInteraction()
+      return
+    }
+
+    if (!event.isPrimary) return
+    if (event.pointerType !== 'touch' && event.button !== 0) return
+    if (pointerPress) cancelPointerInteraction()
+
+    const instanceId = pickInstance(event.clientX, event.clientY)
+    const instance = instances.find((candidate) => candidate.id === instanceId)
+    const originalPlacement = instance?.placement ?? null
+    if (instanceId && originalPlacement) freezeCameraMomentum()
+    const startGridPoint = pointerGridPoint(event.clientX, event.clientY)
+    pointerPress = {
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      instanceId,
+      originalPlacement,
+      startGridPoint,
+    }
+
+    if (instanceId && originalPlacement && startGridPoint) {
+      suspendCameraControls()
+      onSelect(instanceId)
+    }
+  }
+
+  function handlePointerMove(event: PointerEvent): void {
     pointerX = event.clientX
     pointerY = event.clientY
-    const next = pickInstance(event.clientX, event.clientY)
+    const next =
+      event.pointerType === 'touch'
+        ? null
+        : pickInstance(event.clientX, event.clientY)
     if (next !== hoveredInstanceId) {
       hoveredInstanceId = next
       applyColors(observedTheme)
     }
+
+    const press = pointerPress
+    const currentPreview =
+      dragPreview?.instanceId === press?.instanceId ? dragPreview : null
+    if (
+      !press?.instanceId ||
+      event.pointerId !== press.pointerId ||
+      !press.originalPlacement ||
+      !press.startGridPoint ||
+      (!currentPreview && !pointerMovedPastThreshold(event, press))
+    ) {
+      return
+    }
+
+    const currentGridPoint = pointerGridPoint(event.clientX, event.clientY)
+    if (!currentGridPoint) return
+    const placement = snappedPlacementForDrag({
+      original: press.originalPlacement,
+      start: press.startGridPoint,
+      current: currentGridPoint,
+    })
+    if (
+      currentPreview?.placement.cellX === placement.cellX &&
+      currentPreview.placement.cellY === placement.cellY &&
+      currentPreview.placement.rotation === placement.rotation
+    ) {
+      return
+    }
+
+    const valid = onValidatePlacement(press.instanceId, placement)
+    dragPreview = { instanceId: press.instanceId, placement, valid }
+    renderPlacement(press.instanceId, placement)
+    applyColors(observedTheme)
+  }
+
+  function handlePointerUp(event: PointerEvent): void {
+    const press = pointerPress
+    if (!press || event.pointerId !== press.pointerId) return
+    const preview = dragPreview
+    const isClick = !pointerMovedPastThreshold(event, press)
+
+    restorePressedInstance()
+    pointerPress = null
+    dragPreview = null
+    restoreCameraControls()
+    applyColors(observedTheme)
+
+    if (press.instanceId) {
+      if (preview) {
+        onCommitPlacement(press.instanceId, preview.placement)
+      } else if (isClick) {
+        onSelect(press.instanceId)
+      }
+      return
+    }
+
+    if (isClick) onSelect(null)
+  }
+
+  function handlePointerCancel(event: PointerEvent): void {
+    if (!pointerPress || event.pointerId !== pointerPress.pointerId) return
+    cancelPointerInteraction()
   }
 
   function handlePointerLeave(): void {
@@ -498,12 +761,27 @@
       : null,
   )
 
+  let viewportCursor = $derived.by(() => {
+    if (dragPreview) {
+      if (dragPreview.valid) return 'grabbing'
+      return 'not-allowed'
+    }
+    if (hoveredInstanceId) return 'grab'
+    return 'auto'
+  })
+
   onMount(() => {
     if (!container) return
     const theme = observedTheme
+    window.addEventListener('blur', cancelPointerInteraction)
     renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(container.clientWidth, container.clientHeight)
+    renderer.domElement.addEventListener(
+      'pointerdown',
+      handlePointerDownCapture,
+      true,
+    )
     container.appendChild(renderer.domElement)
 
     scene = new THREE.Scene()
@@ -541,7 +819,8 @@
       const pose = currentCameraPose()
       const startPose = controlStartPose
       controlStartPose = null
-      if (!pose || (startPose && !cameraPoseChanged(startPose, pose))) {
+      if (!pose || !startPose) return
+      if (!cameraPoseChanged(startPose, pose)) {
         cameraPoseIsCustom = cameraState[viewMode] != null
         return
       }
@@ -614,7 +893,9 @@
     })
 
     return () => {
+      cancelPointerInteraction()
       cancelAnimationFrame(frameHandle)
+      window.removeEventListener('blur', cancelPointerInteraction)
       window.removeEventListener('pagehide', settleCameraBeforePageExit)
       persistPendingCameraPose()
       resizeObserver?.disconnect()
@@ -636,6 +917,11 @@
       placeholderMeshes = []
       for (const geometry of geometryCache.values()) geometry.dispose()
       geometryCache.clear()
+      renderer.domElement.removeEventListener(
+        'pointerdown',
+        handlePointerDownCapture,
+        true,
+      )
       renderer.dispose()
       renderer.domElement.remove()
       renderer = null
@@ -649,15 +935,25 @@
   $effect(() => {
     instances
     selectedInstanceId
-    rebuildScene(observedTheme)
+    viewMode
+    const theme = observedTheme
+    untrack(() => {
+      rebuildScene(theme)
+      if (dragPreview) {
+        renderPlacement(dragPreview.instanceId, dragPreview.placement)
+      }
+    })
   })
 
   $effect(() => {
     // Only a real view-mode change may reset the camera pose; theme-object
     // churn (the theme observer can emit on focus/blur) must not.
-    if (appliedViewMode === viewMode) return
-    appliedViewMode = viewMode
-    applyViewMode(observedTheme)
+    const mode = viewMode
+    const theme = observedTheme
+    if (appliedViewMode === mode) return
+    untrack(cancelPointerInteraction)
+    appliedViewMode = mode
+    untrack(() => applyViewMode(theme))
   })
 
   $effect(() => {
@@ -696,9 +992,17 @@
   data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
-  onclick={handleClick}
-  onpointerdown={handlePointerDown}
+  data-pointer-instance={pointerPress?.instanceId ?? ''}
+  data-drag-instance={dragPreview?.instanceId ?? ''}
+  data-drag-valid={dragPreview ? String(dragPreview.valid) : ''}
+  data-drag-cell={dragPreview
+    ? `${dragPreview.placement.cellX},${dragPreview.placement.cellY}`
+    : ''}
+  style:cursor={viewportCursor}
   onpointermove={handlePointerMove}
+  onpointerup={handlePointerUp}
+  onpointercancel={handlePointerCancel}
+  onlostpointercapture={handlePointerCancel}
   onpointerleave={handlePointerLeave}
   role="img"
 >

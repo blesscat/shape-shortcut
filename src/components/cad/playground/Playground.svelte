@@ -339,6 +339,21 @@
         gridSize={snapshot.gridSize}
         {locale}
         onSelect={(instanceId) => store?.select(instanceId)}
+        onValidatePlacement={(instanceId, placement) =>
+          store?.validatePlacement(
+            instanceId,
+            placement.cellX,
+            placement.cellY,
+            placement.rotation,
+          ).ok ?? false}
+        onCommitPlacement={(instanceId, placement) => {
+          store?.setPlacement(
+            instanceId,
+            placement.cellX,
+            placement.cellY,
+            placement.rotation,
+          )
+        }}
       />
     </div>
   {:else}

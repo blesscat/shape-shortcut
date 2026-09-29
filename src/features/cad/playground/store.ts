@@ -78,6 +78,14 @@ export type PlaygroundSnapshot = {
 export type PlaygroundPlacementResult =
   { ok: true } | { ok: false; diagnostic: DiagnosticDescriptor }
 
+type PlaygroundPlacementCandidateResult =
+  | {
+      ok: true
+      instance: PlaygroundInstance
+      placement: ScenePlacement
+    }
+  | { ok: false; diagnostic: DiagnosticDescriptor }
+
 /**
  * Coarse tessellation for planning-grade proxies. Kept separate from both
  * the workspace preview config and the export STL config.
@@ -157,6 +165,12 @@ export type PlaygroundStore = {
   duplicateInstance: (instanceId: string) => boolean
   retryInstance: (instanceId: string) => void
   setLabel: (instanceId: string, label: string) => void
+  validatePlacement: (
+    instanceId: string,
+    cellX: number,
+    cellY: number,
+    rotation: ScenePlacement['rotation'],
+  ) => PlaygroundPlacementResult
   setPlacement: (
     instanceId: string,
     cellX: number,
@@ -281,6 +295,52 @@ export function createPlaygroundStore(): PlaygroundStore {
       rotation: 0,
       supportedBy: null,
     }
+  }
+
+  const validatePlacementCandidate = (
+    instanceId: string,
+    cellX: number,
+    cellY: number,
+    rotation: ScenePlacement['rotation'],
+  ): PlaygroundPlacementCandidateResult => {
+    const instance = getInstance(instanceId)
+    if (!instance) {
+      return {
+        ok: false,
+        diagnostic: { messageId: 'diagnostic.sceneFileMalformed' },
+      }
+    }
+    if (!Number.isInteger(cellX) || !Number.isInteger(cellY)) {
+      return {
+        ok: false,
+        diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
+      }
+    }
+    const bounds = effectiveFootprintBounds(instance)
+    if (!bounds) {
+      return {
+        ok: false,
+        diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
+      }
+    }
+    const placement: ScenePlacement = {
+      cellX,
+      cellY,
+      rotation,
+      supportedBy: null,
+    }
+    const conflict = firstPlacementConflict([
+      ...placedEntries(instanceId),
+      { id: instanceId, bounds, placement },
+    ])
+    if (conflict) {
+      return {
+        ok: false,
+        diagnostic: { messageId: 'diagnostic.scenePlacementConflict' },
+      }
+    }
+
+    return { ok: true, instance, placement }
   }
 
   const cacheKeyFor = (instance: PlaygroundInstance): string =>
@@ -704,46 +764,29 @@ export function createPlaygroundStore(): PlaygroundStore {
       instance.label = trimmed.length > 0 ? trimmed : null
       emit()
     },
-    setPlacement(instanceId, cellX, cellY, rotation) {
-      const instance = getInstance(instanceId)
-      if (!instance) {
-        return {
-          ok: false,
-          diagnostic: { messageId: 'diagnostic.sceneFileMalformed' },
-        }
-      }
-      if (!Number.isInteger(cellX) || !Number.isInteger(cellY)) {
-        return {
-          ok: false,
-          diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
-        }
-      }
-      const bounds = effectiveFootprintBounds(instance)
-      if (!bounds) {
-        return {
-          ok: false,
-          diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
-        }
-      }
-      const candidate: ScenePlacement = {
+    validatePlacement(instanceId, cellX, cellY, rotation) {
+      const result = validatePlacementCandidate(
+        instanceId,
         cellX,
         cellY,
         rotation,
-        supportedBy: null,
-      }
-      const conflict = firstPlacementConflict([
-        ...placedEntries(instanceId),
-        { id: instanceId, bounds, placement: candidate },
-      ])
-      if (conflict) {
-        const rejection: DiagnosticDescriptor = {
-          messageId: 'diagnostic.scenePlacementConflict',
-        }
-        diagnostic = rejection
+      )
+      if (!result.ok) return result
+      return { ok: true }
+    },
+    setPlacement(instanceId, cellX, cellY, rotation) {
+      const result = validatePlacementCandidate(
+        instanceId,
+        cellX,
+        cellY,
+        rotation,
+      )
+      if (!result.ok) {
+        diagnostic = result.diagnostic
         emit()
-        return { ok: false, diagnostic: rejection }
+        return result
       }
-      instance.placement = candidate
+      result.instance.placement = result.placement
       diagnostic = null
       emit()
       return { ok: true }

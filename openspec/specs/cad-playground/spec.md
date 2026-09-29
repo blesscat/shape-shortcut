@@ -74,6 +74,74 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 - **WHEN** the scene is in desktop orientation
 - **THEN** only desk-system and unrestricted components MUST be offered and rendered
 
+### Requirement: Pointer drag placement
+
+The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update the same placement state and coordinate inputs used by typed placement, and placement-only dragging MUST NOT request new CAD geometry.
+
+The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing on a valid candidate MUST commit that placement. Releasing on an invalid candidate MUST restore the original placement and show the existing placement-conflict diagnostic. Cancelling the pointer interaction MUST restore the original placement without committing the candidate.
+
+Pointer gesture routing MUST depend on where the gesture starts. A primary-pointer drag that starts on an instance MUST manipulate that instance without orbiting or changing the persisted camera pose. A primary-pointer drag that starts on empty viewport space MUST retain the existing camera orbit behavior. A primary press and release on an instance without a drag MUST select it without moving it. For touch input, one contact that starts on an instance MUST move it, one contact that starts on empty space MUST orbit, and a second concurrent contact MUST cancel an active instance preview before the multi-touch camera gesture proceeds.
+
+#### Scenario: Drag ready instance on desktop grid
+
+- **GIVEN** a ready instance at a valid desktop placement
+- **WHEN** the user drags the rendered instance by one or more grid cells and releases on a valid candidate
+- **THEN** the instance MUST remain under the grabbed pointer offset while moving
+- **AND** the drop MUST commit the snapped integer `cellX` and `cellY`
+- **AND** the placement coordinate inputs MUST show the committed values
+- **AND** the camera pose MUST remain unchanged
+
+#### Scenario: Drag instance on wall grid
+
+- **GIVEN** a visible wall-compatible instance in wall orientation
+- **WHEN** the user drags it across the wall plane and releases on a valid candidate
+- **THEN** horizontal motion MUST update `cellX`
+- **AND** vertical world motion MUST update `cellY`
+- **AND** the instance MUST remain mounted to the wall plane with its rotation unchanged
+
+#### Scenario: Drag pending placeholder
+
+- **GIVEN** an instance whose proxy mesh is still pending and whose placeholder is visible
+- **WHEN** the user drags and validly drops that placeholder
+- **THEN** the new snapped placement MUST be committed
+- **AND** the generated proxy MUST appear at that placement when generation completes
+
+#### Scenario: Invalid drag candidate is rejected
+
+- **GIVEN** two placed instances with non-overlapping footprints
+- **WHEN** the user drags one instance to a candidate whose footprint overlaps the other
+- **THEN** the candidate MUST be visibly marked invalid while it is previewed
+- **AND** releasing it MUST restore the dragged instance's original placement
+- **AND** the camera position, target, and persisted pose state MUST remain unchanged
+- **AND** the playground MUST show the placement-conflict diagnostic
+
+#### Scenario: Cancelled drag restores placement
+
+- **GIVEN** an active instance drag with an uncommitted candidate
+- **WHEN** the pointer interaction is cancelled or the active orientation changes
+- **THEN** the instance MUST return to its original placement
+- **AND** the candidate MUST NOT be written to the scene
+
+#### Scenario: Empty-space drag still orbits
+
+- **GIVEN** an instance is selected
+- **WHEN** the user starts a primary-pointer drag on empty viewport space
+- **THEN** the camera MUST orbit using the existing controls
+- **AND** the selected instance and every instance placement MUST remain unchanged
+
+#### Scenario: Tap selects without moving
+
+- **WHEN** the user presses and releases a rendered instance without performing a drag
+- **THEN** that instance MUST become selected
+- **AND** its placement and the camera pose MUST remain unchanged
+
+#### Scenario: Second touch hands off to camera controls
+
+- **GIVEN** one touch contact has started an instance drag preview
+- **WHEN** a second touch contact begins
+- **THEN** the uncommitted instance preview MUST be cancelled and its original placement restored
+- **AND** the concurrent contacts MUST be available to the existing multi-touch camera gesture
+
 ### Requirement: 格子佔用驗證
 
 The system MUST prevent two instances in the same scene from occupying overlapping ground footprints. Occupancy MUST be derived from each instance's component footprint in grid cells at its current rotation. A placement that would overlap another instance MUST be rejected with a visible diagnostic and MUST NOT be applied.
