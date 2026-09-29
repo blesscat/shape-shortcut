@@ -213,6 +213,18 @@
     </p>
   {/if}
 
+  {#if (snapshot?.overlappingInstanceIds.length ?? 0) > 0}
+    <p
+      class="m-0 text-error"
+      aria-live="polite"
+      data-testid="playground-overlap-warning"
+    >
+      {t('playground.overlapWarning', {
+        count: snapshot!.overlappingInstanceIds.length,
+      })}
+    </p>
+  {/if}
+
   {#if snapshot}
     <div
       class="grid items-start grid-cols-[minmax(240px,340px)_minmax(0,1fr)] gap-4 max-cad:grid-cols-1"
@@ -333,6 +345,8 @@
           placement: instance.placement,
           colorPrimary: instance.colors.primary,
           meshState: instance.meshState,
+          overlapping:
+            snapshot?.overlappingInstanceIds.includes(instance.id) ?? false,
         }))}
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
@@ -345,7 +359,7 @@
             placement.cellX,
             placement.cellY,
             placement.rotation,
-          ).ok ?? false}
+          ) ?? false}
         onCommitPlacement={(instanceId, placement) => {
           store?.setPlacement(
             instanceId,

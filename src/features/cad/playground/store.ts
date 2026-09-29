@@ -29,7 +29,11 @@ import {
   parsePlaygroundSceneFile,
   serializePlaygroundScene,
 } from './scene-file'
-import { findFreeAnchorCell, firstPlacementConflict } from './occupancy'
+import {
+  findFreeAnchorCell,
+  firstPlacementConflict,
+  overlappingInstanceIds,
+} from './occupancy'
 import { sceneInstanceFileName, sceneProxyCacheKey } from './filenames'
 import {
   clampPlaygroundGridCells,
@@ -73,6 +77,11 @@ export type PlaygroundSnapshot = {
   diagnostic: DiagnosticDescriptor | null
   viewMode: PlaygroundViewMode
   gridSize: PlaygroundGridSize
+  /**
+   * Derived ids of instances participating in at least one footprint
+   * overlap. Recomputed on every emission; never persisted.
+   */
+  overlappingInstanceIds: string[]
 }
 
 export type PlaygroundPlacementResult =
@@ -170,7 +179,7 @@ export type PlaygroundStore = {
     cellX: number,
     cellY: number,
     rotation: ScenePlacement['rotation'],
-  ) => PlaygroundPlacementResult
+  ) => boolean
   setPlacement: (
     instanceId: string,
     cellX: number,
@@ -218,16 +227,8 @@ export function createPlaygroundStore(): PlaygroundStore {
   let engineInitTimeout: ReturnType<typeof setTimeout> | null = null
 
   const emit = () => {
-    const current: PlaygroundSnapshot = {
-      instances: instances.map((instance) => ({ ...instance })),
-      selectedInstanceId,
-      sceneColors: { ...sceneColors },
-      viewMode,
-      gridSize: { ...gridSize },
-      workerState,
-      diagnostic: diagnostic ? { ...diagnostic } : null,
-    }
-    for (const listener of listeners) listener(current)
+    const snapshot = current()
+    for (const listener of listeners) listener(snapshot)
   }
 
   const getInstance = (instanceId: string) =>
@@ -329,18 +330,29 @@ export function createPlaygroundStore(): PlaygroundStore {
       rotation,
       supportedBy: null,
     }
-    const conflict = firstPlacementConflict([
-      ...placedEntries(instanceId),
-      { id: instanceId, bounds, placement },
-    ])
-    if (conflict) {
-      return {
-        ok: false,
-        diagnostic: { messageId: 'diagnostic.scenePlacementConflict' },
-      }
-    }
 
     return { ok: true, instance, placement }
+  }
+
+  /**
+   * Whether this candidate placement would be flagged: its footprint
+   * overlaps another instance's footprint. Used for drag-preview coloring
+   * only — commits accept overlapping placements. Returns false for
+   * structurally unevaluable candidates (unknown instance, non-integer
+   * cells, missing bounds) as well; drag candidates never hit that branch.
+   */
+  const placementOverlaps = (
+    instance: PlaygroundInstance,
+    placement: ScenePlacement,
+  ): boolean => {
+    const bounds = effectiveFootprintBounds(instance)
+    if (!bounds) return false
+    return (
+      firstPlacementConflict([
+        ...placedEntries(instance.id),
+        { id: instance.id, bounds, placement },
+      ]) !== null
+    )
   }
 
   const cacheKeyFor = (instance: PlaygroundInstance): string =>
@@ -635,6 +647,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     gridSize: { ...gridSize },
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
+    overlappingInstanceIds: [...overlappingInstanceIds(placedEntries())],
   })
 
   return {
@@ -771,8 +784,8 @@ export function createPlaygroundStore(): PlaygroundStore {
         cellY,
         rotation,
       )
-      if (!result.ok) return result
-      return { ok: true }
+      if (!result.ok) return false
+      return !placementOverlaps(result.instance, result.placement)
     },
     setPlacement(instanceId, cellX, cellY, rotation) {
       const result = validatePlacementCandidate(
@@ -786,6 +799,8 @@ export function createPlaygroundStore(): PlaygroundStore {
         emit()
         return result
       }
+      // Overlapping placements commit; the derived overlap warning on the
+      // snapshot flags them instead of a rejection.
       result.instance.placement = result.placement
       diagnostic = null
       emit()
@@ -910,22 +925,11 @@ export function createPlaygroundStore(): PlaygroundStore {
           }
         }
       }
-      const placed = withAutoPlacement.filter(
-        (
-          instance,
-        ): instance is PlaygroundInstance & {
-          placement: ScenePlacement
-          bounds: ModelBounds
-        } => instance.placement !== null && instance.bounds !== null,
-      )
-      if (firstPlacementConflict(placed)) {
-        diagnostic = { messageId: 'diagnostic.scenePlacementConflict' }
-        emit()
-        return false
-      }
-      // Debounce timers of replaced instances must not fire afterwards; the
-      // clear happens only after every rejection point so a failed import
-      // leaves the current scene untouched.
+      // In-file placement conflicts import with the derived overlap warning
+      // instead of rejecting the whole file; every other failure above
+      // leaves the current scene untouched. Debounce timers of replaced
+      // instances must not fire afterwards, so the clear happens only after
+      // every rejection point.
       for (const timer of generationTimers.values()) clearTimeout(timer)
       generationTimers.clear()
       instances = withAutoPlacement

@@ -174,7 +174,7 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-1')
   })
 
-  test('rejects overlapping placements with a visible diagnostic', async ({
+  test('commits overlapping placements with a persistent warning', async ({
     page,
   }) => {
     await openPlayground(page)
@@ -190,7 +190,101 @@ test.describe('OpenGrid playground planner', () => {
     await cellX.fill('0')
     await cellX.blur()
 
-    await expect(page.getByTestId('playground-diagnostic')).toBeVisible()
+    await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+    await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
+    await expect(cellX).toHaveValue('0')
+    const viewport = page.getByTestId('playground-viewport')
+    await expect(viewport).toHaveAttribute(
+      'data-overlap-instances',
+      'inst-1,inst-2',
+    )
+    // Overlap is a planning warning; it must not block exports.
+    await expect(page.getByTestId('playground-export-stl')).toBeEnabled()
+    const exportStep = page.getByTestId('playground-export-step')
+    if (await exportStep.isVisible()) {
+      await expect(exportStep).toBeEnabled()
+    }
+
+    // Moving the instance apart clears the flags and the warning.
+    await cellX.fill('9')
+    await cellX.blur()
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+  })
+
+  test('flags parameter growth into a neighbor instead of blocking it', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+
+    await page.getByTestId('playground-instance-inst-2').click()
+    const cellX = page.locator('#playground-cell-x')
+    await cellX.fill('1')
+    await cellX.blur()
+    const viewport = page.getByTestId('playground-viewport')
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+
+    await page.getByTestId('playground-instance-inst-1').click()
+    const widthInput = page
+      .getByTestId('playground-param-width')
+      .locator('input[type="text"]')
+      .first()
+    await widthInput.fill('56')
+    await widthInput.blur()
+
+    await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
+    await expect(viewport).toHaveAttribute(
+      'data-overlap-instances',
+      'inst-1,inst-2',
+    )
+  })
+
+  test('imports a scene file with in-file conflicts as flagged overlaps', async ({
+    page,
+  }) => {
+    const overlappingPlacement = {
+      cellX: 0,
+      cellY: 0,
+      rotation: 0,
+      supportedBy: null,
+    }
+    const scene = {
+      schemaVersion: 1,
+      kind: 'shape-shortcut/scene',
+      grid: { system: 'opengrid' },
+      instances: [
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: overlappingPlacement,
+        },
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: overlappingPlacement,
+        },
+      ],
+    }
+    await openPlayground(page)
+    await page.getByTestId('playground-import-input').setInputFiles({
+      name: 'scene.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(scene)),
+    })
+
+    await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
+    await expect(page.getByTestId('playground-instance-inst-2')).toBeVisible()
+    await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+    await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
+    await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+      'data-overlap-instances',
+      'inst-1,inst-2',
+    )
   })
 
   test('downloads the scene file and a per-instance STEP export', async ({
@@ -741,7 +835,7 @@ test('maps wall dragging to cell X and cell Y while preserving the mount', async
   await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
 })
 
-test('rejects an overlapping drag without changing placement or camera', async ({
+test('commits an overlapping drag with a warning and keeps the camera', async ({
   page,
 }) => {
   await useCompactPlaygroundGrid(page)
@@ -751,7 +845,6 @@ test('rejects an overlapping drag without changing placement or camera', async (
   await waitForInstanceReady(page, 'inst-2')
 
   await page.getByTestId('playground-instance-inst-2').click()
-  const original = await readSelectedPlacement(page)
   const firstPoint = await findInstancePoint(page, 'inst-1')
   const secondPoint = await findInstancePoint(page, 'inst-2')
   const viewport = page.getByTestId('playground-viewport')
@@ -764,13 +857,16 @@ test('rejects an overlapping drag without changing placement or camera', async (
   await page.mouse.move(firstPoint.x, firstPoint.y, { steps: 8 })
   await moveActiveDragToCell(page, firstPoint, 0, 0)
   await expect(viewport).toHaveAttribute('data-drag-valid', 'false')
-  await expect(viewport).toHaveCSS('cursor', 'not-allowed')
-  expect(await readSelectedPlacement(page)).toEqual(original)
-  await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+  await expect(viewport).toHaveCSS('cursor', 'grabbing')
   await page.mouse.up()
 
-  expect(await readSelectedPlacement(page)).toEqual(original)
-  await expect(page.getByTestId('playground-diagnostic')).toBeVisible()
+  expect(await readSelectedPlacement(page)).toEqual({ cellX: 0, cellY: 0 })
+  await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+  await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
+  await expect(viewport).toHaveAttribute(
+    'data-overlap-instances',
+    'inst-1,inst-2',
+  )
   await expect(viewport).toHaveAttribute('data-camera-pose', cameraPose!)
   expectSerializedVectorCloseTo(
     await viewport.getAttribute('data-camera-position'),
