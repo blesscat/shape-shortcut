@@ -3,6 +3,7 @@ import {
   boundsForOpenGridOpenConnectShelf,
   isOpenGridOpenConnectShelfParameters,
   openGridOpenConnectShelfFileName,
+  openGridOpenConnectShelfInstalledBoundsFor,
   openGridOpenConnectShelfMaximumAngleForRows,
   openGridOpenConnectShelfStlFileName,
   OPENGRID_OPENCONNECT_SHELF_CONFIGURATION,
@@ -122,6 +123,23 @@ export const opengridOpenConnectShelfDefinition: ModelDefinition = {
     height: 400,
   },
   validateParameters: validateDefinitionParameters,
+  wallDisplay: {
+    // The builder's orientForPrint applies RotX(+angle) onto the installed
+    // frame, so the print frame maps back with the negated angle.
+    printToInstalledRotXDegrees: (parameters) => {
+      if (!isOpenGridOpenConnectShelfParameters(parameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-openconnect-shelf')
+      }
+      return -parameters.angle
+    },
+    installedBoundsFor: (parameters) => {
+      if (!isOpenGridOpenConnectShelfParameters(parameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-openconnect-shelf')
+      }
+      return openGridOpenConnectShelfInstalledBoundsFor(parameters)
+    },
+    wallReadyRotation: { axis: [0, 1, -1], degrees: 180 },
+  },
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName: exportStlFileName,

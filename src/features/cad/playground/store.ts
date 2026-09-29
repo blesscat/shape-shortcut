@@ -42,6 +42,7 @@ import {
   type PlaygroundGridSize,
 } from './grid-size'
 import { modelVisibleInViewMode } from './wall-mount'
+import { wallDisplayPlanFor, wallReadyBoundsFor } from './wall-display'
 
 export type PlaygroundMeshState = 'pending' | 'ready' | 'failed'
 
@@ -242,13 +243,21 @@ export function createPlaygroundStore(): PlaygroundStore {
   }
 
   /**
-   * The footprint an instance occupies on the active plane. Every component
-   * mounts by its base face, so the footprint is the authored X/Y extent in
-   * both orientations.
+   * The footprint an instance occupies on the active plane. Components
+   * authored in the flat print frame mount through their wall display plan,
+   * so in wall orientation their footprint spans the installed-frame width
+   * and installed vertical height; every other component mounts by its base
+   * face and keeps the authored X/Y extent in both orientations.
    */
   const effectiveFootprintBounds = (
     instance: PlaygroundInstance,
-  ): ModelBounds | null => boundsFor(instance)
+  ): ModelBounds | null => {
+    const bounds = boundsFor(instance)
+    if (!bounds || viewMode !== 'wall') return bounds
+    const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
+    if (!plan) return bounds
+    return wallReadyBoundsFor(plan, instance.parameters)
+  }
 
   /** Analytic bounds for the given parameters, used to seed placeholders. */
   const analyticBounds = (
@@ -270,7 +279,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
       .map((instance) => ({
         id: instance.id,
-        bounds: boundsFor(instance),
+        bounds: effectiveFootprintBounds(instance),
         placement: instance.placement,
       }))
       .filter(
@@ -284,7 +293,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
 
   const assignPlacement = (instance: PlaygroundInstance): void => {
-    const bounds = boundsFor(instance)
+    const bounds = effectiveFootprintBounds(instance)
     if (!bounds) {
       instance.placement = null
       return
@@ -891,7 +900,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
       for (const instance of withAutoPlacement) {
         if (!instance.placement) {
-          const bounds = instance.bounds
+          const bounds = effectiveFootprintBounds(instance)
           if (!bounds) {
             instance.placement = null
             continue
@@ -904,7 +913,7 @@ export function createPlaygroundStore(): PlaygroundStore {
               )
               .map((other) => ({
                 id: other.id,
-                bounds: other.bounds,
+                bounds: effectiveFootprintBounds(other),
                 placement: other.placement,
               }))
               .filter(

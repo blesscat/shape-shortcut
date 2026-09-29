@@ -78,6 +78,28 @@ export type FixedStepDownload = {
   fileName: string
 }
 
+/** Axis-angle rotation in the authored coordinate frame. */
+export type WallDisplayRotation = {
+  axis: readonly [number, number, number]
+  degrees: number
+}
+
+/**
+ * Presentation-level plan that mounts a component authored in the flat print
+ * frame onto the playground wall board in its installed orientation: the
+ * OpenConnect interface face against the board, the body protruding toward
+ * +Y, storage openings facing up. It MUST NOT change generated geometry or
+ * exports, which stay in the print frame.
+ */
+export type WallDisplayPlan = {
+  /** Print-frame to installed-frame rotation about +X, in degrees. */
+  printToInstalledRotXDegrees: (parameters: ModelParameterValues) => number
+  /** Component bounds in the installed frame (wall face, protrusion, up). */
+  installedBoundsFor: (parameters: ModelParameterValues) => ModelBounds
+  /** Constant installed-frame to wall-ready-frame rotation. */
+  wallReadyRotation: WallDisplayRotation
+}
+
 export type ModelDefinition<
   PreviewImage extends ModelPreviewImageSpec = ModelPreviewImageSpec,
 > = {
@@ -106,4 +128,5 @@ export type ModelDefinition<
   ) => FixedStepDownload | null
   supportedSystemContexts?: ReadonlyArray<OpenGridSystemContext>
   systemContext?: OpenGridSystemContext
+  wallDisplay?: WallDisplayPlan
 }

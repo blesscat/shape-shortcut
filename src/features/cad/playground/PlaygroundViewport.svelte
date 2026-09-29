@@ -22,9 +22,18 @@
     CAD_VIEWPORT_GRID_ROTATION,
   } from '../viewport/coordinates'
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
+  import { getModelDefinition } from '../model-catalog'
   import { sceneProxyCacheKey } from './filenames'
   import { instanceDisplayColor } from './instance-colors'
   import type { PlaygroundViewMode } from './store'
+  import {
+    wallDisplayPlanFor,
+    wallDisplayRotationMatrix,
+    wallMountPlacementFor,
+    wallReadyBoundsFor,
+    withWallDisplayRotation,
+    type WallMountPlacement,
+  } from './wall-display'
   import { translate, type Locale } from '../../../i18n'
   import {
     defaultPlaygroundCameraPose,
@@ -227,6 +236,31 @@
     return THEME_FIELDS.every((field) => a[field] === b[field])
   }
 
+  function matrixFromWallPlacement(
+    placement: WallMountPlacement,
+  ): THREE.Matrix4 {
+    const [tx, ty, tz] = placement.translation
+    const orientation = placement.orientation
+    return new THREE.Matrix4().set(
+      orientation[0],
+      orientation[1],
+      orientation[2],
+      tx,
+      orientation[3],
+      orientation[4],
+      orientation[5],
+      ty,
+      orientation[6],
+      orientation[7],
+      orientation[8],
+      tz,
+      0,
+      0,
+      0,
+      1,
+    )
+  }
+
   function matrixFor(
     instance: PlaygroundViewportInstance,
     mode: PlaygroundViewMode,
@@ -237,6 +271,23 @@
     const bounds = instance.bounds
     const matrix = new THREE.Matrix4()
     if (mode === 'wall') {
+      const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
+      if (plan) {
+        // Print-frame-authored piece: rotate into the installed orientation
+        // first (OpenConnect face toward the board, openings up), then mount
+        // with the same protrusion-toward-+Y convention. Translation uses the
+        // wall-ready footprint so render, occupancy, and placeholders agree.
+        const wallBounds = wallReadyBoundsFor(plan, instance.parameters)
+        const mount = withWallDisplayRotation(
+          wallMountPlacementFor(wallBounds, {
+            cellX: instance.placement?.cellX ?? 0,
+            cellY: instance.placement?.cellY ?? 0,
+            rotation,
+          }),
+          wallDisplayRotationMatrix(plan, instance.parameters),
+        )
+        return matrixFromWallPlacement(mount)
+      }
       // Mount the authored piece (base plane Z=0, protrusion +Z) onto the
       // vertical wall board: protrusion maps to world +Y, the footprint's
       // depth becomes the vertical span, and the placement rotation stays
@@ -385,12 +436,31 @@
     }
     for (const instance of instances) {
       if (instance.meshState !== 'pending' || !instance.bounds) continue
-      const bounds = instance.bounds
+      const placement: ScenePlacement = {
+        cellX: instance.placement?.cellX ?? 0,
+        cellY: instance.placement?.cellY ?? 0,
+        rotation: instance.placement?.rotation ?? 0,
+        supportedBy: null,
+      }
+      const placeholderPlacement = wallPlaceholderPlacementFor(
+        instance,
+        placement,
+      )
+      const bounds = placeholderPlacement?.wallBounds ?? instance.bounds
       const geometry = new THREE.BoxGeometry(
         Math.max(bounds.max[0] - bounds.min[0], 1),
         Math.max(bounds.max[1] - bounds.min[1], 1),
         Math.max(bounds.max[2] - bounds.min[2], 1),
       )
+      if (placeholderPlacement) {
+        // Match the authored wall-ready frame so the mount-only matrix
+        // places the box flush on the board and aligned with the cells.
+        geometry.translate(
+          (bounds.min[0] + bounds.max[0]) / 2,
+          (bounds.min[1] + bounds.max[1]) / 2,
+          (bounds.min[2] + bounds.max[2]) / 2,
+        )
+      }
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(instance.colorPrimary),
         transparent: true,
@@ -398,7 +468,9 @@
       })
       const placeholder = new THREE.Mesh(geometry, material)
       placeholder.matrixAutoUpdate = false
-      placeholder.matrix.copy(matrixFor(instance, viewMode))
+      placeholder.matrix.copy(
+        placeholderPlacement?.matrix ?? matrixFor(instance, viewMode),
+      )
       placeholder.userData.playgroundInstanceId = instance.id
       placeholder.userData.playgroundColorHex = instance.colorPrimary
       contentGroup.add(placeholder)
@@ -571,13 +643,47 @@
     return gridPointFromWorld(intersection, viewMode)
   }
 
+  /**
+   * Mount for a pending placeholder box of a wallDisplay component in wall
+   * mode. The box is authored in the wall-ready frame, so it takes the mount
+   * without the print-to-ready display rotation. Null outside wall mode or
+   * for components without a wall display plan.
+   */
+  function wallPlaceholderPlacementFor(
+    instance: PlaygroundViewportInstance,
+    placement: ScenePlacement,
+  ): { wallBounds: ModelBounds; matrix: THREE.Matrix4 } | null {
+    if (viewMode !== 'wall') return null
+    const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
+    if (!plan) return null
+    const wallBounds = wallReadyBoundsFor(plan, instance.parameters)
+    return {
+      wallBounds,
+      matrix: matrixFromWallPlacement(
+        wallMountPlacementFor(wallBounds, {
+          cellX: placement.cellX,
+          cellY: placement.cellY,
+          rotation: placement.rotation,
+        }),
+      ),
+    }
+  }
+
   function renderPlacement(
     instanceId: string,
     placement: ScenePlacement,
   ): void {
     const instance = instances.find((candidate) => candidate.id === instanceId)
     if (!instance) return
-    const matrix = matrixFor({ ...instance, placement }, viewMode)
+    const placedInstance = { ...instance, placement }
+    // Ready meshes are authored in the print frame and mount with the
+    // display rotation composed in; pending placeholder boxes are authored
+    // in the wall-ready frame and mount without it.
+    const matrix = matrixFor(placedInstance, viewMode)
+    const placeholderPlacement = wallPlaceholderPlacementFor(
+      placedInstance,
+      placement,
+    )
 
     for (const group of instancedGroups) {
       const index = group.entries.findIndex(
@@ -593,7 +699,7 @@
       (candidate) => candidate.userData.playgroundInstanceId === instanceId,
     )
     if (!placeholder) return
-    placeholder.matrix.copy(matrix)
+    placeholder.matrix.copy(placeholderPlacement?.matrix ?? matrix)
     placeholder.matrixWorldNeedsUpdate = true
   }
 

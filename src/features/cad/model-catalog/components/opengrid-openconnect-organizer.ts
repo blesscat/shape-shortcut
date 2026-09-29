@@ -1,6 +1,7 @@
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOpenConnectOrganizer,
+  installedBoundsForOpenGridOpenConnectOrganizer,
   isOpenGridOpenConnectOrganizerParameters,
   openGridOpenConnectOrganizerFileName,
   openGridOpenConnectOrganizerStlFileName,
@@ -205,6 +206,17 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
     height: 400,
   },
   validateParameters: validateDefinitionParameters,
+  wallDisplay: {
+    // placeBodyInInstalledCoordinates applies RotX(+tilt); orientForPrint
+    // undoes it for the flat print frame.
+    printToInstalledRotXDegrees: (parameters) =>
+      requireParameters(parameters).tiltAngle,
+    installedBoundsFor: (parameters) =>
+      installedBoundsForOpenGridOpenConnectOrganizer(
+        requireParameters(parameters),
+      ),
+    wallReadyRotation: { axis: [0, 1, -1], degrees: 180 },
+  },
   boundsForParameters: (parameters) =>
     boundsForOpenGridOpenConnectOrganizer(requireParameters(parameters)),
   exportFileName: (parameters) =>
