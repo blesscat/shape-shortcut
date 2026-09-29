@@ -114,14 +114,32 @@
     if (!nextScrewMode) return
     onInputChange('text', '')
     onInputChange('textLine2', '')
-    const height = Number(rawParameters.textHeight ?? config.textHeight.default)
-    const size = Number(rawIconSize)
-    if (
-      size + OPENGRID_LABEL_CARD_STACKED_GAP + height >
-      OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
-    ) {
-      onInputChange('textHeight', String(config.screwMode.textHeight))
-    }
+    // Auto-fit the composition: balanced 6 mm icons + 3 mm designation fills
+    // the 10 mm safe height; narrower cards shrink the pair to fit the width.
+    const safeWidth =
+      openGridLabelWidthFor(Number(rawGridUnits)) -
+      2 * OPENGRID_LABEL_GRID.artworkSideInset
+    const widthCap =
+      Math.floor(
+        (safeWidth - OPENGRID_LABEL_GRID.iconTextGap) /
+          2 /
+          config.iconSize.step,
+      ) * config.iconSize.step
+    const iconSize = Math.min(
+      config.iconSize.default,
+      Math.max(config.iconSize.min, widthCap),
+    )
+    const textHeight = Math.min(
+      config.textHeight.twoRowMax,
+      Math.max(
+        config.textHeight.min,
+        OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
+          OPENGRID_LABEL_CARD_STACKED_GAP -
+          iconSize,
+      ),
+    )
+    onInputChange('iconSize', String(iconSize))
+    onInputChange('textHeight', String(textHeight))
   }
 
   function handleTextInput(field: 'text' | 'textLine2', event: Event): void {

@@ -245,7 +245,7 @@ The label card MUST offer a `screwMode` boolean, defaulting missing values to `f
 
 ### Requirement: Screw mode derives text and icon values
 
-While `screwMode` is enabled, validation MUST derive the effective icon from the selected head (side-view id), MUST overwrite the effective text with the generated `M<diameter>x<length>` designation, and MUST ignore any stored manual `text`, `textLine2`, `layout`, `groupAlign`, `iconPosition`, and text-alignment values rather than rejecting or surfacing them. An absent text height MUST hydrate to the 3 mm screw-mode default instead of the manual 7 mm default. The generated designation MUST be exempt from the six-character manual input cap; width validation MUST instead evaluate the full composition (icon pair + gap + designation at the selected text height) against the safe face and return a field-specific diagnostic that prevents generation and export. Screw mode MUST enforce `iconSize + 1 + textHeight` within the 10 mm safe height with a field-specific diagnostic, and enabling screw mode on a card whose text height violates the constraint MUST reduce the text height to 3 mm. Toggling screw mode off MUST restore the manual controls with empty text rows.
+While `screwMode` is enabled, validation MUST derive the effective icon from the selected head (side-view id), MUST overwrite the effective text with the generated `M<diameter>x<length>` designation, and MUST ignore any stored manual `text`, `textLine2`, `layout`, `groupAlign`, `iconPosition`, and text-alignment values rather than rejecting or surfacing them. An absent text height MUST hydrate to the 3 mm screw-mode default instead of the manual 7 mm default. The generated designation MUST be exempt from the six-character manual input cap; width validation MUST instead evaluate the full composition (icon pair + gap + designation at the selected text height) against the safe face and return a field-specific diagnostic that prevents generation and export. Screw mode MUST enforce `iconSize + 1 + textHeight` within the 10 mm safe height with a field-specific diagnostic. Enabling screw mode MUST auto-size the composition to fill the safe height: the balanced 6 mm icon pair with a 3 mm designation where the card width allows, shrinking the pair (and never the minimum 2 mm text) when a narrower card requires it. Toggling screw mode off MUST restore the manual controls with empty text rows.
 
 #### Scenario: Stale manual values are ignored
 
@@ -262,10 +262,10 @@ While `screwMode` is enabled, validation MUST derive the effective icon from the
 - **WHEN** the icon pair plus designation cannot fit the selected card width
 - **THEN** a field-specific width diagnostic MUST prevent generation and export
 
-#### Scenario: Screw mode clamps an impossible text height
+#### Scenario: Screw mode auto-fits the composition on enable
 
-- **WHEN** screw mode is enabled while text height is 7 mm and icon size is 6 mm
-- **THEN** the effective text height MUST be reduced to 3 mm so the composition fits the safe height
+- **WHEN** screw mode is enabled on a card with an unbalanced icon size or text height
+- **THEN** the icon size and text height MUST be reset to the balanced composition that fills the safe height, with the pair shrunk only when the card width requires it
 
 ### Requirement: Screw mode persistence and export fingerprints
 
