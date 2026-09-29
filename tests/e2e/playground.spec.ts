@@ -904,7 +904,7 @@ test('refits only the default wall camera when framing inputs change', async ({
   const gridY = page.getByTestId('playground-grid-size-y')
   await gridY.fill('80')
   await gridY.blur()
-  await expect(viewport).toHaveAttribute('data-grid-size', '50x80')
+  await expect(viewport).toHaveAttribute('data-grid-size', '20x80')
   await expect(viewport).not.toHaveAttribute(
     'data-camera-position',
     aspectRefitPosition!,
@@ -926,7 +926,7 @@ test('refits only the default wall camera when framing inputs change', async ({
 
   await gridY.fill('90')
   await gridY.blur()
-  await expect(viewport).toHaveAttribute('data-grid-size', '50x90')
+  await expect(viewport).toHaveAttribute('data-grid-size', '20x90')
   await expect(viewport).toHaveAttribute(
     'data-camera-position',
     customPosition!,
@@ -945,14 +945,14 @@ test('remembers the scene grid size across reloads', async ({ page }) => {
   await openPlayground(page)
   const gridX = page.getByTestId('playground-grid-size-x')
   const gridY = page.getByTestId('playground-grid-size-y')
-  await expect(gridX).toHaveValue('50')
-  await expect(gridY).toHaveValue('50')
+  await expect(gridX).toHaveValue('20')
+  await expect(gridY).toHaveValue('20')
 
   await gridX.fill('40')
   await gridX.blur()
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
     'data-grid-size',
-    '40x50',
+    '40x20',
   )
 
   await gridY.fill('30')

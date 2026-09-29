@@ -61,7 +61,7 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 
 #### Scenario: Scene grid extent is user-selectable and remembered
 
-- **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 50×50)
+- **WHEN** the user sets whole-cell grid extents for X and Y separately (each clamped to 1–200; default 20×20)
 - **THEN** the rendered guide grid MUST cover that rectangular extent in both orientations
 - **AND** the values MUST be remembered in this browser and restored on the next visit
 - **AND** the logical placement space MUST remain unbounded regardless of the rendered extent
