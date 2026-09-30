@@ -470,4 +470,33 @@ describe('playground wall socket anchoring', () => {
       maxCellY: 4,
     })
   })
+
+  it('keeps every socket seated on the board across tilt adjustments', () => {
+    // A tilt edit must leave the piece flush: the print-to-installed
+    // rotation, translation, bounds, and socket anchor all re-derive from
+    // the same parameters, so sockets stay on the board plane at any tilt.
+    const tiltCases: SocketCase[] = [0, 15, 30, 45].flatMap((tiltAngle) => [
+      {
+        modelId: 'opengrid-openconnect-organizer' as const,
+        parameters: { ...ORGANIZER_PARAMETERS, tiltAngle },
+        socketOrigins: openGridOpenConnectOrganizerSlotOriginsFor({
+          ...ORGANIZER_PARAMETERS,
+          tiltAngle,
+        }),
+      },
+      {
+        modelId: 'opengrid-openconnect-tissue-box' as const,
+        parameters: { ...TISSUE_PARAMETERS, tiltAngle },
+        socketOrigins: tissueBoxSlotOrigins({
+          ...TISSUE_PARAMETERS,
+          tiltAngle,
+        }),
+      },
+    ])
+    for (const socketCase of tiltCases) {
+      for (const world of mountedSocketsFor(socketCase)) {
+        expect(world[1]).toBeCloseTo(0, 6)
+      }
+    }
+  })
 })

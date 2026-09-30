@@ -863,9 +863,28 @@ export function createPlaygroundStore(): PlaygroundStore {
         instance.modelId,
       )
       instance.bounds = analyticBounds(instance.modelId, instance.parameters)
+      // A ready mesh is authored for the previous parameters; mounting it
+      // under the new wall display plan would mis-seat it (a tilt change
+      // floats the plate off the board until regeneration catches up). Adopt
+      // an already-cached mesh for the new parameters immediately, otherwise
+      // drop to the parameter-consistent placeholder for the debounced
+      // generation instead of rendering the stale mesh.
+      const cached = readyCache.get(cacheKeyFor(instance))
+      const pendingTimer = generationTimers.get(instance.id)
+      if (pendingTimer) {
+        clearTimeout(pendingTimer)
+        generationTimers.delete(instance.id)
+      }
+      if (cached) {
+        instance.mesh = cached.mesh
+        instance.bounds = cached.bounds
+        instance.meshState = 'ready'
+      } else {
+        instance.meshState = 'pending'
+      }
       diagnostic = null
       emit()
-      scheduleGenerate(instance)
+      if (!cached) scheduleGenerate(instance)
     },
     setInstanceColors(instanceId, colors) {
       const instance = getInstance(instanceId)
