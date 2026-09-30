@@ -835,6 +835,37 @@ test('maps wall dragging to cell X and cell Y while preserving the mount', async
   await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
 })
 
+test('mounts OpenConnect wall pieces in installed orientation', async ({
+  page,
+}) => {
+  await useCompactPlaygroundGrid(page)
+  await page.getByTestId('playground-mode-wall').click()
+  await page
+    .getByTestId('playground-add-model')
+    .selectOption('opengrid-openconnect-organizer')
+  await page.getByTestId('playground-add').click()
+  await waitForInstanceReady(page, 'inst-1')
+
+  const start = await findInstancePoint(page, 'inst-1')
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(start.x + 56, start.y - 56, { steps: 8 })
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-drag-instance',
+    'inst-1',
+  )
+  await page.mouse.up()
+
+  const after = await readSelectedPlacement(page)
+  expect(after.cellX).not.toBe(0)
+  expect(after.cellY).not.toBe(0)
+  await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+    'data-view-mode',
+    'wall',
+  )
+  await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+})
+
 test('commits an overlapping drag with a warning and keeps the camera', async ({
   page,
 }) => {

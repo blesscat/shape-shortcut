@@ -4,6 +4,9 @@ import {
   isTissueBoxParameters,
   tissueBoxBounds,
   tissueBoxFileName,
+  tissueBoxLayout,
+  tissueBoxInstalledBounds,
+  tissueBoxSlotOrigins,
   validateTissueBoxParameters,
   type TissueBoxParameters,
 } from '../../../../cad-contract/units/opengrid-openconnect-tissue-box'
@@ -77,6 +80,23 @@ export const tissueBoxDefinition: ModelDefinition = {
         parameters: validation.value,
       },
     }
+  },
+  wallDisplay: {
+    // tissueBoxPoint maps the print frame onto the installed frame with
+    // RotX(+tilt) plus a (0, offsetY, 0) translation raising the body off
+    // the rear plate's print origin; the tissue box faces +Y, so the
+    // wall-ready rotation is a plain quarter turn.
+    printToInstalledRotXDegrees: (parameters) =>
+      requireParameters(parameters).tiltAngle,
+    printToInstalledTranslationFor: (parameters) => {
+      const layout = tissueBoxLayout(requireParameters(parameters))
+      return [0, layout.offsetY, 0]
+    },
+    installedBoundsFor: (parameters) =>
+      tissueBoxInstalledBounds(requireParameters(parameters)),
+    wallReadyRotation: { axis: [1, 0, 0], degrees: 90 },
+    installedSocketOriginsFor: (parameters) =>
+      tissueBoxSlotOrigins(requireParameters(parameters)),
   },
   boundsForParameters: (parameters) =>
     tissueBoxBounds(requireParameters(parameters)),

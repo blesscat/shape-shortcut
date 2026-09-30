@@ -10,7 +10,9 @@
 
 The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and a placement of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. The playground MUST NOT offer Z-offset or stacking controls; every instance is placed ground-level, and the scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability.
 
-The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Placement, occupancy, and rotation semantics MUST be identical in both orientations.
+The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Placement, occupancy, and rotation semantics MUST be identical in both orientations — coordinate inputs, rotation steps, and conflict rules; footprint extents for wall display plans are specified in the next paragraph.
+
+A component whose authored geometry is in the flat print frame MUST declare a wall display plan so wall orientation renders it in its installed orientation: the OpenConnect interface face against the wall board, the body protruding toward +Y, and storage openings facing upward. The wall display plan MUST be presentation-level only: it MUST change the rendered transform and the wall footprint, and MUST NOT change the generated proxy mesh geometry or any exported STEP/STL/3MF file, which remain in the print frame. The plan MUST compose the component's full print-to-installed transform — rotation plus any installed-frame translation — so the mounted piece sits flush on the wall board plane. In wall orientation the occupied footprint of such a component MUST span its installed-frame horizontal width and installed vertical height (not the print-frame depth). When the plan declares the component's OpenConnect socket cell origins, the wall placement MUST anchor on the socket grid — the socket cell span's minimum corner at the placement cell — so every socket registers with a wall board cell, the body may overhang the socket span, and occupancy MUST follow the socket-anchored mounted body footprint.
 
 #### Scenario: Add instance to scene
 
@@ -35,6 +37,27 @@ The playground MUST offer desktop and wall scene orientations. In desktop orient
 - **THEN** the grid MUST render as a vertical board, rows extending upward along +Z
 - **AND** wall-mount components MUST render with their OpenConnect interface face directly against the wall board (no full-scene rotation)
 - **AND** placements, occupancy, and selection MUST be unchanged
+
+#### Scenario: OpenConnect wall pieces display installed orientation
+
+- **GIVEN** a scene in wall orientation containing an `opengrid-openconnect-organizer`, `opengrid-openconnect-shelf`, or `opengrid-openconnect-tissue-box` instance
+- **WHEN** the instance renders
+- **THEN** its OpenConnect interface face MUST be flush against the wall board with the body protruding toward +Y and storage openings facing upward, following the component's installed tilt
+- **AND** the rendered geometry MUST be the same proxy mesh used before, only re-transformed
+
+#### Scenario: Wall footprint uses installed extents
+
+- **GIVEN** a wall-orientation scene with an OpenConnect organizer, shelf, or tissue box instance
+- **WHEN** occupancy, drag snapping, and the pending placeholder are evaluated for that instance
+- **THEN** the footprint MUST span the installed-frame width and installed vertical height in grid cells
+- **AND** the footprint MUST NOT use the print-frame body depth as the vertical span
+
+#### Scenario: Display transform does not affect exports
+
+- **GIVEN** an OpenConnect organizer, shelf, or tissue box instance displayed in installed orientation in wall orientation
+- **WHEN** the user exports the instance (or the component in its workspace) as STL or 3MF
+- **THEN** the exported geometry MUST remain in the flat print frame with the print base at Z=0
+- **AND** the exported file name convention MUST be unchanged
 
 #### Scenario: Camera pose persists and can be reset
 

@@ -7,11 +7,14 @@ import {
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
 } from '../../src/cad-contract/units'
 import {
+  absoluteCellsFor,
   cellsForInstance,
   findFreeAnchorCell,
   firstPlacementConflict,
   overlappingInstanceIds,
   rotatedFootprintAABB,
+  type PlaygroundCellRange,
+  type PlaygroundCellsEntry,
 } from '../../src/features/cad/playground/occupancy'
 
 function placement(
@@ -20,6 +23,26 @@ function placement(
   rotation: ScenePlacement['rotation'] = 0,
 ): ScenePlacement {
   return { cellX, cellY, rotation, supportedBy: null }
+}
+
+/** Entry occupying `width` x `height` cells with its min corner on the anchor. */
+function cellsEntry(
+  id: string,
+  cellX: number,
+  cellY: number,
+  width = 1,
+  height = 1,
+): PlaygroundCellsEntry {
+  return {
+    id,
+    relativeCells: {
+      minCellX: 0,
+      maxCellX: width - 1,
+      minCellY: 0,
+      maxCellY: height - 1,
+    },
+    placement: { cellX, cellY },
+  }
 }
 
 function boxBounds(width: number, depth: number, height: number): ModelBounds {
@@ -121,65 +144,81 @@ describe('playground occupancy', () => {
   })
 
   it('detects overlapping placements and accepts adjacent ones', () => {
-    const bounds = boxBounds(28, 28, 10)
-    const existing = [{ id: 'a', bounds, placement: placement(0, 0) }]
+    const existing = [cellsEntry('a', 0, 0)]
+    expect(firstPlacementConflict([...existing, cellsEntry('b', 0, 0)])).toBe(
+      'b',
+    )
     expect(
-      firstPlacementConflict([
-        ...existing,
-        { id: 'b', bounds, placement: placement(0, 0) },
-      ]),
-    ).toBe('b')
-    expect(
-      firstPlacementConflict([
-        ...existing,
-        { id: 'b', bounds, placement: placement(1, 0) },
-      ]),
+      firstPlacementConflict([...existing, cellsEntry('b', 1, 0)]),
     ).toBeNull()
   })
 
   it('flags both sides of each overlap', () => {
-    const bounds = boxBounds(28, 28, 10)
     const flagged = overlappingInstanceIds([
-      { id: 'a', bounds, placement: placement(0, 0) },
-      { id: 'b', bounds, placement: placement(0, 0) },
-      { id: 'c', bounds, placement: placement(5, 5) },
+      cellsEntry('a', 0, 0),
+      cellsEntry('b', 0, 0),
+      cellsEntry('c', 5, 5),
     ])
     expect([...flagged].sort()).toEqual(['a', 'b'])
   })
 
   it('flags every instance in an overlap chain', () => {
-    const bounds = boxBounds(56, 28, 10)
     const flagged = overlappingInstanceIds([
-      { id: 'a', bounds, placement: placement(0, 0) },
-      { id: 'b', bounds, placement: placement(1, 0) },
-      { id: 'c', bounds, placement: placement(2, 0) },
+      cellsEntry('a', 0, 0, 2),
+      cellsEntry('b', 1, 0, 2),
+      cellsEntry('c', 2, 0, 2),
     ])
     expect([...flagged].sort()).toEqual(['a', 'b', 'c'])
   })
 
   it('leaves adjacent and disjoint instances unflagged', () => {
-    const bounds = boxBounds(28, 28, 10)
     const flagged = overlappingInstanceIds([
-      { id: 'a', bounds, placement: placement(0, 0) },
-      { id: 'b', bounds, placement: placement(1, 0) },
-      { id: 'c', bounds, placement: placement(-3, -3) },
+      cellsEntry('a', 0, 0),
+      cellsEntry('b', 1, 0),
+      cellsEntry('c', -3, -3),
     ])
     expect(flagged.size).toBe(0)
   })
 
+  it('respects negative anchor-relative offsets from socket anchoring', () => {
+    // A wall display body overhanging one cell left of and below its
+    // socket-grid anchor conflicts with a neighbour the anchor alone would
+    // clear.
+    const overhanging: PlaygroundCellsEntry = {
+      id: 'a',
+      relativeCells: { minCellX: -1, maxCellX: 1, minCellY: -1, maxCellY: 1 },
+      placement: { cellX: 2, cellY: 2 },
+    }
+    expect(absoluteCellsFor(overhanging)).toEqual({
+      minCellX: 1,
+      maxCellX: 3,
+      minCellY: 1,
+      maxCellY: 3,
+    })
+    expect(firstPlacementConflict([overhanging, cellsEntry('b', 3, 3)])).toBe(
+      'b',
+    )
+    expect(
+      firstPlacementConflict([overhanging, cellsEntry('b', 4, 1)]),
+    ).toBeNull()
+  })
+
   it('finds a free anchor cell next to existing instances', () => {
-    const bounds = boxBounds(28, 28, 10)
-    const existing = [
-      { id: 'a', bounds, placement: placement(0, 0) },
-      { id: 'b', bounds, placement: placement(1, 0) },
-    ]
-    const free = findFreeAnchorCell(bounds, existing)
-    const range = cellsForInstance({
-      bounds,
-      placement: { ...placement(free.cellX, free.cellY) },
+    const existing = [cellsEntry('a', 0, 0), cellsEntry('b', 1, 0)]
+    const relative: PlaygroundCellRange = {
+      minCellX: 0,
+      maxCellX: 0,
+      minCellY: 0,
+      maxCellY: 0,
+    }
+    const free = findFreeAnchorCell(relative, existing)
+    const range = absoluteCellsFor({
+      id: 'c',
+      relativeCells: relative,
+      placement: { cellX: free.cellX, cellY: free.cellY },
     })
     for (const occupied of existing) {
-      const taken = cellsForInstance(occupied)
+      const taken = absoluteCellsFor(occupied)
       const overlaps =
         range.minCellX <= taken.maxCellX &&
         taken.minCellX <= range.maxCellX &&
@@ -187,5 +226,28 @@ describe('playground occupancy', () => {
         taken.minCellY <= range.maxCellY
       expect(overlaps).toBe(false)
     }
+  })
+
+  it('finds a free anchor whose overhanging footprint clears neighbours', () => {
+    const existing = [cellsEntry('a', 0, 0)]
+    const relative: PlaygroundCellRange = {
+      minCellX: -1,
+      maxCellX: 0,
+      minCellY: -1,
+      maxCellY: 0,
+    }
+    const free = findFreeAnchorCell(relative, existing)
+    const range = absoluteCellsFor({
+      id: 'c',
+      relativeCells: relative,
+      placement: { cellX: free.cellX, cellY: free.cellY },
+    })
+    const taken = absoluteCellsFor(existing[0]!)
+    const overlaps =
+      range.minCellX <= taken.maxCellX &&
+      taken.minCellX <= range.maxCellX &&
+      range.minCellY <= taken.maxCellY &&
+      taken.minCellY <= range.maxCellY
+    expect(overlaps).toBe(false)
   })
 })

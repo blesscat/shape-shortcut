@@ -1,8 +1,11 @@
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOpenConnectOrganizer,
+  installedBoundsForOpenGridOpenConnectOrganizer,
   isOpenGridOpenConnectOrganizerParameters,
   openGridOpenConnectOrganizerFileName,
+  openGridOpenConnectOrganizerLayoutFor,
+  openGridOpenConnectOrganizerSlotOriginsFor,
   openGridOpenConnectOrganizerStlFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION,
@@ -205,6 +208,26 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
     height: 400,
   },
   validateParameters: validateDefinitionParameters,
+  wallDisplay: {
+    // placeBodyInInstalledCoordinates applies RotX(+tilt) then translates the
+    // body up by installedBodyPivotZ; orientForPrint undoes both for the flat
+    // print frame.
+    printToInstalledRotXDegrees: (parameters) =>
+      requireParameters(parameters).tiltAngle,
+    printToInstalledTranslationFor: (parameters) => {
+      const layout = openGridOpenConnectOrganizerLayoutFor(
+        requireParameters(parameters),
+      )
+      return [0, 0, layout.installedBodyPivotZ]
+    },
+    installedBoundsFor: (parameters) =>
+      installedBoundsForOpenGridOpenConnectOrganizer(
+        requireParameters(parameters),
+      ),
+    wallReadyRotation: { axis: [0, 1, -1], degrees: 180 },
+    installedSocketOriginsFor: (parameters) =>
+      openGridOpenConnectOrganizerSlotOriginsFor(requireParameters(parameters)),
+  },
   boundsForParameters: (parameters) =>
     boundsForOpenGridOpenConnectOrganizer(requireParameters(parameters)),
   exportFileName: (parameters) =>

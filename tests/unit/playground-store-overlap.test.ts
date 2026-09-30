@@ -144,4 +144,24 @@ describe('playground store soft overlap', () => {
     expect(snapshot.instances).toHaveLength(2)
     expect(snapshot.overlappingInstanceIds).toEqual(['inst-3', 'inst-4'])
   })
+
+  it('occupies the installed wall footprint for wall-mount components', () => {
+    const next = setupStore()
+    next.setViewMode('wall')
+    expect(next.addInstance('opengrid-openconnect-organizer')).toBe(true)
+    expect(next.addInstance('opengrid-openconnect-organizer')).toBe(true)
+
+    // A tall organizer: its installed height spans 4 wall rows, while the
+    // print-frame depth would only span 3.
+    next.setParameter('inst-3', 'holeDepth', '84')
+    next.setPlacement('inst-3', 10, 0, 0)
+    next.setPlacement('inst-4', 10, 2, 0)
+
+    // Free under print-frame depth semantics, overlapping under the
+    // installed wall footprint.
+    expect(next.getSnapshot().overlappingInstanceIds).toEqual([
+      'inst-3',
+      'inst-4',
+    ])
+  })
 })
