@@ -30,9 +30,12 @@ import {
   serializePlaygroundScene,
 } from './scene-file'
 import {
+  cellsForInstance,
   findFreeAnchorCell,
   firstPlacementConflict,
   overlappingInstanceIds,
+  type PlaygroundCellRange,
+  type PlaygroundCellsEntry,
 } from './occupancy'
 import { sceneInstanceFileName, sceneProxyCacheKey } from './filenames'
 import {
@@ -42,7 +45,11 @@ import {
   type PlaygroundGridSize,
 } from './grid-size'
 import { modelVisibleInViewMode } from './wall-mount'
-import { wallDisplayPlanFor, wallReadyBoundsFor } from './wall-display'
+import {
+  wallDisplayCellRangeFor,
+  wallDisplayPlanFor,
+  wallReadyBoundsFor,
+} from './wall-display'
 
 export type PlaygroundMeshState = 'pending' | 'ready' | 'failed'
 
@@ -243,20 +250,32 @@ export function createPlaygroundStore(): PlaygroundStore {
   }
 
   /**
-   * The footprint an instance occupies on the active plane. Components
-   * authored in the flat print frame mount through their wall display plan,
-   * so in wall orientation their footprint spans the installed-frame width
-   * and installed vertical height; every other component mounts by its base
-   * face and keeps the authored X/Y extent in both orientations.
+   * Cells an instance occupies, relative to its placement anchor (only the
+   * rotation matters). Wall display plans anchor on the OpenConnect socket
+   * grid, so the mounted body footprint — including overhang past the
+   * socket span — drives occupancy; every other component keeps the
+   * min-corner anchored X/Y extent in both orientations.
    */
-  const effectiveFootprintBounds = (
+  const relativeCellsFor = (
     instance: PlaygroundInstance,
-  ): ModelBounds | null => {
+    rotation: ScenePlacement['rotation'],
+  ): PlaygroundCellRange | null => {
+    if (viewMode === 'wall') {
+      const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
+      if (plan) {
+        return wallDisplayCellRangeFor(plan, instance.parameters, {
+          cellX: 0,
+          cellY: 0,
+          rotation,
+        })
+      }
+    }
     const bounds = boundsFor(instance)
-    if (!bounds || viewMode !== 'wall') return bounds
-    const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
-    if (!plan) return bounds
-    return wallReadyBoundsFor(plan, instance.parameters)
+    if (!bounds) return null
+    return cellsForInstance({
+      bounds,
+      placement: { cellX: 0, cellY: 0, rotation, supportedBy: null },
+    })
   }
 
   /** Analytic bounds for the given parameters, used to seed placeholders. */
@@ -272,33 +291,33 @@ export function createPlaygroundStore(): PlaygroundStore {
   // Occupancy keeps every placed instance, including failed ones: a failed
   // generation still occupies its planned footprint and a retry must not
   // start from an overlap.
-  const placedEntries = (excludeId?: string) =>
-    instances
-      .filter(
-        (instance) => instance.id !== excludeId && instance.placement !== null,
+  const placedCellEntries = (excludeId?: string): PlaygroundCellsEntry[] =>
+    instances.flatMap((instance) => {
+      if (instance.id === excludeId || instance.placement === null) return []
+      const relativeCells = relativeCellsFor(
+        instance,
+        instance.placement.rotation,
       )
-      .map((instance) => ({
-        id: instance.id,
-        bounds: effectiveFootprintBounds(instance),
-        placement: instance.placement,
-      }))
-      .filter(
-        (
-          entry,
-        ): entry is {
-          id: string
-          bounds: ModelBounds
-          placement: ScenePlacement
-        } => entry.bounds !== null && entry.placement !== null,
-      )
+      if (!relativeCells) return []
+      return [
+        {
+          id: instance.id,
+          relativeCells,
+          placement: instance.placement,
+        },
+      ]
+    })
 
   const assignPlacement = (instance: PlaygroundInstance): void => {
-    const bounds = effectiveFootprintBounds(instance)
-    if (!bounds) {
+    const relativeCells = relativeCellsFor(instance, 0)
+    if (!relativeCells) {
       instance.placement = null
       return
     }
-    const free = findFreeAnchorCell(bounds, placedEntries(instance.id))
+    const free = findFreeAnchorCell(
+      relativeCells,
+      placedCellEntries(instance.id),
+    )
     instance.placement = {
       cellX: free.cellX,
       cellY: free.cellY,
@@ -326,8 +345,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
       }
     }
-    const bounds = effectiveFootprintBounds(instance)
-    if (!bounds) {
+    if (!relativeCellsFor(instance, rotation)) {
       return {
         ok: false,
         diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
@@ -354,12 +372,12 @@ export function createPlaygroundStore(): PlaygroundStore {
     instance: PlaygroundInstance,
     placement: ScenePlacement,
   ): boolean => {
-    const bounds = effectiveFootprintBounds(instance)
-    if (!bounds) return false
+    const relativeCells = relativeCellsFor(instance, placement.rotation)
+    if (!relativeCells) return false
     return (
       firstPlacementConflict([
-        ...placedEntries(instance.id),
-        { id: instance.id, bounds, placement },
+        ...placedCellEntries(instance.id),
+        { id: instance.id, relativeCells, placement },
       ]) !== null
     )
   }
@@ -656,7 +674,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     gridSize: { ...gridSize },
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
-    overlappingInstanceIds: [...overlappingInstanceIds(placedEntries())],
+    overlappingInstanceIds: [...overlappingInstanceIds(placedCellEntries())],
   })
 
   return {
@@ -900,31 +918,29 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
       for (const instance of withAutoPlacement) {
         if (!instance.placement) {
-          const bounds = effectiveFootprintBounds(instance)
-          if (!bounds) {
+          const relativeCells = relativeCellsFor(instance, 0)
+          if (!relativeCells) {
             instance.placement = null
             continue
           }
           const free = findFreeAnchorCell(
-            bounds,
-            withAutoPlacement
-              .filter(
-                (other) => other.id !== instance.id && other.placement !== null,
+            relativeCells,
+            withAutoPlacement.flatMap((other) => {
+              if (other.id === instance.id || other.placement === null)
+                return []
+              const otherCells = relativeCellsFor(
+                other,
+                other.placement.rotation,
               )
-              .map((other) => ({
-                id: other.id,
-                bounds: effectiveFootprintBounds(other),
-                placement: other.placement,
-              }))
-              .filter(
-                (
-                  entry,
-                ): entry is {
-                  id: string
-                  bounds: ModelBounds
-                  placement: ScenePlacement
-                } => entry.bounds !== null && entry.placement !== null,
-              ),
+              if (!otherCells) return []
+              return [
+                {
+                  id: other.id,
+                  relativeCells: otherCells,
+                  placement: other.placement,
+                },
+              ]
+            }),
           )
           instance.placement = {
             cellX: free.cellX,

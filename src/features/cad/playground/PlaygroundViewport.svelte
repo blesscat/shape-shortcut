@@ -29,8 +29,10 @@
   import {
     wallDisplayPlanFor,
     wallDisplayRotationMatrix,
+    wallDisplayTranslationFor,
     wallMountPlacementFor,
     wallReadyBoundsFor,
+    wallSocketAnchorFor,
     withWallDisplayRotation,
     type WallMountPlacement,
   } from './wall-display'
@@ -276,15 +278,22 @@
         // Print-frame-authored piece: rotate into the installed orientation
         // first (OpenConnect face toward the board, openings up), then mount
         // with the same protrusion-toward-+Y convention. Translation uses the
-        // wall-ready footprint so render, occupancy, and placeholders agree.
+        // wall-ready footprint so render, occupancy, and placeholders agree;
+        // the socket grid anchors the placement cell when declared.
         const wallBounds = wallReadyBoundsFor(plan, instance.parameters)
+        const socketAnchor = wallSocketAnchorFor(plan, instance.parameters)
         const mount = withWallDisplayRotation(
-          wallMountPlacementFor(wallBounds, {
-            cellX: instance.placement?.cellX ?? 0,
-            cellY: instance.placement?.cellY ?? 0,
-            rotation,
-          }),
+          wallMountPlacementFor(
+            wallBounds,
+            {
+              cellX: instance.placement?.cellX ?? 0,
+              cellY: instance.placement?.cellY ?? 0,
+              rotation,
+            },
+            socketAnchor,
+          ),
           wallDisplayRotationMatrix(plan, instance.parameters),
+          wallDisplayTranslationFor(plan, instance.parameters),
         )
         return matrixFromWallPlacement(mount)
       }
@@ -657,14 +666,19 @@
     const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
     if (!plan) return null
     const wallBounds = wallReadyBoundsFor(plan, instance.parameters)
+    const socketAnchor = wallSocketAnchorFor(plan, instance.parameters)
     return {
       wallBounds,
       matrix: matrixFromWallPlacement(
-        wallMountPlacementFor(wallBounds, {
-          cellX: placement.cellX,
-          cellY: placement.cellY,
-          rotation: placement.rotation,
-        }),
+        wallMountPlacementFor(
+          wallBounds,
+          {
+            cellX: placement.cellX,
+            cellY: placement.cellY,
+            rotation: placement.rotation,
+          },
+          socketAnchor,
+        ),
       ),
     }
   }

@@ -4,6 +4,7 @@ import {
   installedBoundsForOpenGridOpenConnectOrganizer,
   isOpenGridOpenConnectOrganizerParameters,
   openGridOpenConnectOrganizerFileName,
+  openGridOpenConnectOrganizerSlotOriginsFor,
   openGridOpenConnectOrganizerStlFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
   OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION,
@@ -216,6 +217,8 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
         requireParameters(parameters),
       ),
     wallReadyRotation: { axis: [0, 1, -1], degrees: 180 },
+    installedSocketOriginsFor: (parameters) =>
+      openGridOpenConnectOrganizerSlotOriginsFor(requireParameters(parameters)),
   },
   boundsForParameters: (parameters) =>
     boundsForOpenGridOpenConnectOrganizer(requireParameters(parameters)),

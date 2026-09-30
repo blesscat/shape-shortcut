@@ -63,6 +63,29 @@ export function cellsForInstance(
   }
 }
 
+/**
+ * Occupancy entry with cells expressed relative to the placement anchor
+ * (`cellX`/`cellY` treated as 0). Wall display plans anchor on the
+ * OpenConnect socket grid, so their body footprint may spill into negative
+ * offsets around the anchor; min-corner anchored bounds never do.
+ */
+export type PlaygroundCellsEntry = {
+  id: string
+  relativeCells: PlaygroundCellRange
+  placement: Pick<ScenePlacement, 'cellX' | 'cellY'>
+}
+
+export function absoluteCellsFor(
+  entry: PlaygroundCellsEntry,
+): PlaygroundCellRange {
+  return {
+    minCellX: entry.relativeCells.minCellX + entry.placement.cellX,
+    maxCellX: entry.relativeCells.maxCellX + entry.placement.cellX,
+    minCellY: entry.relativeCells.minCellY + entry.placement.cellY,
+    maxCellY: entry.relativeCells.maxCellY + entry.placement.cellY,
+  }
+}
+
 function rangesOverlap(
   a: PlaygroundCellRange,
   b: PlaygroundCellRange,
@@ -80,13 +103,13 @@ function rangesOverlap(
  * instance's footprint, or `null` when all placements are compatible.
  */
 export function firstPlacementConflict(
-  instances: ReadonlyArray<PlaygroundOccupancyInput & { id: string }>,
+  instances: ReadonlyArray<PlaygroundCellsEntry>,
 ): string | null {
   for (let a = 0; a < instances.length; a += 1) {
     for (let b = a + 1; b < instances.length; b += 1) {
-      const rangeA = cellsForInstance(instances[a])
-      const rangeB = cellsForInstance(instances[b])
-      if (rangesOverlap(rangeA, rangeB)) return instances[b].id
+      const rangeA = absoluteCellsFor(instances[a]!)
+      const rangeB = absoluteCellsFor(instances[b]!)
+      if (rangesOverlap(rangeA, rangeB)) return instances[b]!.id
     }
   }
   return null
@@ -97,13 +120,13 @@ export function firstPlacementConflict(
  * footprint overlap — both sides of each conflict, including chains.
  */
 export function overlappingInstanceIds(
-  instances: ReadonlyArray<PlaygroundOccupancyInput & { id: string }>,
+  instances: ReadonlyArray<PlaygroundCellsEntry>,
 ): Set<string> {
   const overlapping = new Set<string>()
   for (let a = 0; a < instances.length; a += 1) {
     for (let b = a + 1; b < instances.length; b += 1) {
-      const rangeA = cellsForInstance(instances[a]!)
-      const rangeB = cellsForInstance(instances[b]!)
+      const rangeA = absoluteCellsFor(instances[a]!)
+      const rangeB = absoluteCellsFor(instances[b]!)
       if (rangesOverlap(rangeA, rangeB)) {
         overlapping.add(instances[a]!.id)
         overlapping.add(instances[b]!.id)
@@ -114,16 +137,17 @@ export function overlappingInstanceIds(
 }
 
 /**
- * Finds an unoccupied anchor cell near the origin for a new instance with
- * the given footprint, scanning outward in square rings.
+ * Finds an unoccupied anchor cell near the origin for a new instance whose
+ * footprint (relative to the anchor, possibly with negative offsets) is
+ * `relativeCells`, scanning outward in square rings.
  */
 export function findFreeAnchorCell(
-  bounds: ModelBounds,
-  existing: ReadonlyArray<PlaygroundOccupancyInput & { id: string }>,
+  relativeCells: PlaygroundCellRange,
+  existing: ReadonlyArray<PlaygroundCellsEntry>,
 ): { cellX: number; cellY: number } {
   const occupied = new Set(
-    existing.flatMap((instance) => {
-      const range = cellsForInstance(instance)
+    existing.flatMap((entry) => {
+      const range = absoluteCellsFor(entry)
       const cells: string[] = []
       for (let x = range.minCellX; x <= range.maxCellX; x += 1) {
         for (let y = range.minCellY; y <= range.maxCellY; y += 1) {
@@ -134,25 +158,39 @@ export function findFreeAnchorCell(
     }),
   )
 
-  const candidateRange = cellsForInstance({
-    bounds,
-    placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
-  })
-  const spanX = candidateRange.maxCellX - candidateRange.minCellX
-  const spanY = candidateRange.maxCellY - candidateRange.minCellY
-  const ringMax = Math.ceil(Math.sqrt(occupied.size + 1)) + spanX + spanY + 2
+  const spanX = relativeCells.maxCellX - relativeCells.minCellX
+  const spanY = relativeCells.maxCellY - relativeCells.minCellY
+  const overhang = Math.max(
+    0,
+    -Math.min(relativeCells.minCellX, relativeCells.minCellY),
+  )
+  const ringMax =
+    Math.ceil(Math.sqrt(occupied.size + 1)) + spanX + spanY + 2 + overhang
+
+  const candidateCells = (cellX: number, cellY: number) => {
+    const cells: string[] = []
+    for (
+      let x = cellX + relativeCells.minCellX;
+      x <= cellX + relativeCells.maxCellX;
+      x += 1
+    ) {
+      for (
+        let y = cellY + relativeCells.minCellY;
+        y <= cellY + relativeCells.maxCellY;
+        y += 1
+      ) {
+        cells.push(`${x},${y}`)
+      }
+    }
+    return cells
+  }
 
   for (let ring = 0; ring <= ringMax; ring += 1) {
     for (let cellY = -ring; cellY <= ring; cellY += 1) {
       for (let cellX = -ring; cellX <= ring; cellX += 1) {
         if (Math.max(Math.abs(cellX), Math.abs(cellY)) !== ring) continue
-        let conflicts = false
-        for (let x = cellX; x <= cellX + spanX && !conflicts; x += 1) {
-          for (let y = cellY; y <= cellY + spanY && !conflicts; y += 1) {
-            if (occupied.has(`${x},${y}`)) conflicts = true
-          }
-        }
-        if (!conflicts) return { cellX, cellY }
+        if (candidateCells(cellX, cellY).every((cell) => !occupied.has(cell)))
+          return { cellX, cellY }
       }
     }
   }

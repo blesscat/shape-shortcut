@@ -94,10 +94,26 @@ export type WallDisplayRotation = {
 export type WallDisplayPlan = {
   /** Print-frame to installed-frame rotation about +X, in degrees. */
   printToInstalledRotXDegrees: (parameters: ModelParameterValues) => number
+  /**
+   * Installed-frame translation applied after the print-to-installed
+   * rotation, for pieces whose installed frame is shifted relative to the
+   * print origin. Defaults to no translation.
+   */
+  printToInstalledTranslationFor?: (
+    parameters: ModelParameterValues,
+  ) => readonly [number, number, number]
   /** Component bounds in the installed frame (wall face, protrusion, up). */
   installedBoundsFor: (parameters: ModelParameterValues) => ModelBounds
   /** Constant installed-frame to wall-ready-frame rotation. */
   wallReadyRotation: WallDisplayRotation
+  /**
+   * OpenConnect socket cell centers in the installed frame. When declared,
+   * wall placements anchor on the socket grid so every socket registers
+   * with a wall board cell; the body may overhang the socket span.
+   */
+  installedSocketOriginsFor?: (
+    parameters: ModelParameterValues,
+  ) => readonly (readonly [number, number, number])[]
 }
 
 export type ModelDefinition<
