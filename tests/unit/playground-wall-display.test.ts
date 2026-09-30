@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   installedBoundsForOpenGridOpenConnectOrganizer,
+  openGridOpenConnectOrganizerLayoutFor,
   openGridOpenConnectOrganizerSlotOriginsFor,
+  OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
   openGridOpenConnectShelfInstalledBoundsFor,
@@ -496,6 +498,77 @@ describe('playground wall socket anchoring', () => {
     for (const socketCase of tiltCases) {
       for (const world of mountedSocketsFor(socketCase)) {
         expect(world[1]).toBeCloseTo(0, 6)
+      }
+    }
+  })
+
+  it('composes the organizer builder pivot into the wall display plan', () => {
+    // Regression: the builder's print frame is orientForPrint of the
+    // installed frame — RotX(-tilt) after removing the installedBodyPivotZ
+    // rise that placeBodyInInstalledCoordinates applies. The plan must
+    // reproduce exactly that transform, or the mounted mesh rides
+    // rearThickness*tan(tilt) off its installed position on the board.
+    const plan = wallDisplayPlanFor(
+      getModelDefinition('opengrid-openconnect-organizer'),
+    )!
+    for (const tiltAngle of [0, 15, 40]) {
+      const parameters = { ...ORGANIZER_PARAMETERS, tiltAngle }
+      const layout = openGridOpenConnectOrganizerLayoutFor(parameters)
+      const radians = (tiltAngle * Math.PI) / 180
+      const cosine = Math.cos(radians)
+      const sine = Math.sin(radians)
+      const rise: readonly [number, number, number] = [
+        0,
+        0,
+        layout.installedBodyPivotZ,
+      ]
+      // Builder print twin of an installed point: drop the rise, then undo
+      // the print-to-installed rotation.
+      const builderPrintTwin = (
+        installed: readonly [number, number, number],
+      ): [number, number, number] => {
+        const shifted = [
+          installed[0] - rise[0],
+          installed[1] - rise[1],
+          installed[2] - rise[2],
+        ] as const
+        return [
+          shifted[0],
+          shifted[1] * cosine + shifted[2] * sine,
+          -shifted[1] * sine + shifted[2] * cosine,
+        ]
+      }
+      const rotation = plan.printToInstalledRotXDegrees(parameters)
+      const translation = plan.printToInstalledTranslationFor?.(parameters) ?? [
+        0, 0, 0,
+      ]
+      expect(rotation).toBe(tiltAngle)
+      expect(translation).toEqual(rise)
+      const landmarks = [
+        ...openGridOpenConnectOrganizerSlotOriginsFor(parameters),
+        [
+          layout.rearInterfaceWidth / 2,
+          OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.rearThickness,
+          layout.rearInterfaceHeight,
+        ],
+      ] as Array<readonly [number, number, number]>
+      for (const installed of landmarks) {
+        const printTwin = builderPrintTwin(installed)
+        // The plan's own transform must carry the builder's print twin back
+        // onto the authored installed point.
+        const rotated = [
+          printTwin[0],
+          printTwin[1] * cosine - printTwin[2] * sine,
+          printTwin[1] * sine + printTwin[2] * cosine,
+        ] as const
+        const restored = [
+          rotated[0] + translation[0],
+          rotated[1] + translation[1],
+          rotated[2] + translation[2],
+        ]
+        for (let axis = 0; axis < 3; axis += 1) {
+          expect(restored[axis]).toBeCloseTo(installed[axis], 9)
+        }
       }
     }
   })

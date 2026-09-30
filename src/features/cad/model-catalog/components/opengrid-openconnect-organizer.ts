@@ -4,6 +4,7 @@ import {
   installedBoundsForOpenGridOpenConnectOrganizer,
   isOpenGridOpenConnectOrganizerParameters,
   openGridOpenConnectOrganizerFileName,
+  openGridOpenConnectOrganizerLayoutFor,
   openGridOpenConnectOrganizerSlotOriginsFor,
   openGridOpenConnectOrganizerStlFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
@@ -208,10 +209,17 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
   },
   validateParameters: validateDefinitionParameters,
   wallDisplay: {
-    // placeBodyInInstalledCoordinates applies RotX(+tilt); orientForPrint
-    // undoes it for the flat print frame.
+    // placeBodyInInstalledCoordinates applies RotX(+tilt) then translates the
+    // body up by installedBodyPivotZ; orientForPrint undoes both for the flat
+    // print frame.
     printToInstalledRotXDegrees: (parameters) =>
       requireParameters(parameters).tiltAngle,
+    printToInstalledTranslationFor: (parameters) => {
+      const layout = openGridOpenConnectOrganizerLayoutFor(
+        requireParameters(parameters),
+      )
+      return [0, 0, layout.installedBodyPivotZ]
+    },
     installedBoundsFor: (parameters) =>
       installedBoundsForOpenGridOpenConnectOrganizer(
         requireParameters(parameters),
