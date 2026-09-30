@@ -235,7 +235,7 @@ The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbol
 
 ### Requirement: Screw mode dedicated composition
 
-The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, icon-size control, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, and text height controls. The card composition MUST be fixed at real scale, independent of `iconSize`: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) at a fixed 4.5 mm, then the existing icon/text gap, then the side-view screw body — a smooth solid shaft 2 mm thick whose length equals the selected length in millimetres at 1:1 real scale with a fixed 4 mm × 3.5 mm rectangular head block at its far end — all centered as a group in the upper safe zone, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The rendered shaft length on the card face MUST equal the selected length in millimetres so a screw held against the label matches its compartment. `gridUnits`, `style`, and `textHeight` MUST keep their existing ranges and remain adjustable; the stored `iconSize` value MUST be preserved untouched and MUST apply again when screw mode is toggled off.
+The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, icon-size control, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, and text height controls. The card composition MUST be fixed at real scale, independent of `iconSize`: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) at a fixed 4.5 mm, then the existing icon/text gap, then the side-view screw body — a fixed 3 mm × 4.5 mm rectangular head block whose height matches the front symbol, followed by a smooth solid shaft 2 mm thick whose length equals the selected length in millimetres at 1:1 real scale — all centered as a group in the upper safe zone, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The rendered shaft length on the card face MUST equal the selected length in millimetres so a screw held against the label matches its compartment. `gridUnits`, `style`, and `textHeight` MUST keep their existing ranges and remain adjustable; the stored `iconSize` value MUST be preserved untouched and MUST apply again when screw mode is toggled off.
 
 #### Scenario: Enable screw mode
 
@@ -247,17 +247,17 @@ The label card MUST offer a `screwMode` boolean, defaulting missing values to `f
 
 - **WHEN** the user selects hex as the head with any diameter and length
 - **THEN** the composition MUST lead with the `drive-hex` front symbol at the fixed size
-- **AND** selecting phillips or torx MUST lead with the matching drive symbol while the side view keeps the same shaft and head block
+- **AND** selecting phillips or torx MUST lead with the matching drive symbol while the side view keeps the same head block and shaft
 
 #### Scenario: Shaft renders at real scale
 
 - **WHEN** a screw-mode card selects M4 with length 16 on a 30 mm-wide card
-- **THEN** the rendered shaft MUST span approximately 16 mm of the card face plus the fixed head block, within the safe face
+- **THEN** the rendered shaft MUST span approximately 16 mm of the card face between the head block and the shaft tip, within the safe face
 - **AND** two screw-mode cards differing only in length, 8 mm versus 28 mm, MUST render shafts differing by approximately 20 mm on the card face
 
 #### Scenario: Composition too wide is rejected
 
-- **WHEN** the head symbol, gap, shaft, and head block cannot fit the selected card's safe width — for example M4 with length 30 on a 40 mm-wide card
+- **WHEN** the head symbol, gap, head block, and shaft cannot fit the selected card's safe width — for example M4 with length 30 on a 40 mm-wide card
 - **THEN** a field-specific `screwLength` diagnostic MUST prevent generation and export
 - **AND** selecting a wider card MUST let the same screw generate
 

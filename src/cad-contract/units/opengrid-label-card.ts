@@ -104,8 +104,8 @@ export const OPENGRID_LABEL_CARD_SCREW_LENGTH = {
 export const OPENGRID_LABEL_CARD_SCREW_SIDE = {
   headFrontSize: 4.5,
   shaftThickness: 2,
-  blockWidth: 4,
-  blockHeight: 3.5,
+  blockWidth: 3,
+  blockHeight: 4.5,
 } as const
 
 export function openGridLabelCardScrewDesignation(

@@ -722,19 +722,23 @@ describe('label card screw mode geometry', () => {
       expect(bounds[0]![1]!).toBeCloseTo(-5, 0)
       expect((bounds[0]![0]! + bounds[1]![0]!) / 2).toBeCloseTo(0, 1)
       // Real-scale composition on the 50 mm card (M4x16): the 4.5 mm head
-      // symbol, the 1 mm gap, the 16 mm shaft, and the 4 x 3.5 mm head block
-      // span 26.5 mm centered on the face.
+      // symbol, the 2 mm gap, the 3 x 4.5 mm head block on the left, and the
+      // 16 mm shaft span 25.5 mm centered on the face.
       const frontProbe = makeBox([-12.5, 1, 0.65], [-9.5, 4.5, 0.95])
-      const shaftProbe = makeBox([-6, 2, 0.65], [8, 3.5, 0.95])
-      const blockProbe = makeBox([9.5, 1.5, 0.65], [13, 4, 0.95])
-      const gapProbe = makeBox([-8.5, 0.5, 0.65], [-7, 4.5, 0.95])
+      const blockProbe = makeBox([-6, 1, 0.65], [-3.5, 4.5, 0.95])
+      const shaftProbe = makeBox([-3, 2, 0.65], [12, 3.5, 0.95])
+      const gapProbe = makeBox([-8, 0.5, 0.65], [-7, 4.5, 0.95])
+      // Pin the head-left orientation: the right half above the shaft is
+      // empty now, but was inside the block when the block sat on the right.
+      const oldBlockProbe = makeBox([10, 3.9, 0.65], [12, 4.4, 0.95])
       const textProbe = makeBox([-5.5, -5, 0.65], [5.5, -2.2, 0.95])
       try {
         for (const [probe, occupied] of [
           [frontProbe, true],
-          [shaftProbe, true],
           [blockProbe, true],
+          [shaftProbe, true],
           [gapProbe, false],
+          [oldBlockProbe, false],
           [textProbe, true],
         ] as const) {
           const intersection = accent.intersect(probe)
@@ -748,9 +752,10 @@ describe('label card screw mode geometry', () => {
         }
       } finally {
         frontProbe.delete()
-        shaftProbe.delete()
         blockProbe.delete()
+        shaftProbe.delete()
         gapProbe.delete()
+        oldBlockProbe.delete()
         textProbe.delete()
       }
       const body = result.parts.find((part) => part.name === 'body')!

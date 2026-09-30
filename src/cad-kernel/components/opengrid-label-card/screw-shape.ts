@@ -50,11 +50,13 @@ function deleteShape(shape: { delete?: () => void } | null | undefined): void {
 }
 
 /**
- * Real-scale screw-mode side view in millimetres: a shaft 2 mm thick whose
- * length equals the designated screw length, with the fixed rectangular head
- * block at the far end, centered on the returned solid's bounding box. The
- * length arrives from the validated picker (4-30 mm), so the step contour
- * always keeps distinct vertices.
+ * Real-scale screw-mode side view in millimetres, head block on the left: a
+ * fixed rectangular head block (3 mm wide, matching the front symbol's 4.5 mm
+ * height) followed by a shaft 2 mm thick whose length equals the designated
+ * screw length. The contour spans x 0 to block width + length and is placed
+ * by the builder from its measured bounding box. The length arrives from the
+ * validated picker (4-30 mm), so the step contour always keeps distinct
+ * vertices.
  */
 export function makeOpenGridScrewModeSideShape(options: {
   lengthMm: number
@@ -63,17 +65,17 @@ export function makeOpenGridScrewModeSideShape(options: {
   const length = Math.max(0, options.lengthMm)
   const shaftHalf = OPENGRID_LABEL_CARD_SCREW_SIDE.shaftThickness / 2
   const blockHalf = OPENGRID_LABEL_CARD_SCREW_SIDE.blockHeight / 2
-  const blockLeft = length
-  const blockRight = blockLeft + OPENGRID_LABEL_CARD_SCREW_SIDE.blockWidth
+  const blockRight = OPENGRID_LABEL_CARD_SCREW_SIDE.blockWidth
+  const shaftEnd = blockRight + length
   const contour: PathPolygon = [
-    [0, -shaftHalf],
-    [blockLeft, -shaftHalf],
-    [blockLeft, -blockHalf],
+    [0, -blockHalf],
     [blockRight, -blockHalf],
+    [blockRight, -shaftHalf],
+    [shaftEnd, -shaftHalf],
+    [shaftEnd, shaftHalf],
+    [blockRight, shaftHalf],
     [blockRight, blockHalf],
-    [blockLeft, blockHalf],
-    [blockLeft, shaftHalf],
-    [0, shaftHalf],
+    [0, blockHalf],
   ]
   return extrudeContourGroup(contour, [], options.depth)
 }
