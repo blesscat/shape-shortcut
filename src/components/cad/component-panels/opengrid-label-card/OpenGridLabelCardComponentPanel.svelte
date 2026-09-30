@@ -7,6 +7,7 @@
     OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
     OPENGRID_LABEL_CARD_SCREW_HEADS,
     OPENGRID_LABEL_CARD_SCREW_LENGTH,
+    OPENGRID_LABEL_CARD_SCREW_SIDE,
     OPENGRID_LABEL_CARD_STACKED_GAP,
     OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT,
     OPENGRID_LABEL_CARD_STYLES,
@@ -80,7 +81,7 @@
   let screwMaxTextHeight = $derived(
     OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
       OPENGRID_LABEL_CARD_STACKED_GAP -
-      Number(rawIconSize),
+      OPENGRID_LABEL_CARD_SCREW_SIDE.headFrontSize,
   )
   let maxTextHeight = $derived(
     screwMode
@@ -114,32 +115,10 @@
     if (!nextScrewMode) return
     onInputChange('text', '')
     onInputChange('textLine2', '')
-    // Auto-fit the composition: balanced 6 mm icons + 3 mm designation fills
-    // the 10 mm safe height; narrower cards shrink the pair to fit the width.
-    const safeWidth =
-      openGridLabelWidthFor(Number(rawGridUnits)) -
-      2 * OPENGRID_LABEL_GRID.artworkSideInset
-    const widthCap =
-      Math.floor(
-        (safeWidth - OPENGRID_LABEL_GRID.iconTextGap) /
-          2 /
-          config.iconSize.step,
-      ) * config.iconSize.step
-    const iconSize = Math.min(
-      config.iconSize.default,
-      Math.max(config.iconSize.min, widthCap),
-    )
-    const textHeight = Math.min(
-      config.textHeight.twoRowMax,
-      Math.max(
-        config.textHeight.min,
-        OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
-          OPENGRID_LABEL_CARD_STACKED_GAP -
-          iconSize,
-      ),
-    )
-    onInputChange('iconSize', String(iconSize))
-    onInputChange('textHeight', String(textHeight))
+    // The real-scale composition has fixed sizes; only the designation height
+    // defaults (3 mm). The stored manual icon size stays untouched so toggling
+    // screw mode off restores it.
+    onInputChange('textHeight', String(config.screwMode.textHeight))
   }
 
   function handleTextInput(field: 'text' | 'textLine2', event: Event): void {
@@ -400,38 +379,38 @@
     {/if}
   {/if}
 
-  <div class="grid gap-1">
-    <label for="label-card-icon-size" class="text-sm text-ink"
-      >{translate(locale, 'panel.labelCard.iconSize')} · {rawIconSize}
-      mm</label
-    >
-    <input
-      id="label-card-icon-size"
-      type="range"
-      min={config.iconSize.min}
-      max={screwMode
-        ? OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT -
-          OPENGRID_LABEL_CARD_STACKED_GAP -
-          config.textHeight.min
-        : config.iconSize.max}
-      step={config.iconSize.step}
-      value={rawIconSize}
-      data-testid="opengrid-label-card-icon-size"
-      aria-invalid={Boolean(fieldErrors.iconSize)}
-      aria-describedby={fieldErrors.iconSize
-        ? 'label-card-icon-size-error'
-        : undefined}
-      class="min-w-0 w-full accent-primary"
-      oninput={(event) => onInputChange('iconSize', event.currentTarget.value)}
-    />
-    {#if fieldErrors.iconSize}
-      <span
-        id="label-card-icon-size-error"
-        class="text-sm text-error"
-        role="alert">{formatValidationIssue(locale, fieldErrors.iconSize)}</span
+  {#if !screwMode}
+    <div class="grid gap-1">
+      <label for="label-card-icon-size" class="text-sm text-ink"
+        >{translate(locale, 'panel.labelCard.iconSize')} · {rawIconSize}
+        mm</label
       >
-    {/if}
-  </div>
+      <input
+        id="label-card-icon-size"
+        type="range"
+        min={config.iconSize.min}
+        max={config.iconSize.max}
+        step={config.iconSize.step}
+        value={rawIconSize}
+        data-testid="opengrid-label-card-icon-size"
+        aria-invalid={Boolean(fieldErrors.iconSize)}
+        aria-describedby={fieldErrors.iconSize
+          ? 'label-card-icon-size-error'
+          : undefined}
+        class="min-w-0 w-full accent-primary"
+        oninput={(event) =>
+          onInputChange('iconSize', event.currentTarget.value)}
+      />
+      {#if fieldErrors.iconSize}
+        <span
+          id="label-card-icon-size-error"
+          class="text-sm text-error"
+          role="alert"
+          >{formatValidationIssue(locale, fieldErrors.iconSize)}</span
+        >
+      {/if}
+    </div>
+  {/if}
 
   {#if !screwMode}
     <div class="grid gap-1">

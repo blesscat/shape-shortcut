@@ -721,16 +721,19 @@ describe('label card screw mode geometry', () => {
       expect(bounds[1]![1]!).toBeCloseTo(5, 0)
       expect(bounds[0]![1]!).toBeCloseTo(-5, 0)
       expect((bounds[0]![0]! + bounds[1]![0]!) / 2).toBeCloseTo(0, 1)
-      const frontProbe = makeBox([-3.6, 1, 0.65], [-1.9, 4, 0.95])
-      const sideProbe = makeBox([3.5, 1.5, 0.65], [4.5, 2.5, 0.95])
-      // The pair is centered on measured bounding boxes with the 2 mm
-      // icon/text gap; this probe sits inside that gap between the icons.
-      const gapProbe = makeBox([0.6, 0.5, 0.65], [1.3, 4, 0.95])
+      // Real-scale composition on the 50 mm card (M4x16): the 4.5 mm head
+      // symbol, the 1 mm gap, the 16 mm shaft, and the 4 x 3.5 mm head block
+      // span 26.5 mm centered on the face.
+      const frontProbe = makeBox([-12.5, 1, 0.65], [-9.5, 4.5, 0.95])
+      const shaftProbe = makeBox([-6, 2, 0.65], [8, 3.5, 0.95])
+      const blockProbe = makeBox([9.5, 1.5, 0.65], [13, 4, 0.95])
+      const gapProbe = makeBox([-8.5, 0.5, 0.65], [-7, 4.5, 0.95])
       const textProbe = makeBox([-5.5, -5, 0.65], [5.5, -2.2, 0.95])
       try {
         for (const [probe, occupied] of [
           [frontProbe, true],
-          [sideProbe, true],
+          [shaftProbe, true],
+          [blockProbe, true],
           [gapProbe, false],
           [textProbe, true],
         ] as const) {
@@ -745,7 +748,8 @@ describe('label card screw mode geometry', () => {
         }
       } finally {
         frontProbe.delete()
-        sideProbe.delete()
+        shaftProbe.delete()
+        blockProbe.delete()
         gapProbe.delete()
         textProbe.delete()
       }

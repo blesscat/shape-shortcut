@@ -681,7 +681,7 @@ export const zhHantMessages = {
   'validation.labelCardTextTooWide':
     '文字超出卡片可用寬度，請縮短文字或增加格數。',
   'validation.labelCardScrewTooWide':
-    '螺絲圖示與規格文字超出卡片可用寬度，請增加格數或縮小 icon／文字。',
+    '螺絲側視圖與規格文字超出卡片可用寬度，請增加卡片寬度或縮短螺絲長度。',
   'validation.labelSlotDoesNotFit':
     '卡槽超出正面可用寬度或高度，請減少標籤格數、增加本體尺寸或關閉卡槽。',
   'validation.labelCardWidthTierInvalid': '{field} 必須是 {values} 之一。',
@@ -1771,7 +1771,7 @@ export const enMessages: { [Key in keyof typeof zhHantMessages]: string } = {
   'validation.labelCardTextTooWide':
     'Text exceeds the usable card width. Shorten the text or increase label units.',
   'validation.labelCardScrewTooWide':
-    'The screw icons and designation exceed the usable card width. Increase label units or shrink the icons or text.',
+    'The real-scale screw side view and designation exceed the usable card width. Increase the card width or shorten the screw length.',
   'validation.labelSlotDoesNotFit':
     'The slot exceeds the flat front width or height. Reduce label units, enlarge the organizer, or disable the slot.',
   'validation.labelCardWidthTierInvalid': '{field} must be one of {values}.',

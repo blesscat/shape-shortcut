@@ -31,9 +31,9 @@ test.describe('label card screw mode', () => {
       page.getByTestId('opengrid-label-card-icon-gallery'),
     ).toBeHidden()
     await expect(page.getByTestId('opengrid-label-card-layout')).toBeHidden()
-    await expect(page.getByTestId('opengrid-label-card-icon-size')).toHaveValue(
-      '6',
-    )
+    // The real-scale composition has fixed sizes: no icon-size control while
+    // screw mode is on, and the designation height defaults to 3 mm.
+    await expect(page.getByTestId('opengrid-label-card-icon-size')).toBeHidden()
     await expect(page.locator('#label-card-text-height')).toHaveValue('3')
 
     await page.getByTestId('opengrid-label-card-screw-head-hex').click()
@@ -55,6 +55,9 @@ test.describe('label card screw mode', () => {
     await page
       .getByTestId('opengrid-label-card-screw-diameter')
       .selectOption('2.5')
+    // A 30 mm shaft at real scale needs the 60 mm card (head symbol + gap +
+    // shaft + block = 40.5 mm).
+    await page.getByTestId('opengrid-label-card-grid-units').fill('6')
     await page.getByTestId('opengrid-label-card-screw-length').fill('30')
     await expect(
       page.getByRole('button', { name: /^(下載 STEP|Download STEP)$/ }),

@@ -613,6 +613,7 @@ describe('OpenGrid Label Card screw mode', () => {
       textLine2: 'stuff',
       layout: 'stacked',
       groupAlign: 'right',
+      iconSize: 3.5,
       screwMode: true,
       screwHead: 'torx',
       screwDiameter: 5,
@@ -626,6 +627,7 @@ describe('OpenGrid Label Card screw mode', () => {
         layout: 'inline',
         groupAlign: 'center',
         iconPosition: 'left',
+        iconSize: 3.5,
         screwMode: true,
         screwHead: 'torx',
         screwDiameter: 5,
@@ -682,11 +684,34 @@ describe('OpenGrid Label Card screw mode', () => {
       valid: false,
       issues: [
         {
-          field: 'screwDiameter',
+          field: 'screwLength',
           messageId: 'validation.labelCardScrewTooWide',
         },
       ],
     })
+  })
+
+  it('rejects real-scale shafts that overflow the card and accepts wider cards', () => {
+    const overflow = {
+      gridUnits: 4,
+      style: 'raised',
+      iconPosition: 'left',
+      screwMode: true,
+      screwDiameter: 4,
+      screwLength: 30,
+    } as const
+    expect(validateOpenGridLabelCardParameters(overflow)).toMatchObject({
+      valid: false,
+      issues: [
+        {
+          field: 'screwLength',
+          messageId: 'validation.labelCardScrewTooWide',
+        },
+      ],
+    })
+    expect(
+      validateOpenGridLabelCardParameters({ ...overflow, gridUnits: 6 }),
+    ).toMatchObject({ valid: true, value: { text: 'M4x30' } })
   })
 
   it('rejects explicit heights that break the screw composition', () => {
@@ -701,7 +726,7 @@ describe('OpenGrid Label Card screw mode', () => {
     ).toMatchObject({
       valid: false,
       issues: [
-        { field: 'iconSize', messageId: 'validation.labelCardStackedHeight' },
+        { field: 'textHeight', messageId: 'validation.labelCardStackedHeight' },
       ],
     })
   })
