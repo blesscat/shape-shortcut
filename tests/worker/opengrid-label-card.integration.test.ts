@@ -22,6 +22,7 @@ import {
   OPENGRID_LABEL_CARD_CONFIGURATION,
   OPENGRID_LABEL_CARD_ICON_IDS,
 } from '../../src/cad-contract/units'
+import type { OpenGridLabelCardIconId } from '../../src/cad-contract/units/opengrid-label-icons'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -668,32 +669,31 @@ describe('label card layout modes', () => {
   })
 
   it('scales screw icons with iconSize', async () => {
-    const small = await buildOpenGridLabelCardWithParts(
-      { ...base, icon: 'screw-hex', iconSize: 3 },
-      {},
-    )
-    const large = await buildOpenGridLabelCardWithParts(
-      { ...base, icon: 'screw-hex', iconSize: 8 },
-      {},
-    )
-    try {
-      const smallBounds = shapeBounds(
-        small.parts.find((part) => part.name === 'accent')!.shape,
+    // The side-view screw pictogram is a ring, a thin proportional shaft, and
+    // a rectangular head block, so its size shows along X; the shared text
+    // width is subtracted via a baseline.
+    const accentWidth = async (
+      icon: OpenGridLabelCardIconId,
+      iconSize: number,
+    ) => {
+      const built = await buildOpenGridLabelCardWithParts(
+        { ...base, icon, iconSize },
+        {},
       )
-      const largeBounds = shapeBounds(
-        large.parts.find((part) => part.name === 'accent')!.shape,
-      )
-      const smallSpan = smallBounds[1]![1]! - smallBounds[0]![1]!
-      const largeSpan = largeBounds[1]![1]! - largeBounds[0]![1]!
-      expect(largeSpan).toBeGreaterThan(smallSpan * 1.5)
-    } finally {
-      deleteParts(small.parts)
-      deleteParts(large.parts)
-      small.qualityShape.delete()
-      small.shape.delete()
-      large.qualityShape.delete()
-      large.shape.delete()
+      try {
+        const accent = built.parts.find((part) => part.name === 'accent')!.shape
+        const bounds = shapeBounds(accent)
+        return bounds[1]![0]! - bounds[0]![0]!
+      } finally {
+        deleteParts(built.parts)
+        built.qualityShape.delete()
+        built.shape.delete()
+      }
     }
+    const textOnly = await accentWidth('none', 4.5)
+    const small = (await accentWidth('screw-hex', 3)) - textOnly
+    const large = (await accentWidth('screw-hex', 8)) - textOnly
+    expect(large).toBeGreaterThan(small * 1.5)
   })
 })
 
@@ -721,15 +721,24 @@ describe('label card screw mode geometry', () => {
       expect(bounds[1]![1]!).toBeCloseTo(5, 0)
       expect(bounds[0]![1]!).toBeCloseTo(-5, 0)
       expect((bounds[0]![0]! + bounds[1]![0]!) / 2).toBeCloseTo(0, 1)
-      const frontProbe = makeBox([-3.6, 1, 0.65], [-1.9, 4, 0.95])
-      const sideProbe = makeBox([3.5, 1.5, 0.65], [4.5, 2.5, 0.95])
-      const gapProbe = makeBox([0.6, 0.5, 0.65], [2, 4, 0.95])
+      // Real-scale composition on the 50 mm card (M4x16): the 4.5 mm head
+      // symbol, the 2 mm gap, the 3 x 4.5 mm head block on the left, and the
+      // 16 mm shaft span 25.5 mm centered on the face.
+      const frontProbe = makeBox([-12.5, 1, 0.65], [-9.5, 4.5, 0.95])
+      const blockProbe = makeBox([-6, 1, 0.65], [-3.5, 4.5, 0.95])
+      const shaftProbe = makeBox([-3, 2, 0.65], [12, 3.5, 0.95])
+      const gapProbe = makeBox([-8, 0.5, 0.65], [-7, 4.5, 0.95])
+      // Pin the head-left orientation: the right half above the shaft is
+      // empty now, but was inside the block when the block sat on the right.
+      const oldBlockProbe = makeBox([10, 3.9, 0.65], [12, 4.4, 0.95])
       const textProbe = makeBox([-5.5, -5, 0.65], [5.5, -2.2, 0.95])
       try {
         for (const [probe, occupied] of [
           [frontProbe, true],
-          [sideProbe, true],
+          [blockProbe, true],
+          [shaftProbe, true],
           [gapProbe, false],
+          [oldBlockProbe, false],
           [textProbe, true],
         ] as const) {
           const intersection = accent.intersect(probe)
@@ -743,8 +752,10 @@ describe('label card screw mode geometry', () => {
         }
       } finally {
         frontProbe.delete()
-        sideProbe.delete()
+        blockProbe.delete()
+        shaftProbe.delete()
         gapProbe.delete()
+        oldBlockProbe.delete()
         textProbe.delete()
       }
       const body = result.parts.find((part) => part.name === 'body')!

@@ -11,13 +11,13 @@ import {
 import { makeLabelCardIconShape } from '../opengrid-label-card/icon-shape'
 import {
   makeOpenGridLabelScrewShape,
-  parseOpenGridLabelScrewShaftRatio,
-  ratioForOpenGridLabelScrewLength,
+  makeOpenGridScrewModeSideShape,
+  parseOpenGridLabelScrewShaftUnits,
 } from '../opengrid-label-card/screw-shape'
 import { isOpenGridLabelScrewIconId } from '../../../cad-contract/units'
 import {
   OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS,
-  OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS,
+  OPENGRID_LABEL_CARD_SCREW_SIDE,
 } from '../../../cad-contract/units'
 import { makeOpenGridLabelCardTextShape } from '../opengrid-label-card/flat-text'
 
@@ -289,7 +289,7 @@ export async function buildOpenGridLabelCardWithParts(
         if (isOpenGridLabelScrewIconId(validation.value.icon)) {
           iconShape = makeOpenGridLabelScrewShape({
             iconId: validation.value.icon,
-            shaftRatio: parseOpenGridLabelScrewShaftRatio(
+            shaftLength: parseOpenGridLabelScrewShaftUnits(
               validation.value.text,
             ),
             size: iconSize,
@@ -339,28 +339,32 @@ export async function buildOpenGridLabelCardWithParts(
 
     if (screwMode) {
       const frontIconId = OPENGRID_LABEL_CARD_SCREW_FRONT_ICONS[screwHead]
-      const sideIconId = OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS[screwHead]
-      const pairY = safeHalfHeight - iconSize / 2
       let frontIcon: Shape3D | null = null
       let sideIcon: Shape3D | null = null
       try {
-        frontIcon = makeLabelCardIconShape(frontIconId, accentDepth, iconSize)
-        sideIcon = makeOpenGridLabelScrewShape({
-          iconId: sideIconId,
-          shaftRatio: ratioForOpenGridLabelScrewLength(
+        frontIcon = makeLabelCardIconShape(
+          frontIconId,
+          accentDepth,
+          OPENGRID_LABEL_CARD_SCREW_SIDE.headFrontSize,
+        )
+        sideIcon = makeOpenGridScrewModeSideShape({
+          lengthMm:
             validation.value.screwLength ?? config.screwMode.defaultLength,
-          ),
-          size: iconSize,
           depth: accentDepth,
         })
         const frontBox = frontIcon.boundingBox
         const sideBox = sideIcon.boundingBox
         let placements: { shape: Shape3D; x: number }[]
+        let pairHeight: number
         try {
           const frontWidth = frontBox.bounds[1][0]! - frontBox.bounds[0][0]!
           const sideWidth = sideBox.bounds[1][0]! - sideBox.bounds[0][0]!
           const pairWidth =
             frontWidth + OPENGRID_LABEL_GRID.iconTextGap + sideWidth
+          pairHeight = Math.max(
+            frontBox.bounds[1][1]! - frontBox.bounds[0][1]!,
+            sideBox.bounds[1][1]! - sideBox.bounds[0][1]!,
+          )
           placements = [
             {
               shape: frontIcon,
@@ -375,6 +379,7 @@ export async function buildOpenGridLabelCardWithParts(
           frontBox.delete()
           sideBox.delete()
         }
+        const pairY = safeHalfHeight - pairHeight / 2
         for (const piece of placements) {
           const translated = piece.shape.translate(piece.x, pairY, accentZ)
           try {

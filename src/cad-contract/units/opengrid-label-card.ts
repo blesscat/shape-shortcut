@@ -96,6 +96,18 @@ export const OPENGRID_LABEL_CARD_SCREW_LENGTH = {
   default: 16,
 } as const
 
+/**
+ * Fixed real-scale dimensions (mm) of the screw-mode composition: the
+ * front-view head symbol, the 1:1 shaft thickness, and the head block at the
+ * shaft's far end. The shaft length itself equals the selected screw length.
+ */
+export const OPENGRID_LABEL_CARD_SCREW_SIDE = {
+  headFrontSize: 4.5,
+  shaftThickness: 2,
+  blockWidth: 3,
+  blockHeight: 4.5,
+} as const
+
 export function openGridLabelCardScrewDesignation(
   diameter: number,
   length: number,
@@ -444,18 +456,25 @@ export function validateOpenGridLabelCardParameters(
       (Math.max(0, letters - 1) * OPENGRID_LABEL_GRID.textSpacing +
         OPENGRID_LABEL_GRID.textFontSize) *
       (textHeight / OPENGRID_LABEL_GRID.textFontSize)
-    const pairWidth = 2 * iconSize + OPENGRID_LABEL_GRID.iconTextGap
+    const sideViewWidth =
+      screwLength + OPENGRID_LABEL_CARD_SCREW_SIDE.blockWidth
+    const pairWidth =
+      OPENGRID_LABEL_CARD_SCREW_SIDE.headFrontSize +
+      OPENGRID_LABEL_GRID.iconTextGap +
+      sideViewWidth
     if (
       Math.max(pairWidth, designationWidth) >
       openGridLabelWidthFor(gridUnits) -
         2 * OPENGRID_LABEL_GRID.artworkSideInset
     )
-      return invalid('screwDiameter', 'validation.labelCardScrewTooWide')
+      return invalid('screwLength', 'validation.labelCardScrewTooWide')
     if (
-      iconSize + OPENGRID_LABEL_CARD_STACKED_GAP + textHeight >
+      OPENGRID_LABEL_CARD_SCREW_SIDE.headFrontSize +
+        OPENGRID_LABEL_CARD_STACKED_GAP +
+        textHeight >
       OPENGRID_LABEL_CARD_STACKED_SAFE_HEIGHT
     )
-      return invalid('iconSize', 'validation.labelCardStackedHeight')
+      return invalid('textHeight', 'validation.labelCardStackedHeight')
     parameters.text = designation
     delete parameters.textLine2
     parameters.icon = OPENGRID_LABEL_CARD_SCREW_SIDE_ICONS[screwHead]

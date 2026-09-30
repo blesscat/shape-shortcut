@@ -204,48 +204,66 @@ The card MUST offer optional upper and lower text inputs, each with left, center
 
 
 ### Requirement: Fastener symbol choices
-The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. The screw side-view icons MUST be drawn as bold solid silhouettes — pan or hex head plus a shaft with thread teeth — whose minimum feature stays at least 1.5 viewport units at the 16-unit grid, and MUST scale with `iconSize`. For the screw side-view category the shaft length MUST follow the first text row: a `M<dia>x<len>` designation maps a 4–30 mm length to a 0.35–1.0 shaft ratio, and a designation without a length or a non-matching text MUST use the 0.55 fallback ratio. All icons MUST support both card styles and multipart export, and labels MUST be localized.
+The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. Both screw side-view icons MUST render the same pictogram: a small ring on the left, one smooth solid rectangular shaft extending to the right, and a fixed-size rectangular head block at the right end — with no thread teeth and no pointed corners. The shaft length MUST follow the first text row: a `M<dia>x<len>` designation MUST map the shaft length linearly so that it is proportional to the designated length in millimetres, short designations included, and a designation without a length or a non-matching text MUST render a short stub shaft. The ring, shaft, and head block keep fixed thicknesses across all designations — shaft and head block features stay at least 1.5 viewport units and the ring stroke stays at least 1.0 viewport unit at the 16-unit grid — and the whole glyph MUST scale with `iconSize` and stay within the 16-unit icon grid. All icons MUST support both card styles and multipart export, and labels MUST be localized.
 
 #### Scenario: Select a fastener symbol
 
 - **WHEN** a user chooses a fastener symbol
 - **THEN** the preview and exported card MUST contain the chosen upright geometry with the spacing rules of its layout
 
+#### Scenario: Screw side view is a ring with a smooth shaft and a rectangular head
+
+- **WHEN** a card uses the `screw-pan` or `screw-hex` icon
+- **THEN** the rendered pictogram MUST show a ring on the left, a smooth solid shaft extending to the right, and a fixed-size rectangular head block at the shaft's far end, with no thread teeth and no pointed corners
+
 #### Scenario: Screw shaft length follows the text designation
 
 - **WHEN** a card uses the `screw-pan` icon with text `M4x16` and another uses `M4`
 - **THEN** the `M4x16` card MUST render a visibly longer shaft than the `M4` card within the same icon size
-- **AND** text without a `M<dia>[x<len>]` designation MUST fall back to the medium shaft ratio
+- **AND** text without a `M<dia>[x<len>]` designation MUST fall back to the short stub shaft
+
+#### Scenario: Shaft length scales proportionally with the designated length
+
+- **WHEN** two cards of the same icon size use `M2x8` and `M2x20`
+- **THEN** the `M2x20` card MUST render a shaft at least twice as long as the `M2x8` card
+- **AND** short designations MUST stay proportional, with `M4x6` rendering twice the shaft of `M4x3`
 
 #### Scenario: Screw icons scale with icon size
 
 - **WHEN** the user changes `iconSize` while a screw side-view icon is selected
-- **THEN** the generated screw geometry MUST scale to the selected size while keeping every feature at least 1.5 viewport units thick
+- **THEN** the generated screw geometry MUST scale to the selected size while keeping shaft and head block features at least 1.5 viewport units thick and the ring stroke at least 1.0 viewport unit
 
 ### Requirement: Screw mode dedicated composition
 
-The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, icon size, and text height controls. The card composition MUST be fixed: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) and the side-view screw silhouette (`screw-pan` for phillips and torx, `screw-hex` for hex) MUST sit side by side, centered as a pair in the upper safe zone sharing `iconSize` and separated by the existing icon/text gap, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The side-view shaft length MUST follow the selected length through the existing 4–30 mm to 0.35–1.0 shaft ratio mapping, independent of text parsing. `gridUnits`, `style`, `iconSize`, and `textHeight` MUST keep their existing ranges and remain adjustable.
+The label card MUST offer a `screwMode` boolean, defaulting missing values to `false`; snapshots without the key MUST behave exactly as before. While `screwMode` is enabled the parameter panel MUST replace the icon gallery, layout, group alignment, icon position, alignment selects, icon-size control, and free-text inputs with three pickers — head type (`phillips`, `torx`, `hex`), diameter (M2, M2.5, M3, M3.5, M4, M5, M6, M8), and integer length in millimetres from 4 through 30 — plus the existing width, style, and text height controls. The card composition MUST be fixed at real scale, independent of `iconSize`: the front-view head symbol (`drive-phillips`, `drive-torx`, or `drive-hex`) at a fixed 4.5 mm, then the existing icon/text gap, then the side-view screw body — a fixed 3 mm × 4.5 mm rectangular head block whose height matches the front symbol, followed by a smooth solid shaft 2 mm thick whose length equals the selected length in millimetres at 1:1 real scale — all centered as a group in the upper safe zone, with a single centered text row below carrying the generated designation `M<diameter>x<length>`. The rendered shaft length on the card face MUST equal the selected length in millimetres so a screw held against the label matches its compartment. `gridUnits`, `style`, and `textHeight` MUST keep their existing ranges and remain adjustable; the stored `iconSize` value MUST be preserved untouched and MUST apply again when screw mode is toggled off.
 
 #### Scenario: Enable screw mode
 
 - **WHEN** the user enables screw mode on a manual card
-- **THEN** the panel MUST show only the head, diameter, and length pickers alongside width, style, icon size, and text height
-- **AND** the card MUST generate the dual-icon composition with the generated designation instead of any manual icon or text
+- **THEN** the panel MUST show only the head, diameter, and length pickers alongside width, style, and text height — with no icon-size control
+- **AND** the card MUST generate the real-scale composition with the generated designation instead of any manual icon or text
 
-#### Scenario: Head choice derives both icons
+#### Scenario: Head choice drives the front symbol
 
 - **WHEN** the user selects hex as the head with any diameter and length
-- **THEN** the composition MUST use the `drive-hex` front symbol beside a `screw-hex` side view
-- **AND** selecting phillips or torx MUST pair the matching drive symbol with a `screw-pan` side view
+- **THEN** the composition MUST lead with the `drive-hex` front symbol at the fixed size
+- **AND** selecting phillips or torx MUST lead with the matching drive symbol while the side view keeps the same head block and shaft
 
-#### Scenario: Shaft length follows the selected length
+#### Scenario: Shaft renders at real scale
 
-- **WHEN** two screw-mode cards differ only in length, 8 mm versus 28 mm
-- **THEN** the 28 mm card MUST render a visibly longer shaft within the same `iconSize`
+- **WHEN** a screw-mode card selects M4 with length 16 on a 30 mm-wide card
+- **THEN** the rendered shaft MUST span approximately 16 mm of the card face between the head block and the shaft tip, within the safe face
+- **AND** two screw-mode cards differing only in length, 8 mm versus 28 mm, MUST render shafts differing by approximately 20 mm on the card face
+
+#### Scenario: Composition too wide is rejected
+
+- **WHEN** the head symbol, gap, head block, and shaft cannot fit the selected card's safe width — for example M4 with length 30 on a 40 mm-wide card
+- **THEN** a field-specific `screwLength` diagnostic MUST prevent generation and export
+- **AND** selecting a wider card MUST let the same screw generate
 
 ### Requirement: Screw mode derives text and icon values
 
-While `screwMode` is enabled, validation MUST derive the effective icon from the selected head (side-view id), MUST overwrite the effective text with the generated `M<diameter>x<length>` designation, and MUST ignore any stored manual `text`, `textLine2`, `layout`, `groupAlign`, `iconPosition`, and text-alignment values rather than rejecting or surfacing them. An absent text height MUST hydrate to the 3 mm screw-mode default instead of the manual 7 mm default. The generated designation MUST be exempt from the six-character manual input cap; width validation MUST instead evaluate the full composition (icon pair + gap + designation at the selected text height) against the safe face and return a field-specific diagnostic that prevents generation and export. Screw mode MUST enforce `iconSize + 1 + textHeight` within the 10 mm safe height with a field-specific diagnostic. Enabling screw mode MUST auto-size the composition to fill the safe height: the balanced 6 mm icon pair with a 3 mm designation where the card width allows, shrinking the pair (and never the minimum 2 mm text) when a narrower card requires it. Toggling screw mode off MUST restore the manual controls with empty text rows.
+While `screwMode` is enabled, validation MUST derive the effective icon from the selected head (side-view id), MUST overwrite the effective text with the generated `M<diameter>x<length>` designation, and MUST ignore any stored manual `text`, `textLine2`, `layout`, `groupAlign`, `iconPosition`, `iconSize`, and text-alignment values rather than rejecting or surfacing them. An absent text height MUST hydrate to the 3 mm screw-mode default instead of the manual 7 mm default. The generated designation MUST be exempt from the six-character manual input cap; width validation MUST instead evaluate the full real-scale composition (head-front symbol + gap + designated shaft length + head block, and the designation at the selected text height) against the safe face and return a `screwLength` field diagnostic that prevents generation and export. Screw mode MUST enforce `head-front size + gap + textHeight` within the 10 mm safe height with a field-specific diagnostic. Enabling screw mode MUST NOT resize any stored manual control: the composition has fixed sizes, and the text height MUST be set to the 3 mm screw-mode default. Toggling screw mode off MUST restore the manual controls — including the stored icon size — with empty text rows.
 
 #### Scenario: Stale manual values are ignored
 
@@ -257,15 +275,11 @@ While `screwMode` is enabled, validation MUST derive the effective icon from the
 - **WHEN** the user selects diameter M2.5 with length 30 on a card wide enough for the composition
 - **THEN** the designation `M2.5x30` MUST generate without a text-length rejection
 
-#### Scenario: Composition too wide is rejected
+#### Scenario: Screw mode enable keeps the stored icon size
 
-- **WHEN** the icon pair plus designation cannot fit the selected card width
-- **THEN** a field-specific width diagnostic MUST prevent generation and export
-
-#### Scenario: Screw mode auto-fits the composition on enable
-
-- **WHEN** screw mode is enabled on a card with an unbalanced icon size or text height
-- **THEN** the icon size and text height MUST be reset to the balanced composition that fills the safe height, with the pair shrunk only when the card width requires it
+- **WHEN** screw mode is enabled on a card with any stored icon size
+- **THEN** the stored icon size MUST stay unchanged for restore on toggle-off and the designation height MUST default to 3 mm
+- **AND** the generated composition MUST use its fixed real-scale sizes regardless of that stored value
 
 ### Requirement: Screw mode persistence and export fingerprints
 
