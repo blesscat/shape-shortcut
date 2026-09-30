@@ -1,10 +1,12 @@
-# Cloudflare Pages serves the locale-prefixed routes as the indexable pages.
+# Cloudflare static hosting serves the locale-prefixed routes as indexable pages.
 # Relative destinations keep the current hostname and preserve route context.
 / /zh-Hant/ 308
 /models /zh-Hant/models 308
 /models/ /zh-Hant/models 308
 /docs /zh-Hant/docs 308
 /docs/ /zh-Hant/docs 308
+/about /zh-Hant/about/ 308
+/about/ /zh-Hant/about/ 308
 /cad /zh-Hant/cad 308
 /cad/ /zh-Hant/cad 308
 /cad/* /zh-Hant/cad/:splat 308

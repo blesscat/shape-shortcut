@@ -6,7 +6,23 @@
 
 ## 多語系與搜尋 metadata
 
-公開頁面使用 `/zh-Hant/` 與 `/en/` 前綴；未帶 locale 的舊網址會導向繁體中文版本。production 預設 origin 設定在 `.env.production` 的 `PUBLIC_SITE_URL`（目前為 `https://shape-shortcut.blesscat.dev`），其他部署環境可用同名環境變數覆寫，讓 canonical、`hreflang` 與 `/sitemap.xml` 使用正確網址；本機開發與測試未設定時才會使用 `http://localhost:3456` fallback。Cloudflare Pages 會讀取 `public/_redirects`，以同 origin 的相對路徑發出保留 query string 的 308 redirect；其他 static hosting 需要用等效的 redirect 設定。靜態 fallback 仍會使用 `noindex`、canonical、meta refresh 與 JavaScript 導向，其中 JavaScript 會保留 query string，靜態 meta refresh 與無 JavaScript anchor 僅能導向穩定路徑。
+公開頁面使用 `/zh-Hant/` 與 `/en/` 前綴；未帶 locale 的舊網址會導向繁體中文版本。production 預設 origin 設定在 `.env.production` 的 `PUBLIC_SITE_URL`（目前為 `https://shape-shortcut.blesscat.dev`），其他部署環境可用同名環境變數覆寫，讓 canonical、`hreflang` 與 `/sitemap.xml` 使用正確網址；本機開發與測試未設定時才會使用 `http://localhost:3456` fallback。Cloudflare Workers Static Assets 與 Pages 會讀取 `public/_redirects`，以同 origin 的相對路徑發出保留 query string 的 308 redirect；其他 static hosting 需要用等效的 redirect 設定。靜態 fallback 仍會使用 `noindex`、canonical、meta refresh 與 JavaScript 導向，其中 JavaScript 會保留 query string，靜態 meta refresh 與無 JavaScript anchor 僅能導向穩定路徑。
+
+## Cloudflare Workers 部署
+
+使用 Node.js 22.22.2 以上與 `pnpm@11.20.0`。Astro 的 `dist/` 可直接交給 Workers Static Assets；CAD 計算仍由使用者瀏覽器內的 Web Worker 執行。`wrangler.jsonc` 管理靜態資產與路由行為，Wrangler 的版本及安裝腳本允許設定隨 lockfile 與 `pnpm-workspace.yaml` 一起提交。
+
+```bash
+pnpm install --frozen-lockfile
+pnpm preview:workers       # 建置後，在 http://127.0.0.1:4179 本機預覽
+pnpm test:e2e:workers      # 自動建置並驗證 Workers HTTP 路由與 CAD/STL 下載
+pnpm build
+pnpm exec wrangler deploy --dry-run
+```
+
+已設定 Cloudflare CLI 登入或 CI 憑證時，可用 `pnpm run deploy` 建置並發布；請明確使用 `run deploy`，避免呼叫 pnpm 自己的 `deploy` 子命令。初始設定使用 `workers.dev` 網址。正式站仍需依[Workers 遷移與回復步驟](docs/cloudflare-workers.md)完成 Git 自動部署、候選版本驗證與自訂網域切換。
+
+既有 `pnpm dev` 與 `pnpm preview` 保留 Astro 開發流程；檢查 Cloudflare 的 HTTP 轉址時使用 `preview:workers`。
 
 ## 贊助平台設定
 
