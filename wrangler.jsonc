@@ -5,6 +5,9 @@
   "workers_dev": true,
   "preview_urls": true,
   "previews": {},
+  "routes": [
+    { "pattern": "shape-shortcut.blesscat.dev", "custom_domain": true },
+  ],
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",
