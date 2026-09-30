@@ -7,6 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "preview:workers": "pnpm build && wrangler dev --local --ip 127.0.0.1 --port 4179",
+    "deploy": "pnpm build && wrangler deploy",
     "check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{astro,svelte,css,scss,ts,tsx,js,jsx,mjs,cjs,json}\" \"scripts/**/*.{ts,tsx,js,jsx,mjs,cjs,json}\" \"tests/**/*.{ts,tsx,js,jsx,mjs,cjs,json}\" \"*.{mjs,cjs,js,jsx,ts,tsx,json,yaml,yml,md}\" \".vscode/**/*.json\"",
     "format:check": "prettier --check \"src/**/*.{astro,svelte,css,scss,ts,tsx,js,jsx,mjs,cjs,json}\" \"scripts/**/*.{ts,tsx,js,jsx,mjs,cjs,json}\" \"tests/**/*.{ts,tsx,js,jsx,mjs,cjs,json}\" \"*.{mjs,cjs,js,jsx,ts,tsx,json,yaml,yml,md}\" \".vscode/**/*.json\"",
@@ -17,6 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:prod": "playwright test -c playwright.prod.config.ts",
+    "test:e2e:workers": "playwright test -c playwright.workers.config.ts",
     "capture:model-previews": "CAPTURE_MODEL_PREVIEWS=1 playwright test tests/e2e/model-card-previews.spec.ts --project=chromium --workers=1",
     "verify:model-previews": "playwright test tests/e2e/model-card-previews.spec.ts --project=chromium --workers=1",
     "generate:desk-diagrams": "node scripts/desk-diagrams/generate.mjs",
@@ -24,7 +27,7 @@
     "test:e2e:firefox": "xvfb-run -a env PW_HEADFUL=1 playwright test --project=firefox --headed"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.22.2"
   },
   "dependencies": {
     "@astrojs/svelte": "9.0.1",
@@ -58,6 +61,7 @@
     "sass": "^1.102.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "4.144.0"
   }
 }
