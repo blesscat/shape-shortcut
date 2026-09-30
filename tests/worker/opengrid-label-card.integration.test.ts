@@ -669,8 +669,9 @@ describe('label card layout modes', () => {
   })
 
   it('scales screw icons with iconSize', async () => {
-    // The side-view screw glyph is a horizontal head-plus-shaft bar, so its
-    // size shows along X; the shared text width is subtracted via a baseline.
+    // The side-view screw pictogram is a ring, a thin proportional shaft, and
+    // a rectangular head block, so its size shows along X; the shared text
+    // width is subtracted via a baseline.
     const accentWidth = async (
       icon: OpenGridLabelCardIconId,
       iconSize: number,
@@ -722,7 +723,9 @@ describe('label card screw mode geometry', () => {
       expect((bounds[0]![0]! + bounds[1]![0]!) / 2).toBeCloseTo(0, 1)
       const frontProbe = makeBox([-3.6, 1, 0.65], [-1.9, 4, 0.95])
       const sideProbe = makeBox([3.5, 1.5, 0.65], [4.5, 2.5, 0.95])
-      const gapProbe = makeBox([0.6, 0.5, 0.65], [2, 4, 0.95])
+      // The pair is centered on measured bounding boxes with the 2 mm
+      // icon/text gap; this probe sits inside that gap between the icons.
+      const gapProbe = makeBox([0.6, 0.5, 0.65], [1.3, 4, 0.95])
       const textProbe = makeBox([-5.5, -5, 0.65], [5.5, -2.2, 0.95])
       try {
         for (const [probe, occupied] of [

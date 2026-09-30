@@ -204,17 +204,17 @@ The card MUST offer optional upper and lower text inputs, each with left, center
 
 
 ### Requirement: Fastener symbol choices
-The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. The screw side-view icons MUST be drawn as bold solid horizontal silhouettes — a pan or hex head on the left plus one smooth solid rectangular shaft extending to the right with a flat tip and no thread teeth — whose minimum feature thickness stays at least 1.5 viewport units at the 16-unit grid, and MUST scale with `iconSize`. The head MUST keep a fixed size regardless of the designated length, and the whole glyph MUST stay within the 16-unit icon grid. For the screw side-view category the shaft length MUST follow the first text row: a `M<dia>x<len>` designation MUST map the shaft length linearly so that it is proportional to the designated length in millimetres, and a designation without a length or a non-matching text MUST render a short stub shaft no longer than the head radius. All icons MUST support both card styles and multipart export, and labels MUST be localized.
+The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbols, simplified sectional pictograms for through, threaded, countersunk, and counterbored holes, and a screw side-view category (`screw-pan`, `screw-hex`). The drive and hole symbols are identification pictograms, not dimensioned manufacturing profiles. Both screw side-view icons MUST render the same pictogram: a small ring on the left, one smooth solid rectangular shaft extending to the right, and a fixed-size rectangular head block at the right end — with no thread teeth and no pointed corners. The shaft length MUST follow the first text row: a `M<dia>x<len>` designation MUST map the shaft length linearly so that it is proportional to the designated length in millimetres, short designations included, and a designation without a length or a non-matching text MUST render a short stub shaft. The ring, shaft, and head block keep fixed thicknesses across all designations — shaft and head block features stay at least 1.5 viewport units and the ring stroke stays at least 1.0 viewport unit at the 16-unit grid — and the whole glyph MUST scale with `iconSize` and stay within the 16-unit icon grid. All icons MUST support both card styles and multipart export, and labels MUST be localized.
 
 #### Scenario: Select a fastener symbol
 
 - **WHEN** a user chooses a fastener symbol
 - **THEN** the preview and exported card MUST contain the chosen upright geometry with the spacing rules of its layout
 
-#### Scenario: Screw side view is horizontal with a smooth shaft
+#### Scenario: Screw side view is a ring with a smooth shaft and a rectangular head
 
 - **WHEN** a card uses the `screw-pan` or `screw-hex` icon
-- **THEN** the rendered silhouette MUST show the head on the left and the shaft extending to the right with a smooth solid outline and no thread teeth
+- **THEN** the rendered pictogram MUST show a ring on the left, a smooth solid shaft extending to the right, and a fixed-size rectangular head block at the shaft's far end, with no thread teeth and no pointed corners
 
 #### Scenario: Screw shaft length follows the text designation
 
@@ -226,11 +226,12 @@ The icon gallery MUST offer slotted, Phillips, hex socket, and Torx drive symbol
 
 - **WHEN** two cards of the same icon size use `M2x8` and `M2x20`
 - **THEN** the `M2x20` card MUST render a shaft at least twice as long as the `M2x8` card
+- **AND** short designations MUST stay proportional, with `M4x6` rendering twice the shaft of `M4x3`
 
 #### Scenario: Screw icons scale with icon size
 
 - **WHEN** the user changes `iconSize` while a screw side-view icon is selected
-- **THEN** the generated screw geometry MUST scale to the selected size while keeping every feature at least 1.5 viewport units thick
+- **THEN** the generated screw geometry MUST scale to the selected size while keeping shaft and head block features at least 1.5 viewport units thick and the ring stroke at least 1.0 viewport unit
 
 ### Requirement: Screw mode dedicated composition
 

@@ -11,7 +11,7 @@ import {
 } from '../../src/cad-contract/units'
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { LABEL_CARD_ICON_PATHS } from '../../src/cad-kernel/components/opengrid-label-card/icon-paths'
-import { screwOutlinePolygon16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
+import { screwOutlineContours16 } from '../../src/cad-kernel/components/opengrid-label-card/screw-outline'
 import {
   OPENGRID_LABEL_SCREW_SHAFT,
   parseOpenGridLabelScrewShaftUnits,
@@ -289,7 +289,7 @@ describe('OpenGrid Label Card contract', () => {
     }
   })
 
-  it('draws a horizontal smooth screw silhouette', () => {
+  it('draws the ring, shaft, and rectangular head block pictogram', () => {
     const onOutline = (
       point: readonly [number, number],
       polygon: readonly (readonly [number, number])[],
@@ -306,112 +306,148 @@ describe('OpenGrid Label Card contract', () => {
         )
       })
 
-    for (const head of ['pan', 'hex'] as const) {
-      for (const shaftLength of [
-        OPENGRID_LABEL_SCREW_SHAFT.stub,
-        1.5,
-        3,
-        6,
-        7.5,
-        11.25,
-      ]) {
-        const polygon = screwOutlinePolygon16(head, shaftLength)
+    for (const shaftLength of [
+      OPENGRID_LABEL_SCREW_SHAFT.stub,
+      0.58,
+      0.87,
+      2.32,
+      4.64,
+      5.8,
+      8.7,
+    ]) {
+      const contours = screwOutlineContours16(shaftLength)
+      expect(contours.length, `${shaftLength} contour count`).toBe(3)
+      const polygon = contours.flat()
 
-        // y-symmetric about the icon origin
-        const ys = polygon.map((point) => point[1])
+      // y-symmetric about the icon origin
+      const ys = polygon.map((point) => point[1])
+      expect(
+        Math.abs(Math.min(...ys) + Math.max(...ys)),
+        `${shaftLength} y-symmetry`,
+      ).toBeLessThan(1e-6)
+
+      // every vertex and its y-mirror lie on the pictogram
+      for (const [px, py] of polygon) {
         expect(
-          Math.abs(Math.min(...ys) + Math.max(...ys)),
-          `${head} ${shaftLength} y-symmetry`,
-        ).toBeLessThan(1e-6)
+          contours.some((contour) => onOutline([px, py], contour)),
+          `${shaftLength} vertex`,
+        ).toBe(true)
+        expect(
+          contours.some((contour) => onOutline([px, -py], contour)),
+          `${shaftLength} mirror of ${px},${py}`,
+        ).toBe(true)
+      }
 
-        // every vertex and its y-mirror lie on the outline
-        for (const [px, py] of polygon) {
-          expect(
-            onOutline([px, py], polygon),
-            `${head} ${shaftLength} vertex`,
-          ).toBe(true)
-          expect(
-            onOutline([px, -py], polygon),
-            `${head} ${shaftLength} mirror of ${px},${py}`,
-          ).toBe(true)
-        }
-
-        // no self-intersections between non-adjacent edges
+      // no self-intersections within any contour
+      for (const contour of contours) {
         let crossings = 0
-        const n = polygon.length
+        const n = contour.length
         for (let i = 0; i < n; i += 1) {
           for (let j = i + 2; j < n; j += 1) {
             if (j === n - 1 && i === 0) continue
             if (
               segmentsCross(
-                polygon[i]!,
-                polygon[(i + 1) % n]!,
-                polygon[j]!,
-                polygon[(j + 1) % n]!,
+                contour[i]!,
+                contour[(i + 1) % n]!,
+                contour[j]!,
+                contour[(j + 1) % n]!,
               )
             )
               crossings += 1
           }
         }
-        expect(crossings, `${head} ${shaftLength} self-intersection`).toBe(0)
-
-        // smooth shaft: exactly two vertices share the flat tip at max x,
-        // and nothing right of the head oscillates like thread teeth
-        const xs = polygon.map((point) => point[0])
-        const maxX = Math.max(...xs)
-        const tip = polygon.filter(([px]) => Math.abs(px - maxX) < 1e-6)
-        expect(tip.length, `${head} ${shaftLength} flat tip`).toBe(2)
-        expect(
-          Math.abs(tip[0]![1] - tip[1]![1]),
-          `${head} ${shaftLength} shaft thickness`,
-        ).toBeGreaterThanOrEqual(1.5)
-
-        // whole glyph stays inside the 16-unit icon grid
-        expect(
-          maxX - Math.min(...xs),
-          `${head} ${shaftLength} width`,
-        ).toBeLessThanOrEqual(16 + 1e-6)
-        expect(
-          Math.max(...ys) - Math.min(...ys),
-          `${head} ${shaftLength} height`,
-        ).toBeLessThanOrEqual(16 + 1e-6)
+        expect(crossings, `${shaftLength} self-intersection`).toBe(0)
       }
+
+      // the ring is a hole: two circular contours of radius 2.0 and 1.0 share
+      // one center, giving a 1.0 stroke
+      const circleCenters = contours
+        .map((contour) => {
+          const cx = contour.reduce((sum, [px]) => sum + px, 0) / contour.length
+          const cy =
+            contour.reduce((sum, [, py]) => sum + py, 0) / contour.length
+          const distances = contour.map(([px, py]) =>
+            Math.hypot(px - cx, py - cy),
+          )
+          const radius =
+            distances.reduce((sum, d) => sum + d, 0) / distances.length
+          const spread = Math.max(...distances.map((d) => Math.abs(d - radius)))
+          return { cx, cy, radius, isCircle: spread < 1e-6 }
+        })
+        .filter(({ isCircle, radius }) => isCircle && radius > 0.5)
+      expect(circleCenters.length, `${shaftLength} ring contours`).toBe(2)
+      expect(
+        Math.abs(circleCenters[0]!.cx - circleCenters[1]!.cx),
+        `${shaftLength} ring coaxial x`,
+      ).toBeLessThan(1e-6)
+      expect(
+        Math.abs(circleCenters[0]!.cy - circleCenters[1]!.cy),
+        `${shaftLength} ring coaxial y`,
+      ).toBeLessThan(1e-6)
+      expect(
+        Math.abs(circleCenters[0]!.radius - circleCenters[1]!.radius),
+        `${shaftLength} ring stroke`,
+      ).toBeCloseTo(1, 6)
+
+      // the head block ends flat: exactly two vertices at max x, 3.4 apart
+      const xs = polygon.map((point) => point[0])
+      const maxX = Math.max(...xs)
+      const tip = polygon.filter(([px]) => Math.abs(px - maxX) < 1e-6)
+      expect(tip.length, `${shaftLength} flat head end`).toBe(2)
+      expect(
+        Math.abs(tip[0]![1] - tip[1]![1]),
+        `${shaftLength} head block height`,
+      ).toBeCloseTo(3.4, 6)
+
+      // the shaft meets the block in a step: the step contour's inner
+      // vertices sit at y = ±0.8, giving the 1.6 shaft thickness
+      const stepContour = contours[2]!
+      const shaftVertices = stepContour.filter(([, py]) => Math.abs(py) < 1)
+      expect(shaftVertices.length, `${shaftLength} shaft vertices`).toBe(4)
+      const shaftTop = Math.max(...shaftVertices.map(([, py]) => py))
+      const shaftBottom = Math.min(...shaftVertices.map(([, py]) => py))
+      expect(
+        shaftTop - shaftBottom,
+        `${shaftLength} shaft thickness`,
+      ).toBeCloseTo(1.6, 6)
+
+      // whole glyph stays inside the 16-unit icon grid
+      expect(
+        maxX - Math.min(...xs),
+        `${shaftLength} width`,
+      ).toBeLessThanOrEqual(16 + 1e-6)
+      expect(
+        Math.max(...ys) - Math.min(...ys),
+        `${shaftLength} height`,
+      ).toBeLessThanOrEqual(16 + 1e-6)
     }
   })
 
   it('scales the shaft proportionally with the screw length', () => {
-    const width = (head: 'pan' | 'hex', length: number): number => {
-      const polygon = screwOutlinePolygon16(head, length)
+    const width = (length: number): number => {
+      const polygon = screwOutlineContours16(length).flat()
       const xs = polygon.map((point) => point[0])
       return Math.max(...xs) - Math.min(...xs)
     }
-    const shaft = (head: 'pan' | 'hex', length: number): number => {
-      const headWidth =
-        width(head, OPENGRID_LABEL_SCREW_SHAFT.stub) -
-        OPENGRID_LABEL_SCREW_SHAFT.stub
-      return width(head, length) - headWidth
-    }
+    const headSpan =
+      width(OPENGRID_LABEL_SCREW_SHAFT.stub) - OPENGRID_LABEL_SCREW_SHAFT.stub
+    const shaft = (length: number): number => width(length) - headSpan
+    const units = (millimetres: number) =>
+      shaftUnitsForOpenGridLabelScrewLength(millimetres)
 
-    for (const head of ['pan', 'hex'] as const) {
-      const units = (millimetres: number) =>
-        shaftUnitsForOpenGridLabelScrewLength(millimetres)
+    // linear in millimetres: 0.29 units per mm
+    expect(shaft(units(8)) - shaft(units(4))).toBeCloseTo(1.16, 6)
+    expect(shaft(units(30)) - shaft(units(20))).toBeCloseTo(2.9, 6)
 
-      // linear in millimetres: 0.375 units per mm
-      expect(shaft(head, units(8)) - shaft(head, units(4))).toBeCloseTo(1.5, 6)
-      expect(shaft(head, units(30)) - shaft(head, units(20))).toBeCloseTo(
-        3.75,
-        6,
-      )
+    // 20 mm is at least twice as long as 8 mm
+    expect(shaft(units(20))).toBeGreaterThanOrEqual(2 * shaft(units(8)))
 
-      // 20 mm is at least twice as long as 8 mm
-      expect(shaft(head, units(20))).toBeGreaterThanOrEqual(
-        2 * shaft(head, units(8)),
-      )
+    // short designations keep their true proportion: 6 mm is twice 3 mm
+    expect(shaft(units(6))).toBeCloseTo(2 * shaft(units(3)), 6)
 
-      // clamped to the documented 4-30 mm range
-      expect(units(31)).toBe(30 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
-      expect(units(2)).toBe(4 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
-    }
+    // clamped to the documented 2-30 mm range
+    expect(units(31)).toBe(30 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
+    expect(units(1)).toBe(2 * OPENGRID_LABEL_SCREW_SHAFT.perMillimetre)
   })
 
   it('falls back to the stub shaft without a designation length', () => {
@@ -419,10 +455,8 @@ describe('OpenGrid Label Card contract', () => {
     expect(parseOpenGridLabelScrewShaftUnits('M4')).toBe(stub)
     expect(parseOpenGridLabelScrewShaftUnits(undefined)).toBe(stub)
     expect(parseOpenGridLabelScrewShaftUnits('camera')).toBe(stub)
-    expect(parseOpenGridLabelScrewShaftUnits('M4x16')).toBeCloseTo(6, 6)
-
-    // the stub shaft stays no longer than the pan head radius
-    expect(stub).toBeLessThanOrEqual(2.3)
+    expect(parseOpenGridLabelScrewShaftUnits('M4x16')).toBeCloseTo(4.64, 6)
+    expect(parseOpenGridLabelScrewShaftUnits('M2x3')).toBeCloseTo(0.87, 6)
   })
 
   it('renders screw gallery paths inside the 16-unit viewBox', () => {
@@ -431,7 +465,7 @@ describe('OpenGrid Label Card contract', () => {
     for (const iconId of ['screw-pan', 'screw-hex'] as const) {
       const icon = LABEL_CARD_ICON_PATHS[iconId]
       expect(icon, iconId).toBeDefined()
-      expect(icon.evenOdd).toBe(false)
+      expect(icon.evenOdd).toBe(true)
       for (const d of icon.paths) {
         const { min, max } = svgPathBounds(d)
         expect(min[0], `${iconId} min x`).toBeGreaterThanOrEqual(-0.05)

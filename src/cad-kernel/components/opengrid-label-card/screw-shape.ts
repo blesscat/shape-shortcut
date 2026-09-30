@@ -1,20 +1,20 @@
-import type { Shape3D } from 'replicad'
+import { makeCompound, type Shape3D } from 'replicad'
 import { extrudeContourGroup } from './icon-shape'
-import type { PathPolygon } from './svg-path'
-import { screwOutlinePolygon16, type ScrewHeadStyle } from './screw-outline'
+import { groupPolygonContours, type PathPolygon } from './svg-path'
+import { screwOutlineContours16 } from './screw-outline'
 
 /** Shaft-length mapping from the `M<dia>x<len>` designation to grid units. */
 export const OPENGRID_LABEL_SCREW_SHAFT = {
-  perMillimetre: 0.375,
+  perMillimetre: 0.29,
   stub: 1.2,
-  lengthMin: 4,
+  lengthMin: 2,
   lengthMax: 30,
 } as const
 
 /**
  * Maps a screw length in millimetres to the shaft length in 16-unit grid
- * units measured from the head's join edge, clamped to the documented
- * 4–30 mm range.
+ * units measured from the shaft start, clamped to the 2–30 mm range so short
+ * designations keep their true proportion inside the grid budget.
  */
 export function shaftUnitsForOpenGridLabelScrewLength(length: number): number {
   const clamped = Math.min(
@@ -40,9 +40,18 @@ export function parseOpenGridLabelScrewShaftUnits(
   return shaftUnitsForOpenGridLabelScrewLength(length)
 }
 
+function deleteShape(shape: { delete?: () => void } | null | undefined): void {
+  try {
+    shape?.delete?.()
+  } catch {
+    // Cleanup must not hide the primary geometry error.
+  }
+}
+
 /**
- * Extrudes the parametric side-view screw silhouette scaled to the icon size
- * box. The outline is one closed contour, so the accent stays a single solid.
+ * Extrudes the parametric screw pictogram (ring, shaft, head block) scaled to
+ * the icon size box. Contours are even-odd grouped so the ring hole is cut
+ * and the disjoint solids fuse into one accent compound.
  */
 export function makeOpenGridLabelScrewShape(options: {
   iconId: string
@@ -50,13 +59,34 @@ export function makeOpenGridLabelScrewShape(options: {
   size: number
   depth: number
 }): Shape3D {
-  const head: ScrewHeadStyle = options.iconId === 'screw-hex' ? 'hex' : 'pan'
-  const polygon: PathPolygon = screwOutlinePolygon16(
-    head,
+  const scale = options.size / 16
+  const contours: PathPolygon[] = screwOutlineContours16(
     options.shaftLength,
-  ).map(([x, y]) => [
-    Number(((x * options.size) / 16).toFixed(4)),
-    Number(((y * options.size) / 16).toFixed(4)),
-  ])
-  return extrudeContourGroup(polygon, [], options.depth)
+  ).map((contour) =>
+    contour.map(([x, y]) => [
+      Number((x * scale).toFixed(4)),
+      Number((y * scale).toFixed(4)),
+    ]),
+  )
+
+  const pieces: Shape3D[] = []
+  try {
+    for (const [outer, ...holes] of groupPolygonContours(contours)) {
+      if (!outer) continue
+      pieces.push(extrudeContourGroup(outer, holes, options.depth))
+    }
+    if (pieces.length === 0) throw new Error('LABEL_CARD_SCREW_EMPTY')
+    if (pieces.length === 1) {
+      const single = pieces[0]!
+      pieces.length = 0
+      return single
+    }
+    const compound = makeCompound(pieces).asShape3D()
+    pieces.length = 0
+    return compound
+  } catch (error) {
+    for (const piece of pieces) deleteShape(piece)
+    pieces.length = 0
+    throw error
+  }
 }
