@@ -1,6 +1,17 @@
 # Cloudflare Workers 遷移與回復
 
-此專案提供 `dist/` 靜態檔案。`wrangler.jsonc` 沒有應用程式 Worker 入口、SSR adapter、資料庫或 R2 binding。CAD 計算與檔案產生由使用者瀏覽器完成。這份 runbook 適用於 PR 合併後的正式部署；repository 的驗證完成不代表線上的 Pages 已切換。
+此專案提供 `dist/` 靜態檔案。`wrangler.jsonc` 沒有應用程式 Worker 入口、SSR adapter、資料庫或 R2 binding。CAD 計算與檔案產生由使用者瀏覽器完成。
+
+## 目前部署狀態（2026-09-30）
+
+- 正式站：`https://shape-shortcut.blesscat.dev`，由 `shape-shortcut` Worker 提供；同版本也可在 `https://shape-shortcut.blesscat.workers.dev` 驗證。
+- GitHub repository：`blesscat/shape-shortcut`；`main` 自動部署正式 Worker，其他分支使用獨立 Worker Preview。
+- Node.js `22.23.2`、pnpm `11.20.0` 已設為 production 與 preview 的 build variables；公開網址及贊助連結沿用 `.env.production`。
+- 正式 custom domain 已轉移到 Worker，DNS 記錄由 Workers 管理。`wrangler.jsonc` 的 `routes` 保存正式 hostname；手動 `pnpm run deploy` 也會更新正式站。
+- Pages 專案保留作回復，production 自動部署已關閉，preview 設為 `none`。回復版本為 `0d34d11e-a162-4679-b629-48c0c3fe3eb8`（commit `e158441`），網址 `https://0d34d11e.shape-shortcut.pages.dev`。
+- 首次 Workers Builds 成功，dashboard 顯示 1 分 6 秒：初始化 3 秒、clone 4 秒、安裝 26 秒、build 13 秒、deploy 20 秒。這是單次量測，後續快取與帳號總用量會影響實際耗時。
+
+下方保留建立、驗證及回復步驟。重新演練候選遷移時，先在獨立設定中移除正式 `routes`，避免候選部署改動正式 hostname。
 
 ## 本機驗證與手動發布
 
@@ -77,7 +88,7 @@ Host 行為：
    ]
    ```
 
-   原始候選設定刻意省略正式 routes，方便先部署到 `workers.dev`。不要在尚未轉移時讓自動部署嘗試接管 Pages hostname；切換後也要將 dashboard 設定與 repository 對齊。
+   遷移當時的候選設定省略正式 routes，先部署到 `workers.dev`；現在已納入正式 hostname。不要在尚未轉移時讓自動部署嘗試接管 Pages hostname；切換後也要將 dashboard 設定與 repository 對齊。
 
 7. 關閉 Pages production 與 preview 的自動建置，避免每次 push 建置兩份。保留 Pages 專案及最後成功版本，待觀察期結束後另行決定是否刪除。
 
@@ -85,7 +96,7 @@ Host 行為：
 
 若候選驗證失敗，在 `workers.dev` 修正並重測即可。若正式切換後失敗：
 
-1. 暫停 Workers 自動發布，從 Worker 移除正式 custom domain，避免後续部署重新接管；同步撤回 repository 的該條 route。
+1. 暫停 Workers 自動發布，從 Worker 移除正式 custom domain，避免後續部署重新接管；同步撤回 repository 的該條 route。
 2. 將 hostname 重新加入保留的 Pages 專案，恢復先前記錄的 DNS 指向，等待 Pages domain/TLS 狀態正常。
 3. 必要時在 Pages 選回最後成功的 production deployment。以該版本的既有路由行為驗證首頁、語系、CAD 與下載；舊版缺少 About 308 或未知頁面 404 時，不把 Workers 新增的斷言當成回復失敗。
 4. 確認正式服務恢復後，重新啟用 Pages production/preview 自動部署。保留失敗 Worker 版本供調查。

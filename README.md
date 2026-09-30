@@ -20,7 +20,7 @@ pnpm build
 pnpm exec wrangler deploy --dry-run
 ```
 
-已設定 Cloudflare CLI 登入或 CI 憑證時，可用 `pnpm run deploy` 建置並發布；請明確使用 `run deploy`，避免呼叫 pnpm 自己的 `deploy` 子命令。初始設定使用 `workers.dev` 網址。正式站仍需依[Workers 遷移與回復步驟](docs/cloudflare-workers.md)完成 Git 自動部署、候選版本驗證與自訂網域切換。
+已設定 Cloudflare CLI 登入或 CI 憑證時，可用 `pnpm run deploy` 建置並發布；請明確使用 `run deploy`，避免呼叫 pnpm 自己的 `deploy` 子命令。正式站已由 Workers 提供，`routes` 管理 `shape-shortcut.blesscat.dev`；此命令會更新正式站。`main` 使用 Workers Builds 自動發布，分支使用獨立 Worker Preview。現行設定、驗證及 Pages 回復流程見[Workers 遷移與回復步驟](docs/cloudflare-workers.md)。
 
 既有 `pnpm dev` 與 `pnpm preview` 保留 Astro 開發流程；檢查 Cloudflare 的 HTTP 轉址時使用 `preview:workers`。
 
