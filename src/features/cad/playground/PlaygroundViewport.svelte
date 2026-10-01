@@ -224,9 +224,15 @@
     'gridMajor',
     'gridMinor',
     'gizmoBackground',
+    'gizmoX',
+    'gizmoY',
+    'gizmoZ',
+    'gizmoLabel',
     'edge',
     'annotation',
     'annotationLabel',
+    'hover',
+    'selection',
     'faceHighlight',
     'hemisphereSky',
     'hemisphereGround',
@@ -353,7 +359,8 @@
       emphasized:
         instanceId === selectedInstanceId || instanceId === hoveredInstanceId,
       colorHex,
-      faceHighlight: theme.faceHighlight,
+      hoverColor: theme.hover,
+      selectionColor: theme.selection,
       conflictColor: invalidPreviewColor(),
     })
   }

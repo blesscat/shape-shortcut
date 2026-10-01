@@ -88,17 +88,24 @@
     scene.background = new Color(theme.background)
   })
 
-  $effect(() => {
-    const gizmo = viewportGizmo
-    if (!gizmo) return
-
-    gizmo.set({
+  function gizmoOptions(): GizmoOptions {
+    return {
       ...CAD_VIEWPORT_GIZMO,
       background: {
         ...CAD_VIEWPORT_GIZMO.background,
         color: theme.gizmoBackground,
       },
-    })
+      x: { label: 'X', color: theme.gizmoX, labelColor: theme.gizmoLabel },
+      y: { label: 'Y', color: theme.gizmoY, labelColor: theme.gizmoLabel },
+      z: { label: 'Z', color: theme.gizmoZ, labelColor: theme.gizmoLabel },
+    }
+  }
+
+  $effect(() => {
+    const gizmo = viewportGizmo
+    if (!gizmo) return
+
+    gizmo.set(gizmoOptions())
     gizmo.update()
   })
 </script>
@@ -138,11 +145,7 @@
   {/if}
 </T.PerspectiveCamera>
 {#if presentation === 'workspace' && orbitControls}
-  <Gizmo
-    bind:ref={viewportGizmo}
-    controls={orbitControls}
-    {...CAD_VIEWPORT_GIZMO}
-  />
+  <Gizmo bind:ref={viewportGizmo} controls={orbitControls} {...gizmoOptions()} />
 {/if}
 {#key modelRevision}
   <Bounds margin={boundsMarginFor(presentation)} animate={false}>
