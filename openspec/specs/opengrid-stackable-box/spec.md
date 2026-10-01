@@ -1,9 +1,7 @@
 ## Purpose
 
 提供一個以 OpenGrid 28 mm 格線為尺寸基準、可固定到底座並能與相同盒體互相堆疊的開口盒模型，讓盒子不需要區分上盒與下盒也能重複使用。
-
 ## Requirements
-
 ### Requirement: OpenGrid stackable box parameters
 
 The system MUST expose an independently validated OpenGrid stackable-box model
@@ -119,7 +117,6 @@ unsupported values after legacy alias migration.
   full-grid, or any opening value without changing the model identity
 - **THEN** the existing footprint, clear-height, mode, opening, preview, and
   export contracts MUST continue to apply
-
 
 ### Requirement: Identical box-to-box stacking interface
 
@@ -260,7 +257,6 @@ grid MAY use every nominal grid position.
 - **THEN** the positions MUST be emitted as one valid special socket or seat
 - **AND** the footprint MUST remain unchanged
 
-
 ### Requirement: Optional nominal OpenGrid bottom hole grid
 
 The stackable-box model MUST expose `fullBottomHoleGrid` independently from
@@ -311,7 +307,6 @@ is `none`, all nominal positions remain ordinary holes.
 - **THEN** grid centers MUST remain based on the nominal un-cleared footprint
 - **AND** the 14 mm spacing and half-cell layout MUST remain unchanged
 
-
 ### Requirement: Full-hole geometry quality and exports
 
 The stackable-box builder MUST validate the selected `cornerSeatMode` and
@@ -352,7 +347,6 @@ shell/interface checks remain valid.
 - **AND** the failed candidate MUST NOT replace the last valid revision
 - **AND** export MUST remain disabled for that revision
 
-
 ### Requirement: Stackable-box geometry quality and exports
 
 The stackable-box builder MUST continue to validate the shell, opening, and
@@ -382,7 +376,6 @@ successful results MUST remain previewable and exportable.
 - **THEN** its existing box-to-box guide contract MUST remain unchanged
 - **AND** the new seats MUST be treated as outward mounting geometry rather
   than a replacement for the top rail or bottom guide
-
 
 ### Requirement: Four independently configurable box side openings
 
@@ -416,7 +409,6 @@ The panel MUST expose one disclosure labelled `四個方向開口設定`, follow
 - **THEN** the outer disclosure MUST be expanded and only that direction group MUST be expanded on first display
 - **AND** `前方` MUST follow the same rule as `後方`, `左方`, and `右方`
 - **AND** restoring the direction's values to defaults MUST collapse that direction group and the outer disclosure when no other direction is non-default
-
 
 ### Requirement: Rounded box-native opening profile
 
@@ -455,7 +447,6 @@ Every enabled opening MUST cut completely through the selected wall thickness fr
 - **AND** no continuous membrane or thin layer of selected-wall material MAY remain inside the requested opening span
 - **AND** the opposite wall, floor, corner bridges, and unselected rim spans MUST retain their existing material
 
-
 ### Requirement: Side-opening safety and existing box preservation
 
 Every enabled opening MUST remain compatible with every supported floor and rim profile. Its lowest boundary MUST NOT remove the active interior floor or corner pads, fixed corner sockets, or ordinary bottom-hole bearing material. In `stacking` bottoms it MUST also preserve the bottom guide and stacking interface; in `thin-shell` bottoms it MUST preserve the flat 2 mm floor; in `none` bottoms it MUST preserve the open floor span and the 2 mm corner pads. The derived opening span MUST leave valid corner bridges and MUST reject any parameter set whose neighboring opening spans overlap, merge, or reduce a required structural bridge below the geometry-safety minimum. The opening feature MUST NOT change the existing 28 mm footprint calculation, 14 mm bottom-hole grid, bottom-hole switches, or unselected top-rim spans. A zero-opening snapshot MUST remain geometrically identical to the existing accepted snapshot for its selected combination.
@@ -485,7 +476,6 @@ Every enabled opening MUST remain compatible with every supported floor and rim 
 - **WHEN** browser persistence or an imported parameter record contains a valid legacy box snapshot without the twelve opening fields
 - **THEN** hydration MUST add depth `0`, bottom length `1`, and angle `90` for every direction
 - **AND** the restored snapshot MUST generate the existing no-opening geometry for its selected mode and remain eligible for the existing export identity
-
 
 ### Requirement: Deterministic stackable-box export metadata
 
@@ -531,7 +521,6 @@ existing behavior.
 - **WHEN** an integrated-seat box is exported
 - **THEN** both STEP and STL filenames MUST contain `-seats-integrated`
 - **AND** the downloaded geometry MUST include the outward Ø5 mm × 3.8 mm seats
-
 
 ### Requirement: Honeycomb material-saving box mode
 
@@ -630,7 +619,6 @@ diagnostically before committing a partial candidate.
 - **AND** its B-Rep volume MUST be lower than the otherwise identical non-honeycomb profile within geometry tolerance
 - **AND** the existing filename identity MUST remain unchanged when `honeycombMode=false`
 
-
 ### Requirement: Honeycomb box quality protection
 
 The stackable-box quality gate MUST inspect honeycomb-mode candidates separately from solid profiles. It MUST reject a candidate that changes any protected hole profile, cuts a protected interface or opening boundary, creates an invalid or multi-solid result, exceeds the existing bounds, or fails preview/export eligibility. The quality report MUST identify whether honeycomb mode was enabled and MUST distinguish a valid no-cell fallback from a failed lattice construction. Memory-bounded construction and inspection MUST NOT weaken any protected-feature, validity, or export decision.
@@ -698,7 +686,6 @@ builder.
 - **THEN** STEP and STL export MUST use the selected seat-mode metadata
 - **AND** exports MUST remain disabled while the current snapshot is invalid,
   stale, generating, or failed geometry validation
-
 
 ### Requirement: Memory-bounded box inspection preserves measurement decisions
 
@@ -777,7 +764,10 @@ chamfer, leaving the upper chamfer uncleared. At the previous fully seated
 board datum, the box MAY intersect the Lite or Full board and MUST NOT be
 claimed to drop in, sit flush, or lift vertically without interference. The
 box-to-box stacking guide, continuous floor, model identity, and parameter
-defaults MUST remain valid.
+defaults MUST remain valid. Because the relief is cut at every grid junction
+including the outer perimeter, it MAY fully supersede the R0.5 bottom-edge
+fillet band; the finishing gates MUST assert the relief termination surface
+instead of the superseded fillet.
 
 #### Scenario: Corner relief stops at the board chamfer
 - **WHEN** a stacking-bottom box is generated with or without locating seats
@@ -802,6 +792,14 @@ defaults MUST remain valid.
 - **WHEN** thin-shell, open-bottom, half-cell or locating-seat configurations are generated
 - **THEN** their existing solid and socket contracts MUST remain valid
 - **AND** board-fit claims MUST be restricted to combinations supported by geometric verification
+
+#### Scenario: Relief supersedes the bottom-edge fillet at every junction
+- **WHEN** a stacking-bottom box is generated
+- **THEN** the square-section relief cuts MAY remove the R0.5 bottom-edge
+  fillet band at every grid junction they cross, leaving flat relief
+  termination surfaces near the chamfer-start datum instead of fillet faces
+- **AND** the integrated seats MUST keep their 0.2 mm bottom chamfer
+- **AND** the box MUST NOT gain protruding positioning pegs
 
 ### Requirement: Two-color top accent rim shell partitioning
 
@@ -876,3 +874,4 @@ assigned to `body` and `rim`.
 - **AND** when `topRimEnabled` is `false`, the model definition MUST report no
   3MF filename and the STL filename MUST remain unchanged from its current
   fingerprint
+

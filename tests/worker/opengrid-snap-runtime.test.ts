@@ -739,6 +739,10 @@ describe('OpenGrid Snap Worker runtime', () => {
     expect(mocks.exportThreeMfBytes).toHaveBeenCalledWith(
       expect.any(Array),
       expect.objectContaining({ baseColor: '#123456', accentColor: '#abcdef' }),
+      expect.objectContaining({
+        modelSettingsName: 'opengrid-wall-cover',
+        accentPartName: 'text',
+      }),
     )
     expect(
       events.filter(
