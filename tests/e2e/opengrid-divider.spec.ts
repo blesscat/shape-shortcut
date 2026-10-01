@@ -10,7 +10,7 @@ test('OpenGrid divider is listed with independent directional controls', async (
 
   // The divider lives in the collapsed tools zone; expand the zones so the
   // card re-enters the accessibility tree.
-  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsSections = page.getByTestId('model-zone-tools-desk')
   const toolsCount = await toolsSections.count()
   for (let index = 0; index < toolsCount; index += 1) {
     await toolsSections.nth(index).locator('summary').click()
@@ -18,7 +18,7 @@ test('OpenGrid divider is listed with independent directional controls', async (
 
   const modelLink = page
     .getByRole('heading', { name: 'divider (分隔牆)', exact: true })
-    .locator('..')
+    .locator('xpath=ancestor::article[1]')
     .getByRole('link', { name: '編輯 divider (分隔牆)', exact: true })
   await expect(modelLink).toHaveAttribute(
     'href',

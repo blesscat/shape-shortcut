@@ -4,7 +4,7 @@
 
 The static `/models` chooser MUST present the visible OpenGrid catalog entries
 in a single system panel selected by a segmented control with three options:
-`Desk`（Desk System）, `Wall`（Wall Related）, and `HSW`. The Desk panel MUST
+`Desk`（Desk System）, `Wall`（Wall System）, and `HSW`. The Desk panel MUST
 contain `opengrid`, `opengrid-snap`, `opengrid-pillar`, `opengrid-divider`,
 `opengrid-stackable-box`, `opengrid-stackable-cylinder`, `opengrid-organizer-box`,
 `opengrid-snap-remover`, `opengrid-open-shelf`, and `opengrid-label-card`. The
@@ -140,3 +140,53 @@ with a friendly hint, a visible teaser line while collapsed, and an
   在地化主名搭配次要原文呈現
 - **AND** 工具與配件區收合時 MUST 顯示提示語與預覽文案，MUST NOT 顯示模型
   數量
+
+### Requirement: OpenGrid Snap 選擇入口順序
+
+The `/models` chooser MUST render each system panel's entries in three
+part-category zones in this order: the 基礎 zone first, then the 容器 zone,
+then the collapsed 工具與配件 zone. Within the 基礎 zone the order MUST be
+`opengrid`（Board）then `opengrid-snap` in both system panels. The Desk 容器
+zone MUST render `opengrid-stackable-box`, `opengrid-stackable-cylinder`,
+`opengrid-organizer-box`, `opengrid-open-shelf` in this order. The Wall 容器
+zone MUST render `opengrid-openconnect-shelf`,
+`opengrid-openconnect-organizer`, `opengrid-openconnect-tissue-box` in this
+order. The Desk 工具與配件 zone MUST render `opengrid-snap-remover`,
+`opengrid-pillar`, `opengrid-divider`, `opengrid-label-card` in this order.
+The Wall 工具與配件 zone MUST render `opengrid-wall-cover`,
+`opengrid-label-card`, `opengrid-label-slot-test` in this order. The 基礎
+hero rows MUST render Board（底版）first and Snap（咔咔）second, stacked
+vertically in this order at every viewport width. Every entry MUST retain its
+existing model-specific route.
+
+#### Scenario: Desk 子分組分區順序
+
+- **WHEN** 使用者檢視 `/models` 的 Desk System 面板
+- **THEN** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
+- **AND** 容器區 MUST 依序顯示 `Grid Box (方盒)`、`Round Box (圓盒)`、
+  Organizer Box、`Open Shelf (斜開格櫃)`
+- **AND** 工具與配件區展開後 MUST 依序顯示 Snap Remover、
+  `Locating Post (定位柱)`、`divider (分隔牆)`、Label Card
+
+#### Scenario: Snap 與底板在寬版相鄰
+
+- **WHEN** 使用者以支援至少雙欄卡片排列的視窗開啟 `/models`
+- **THEN** 基礎區的第一列 hero 橫條 MUST 是 `Board (底版)`
+- **AND** 第二列 MUST 是 `Snap (咔咔)`，兩列以垂直堆疊呈現
+- **AND** `Board (底版)` 的入口 MUST 導向 `/cad/opengrid`
+- **AND** `Snap (咔咔)` 的入口 MUST 導向 `/cad/opengrid-snap`
+
+#### Scenario: 其他 OpenGrid 入口仍保留
+
+- **WHEN** 使用者開啟 `/models`
+- **THEN** OpenGrid 系列 MUST 仍包含 `opengrid-pillar`、`opengrid-divider`、`opengrid-stackable-box`、`opengrid-stackable-cylinder`、`opengrid-snap-remover` 與 `opengrid-open-shelf`
+- **AND** 這些入口的既有 model ID 與 `/cad/<modelId>` 路由 MUST 維持不變
+
+#### Scenario: Wall 子分組分區順序
+
+- **WHEN** 使用者檢視 `/models` 的 Wall System 面板
+- **THEN** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
+- **AND** 容器區 MUST 依序顯示 OpenConnect Shelf、OpenConnect Organizer、
+  OpenConnect 面紙盒
+- **AND** 工具與配件區展開後 MUST 依序顯示 Wall Cover、Label Card、
+  Label Slot Test

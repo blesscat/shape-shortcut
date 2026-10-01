@@ -290,11 +290,26 @@ test('model cards expose static previews and preserve selection on image failure
   }
   const locale = 'zh-Hant' as const
 
+  let activeSystem = 'desk'
   for (const definition of VISIBLE_MODEL_DEFINITIONS) {
     const preview = definition.previewImage
     if (!preview)
       throw new Error(`PREVIEW_METADATA_MISSING:${entryKey(definition)}`)
 
+    // The switcher keeps non-active panels out of the accessibility tree;
+    // visit each card's own system panel before asserting on it, expanding
+    // its collapsed tools zone so tool/accessory cards stay reachable.
+    const system = definition.systemContext ?? 'hsw'
+    if (system !== activeSystem) {
+      await page.locator(`[data-system-tab="${system}"]`).click()
+      activeSystem = system
+    }
+    if (system !== 'hsw') {
+      const tools = page.getByTestId(`model-zone-tools-${system}`)
+      if ((await tools.getAttribute('open')) === null) {
+        await tools.locator('summary').click()
+      }
+    }
     const card = page.locator(`[data-entry-key="${entryKey(definition)}"]`)
     const lightImage = card.locator('img').first()
     const darkImage = card.locator('img').nth(1)
@@ -314,6 +329,9 @@ test('model cards expose static previews and preserve selection on image failure
       localizedCadPathFor(locale, definition.id, definition.systemContext),
     )
   }
+
+  // The fallback assert needs the Desk panel visible again.
+  await page.locator('[data-system-tab="desk"]').click()
 
   const failedPreviewCard = page.locator('[data-entry-key="opengrid-desk"]')
   await expect(

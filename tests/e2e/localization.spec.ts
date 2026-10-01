@@ -117,16 +117,16 @@ test('model chooser keeps compact cards and stable modal details', async ({
 }) => {
   await page.goto('/en/models')
 
-  // Tools live in a collapsed zone by default; expand both so every card is
-  // measurable and visible before the layout assertions below.
-  const toolsSections = page.getByTestId('model-zone-tools')
-  const toolsCount = await toolsSections.count()
-  for (let index = 0; index < toolsCount; index += 1) {
-    await toolsSections.nth(index).locator('summary').click()
-  }
+  // Tools live in a collapsed zone by default; expand the Desk panel's zone
+  // so every card is measurable and visible before the layout assertions
+  // below (the switcher keeps the other panels out of layout).
+  await page.getByTestId('model-zone-tools-desk').locator('summary').click()
 
-  const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
-  await expect(cards).not.toHaveCount(0)
+  const cards = page
+    .locator('[data-testid="model-selection"]')
+    .locator('[data-system-panel="desk"]')
+    .locator('[data-model-id]')
+  await expect(cards).toHaveCount(10)
   const staticResponse = await page.request.get('/en/models')
   expect(staticResponse.ok()).toBe(true)
   const staticHtml = await staticResponse.text()
@@ -145,6 +145,28 @@ test('model chooser keeps compact cards and stable modal details', async ({
       card.getByRole('button', { name: 'Details', exact: true }),
     ).toBeVisible()
   }
+
+  // The other panels keep the same card anatomy; verify via the switcher.
+  // Park the pointer first: tab clicks above the panels leave it hovering a
+  // card, whose hover lift keeps the layout (and the next tab) unstable.
+  await page.mouse.move(0, 0)
+  await page.locator('[data-system-tab="wall"]').click()
+  await expect(
+    page
+      .locator('[data-system-panel="wall"]')
+      .locator('[data-model-id]')
+      .first()
+      .getByRole('button', { name: 'Details', exact: true }),
+  ).toBeVisible()
+  await page.locator('[data-system-tab="hsw"]').click()
+  await expect(
+    page
+      .locator('[data-system-panel="hsw"]')
+      .locator('[data-model-id="hsw-cell"]')
+      .getByRole('button', { name: 'Details', exact: true }),
+  ).toBeVisible()
+  await page.mouse.move(0, 0)
+  await page.locator('[data-system-tab="desk"]').click()
 
   const board = page.locator('[data-entry-key="opengrid-desk"]')
   await expect(board).not.toContainText('Adjustable settings:')
@@ -281,15 +303,14 @@ test('traditional Chinese model cards keep the compact presentation', async ({
 }) => {
   await page.goto('/zh-Hant/models')
 
-  const toolsSections = page.getByTestId('model-zone-tools')
-  const toolsCount = await toolsSections.count()
-  for (let index = 0; index < toolsCount; index += 1) {
-    await toolsSections.nth(index).locator('summary').click()
-  }
+  await page.getByTestId('model-zone-tools-desk').locator('summary').click()
   await page.mouse.move(0, 0)
 
-  const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
-  await expect(cards).not.toHaveCount(0)
+  const cards = page
+    .locator('[data-testid="model-selection"]')
+    .locator('[data-system-panel="desk"]')
+    .locator('[data-model-id]')
+  await expect(cards).toHaveCount(10)
   const cardCount = await cards.count()
   for (let index = 0; index < cardCount; index += 1) {
     const card = cards.nth(index)
@@ -418,7 +439,7 @@ test('model chooser badges and home summaries expose localized part categories',
   const deskBaseBadge = () =>
     page
       .getByTestId('model-subgroup-desk')
-      .getByTestId('model-zone-base')
+      .getByTestId('model-zone-base-desk')
       .locator(
         '[data-model-id="opengrid"] [data-testid="model-category-badge"]',
       )
@@ -428,7 +449,7 @@ test('model chooser badges and home summaries expose localized part categories',
   await expect(
     page
       .getByTestId('model-subgroup-desk')
-      .getByTestId('model-zone-containers')
+      .getByTestId('model-zone-containers-desk')
       .locator(
         '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
       ),
@@ -447,7 +468,7 @@ test('model chooser badges and home summaries expose localized part categories',
   await expect(
     page
       .getByTestId('model-subgroup-desk')
-      .getByTestId('model-zone-containers')
+      .getByTestId('model-zone-containers-desk')
       .locator(
         '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
       ),

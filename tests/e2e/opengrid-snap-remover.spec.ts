@@ -14,7 +14,7 @@ test('OpenGrid Snap Remover previews and exports without parameter controls', as
 
   // The Snap Remover lives in the collapsed tools zone; expand the zones so
   // the card re-enters the accessibility tree.
-  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsSections = page.getByTestId('model-zone-tools-desk')
   const toolsCount = await toolsSections.count()
   for (let index = 0; index < toolsCount; index += 1) {
     await toolsSections.nth(index).locator('summary').click()
@@ -22,7 +22,7 @@ test('OpenGrid Snap Remover previews and exports without parameter controls', as
 
   const modelLink = page
     .getByRole('heading', { name: 'Snap Remover', exact: true })
-    .locator('..')
+    .locator('xpath=ancestor::article[1]')
     .getByRole('link', { name: '編輯 Snap Remover', exact: true })
   await expect(modelLink).toHaveAttribute(
     'href',

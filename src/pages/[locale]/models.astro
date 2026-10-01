@@ -2,7 +2,6 @@
 import SiteLayout from '../../layouts/SiteLayout.astro'
 import '../../styles/starwind.css'
 import { Badge } from '../../components/starwind/badge'
-import { Separator } from '../../components/starwind/separator'
 import ModelCard from '../../components/cad/ModelCard.astro'
 import {
   groupModelDefinitions,
@@ -24,18 +23,27 @@ const t = (key: string, values?: Record<string, string | number | boolean>) =>
   translate(locale, key, values)
 const modelGroups = groupModelDefinitions()
 
-function groupText(groupKey: string): string {
-  return t(`models.family.${groupKey}`)
-}
+const opengridGroup = modelGroups.find((group) => group.key === 'opengrid')
+const otherGroup = modelGroups.find((group) => group.key === 'other')
 
-function subgroupText(
-  groupKey: string,
-  subgroupKey: string,
-  hasSubgroups: boolean,
-): string {
-  if (hasSubgroups) return t(`models.context.${subgroupKey}`)
-  return groupText(groupKey)
-}
+const systemSubgroups = opengridGroup?.subgroups ?? []
+const deskSubgroup = systemSubgroups.find((subgroup) => subgroup.key === 'desk')
+const wallSubgroup = systemSubgroups.find((subgroup) => subgroup.key === 'wall')
+const hswDefinitions = otherGroup?.definitions ?? []
+
+const deskZones = deskSubgroup
+  ? partitionByPartZone(deskSubgroup.definitions)
+  : null
+const wallZones = wallSubgroup
+  ? partitionByPartZone(wallSubgroup.definitions)
+  : null
+const hswZones = partitionByPartZone(hswDefinitions)
+
+const systemTabs = [
+  { key: 'desk', label: 'Desk' },
+  { key: 'wall', label: 'Wall' },
+  { key: 'hsw', label: 'HSW' },
+] as const
 ---
 
 <SiteLayout
@@ -45,7 +53,7 @@ function subgroupText(
   description={t('models.description')}
 >
   <section
-    class="grid gap-10"
+    class="grid gap-8"
     aria-labelledby="model-selection-title"
     data-testid="model-selection"
   >
@@ -71,128 +79,155 @@ function subgroupText(
       </a>
     </header>
 
-    <div class="grid gap-12" aria-label={t('models.series')}>
+    <h2 class="sr-only" id="opengrid-series-title">
+      {t('models.family.opengrid')}
+    </h2>
+
+    {
+      /* v2 palette: segmented system switcher above a single panel
+        (progressive enhancement — without JS all panels stack). */
+    }
+    <div
+      class="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-soft"
+      role="group"
+      aria-label={t('models.switcher.label')}
+      data-testid="model-system-switcher"
+    >
       {
-        modelGroups.map((group) => {
-          const hasSubgroups = Boolean(group.subgroups)
-          const subgroups = group.subgroups ?? [
-            {
-              key: group.key,
-              label: group.label,
-              definitions: group.definitions,
-            },
-          ]
+        systemTabs.map((tab) => (
+          <button
+            type="button"
+            data-system-tab={tab.key}
+            aria-pressed={tab.key === 'desk' ? 'true' : 'false'}
+            class:list={[
+              'min-h-9 rounded-full px-4 py-1.5 text-sm font-extrabold transition-colors duration-200 ease-out focus-visible:ring-3 focus-visible:ring-outline',
+              tab.key === 'desk'
+                ? 'bg-primary text-primary-foreground shadow-soft'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            ]}
+          >
+            {tab.label}
+          </button>
+        ))
+      }
+    </div>
 
-          return (
+    <div class="grid gap-10">
+      {
+        [
+          {
+            key: 'desk',
+            title: t('models.context.desk'),
+            zones: deskZones,
+            labelledBy: 'model-subgroup-desk-title',
+          },
+          {
+            key: 'wall',
+            title: t('models.context.wall'),
+            zones: wallZones,
+            labelledBy: 'model-subgroup-wall-title',
+          },
+          {
+            key: 'hsw',
+            title: 'HSW',
+            zones: hswZones,
+            labelledBy: 'model-subgroup-hsw-title',
+          },
+        ].map((panel) =>
+          panel.zones ? (
             <section
-              class="grid gap-6"
-              aria-labelledby={`model-family-${group.key}`}
-              data-testid={`model-family-${group.key}`}
+              class="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"
+              aria-labelledby={panel.labelledBy}
+              data-testid={`model-subgroup-${panel.key}`}
+              data-system-panel={panel.key}
             >
-              <div class="grid justify-items-center gap-3 text-center">
-                <h2
-                  class="text-3xl font-semibold leading-tight"
-                  id={`model-family-${group.key}`}
+              <div class="flex items-baseline gap-2 px-4 pt-4 sm:px-5">
+                <h3
+                  class="m-0 text-[15px] font-black leading-snug"
+                  id={panel.labelledBy}
                 >
-                  {groupText(group.key)}
-                </h2>
-                <Separator class="bg-border" />
+                  {panel.title}
+                </h3>
+                <span class="text-xs font-bold text-muted-foreground">
+                  {t('models.panel.hint')}
+                </span>
               </div>
-              <div
-                class="grid gap-10"
-                data-testid={
-                  hasSubgroups ? `model-subgroups-${group.key}` : undefined
-                }
-              >
-                {subgroups.map((subgroup) => {
-                  const zones = hasSubgroups
-                    ? partitionByPartZone(subgroup.definitions)
-                    : null
-
-                  return (
-                    <section
-                      class="grid gap-4"
-                      aria-labelledby={
-                        hasSubgroups
-                          ? `model-subgroup-${subgroup.key}-title`
-                          : undefined
-                      }
-                      data-testid={`model-subgroup-${subgroup.key}`}
+              <div class="grid gap-5 px-2 pb-3 sm:px-3">
+                {panel.zones.base.length > 0 && (
+                  <div
+                    role="group"
+                    aria-label={t('models.zone.base')}
+                    data-testid={`model-zone-base-${panel.key}`}
+                    class="grid gap-2"
+                  >
+                    {panel.zones.base.map((definition) => (
+                      <ModelCard {definition} {locale} />
+                    ))}
+                  </div>
+                )}
+                {panel.zones.containers.length > 0 && (
+                  <div class="grid gap-2">
+                    <div class="flex items-baseline gap-2 px-1">
+                      <span class="text-[13px] font-black tracking-wide">
+                        {t('models.zone.containers')}
+                      </span>
+                      <span class="text-xs font-bold text-muted-foreground">
+                        {t('models.zone.containersHint')}
+                      </span>
+                    </div>
+                    <div
+                      role="group"
+                      aria-label={t('models.zone.containers')}
+                      data-testid={`model-zone-containers-${panel.key}`}
+                      class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
                     >
-                      {hasSubgroups ? (
-                        <div class="grid justify-items-center gap-2 text-center">
-                          <h3
-                            class="text-xl font-semibold leading-tight"
-                            id={`model-subgroup-${subgroup.key}-title`}
-                          >
-                            {subgroupText(
-                              group.key,
-                              subgroup.key,
-                              hasSubgroups,
-                            )}
-                          </h3>
-                          <Separator class="bg-border" />
-                        </div>
-                      ) : null}
-                      {zones ? (
-                        <div class="grid gap-6">
-                          <div
-                            role="group"
-                            aria-label={t('models.zone.base')}
-                            data-testid="model-zone-base"
-                            class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]"
-                          >
-                            {zones.base.map((definition) => (
-                              <ModelCard {definition} {locale} />
-                            ))}
-                          </div>
-                          <div
-                            role="group"
-                            aria-label={t('models.zone.containers')}
-                            data-testid="model-zone-containers"
-                            class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]"
-                          >
-                            {zones.containers.map((definition) => (
-                              <ModelCard {definition} {locale} />
-                            ))}
-                          </div>
-                          <details
-                            class="group overflow-hidden rounded-2xl border border-border bg-card"
-                            data-testid="model-zone-tools"
-                          >
-                            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-                              <span>{t('models.zone.tools')}</span>
-                              <span
-                                class="text-muted-foreground group-open:rotate-180"
-                                aria-hidden="true"
-                              >
-                                ▾
-                              </span>
-                            </summary>
-                            <div
-                              class="grid gap-4 border-t border-border py-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]"
-                              data-testid="model-tools-grid"
-                            >
-                              {zones.tools.map((definition) => (
-                                <ModelCard {definition} {locale} />
-                              ))}
-                            </div>
-                          </details>
-                        </div>
-                      ) : (
-                        <div class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
-                          {subgroup.definitions.map((definition) => (
-                            <ModelCard {definition} {locale} />
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  )
-                })}
+                      {panel.zones.containers.map((definition) => (
+                        <ModelCard {definition} {locale} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {panel.zones.tools.length > 0 && (
+                  <details
+                    class="group rounded-xl border border-border bg-background"
+                    data-testid={`model-zone-tools-${panel.key}`}
+                  >
+                    <summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                      <span class="text-[15px] font-black">
+                        {t('models.zone.tools')}
+                      </span>
+                      <span class="text-xs font-bold text-muted-foreground">
+                        {t('models.zone.toolsHint')}
+                      </span>
+                      <span
+                        class="ms-auto flex items-center gap-1 text-xs font-extrabold text-primary-hover dark:text-primary"
+                        aria-hidden="true"
+                      >
+                        <span class="group-open:hidden">
+                          ▸ {t('models.zone.expand')}
+                        </span>
+                        <span class="hidden group-open:inline">
+                          ▾ {t('models.zone.collapse')}
+                        </span>
+                      </span>
+                      <span class="block w-full text-xs font-semibold leading-normal text-muted-foreground">
+                        {t('models.zone.toolsTeaser')}
+                      </span>
+                    </summary>
+                    <div
+                      class="grid gap-2 border-t border-border py-2"
+                      data-testid={`model-tools-grid-${panel.key}`}
+                    >
+                      {panel.zones.tools.map((definition) => (
+                        <ModelCard {definition} {locale} />
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
             </section>
-          )
-        })
+          ) : null,
+        )
       }
     </div>
   </section>
@@ -224,6 +259,39 @@ function subgroupText(
       dialog.addEventListener('click', (event) => {
         if (event.target === dialog) dialog.close()
       })
+    }
+
+    // System switcher: show exactly one panel once scripting is available;
+    // the server-rendered page stacks all panels as the no-JS fallback.
+    const switcher = document.querySelector(
+      '[data-testid=model-system-switcher]',
+    )
+    if (switcher) {
+      const tabs = Array.from(switcher.querySelectorAll('[data-system-tab]'))
+      const panels = Array.from(
+        document.querySelectorAll('[data-system-panel]'),
+      )
+      const apply = function (key) {
+        for (const tab of tabs) {
+          tab.setAttribute(
+            'aria-pressed',
+            String(tab.getAttribute('data-system-tab') === key),
+          )
+        }
+        for (const panel of panels) {
+          if (panel.getAttribute('data-system-panel') === key) {
+            panel.removeAttribute('hidden')
+          } else {
+            panel.setAttribute('hidden', '')
+          }
+        }
+      }
+      apply('desk')
+      for (const tab of tabs) {
+        tab.addEventListener('click', function () {
+          apply(tab.getAttribute('data-system-tab'))
+        })
+      }
     }
   </script>
 </SiteLayout>

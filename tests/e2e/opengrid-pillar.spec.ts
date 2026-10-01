@@ -14,7 +14,7 @@ test('OpenGrid pillar is listed in its family and exposes locking and positionin
 
   // Locating Post lives in the collapsed tools zone; expand the zones so the
   // card re-enters the accessibility tree.
-  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsSections = page.getByTestId('model-zone-tools-desk')
   const toolsCount = await toolsSections.count()
   for (let index = 0; index < toolsCount; index += 1) {
     await toolsSections.nth(index).locator('summary').click()
@@ -22,7 +22,7 @@ test('OpenGrid pillar is listed in its family and exposes locking and positionin
 
   const modelLink = page
     .getByRole('heading', { name: 'Locating Post (定位柱)', exact: true })
-    .locator('..')
+    .locator('xpath=ancestor::article[1]')
     .getByRole('link', { name: '編輯 Locating Post (定位柱)', exact: true })
   await expect(modelLink).toHaveAttribute(
     'href',
