@@ -46,6 +46,7 @@ export const tissueBoxDefinition: ModelDefinition = {
   id: 'opengrid-openconnect-tissue-box',
   buildKey: 'opengrid-openconnect-tissue-box',
   family: 'opengrid',
+  partCategory: 'container',
   supportedSystemContexts: ['wall'],
   displayName: 'models.model.opengrid-openconnect-tissue-box.name',
   selectionLabel: 'models.model.opengrid-openconnect-tissue-box.selection',

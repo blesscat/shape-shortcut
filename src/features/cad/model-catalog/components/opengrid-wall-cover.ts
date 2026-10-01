@@ -54,6 +54,7 @@ export const opengridWallCoverDefinition: ModelDefinition = {
   id: 'opengrid-wall-cover',
   buildKey: 'opengrid-wall-cover',
   family: 'opengrid',
+  partCategory: 'accessory',
   displayName: 'models.model.opengrid-wall-cover.name',
   selectionLabel: 'models.model.opengrid-wall-cover.selection',
   selectionDescription: 'models.model.opengrid-wall-cover.description',

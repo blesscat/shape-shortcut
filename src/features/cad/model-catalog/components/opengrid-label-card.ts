@@ -56,6 +56,7 @@ export const opengridLabelCardDefinition: ModelDefinition = {
   id: 'opengrid-label-card',
   buildKey: 'opengrid-label-card',
   family: 'opengrid',
+  partCategory: 'accessory',
   displayName: 'models.model.opengrid-label-card.name',
   selectionLabel: 'models.model.opengrid-label-card.selection',
   selectionDescription: 'models.model.opengrid-label-card.description',

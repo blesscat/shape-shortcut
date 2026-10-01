@@ -30,6 +30,7 @@ import type {
   ModelFamilyMetadata,
   ModelPreviewImage,
   ModelSelectionSubgroup,
+  PartCategory,
 } from './types'
 
 export { displayParameterLabel } from './labels'
@@ -46,6 +47,7 @@ export type {
   ModelParameterPresentation,
   ModelPreviewImage,
   ModelSelectionSubgroup,
+  PartCategory,
   ParameterField,
   FixedStepDownload,
 } from './types'
@@ -119,6 +121,11 @@ function withDerivedDarkPreview(
   }
 }
 
+/**
+ * Registration order is the presentation order: within each system subgroup,
+ * 基礎（Board, Snap）→ 容器 → 工具／配件／測試件. partitionByPartZone relies
+ * on this relative order inside each zone.
+ */
 export const modelDefinitions: ReadonlyArray<
   ModelDefinition<ModelPreviewImage>
 > = [
@@ -128,17 +135,17 @@ export const modelDefinitions: ReadonlyArray<
   hexagonalColumnDefinition,
   opengridDefinition,
   opengridSnapDefinition,
-  opengridWallCoverDefinition,
-  opengridPillarDefinition,
-  opengridDividerDefinition,
-  opengridOrganizerBoxDefinition,
   opengridStackableBoxDefinition,
   opengridStackableCylinderDefinition,
-  openGridSnapRemoverDefinition,
+  opengridOrganizerBoxDefinition,
   opengridOpenShelfDefinition,
   opengridOpenConnectShelfDefinition,
   opengridOpenConnectOrganizerDefinition,
   tissueBoxDefinition,
+  openGridSnapRemoverDefinition,
+  opengridPillarDefinition,
+  opengridDividerDefinition,
+  opengridWallCoverDefinition,
   opengridLabelCardDefinition,
   opengridLabelSlotTestDefinition,
 ]
@@ -225,6 +232,48 @@ function openGridSubgroups(
       definitions: wall,
     },
   ]
+}
+
+/**
+ * Ratified chooser zones: 基礎 pinned first, 容器 as the main grid, and the
+ * rest（工具 → 配件 → 測試件）collapsed together. Unclassified definitions
+ * keep their catalog order at the tail so a missing partCategory stays visible
+ * instead of silently disappearing from the chooser.
+ */
+const partZoneRank: Record<PartCategory, number> = {
+  base: 0,
+  container: 1,
+  tool: 2,
+  accessory: 3,
+  test: 4,
+}
+
+export type PartZoneBuckets = {
+  base: ReadonlyArray<ModelDefinition<ModelPreviewImage>>
+  containers: ReadonlyArray<ModelDefinition<ModelPreviewImage>>
+  tools: ReadonlyArray<ModelDefinition<ModelPreviewImage>>
+}
+
+export function partitionByPartZone(
+  definitions: ReadonlyArray<ModelDefinition<ModelPreviewImage>>,
+): PartZoneBuckets {
+  const base: ModelDefinition<ModelPreviewImage>[] = []
+  const containers: ModelDefinition<ModelPreviewImage>[] = []
+  const tools: ModelDefinition<ModelPreviewImage>[] = []
+  for (const definition of definitions) {
+    if (definition.partCategory === 'base') base.push(definition)
+    else if (definition.partCategory === 'container') {
+      containers.push(definition)
+    } else {
+      tools.push(definition)
+    }
+  }
+  const rankFor = (definition: ModelDefinition<ModelPreviewImage>) =>
+    definition.partCategory
+      ? partZoneRank[definition.partCategory]
+      : Number.POSITIVE_INFINITY
+  tools.sort((a, b) => rankFor(a) - rankFor(b))
+  return { base, containers, tools }
 }
 
 export function groupModelDefinitions(

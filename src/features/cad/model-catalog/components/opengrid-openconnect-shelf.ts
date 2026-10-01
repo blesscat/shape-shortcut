@@ -111,6 +111,7 @@ export const opengridOpenConnectShelfDefinition: ModelDefinition = {
   id: 'opengrid-openconnect-shelf',
   buildKey: 'opengrid-openconnect-shelf',
   family: 'opengrid',
+  partCategory: 'container',
   displayName: 'models.model.opengrid-openconnect-shelf.name',
   selectionLabel: 'models.model.opengrid-openconnect-shelf.selection',
   selectionDescription: 'models.model.opengrid-openconnect-shelf.description',

@@ -87,7 +87,9 @@ test('localized model chooser exposes localized shell and search metadata', asyn
   await expect(page).toHaveURL(/\/en\/models\/?$/)
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Pick one you like, take it home to print' }),
+    page.getByRole('heading', {
+      name: 'Pick one you like, take it home to print',
+    }),
   ).toBeVisible()
   await expect(
     page
@@ -114,6 +116,14 @@ test('model chooser keeps compact cards and stable modal details', async ({
   page,
 }) => {
   await page.goto('/en/models')
+
+  // Tools live in a collapsed zone by default; expand both so every card is
+  // measurable and visible before the layout assertions below.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
 
   const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
   await expect(cards).not.toHaveCount(0)
@@ -159,6 +169,13 @@ test('model chooser keeps compact cards and stable modal details', async ({
   await expectNavGeometrySettled(
     page.getByRole('navigation', { name: 'Primary navigation' }),
   )
+  // The capsule nav is sticky and in-flow, so the tail of its ~200ms collapse
+  // still drifts document coordinates by a couple of pixels. Let it finish.
+  await page.waitForTimeout(250)
+  await page.evaluate(() => document.fonts.ready)
+  // Expansion clicks park the pointer over a card; the hover lift
+  // (-translate-y-0.5) would masquerade as a dialog-induced shift.
+  await page.mouse.move(0, 0)
 
   const boundsBefore = await cards.evaluateAll((cardElements) =>
     cardElements.map((card) => {
@@ -222,9 +239,7 @@ test('model chooser details remain readable without narrow-screen overflow', asy
   const card = page.locator(
     '[data-entry-key="opengrid-stackable-cylinder-desk"]',
   )
-  await card
-    .getByRole('button', { name: 'Details', exact: true })
-    .click()
+  await card.getByRole('button', { name: 'Details', exact: true }).click()
 
   const dialog = card.getByTestId('model-details-dialog')
   await expect(dialog).toBeVisible()
@@ -251,6 +266,13 @@ test('traditional Chinese model cards keep the compact presentation', async ({
   page,
 }) => {
   await page.goto('/zh-Hant/models')
+
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
+  await page.mouse.move(0, 0)
 
   const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
   await expect(cards).not.toHaveCount(0)
@@ -286,7 +308,9 @@ test('localized public pages and CAD controls expose both locales', async ({
   await page.goto('/en/docs/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'First time with Desk System? This page is all you need' }),
+    page.getByRole('heading', {
+      name: 'First time with Desk System? This page is all you need',
+    }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Parameters and constraints' }),
@@ -298,7 +322,9 @@ test('localized public pages and CAD controls expose both locales', async ({
   await page.goto('/en/about/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Indie developer, and a 3D-printing enthusiast.' }),
+    page.getByRole('heading', {
+      name: 'Indie developer, and a 3D-printing enthusiast.',
+    }),
   ).toBeVisible()
   await expect(
     page
@@ -370,4 +396,54 @@ test('publishes canonical localized sitemap URLs', async ({ request }) => {
   expect(body).toContain(`<loc>${origin}/en/</loc>`)
   expect(body).toContain(`<loc>${origin}/zh-Hant/cad/opengrid</loc>`)
   expect(body).not.toContain(`<loc>${origin}/cad/opengrid</loc>`)
+})
+
+test('model chooser badges and home summaries expose localized part categories', async ({
+  page,
+}) => {
+  const deskBaseBadge = () =>
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-base')
+      .locator(
+        '[data-model-id="opengrid"] [data-testid="model-category-badge"]',
+      )
+
+  await page.goto('/en/models')
+  await expect(deskBaseBadge()).toHaveText('Base')
+  await expect(
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-containers')
+      .locator(
+        '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
+      ),
+  ).toHaveText('Container')
+
+  await page.goto('/en/')
+  await expect(
+    page.getByTestId('home-explore-desk-category-summary'),
+  ).toContainText('Board and Snap are your base')
+  await expect(
+    page.getByTestId('home-explore-wall-category-summary'),
+  ).toContainText('Shelves, organizers, and the tissue box are containers')
+
+  await page.goto('/zh-Hant/models')
+  await expect(deskBaseBadge()).toHaveText('基礎')
+  await expect(
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-containers')
+      .locator(
+        '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
+      ),
+  ).toHaveText('容器')
+
+  await page.goto('/zh-Hant/')
+  await expect(
+    page.getByTestId('home-explore-desk-category-summary'),
+  ).toContainText('底版跟 Snap 是基礎')
+  await expect(
+    page.getByTestId('home-explore-wall-category-summary'),
+  ).toContainText('層架、方格、面紙盒都是容器')
 })

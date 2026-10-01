@@ -244,15 +244,16 @@ test('home, model selection, and docs are static Astro pages', async ({
   ).not.toHaveAttribute('aria-current', 'page')
   const primaryCta = page.getByRole('link', { name: '來挑模型 →' })
   await expect(primaryCta).toHaveAttribute('href', '/zh-Hant/models')
-  const deskCta = page.getByRole('link', { name: '不知道從哪開始？從 Desk System 開始玩 →' })
+  const deskCta = page.getByRole('link', {
+    name: '不知道從哪開始？從 Desk System 開始玩 →',
+  })
   await expect(deskCta).toHaveAttribute(
     'href',
     '/zh-Hant/cad/opengrid?system=desk',
   )
-  await expect(page.getByRole('link', { name: '先看看怎麼玩' })).toHaveAttribute(
-    'href',
-    '/zh-Hant/docs/',
-  )
+  await expect(
+    page.getByRole('link', { name: '先看看怎麼玩' }),
+  ).toHaveAttribute('href', '/zh-Hant/docs/')
   const ctaBackground = await primaryCta.evaluate(
     (element) => getComputedStyle(element).backgroundColor,
   )
@@ -346,6 +347,47 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(
     wallRelated.getByRole('heading', { name: 'Wall System' }),
   ).toBeVisible()
+
+  // V2 zones (cad-part-categories-v2): pinned base row, container hero grid,
+  // tools collapsed by default and expandable in place.
+  const deskZoneBase = deskSystem.getByTestId('model-zone-base')
+  const deskZoneContainers = deskSystem.getByTestId('model-zone-containers')
+  const deskZoneTools = deskSystem.getByTestId('model-zone-tools')
+  const wallZoneTools = wallRelated.getByTestId('model-zone-tools')
+  await expect(deskZoneBase.locator('[data-model-id]')).toHaveCount(2)
+  await expect(deskZoneContainers.locator('[data-model-id]')).toHaveCount(4)
+  await expect(deskZoneTools).not.toHaveAttribute('open')
+  await expect(wallZoneTools).not.toHaveAttribute('open')
+  await expect(deskSystem.getByTestId('model-category-badge')).toHaveCount(10)
+  await expect(wallRelated.getByTestId('model-category-badge')).toHaveCount(8)
+  await expect(
+    deskZoneBase
+      .locator('[data-model-id="opengrid"]')
+      .getByTestId('model-category-badge'),
+  ).toHaveText('基礎')
+  await expect(
+    deskZoneContainers
+      .locator('[data-model-id="opengrid-stackable-box"]')
+      .getByTestId('model-category-badge'),
+  ).toHaveText('容器')
+  await expect(deskZoneTools.locator('summary')).toContainText('工具與配件')
+  await deskZoneTools.locator('summary').click()
+  await wallZoneTools.locator('summary').click()
+  // Park the pointer away from the cards so hover lifts cannot leak into the
+  // geometry assertions below.
+  await page.mouse.move(0, 0)
+  await expect(deskZoneTools).toHaveAttribute('open')
+  await expect(wallZoneTools).toHaveAttribute('open')
+  await expect(
+    deskZoneTools
+      .getByTestId('model-tools-grid')
+      .locator('[data-model-id="opengrid-snap-remover"]'),
+  ).toBeVisible()
+  await expect(
+    wallZoneTools
+      .getByTestId('model-tools-grid')
+      .locator('[data-model-id="opengrid-label-slot-test"]'),
+  ).toBeVisible()
   await expect(editLinkFor(otherModels, '六角蜂巢')).toHaveAttribute(
     'href',
     '/zh-Hant/cad/hsw-cell',
@@ -406,18 +448,21 @@ test('home, model selection, and docs are static Astro pages', async ({
   }
   expect(snapCardBounds.x).toBeGreaterThan(bottomCardBounds.x)
   expect(snapCardBounds.y).toBeCloseTo(bottomCardBounds.y, 0)
-  const openGridCardPositions = await openGridCards.evaluateAll((cards) =>
+  const containerCards = deskZoneContainers.locator('[data-model-id]')
+  const containerCardPositions = await containerCards.evaluateAll((cards) =>
     cards.map((card) => {
       const bounds = card.getBoundingClientRect()
       return { x: bounds.x, y: bounds.y }
     }),
   )
-  const firstCardPosition = openGridCardPositions[0]
-  if (!firstCardPosition) throw new Error('Expected OpenGrid card positions')
-  const firstRowCount = openGridCardPositions.filter(
-    (position) => Math.abs(position.y - firstCardPosition.y) < 1,
+  const firstContainerPosition = containerCardPositions[0]
+  if (!firstContainerPosition) {
+    throw new Error('Expected container card positions')
+  }
+  const containerFirstRowCount = containerCardPositions.filter(
+    (position) => Math.abs(position.y - firstContainerPosition.y) < 1,
   ).length
-  expect(firstRowCount).toBeGreaterThanOrEqual(3)
+  expect(containerFirstRowCount).toBeGreaterThanOrEqual(3)
   await expect(wallRelated.locator('[data-model-id]')).not.toHaveCount(0)
   for (const displayName of ['方塊', '模組化網格底板', '可調六角柱']) {
     await expect(
@@ -611,10 +656,10 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
       name: /桌面好亂？挑個模型調一調\s*，列印出來就對了。/,
     }),
   ).toBeVisible()
+  await expect(page.getByTestId('home-badge-in-browser')).toBeVisible()
   await expect(
-    page.getByTestId('home-badge-in-browser'),
+    page.getByTestId('home-file-card').getByText('STL · 雙色 3MF'),
   ).toBeVisible()
-  await expect(page.getByTestId('home-file-card').getByText('STL · 雙色 3MF')).toBeVisible()
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
     'content',
@@ -631,10 +676,9 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   await expect(
     page.getByRole('link', { name: '不知道從哪開始？從 Desk System 開始玩 →' }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid?system=desk')
-  await expect(page.getByRole('link', { name: '先看看怎麼玩' })).toHaveAttribute(
-    'href',
-    '/zh-Hant/docs/',
-  )
+  await expect(
+    page.getByRole('link', { name: '先看看怎麼玩' }),
+  ).toHaveAttribute('href', '/zh-Hant/docs/')
   await expect(
     page.getByRole('link', { name: '玩 Wall System →' }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid?system=wall')
@@ -662,9 +706,7 @@ test('English homepage uses localized promotional content and routes', async ({
       name: /Desk messy\?\s*Pick a model, tweak it\s*,\s*print it\./,
     }),
   ).toBeVisible()
-  await expect(
-    page.getByTestId('home-badge-free-forever'),
-  ).toBeVisible()
+  await expect(page.getByTestId('home-badge-free-forever')).toBeVisible()
   await expect(
     page.getByTestId('home-file-card').getByText('STL · dual-color 3MF'),
   ).toBeVisible()
@@ -674,7 +716,9 @@ test('English homepage uses localized promotional content and routes', async ({
     page.getByRole('link', { name: 'Browse models →' }),
   ).toHaveAttribute('href', '/en/models')
   await expect(
-    page.getByRole('link', { name: 'Not sure where to start? Try the Desk System →' }),
+    page.getByRole('link', {
+      name: 'Not sure where to start? Try the Desk System →',
+    }),
   ).toHaveAttribute('href', '/en/cad/opengrid?system=desk')
   await expect(
     page.getByRole('link', { name: 'See how it works' }),
@@ -783,6 +827,15 @@ test('model selection stacks all cards on narrow screens', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/models')
 
+  // Closed <details> hides the tools cards from layout; expand both zones so
+  // every card contributes to the stacked-column assertion.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
+  await page.mouse.move(0, 0)
+
   const cards = page.getByTestId('model-selection').locator('[data-model-id]')
   const positions = await cards.evaluateAll((cardElements) =>
     cardElements.map((card) => {
@@ -793,7 +846,9 @@ test('model selection stacks all cards on narrow screens', async ({ page }) => {
   expect(positions.length).toBeGreaterThan(0)
   const cardX = positions[0]?.x
   if (cardX === undefined) throw new Error('Expected narrow model cards')
-  expect(positions.every((position) => Math.abs(position.x - cardX) < 1)).toBe(
+  // The collapsed tools panel contributes a 1px border, so stacked cards may
+  // sit 1px off; anything beyond that breaks the single-column guarantee.
+  expect(positions.every((position) => Math.abs(position.x - cardX) < 2)).toBe(
     true,
   )
   expect(
@@ -807,6 +862,12 @@ test('model selection stacks all cards on narrow screens', async ({ page }) => {
 test('model cards keep long localized names on one line', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/models')
+
+  // Locating Post lives in the collapsed tools zone; expand it first.
+  const deskTools = page
+    .getByTestId('model-subgroup-desk')
+    .getByTestId('model-zone-tools')
+  await deskTools.locator('summary').click()
 
   const heading = page.getByRole('heading', {
     name: 'Locating Post (定位柱)',

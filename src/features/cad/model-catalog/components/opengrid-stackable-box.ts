@@ -177,6 +177,7 @@ export const opengridStackableBoxDefinition: ModelDefinition = {
   id: 'opengrid-stackable-box',
   buildKey: 'opengrid-stackable-box',
   family: 'opengrid',
+  partCategory: 'container',
   supportedSystemContexts: ['desk'],
   displayName: 'models.model.opengrid-stackable-box.name',
   selectionLabel: 'models.model.opengrid-stackable-box.selection',

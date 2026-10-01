@@ -2,29 +2,14 @@
 import SiteLayout from '../../layouts/SiteLayout.astro'
 import '../../styles/starwind.css'
 import { Badge } from '../../components/starwind/badge'
-import { Button } from '../../components/starwind/button'
-import { Card } from '../../components/starwind/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../../components/starwind/dialog'
 import { Separator } from '../../components/starwind/separator'
-import ModelPreviewPicture from '../../components/ModelPreviewPicture.astro'
+import ModelCard from '../../components/cad/ModelCard.astro'
 import {
-  displayParameterLabel,
   groupModelDefinitions,
-  modelSelectionLabelFor,
-  parameterPresentationFor,
-  parameterStaticSummaryKeysFor,
-  unitLabelFor,
-  type ModelDefinition,
+  partitionByPartZone,
 } from '../../features/cad/model-catalog'
 import { SUPPORTED_LOCALES, isLocale, translate, type Locale } from '../../i18n'
-import { localizedCadPathFor, localizedPathFor } from '../../i18n/routes'
+import { localizedPathFor } from '../../i18n/routes'
 
 export function getStaticPaths() {
   return SUPPORTED_LOCALES.map((locale) => ({
@@ -39,20 +24,6 @@ const t = (key: string, values?: Record<string, string | number | boolean>) =>
   translate(locale, key, values)
 const modelGroups = groupModelDefinitions()
 
-function previewImageFor(definition: ModelDefinition) {
-  if (!definition.previewImage) {
-    throw new Error(`MODEL_PREVIEW_MISSING:${definition.id}`)
-  }
-  return definition.previewImage
-}
-
-function modelText(
-  definition: ModelDefinition,
-  field: 'name' | 'description' | 'alt',
-) {
-  return t(`models.model.${definition.id}.${field}`)
-}
-
 function groupText(groupKey: string): string {
   return t(`models.family.${groupKey}`)
 }
@@ -64,61 +35,6 @@ function subgroupText(
 ): string {
   if (hasSubgroups) return t(`models.context.${subgroupKey}`)
   return groupText(groupKey)
-}
-
-function translatedSummaryFor(key: string | undefined): string | undefined {
-  if (!key) return undefined
-  const summary = t(key)
-  if (summary.startsWith('⟦')) return undefined
-  return summary
-}
-
-function translatedStaticSummariesFor(definition: ModelDefinition): string[] {
-  return parameterStaticSummaryKeysFor(definition)
-    .map((key) => translatedSummaryFor(key))
-    .filter((summary): summary is string => summary !== undefined)
-}
-
-function parameterSummary(definition: ModelDefinition): string[] {
-  const presentation = parameterPresentationFor(definition)
-  const staticSummaries = translatedStaticSummariesFor(definition)
-  if (staticSummaries.length > 0) return staticSummaries
-
-  if (presentation.kind === 'fixed') {
-    return [t('models.fixedParameters')]
-  }
-
-  if (definition.parameterSchema.length === 0) {
-    return [t('models.adjustableSettingsMultiple')]
-  }
-
-  return definition.parameterSchema.map((field) =>
-    t('models.parameterRange', {
-      label: displayParameterLabel(field, locale),
-      min: field.min,
-      max: field.max,
-      unit: unitLabelFor(locale, field.unit),
-    }),
-  )
-}
-
-function detailsDialogIdFor(definition: ModelDefinition): string {
-  return `model-details-${definition.id}-${definition.systemContext ?? 'legacy'}`
-}
-
-/* Warm system tag tint: Desk on coral soft, Wall on mint soft, HSW neutral. */
-function systemTagClassFor(definition: ModelDefinition): string {
-  if (definition.systemContext === 'desk')
-    return 'bg-primary-soft text-primary-hover dark:text-primary'
-  if (definition.systemContext === 'wall') return 'bg-success-soft text-success'
-  return 'bg-muted text-muted-foreground'
-}
-
-function systemTagFor(definition: ModelDefinition): string | null {
-  if (definition.systemContext === 'desk') return t('models.context.desk')
-  if (definition.systemContext === 'wall') return t('models.context.wall')
-  if (definition.id === 'hsw-cell') return 'HSW'
-  return null
 }
 ---
 
@@ -188,181 +104,91 @@ function systemTagFor(definition: ModelDefinition): string | null {
                   hasSubgroups ? `model-subgroups-${group.key}` : undefined
                 }
               >
-                {subgroups.map((subgroup) => (
-                  <section
-                    class="grid gap-4"
-                    aria-labelledby={
-                      hasSubgroups
-                        ? `model-subgroup-${subgroup.key}-title`
-                        : undefined
-                    }
-                    data-testid={`model-subgroup-${subgroup.key}`}
-                  >
-                    {hasSubgroups ? (
-                      <div class="grid justify-items-center gap-2 text-center">
-                        <h3
-                          class="text-xl font-semibold leading-tight"
-                          id={`model-subgroup-${subgroup.key}-title`}
-                        >
-                          {subgroupText(group.key, subgroup.key, hasSubgroups)}
-                        </h3>
-                        <Separator class="bg-border" />
-                      </div>
-                    ) : null}
-                    <div class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
-                      {subgroup.definitions.map((definition) => {
-                        const preview = previewImageFor(definition)
-                        const selectionLabel = t(
-                          modelSelectionLabelFor(definition),
-                        )
-                        const description = modelText(definition, 'description')
-                        const previewAlt = modelText(definition, 'alt')
-                        const parameterDetails = parameterSummary(definition)
-                        const dialogId = detailsDialogIdFor(definition)
-                        const cadPath = localizedCadPathFor(
-                          locale,
-                          definition.id,
-                          definition.systemContext,
-                        )
-                        return (
-                          <Card
-                            as="article"
-                            size="sm"
-                            class="grid gap-3 p-3  sm:p-4"
-                            data-model-id={definition.id}
-                            data-entry-key={`${definition.id}-${definition.systemContext ?? 'legacy'}`}
-                            data-system-context={definition.systemContext}
+                {subgroups.map((subgroup) => {
+                  const zones = hasSubgroups
+                    ? partitionByPartZone(subgroup.definitions)
+                    : null
+
+                  return (
+                    <section
+                      class="grid gap-4"
+                      aria-labelledby={
+                        hasSubgroups
+                          ? `model-subgroup-${subgroup.key}-title`
+                          : undefined
+                      }
+                      data-testid={`model-subgroup-${subgroup.key}`}
+                    >
+                      {hasSubgroups ? (
+                        <div class="grid justify-items-center gap-2 text-center">
+                          <h3
+                            class="text-xl font-semibold leading-tight"
+                            id={`model-subgroup-${subgroup.key}-title`}
                           >
-                            <div
-                              class="grid aspect-[16/10] place-items-center overflow-hidden rounded-lg border border-border bg-muted"
-                              data-testid="model-preview"
-                            >
-                              <div
-                                class="p-4 text-center text-sm text-muted-foreground"
-                                data-testid="model-preview-fallback"
-                                hidden
-                                role="img"
-                                aria-label={previewAlt}
-                              >
-                                {t('models.previewUnavailable')}
-                              </div>
-                              <ModelPreviewPicture
-                                src={preview.src}
-                                darkSrc={preview.darkSrc}
-                                width={preview.width}
-                                height={preview.height}
-                                alt={previewAlt}
-                                loading="lazy"
-                                class="h-full w-full object-contain"
-                                onerror="if (this.offsetParent) { this.hidden = true; this.closest('[data-testid=model-preview]')?.querySelector('[data-testid=model-preview-fallback]')?.removeAttribute('hidden') }"
-                              />
-                            </div>
-                            {hasSubgroups ? (
-                              <h4 class="text-2xl font-semibold leading-tight">
-                                {selectionLabel}
-                              </h4>
-                            ) : (
-                              <h3 class="text-2xl font-semibold leading-tight">
-                                {selectionLabel}
-                              </h3>
+                            {subgroupText(
+                              group.key,
+                              subgroup.key,
+                              hasSubgroups,
                             )}
-                            {systemTagFor(definition) && (
+                          </h3>
+                          <Separator class="bg-border" />
+                        </div>
+                      ) : null}
+                      {zones ? (
+                        <div class="grid gap-6">
+                          <div
+                            role="group"
+                            aria-label={t('models.zone.base')}
+                            data-testid="model-zone-base"
+                            class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]"
+                          >
+                            {zones.base.map((definition) => (
+                              <ModelCard {definition} {locale} />
+                            ))}
+                          </div>
+                          <div
+                            role="group"
+                            aria-label={t('models.zone.containers')}
+                            data-testid="model-zone-containers"
+                            class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]"
+                          >
+                            {zones.containers.map((definition) => (
+                              <ModelCard {definition} {locale} />
+                            ))}
+                          </div>
+                          <details
+                            class="group overflow-hidden rounded-2xl border border-border bg-card"
+                            data-testid="model-zone-tools"
+                          >
+                            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+                              <span>{t('models.zone.tools')}</span>
                               <span
-                                class={`-mt-1 w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${systemTagClassFor(definition)}`}
-                                data-testid="model-system-tag"
+                                class="text-muted-foreground group-open:rotate-180"
+                                aria-hidden="true"
                               >
-                                {systemTagFor(definition)}
+                                ▾
                               </span>
-                            )}
-                            <p class="m-0 text-sm leading-normal text-muted-foreground">
-                              {description}
-                            </p>
-                            <div class="grid gap-2 text-sm leading-normal">
-                              <Dialog>
-                                <DialogTrigger
-                                  class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
-                                  data-model-details-open={dialogId}
-                                  aria-controls={dialogId}
-                                  hidden
-                                >
-                                  {t('models.details')}
-                                </DialogTrigger>
-                                <a
-                                  class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
-                                  data-model-details-fallback
-                                  href={cadPath}
-                                >
-                                  {t('models.details')}
-                                </a>
-                                <DialogContent
-                                  id={dialogId}
-                                  class="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground"
-                                  aria-labelledby={`${dialogId}-title`}
-                                  data-testid="model-details-dialog"
-                                  closeLabel={t('models.close')}
-                                >
-                                  <div
-                                    class="grid max-h-[calc(100dvh-2rem)] min-w-0 gap-5 overflow-y-auto p-5 sm:p-6"
-                                    data-testid="model-details-scroll"
-                                  >
-                                    <DialogHeader class="min-w-0 items-start gap-0 text-left">
-                                      <DialogTitle
-                                        class="m-0 break-words text-2xl font-semibold leading-tight"
-                                        id={`${dialogId}-title`}
-                                      >
-                                        {selectionLabel}
-                                      </DialogTitle>
-                                      <DialogDescription class="sr-only">
-                                        {description}
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <Separator class="bg-border" />
-                                    <section class="grid min-w-0 gap-2 text-sm leading-normal">
-                                      <h3 class="m-0 text-lg font-semibold leading-tight">
-                                        {t('models.parameters')}
-                                      </h3>
-                                      {/* Spec-table treatment: soft rounded panel
-                                          with hairline row separators and mono
-                                          tabular values (design spec-table). */}
-                                      <ul
-                                        class="m-0 grid list-none gap-0 overflow-hidden rounded-xl bg-muted p-0"
-                                        data-testid="model-parameters-table"
-                                      >
-                                        {parameterDetails.map((summary) => (
-                                          <li class="break-words border-b border-border px-4 py-2.5 font-mono text-sm leading-normal tabular-nums text-ink last:border-b-0">
-                                            {summary}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                      <p class="m-0 break-words text-muted-foreground">
-                                        {t('models.exportFormatsLine', {
-                                          label: t('models.exportFormats'),
-                                          value: t('models.exportFormatsValue'),
-                                        })}
-                                      </p>
-                                    </section>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                            <Button
-                              as="a"
-                              href={cadPath}
-                              variant="outline"
-                              size="sm"
-                              class="justify-self-start no-underline"
-                              aria-label={t('models.editAria', {
-                                name: selectionLabel,
-                              })}
+                            </summary>
+                            <div
+                              class="grid gap-4 border-t border-border py-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]"
+                              data-testid="model-tools-grid"
                             >
-                              {t('models.edit')}
-                            </Button>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  </section>
-                ))}
+                              {zones.tools.map((definition) => (
+                                <ModelCard {definition} {locale} />
+                              ))}
+                            </div>
+                          </details>
+                        </div>
+                      ) : (
+                        <div class="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
+                          {subgroup.definitions.map((definition) => (
+                            <ModelCard {definition} {locale} />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )
+                })}
               </div>
             </section>
           )
