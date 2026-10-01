@@ -1,9 +1,9 @@
 import { tv } from 'tailwind-variants'
 
 const buttonBase = [
-  'inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap',
+  'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold whitespace-nowrap',
   '[&_svg]:pointer-events-none [&_svg]:shrink-0',
-  'transition-all outline-none focus-visible:ring-3',
+  'transition-all duration-200 outline-none focus-visible:ring-3',
   'disabled:pointer-events-none disabled:opacity-50',
   'data-disabled:pointer-events-none data-disabled:opacity-50',
   'aria-invalid:border-error aria-invalid:focus-visible:ring-error/40',
@@ -14,14 +14,14 @@ const buttonVariantStyles = {
     'bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-outline/50',
   primary:
     'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/50',
-  /* Light keeps the solid Kinetic deep blue; dark layers the Cyber-CAD neon
-     gradient over a solid #38bdf8 face (the computed backgroundColor stays
-     constant for the home CTA contrast check) with the on-primary dark label.
-     Hover boosts brightness via filter so backgroundColor never changes. */
+  /* Warm CTA: solid coral face with white label in both appearances; hover
+     deepens in light and brightens in dark via the primary-hover token and
+     lifts the surface (transform only, disabled under reduced motion). */
   neon: [
     'bg-primary-strong text-primary-foreground shadow-xs',
-    'hover:brightness-110 focus-visible:ring-primary-strong/50',
-    'dark:bg-neon dark:bg-linear-to-r dark:from-cyber-cyan dark:to-neon dark:text-[#00354a] dark:shadow-glow dark:focus-visible:ring-neon/50',
+    'hover:bg-primary-hover focus-visible:ring-primary-strong/50',
+    'motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift',
+    'dark:shadow-none',
   ].join(' '),
   secondary:
     'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] focus-visible:ring-secondary/50',
@@ -30,7 +30,7 @@ const buttonVariantStyles = {
   ghost: 'hover:bg-muted hover:text-foreground focus-visible:ring-outline/50',
   info: 'bg-info text-info-foreground hover:bg-info/90 focus-visible:ring-info/50',
   success:
-    'bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/50',
+    'bg-success-surface text-success-surface-foreground hover:bg-success-surface/90 focus-visible:ring-success-surface/50',
   warning:
     'bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/50',
   error:
@@ -38,10 +38,10 @@ const buttonVariantStyles = {
 }
 
 const buttonSizeStyles = {
-  sm: "h-9 px-4 text-sm has-[>svg]:px-3 [&_svg:not([class*='size-'])]:size-3.5",
+  sm: "h-11 px-4 text-sm has-[>svg]:px-3 [&_svg:not([class*='size-'])]:size-3.5",
   md: "h-11 px-5 text-base has-[>svg]:px-4 [&_svg:not([class*='size-'])]:size-4.5",
   lg: "h-12 px-8 text-lg has-[>svg]:px-6 [&_svg:not([class*='size-'])]:size-5",
-  'icon-sm': "size-9 [&_svg:not([class*='size-'])]:size-3.5",
+  'icon-sm': "size-11 [&_svg:not([class*='size-'])]:size-3.5",
   icon: "size-11 [&_svg:not([class*='size-'])]:size-4.5",
   'icon-lg': "size-12 [&_svg:not([class*='size-'])]:size-5",
 }

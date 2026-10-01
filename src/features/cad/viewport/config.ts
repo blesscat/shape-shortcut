@@ -35,6 +35,10 @@ export function colorForCadViewportPart(
   return name === 'body' ? colors.primary : colors.secondary
 }
 
+/* Fallback gizmo geometry/copy config. Colors here only backstop contexts
+   without CSS tokens; the live axis/label colors come from the viewport
+   theme (src/features/cad/viewport/theme.ts) and match Part D of the warm
+   design tokens. */
 export const CAD_VIEWPORT_GIZMO = {
   id: 'cad-viewport-xyz-gizmo',
   className: 'cad-viewport-xyz-gizmo',
@@ -49,23 +53,23 @@ export const CAD_VIEWPORT_GIZMO = {
   animated: false,
   background: {
     enabled: true,
-    color: '#eef2f8',
+    color: '#fff7f2',
     opacity: 0.84,
   },
   x: {
     label: 'X',
-    color: '#c0392b',
-    labelColor: '#7f1d1d',
+    color: '#c8401f',
+    labelColor: '#362a24',
   },
   y: {
     label: 'Y',
-    color: '#198754',
-    labelColor: '#166534',
+    color: '#1f7a3a',
+    labelColor: '#362a24',
   },
   z: {
     label: 'Z',
-    color: '#2563eb',
-    labelColor: '#1e3a8a',
+    color: '#0284c7',
+    labelColor: '#362a24',
   },
 } as const
 

@@ -35,7 +35,7 @@ test('OpenConnect organizer is Wall-only and starts from the canonical snapshot'
     }),
   ).toBeVisible()
   await expect(page.getByTestId('cad-system-context')).toHaveText(
-    '目前系統：Wall Related',
+    '目前系統：Wall System',
   )
   await expect(
     page.getByTestId('opengrid-openconnect-organizer-help'),

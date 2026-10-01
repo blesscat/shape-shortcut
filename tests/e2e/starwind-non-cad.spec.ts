@@ -25,6 +25,20 @@ test('localized public Astro pages expose shared surfaces without CAD runtime', 
     await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
   }
 
+  // The semantic success token must stay owned by global.css: in dark the
+  // Wall System tag text renders bright green on the mint soft tint, never
+  // the same color as its background.
+  await page.goto('/zh-Hant/models')
+  const wallTag = page.locator('[data-testid="model-system-tag"]').filter({
+    hasText: 'Wall System',
+  })
+  await expect(wallTag.first()).toBeVisible()
+  const tagColors = await wallTag.first().evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return { color: styles.color, backgroundColor: styles.backgroundColor }
+  })
+  expect(tagColors.color).not.toBe(tagColors.backgroundColor)
+
   expect(workerUrls).toEqual([])
   expect(wasmRequests).toEqual([])
 })

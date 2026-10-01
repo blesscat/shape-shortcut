@@ -32,7 +32,7 @@
       >{translate(locale, titleKeyForError(error))}</strong
     >
     <button
-      class="rounded-md px-2 py-1 text-lg leading-none text-muted-foreground hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      class="rounded-md px-2 py-1 text-lg leading-none text-muted-foreground hover:bg-page focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
       type="button"
       aria-label={translate(locale, 'cad.error.close')}
       onclick={onDismiss}

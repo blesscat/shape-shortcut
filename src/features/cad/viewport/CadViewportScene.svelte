@@ -88,17 +88,27 @@
     scene.background = new Color(theme.background)
   })
 
-  $effect(() => {
-    const gizmo = viewportGizmo
-    if (!gizmo) return
-
-    gizmo.set({
+  function gizmoOptions(): GizmoOptions {
+    return {
       ...CAD_VIEWPORT_GIZMO,
       background: {
         ...CAD_VIEWPORT_GIZMO.background,
         color: theme.gizmoBackground,
       },
-    })
+      x: { label: 'X', color: theme.gizmoX, labelColor: theme.gizmoLabel },
+      y: { label: 'Y', color: theme.gizmoY, labelColor: theme.gizmoLabel },
+      z: { label: 'Z', color: theme.gizmoZ, labelColor: theme.gizmoLabel },
+    }
+  }
+
+  /* Axis/label/background colors update through gizmo.set() on theme
+     changes; passing a fresh options object as props would rebuild the
+     gizmo containers and leak duplicate elements. */
+  $effect(() => {
+    const gizmo = viewportGizmo
+    if (!gizmo) return
+
+    gizmo.set(gizmoOptions())
     gizmo.update()
   })
 </script>

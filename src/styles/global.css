@@ -1,69 +1,77 @@
 @import 'tailwindcss';
 
-/* Site tokens live here only. The design systems are:
-   - light = Kinetic Utility v2 (Stitch): #f8f9fa surfaces, white cards with
-     1px outline-variant borders, Neon Blue #3b82f6 primary (#0058be wherever
-     white label text needs 4.5:1), Hanken Grotesk + JetBrains Mono.
-   - dark = Minimalist Futurism / Cyber-CAD Industrial (Stitch): #0b1326
-     surfaces, #38bdf8 neon primary with cyan/purple accents, glass surfaces,
-     cyan grid, glow accents, Inter + Fira Code.
+/* Site tokens live here only. The design system is the Human 親和系 warm
+   system (design-spec-4.0.0 - 4.2.0-viewport): white and warm surfaces with a
+   coral #CF4429 primary in light appearance; warm dark brown #201A16 grounds
+   with bright coral #FF8A70 links and unchanged coral CTAs in dark
+   appearance; Nunito + Noto Sans TC UI text with JetBrains Mono technical
+   labels in both appearances.
    starwind.css maps its shadcn-style variables onto these tokens; it must not
    redefine any --color-* name declared here (custom-property cycles). */
 @theme static {
   --breakpoint-cad: 760px;
-  --font-sans: 'Hanken Grotesk', Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    'Nunito', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui,
+    sans-serif;
   --font-mono:
     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Starwind card/dialog titles consume --font-heading. var() resolves against
-     the same element, so the theme-switched --font-sans below flows through. */
+     the same element, so the --font-sans above flows through. */
   --font-heading: var(--font-sans);
 
-  --color-ink: #191c1d;
+  --color-ink: #362a24;
   /* Muted is the de-emphasised SURFACE token (bg-muted hovers/footers/panels);
      muted TEXT is --color-muted-foreground. */
-  --color-muted: #eef0f5;
-  --color-muted-foreground: #424754;
-  --color-page: #f8f9fa;
-  --color-panel: #ffffff;
-  --color-background: #f8f9fa;
+  --color-muted: #fff7f2;
+  --color-muted-foreground: #6e5f57;
+  --color-ink-faint: #7d6e65;
+  --color-page: #ffffff;
+  --color-panel: #fff7f2;
+  --color-background: #ffffff;
   --color-card: #ffffff;
-  --color-foreground: #191c1d;
-  --color-card-foreground: #191c1d;
-  --color-border-card: #c2c6d6;
-  --color-border: #c2c6d6;
-  --color-border-field: #bfc8d9;
+  --color-foreground: #362a24;
+  --color-card-foreground: #362a24;
+  --color-border-card: #e8ded6;
+  --color-border: #e8ded6;
+  --color-border-field: #d9ccc2;
   --color-error: #a32828;
   --color-error-border: #c44747;
   --color-stale: #d69a34;
   --color-stale-background: #fff4d6;
   --color-stale-text: #69470d;
-  --color-primary: #3b82f6;
-  /* Solid control faces (white labels need 4.5:1) use the deep Kinetic blue. */
-  --color-primary-strong: #0058be;
+  /* The coral CTA face (#cf4429, white labels >=4.6:1 in both appearances)
+     hovers to #B93A23 in light; dark hover keeps the face and lifts instead. */
+  --color-primary: #cf4429;
+  --color-primary-strong: #cf4429;
+  --color-primary-hover: #b93a23;
+  --color-primary-soft: #ffe9e2;
   --color-primary-foreground: #ffffff;
-  --color-focus: #0058be;
-  --color-outline: #0058be;
-  --color-disabled: #aeb8ca;
-  --color-status: #3d485d;
-  --color-progress-track: #dfe4ee;
-  --color-progress-fill: #0058be;
+  --color-success: #1f7a3a;
+  --color-success-soft: #eaf6ee;
+  /* accent-bright is the link/text coral: the CTA color in light, the bright
+     variant #FF8A70 in dark. */
+  --color-accent-bright: #cf4429;
+  --color-focus: #cf4429;
+  --color-outline: #cf4429;
+  --color-disabled: #c9bbb1;
+  --color-status: #5f534b;
+  --color-progress-track: #f0e9e3;
+  --color-progress-fill: #cf4429;
   --color-nav: rgb(255 255 255 / 72%);
-  --color-nav-foreground: #191c1d;
-  /* Light banner is a Kinetic white card (borders carry the structure); the
-     dark banner is the neon glass composite rgb(56 189 248 / 12%) over
-     #0b1326, pre-flattened to #102740 so text contrast stays deterministic. */
-  --color-banner: #ffffff;
-  --color-banner-foreground: #191c1d;
-  --color-viewport: #eef2f8;
+  --color-nav-foreground: #362a24;
+  --color-banner: #fff7f2;
+  --color-banner-foreground: #362a24;
+  --color-viewport: #f7f3ef;
 
-  /* Cyber-CAD accent tokens (dark-scoped usage via dark: variants). */
-  --color-neon: #38bdf8;
-  --color-cyber-cyan: #06b6d4;
-  --color-cyber-purple: #8b5cf6;
+  /* Warm shape vocabulary: 12px images, 20px cards, 24px containers and
+     popovers; buttons, tags, and navigation are pills (rounded-full). */
+  --radius-img: 12px;
+  --radius-card: 20px;
+  --radius-container: 24px;
 
-  --shadow-card: 0 1rem 3rem rgb(23 32 51 / 7%);
-  --shadow-glow: 0 0 24px rgb(56 189 248 / 35%);
-  --shadow-glow-lg: 0 0 44px rgb(56 189 248 / 45%);
+  --shadow-soft: 0 8px 24px rgb(59 43 36 / 10%);
+  --shadow-lift: 0 14px 34px rgb(59 43 36 / 14%);
+  --shadow-card: 0 8px 24px rgb(59 43 36 / 10%);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -72,18 +80,23 @@
 
 :root {
   color-scheme: light;
-  --grid-line: rgb(56 189 248 / 5%);
-  --cad-viewport-grid-major: #b9c4d7;
-  --cad-viewport-grid-minor: #d8deea;
-  --cad-viewport-gizmo-background: #eef2f8;
-  --cad-viewport-edge: #1f3b74;
-  --cad-viewport-annotation: #8d98a3;
-  --cad-viewport-annotation-label: #7f8a95;
-  --cad-viewport-face-highlight: #d97706;
+  --cad-viewport-grid-major: rgba(54, 42, 36, 0.18);
+  --cad-viewport-grid-minor: rgba(54, 42, 36, 0.07);
+  --cad-viewport-gizmo-background: #fff7f2;
+  --cad-viewport-gizmo-x: #c8401f;
+  --cad-viewport-gizmo-y: #1f7a3a;
+  --cad-viewport-gizmo-z: #0284c7;
+  --cad-viewport-gizmo-label: #362a24;
+  --cad-viewport-hover: #ffb454;
+  --cad-viewport-selection: #d6452b;
+  --cad-viewport-edge: #3a2e27;
+  --cad-viewport-annotation: #0284c7;
+  --cad-viewport-annotation-label: #6e5f57;
+  --cad-viewport-face-highlight: rgba(255, 180, 84, 0.35);
   --cad-viewport-light-sky: #ffffff;
-  --cad-viewport-light-ground: #c5cfdf;
+  --cad-viewport-light-ground: #c9bcb2;
   --cad-viewport-light-key: #ffffff;
-  --cad-viewport-light-fill: #dbe7ff;
+  --cad-viewport-light-fill: #f3eae2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -91,103 +104,125 @@
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
     color-scheme: dark;
-    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-    --font-mono:
-      'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    --color-ink: #dae2fd;
-    --color-muted: #1d2540;
-    --color-muted-foreground: #9ca3af;
-    --color-page: #0b1326;
-    --color-panel: #171f33;
-    --color-background: #0b1326;
-    --color-card: #171f33;
-    --color-foreground: #dae2fd;
-    --color-card-foreground: #dae2fd;
-    --color-border-card: #3e484f;
-    --color-border: #3e484f;
-    --color-border-field: #6a7b98;
+    --color-ink: #f4ede7;
+    --color-muted: #2a231e;
+    --color-muted-foreground: #b8a99f;
+    --color-ink-faint: #94867c;
+    --color-page: #201a16;
+    --color-panel: #2a231e;
+    --color-background: #201a16;
+    --color-card: #2a231e;
+    --color-foreground: #f4ede7;
+    --color-card-foreground: #f4ede7;
+    --color-border-card: #443b34;
+    --color-border: #443b34;
+    --color-border-field: #94867c;
     --color-error: #ff9d9d;
     --color-error-border: #e16b73;
     --color-stale: #f5c96b;
     --color-stale-background: #493812;
     --color-stale-text: #ffe4a4;
-    --color-primary: #8ed5ff;
-    --color-primary-strong: #38bdf8;
-    --color-primary-foreground: #00354a;
-    --color-focus: #38bdf8;
-    --color-outline: #38bdf8;
-    --color-disabled: #5d6a80;
-    --color-status: #c5d0e2;
-    --color-progress-track: #3e484f;
-    --color-progress-fill: #38bdf8;
-    --color-nav: rgb(15 23 42 / 60%);
-    --color-nav-foreground: #dae2fd;
-    --color-banner: #102740;
-    --color-banner-foreground: #dae2fd;
-    --color-viewport: #060e20;
-    --shadow-card: 0 1rem 3rem rgb(0 0 0 / 35%);
-    --cad-viewport-grid-major: rgb(56 189 248 / 35%);
-    --cad-viewport-grid-minor: rgb(56 189 248 / 12%);
-    --cad-viewport-gizmo-background: #060e20;
-    --cad-viewport-edge: #7bd0ff;
-    --cad-viewport-annotation: #d9e1f0;
-    --cad-viewport-annotation-label: #c8d3e7;
-    --cad-viewport-face-highlight: #fbbf24;
-    --cad-viewport-light-sky: #d2e4f6;
-    --cad-viewport-light-ground: #4f637f;
-    --cad-viewport-light-key: #eaf4ff;
-    --cad-viewport-light-fill: #a3cfef;
+    --color-primary: #ff8a70;
+    --color-primary-strong: #cf4429;
+    --color-primary-hover: #cf4429;
+    --color-primary-soft: rgb(214 69 43 / 16%);
+    --color-primary-foreground: #ffffff;
+    --color-success: #5cd68a;
+    --color-success-soft: #23392b;
+    --color-accent-bright: #ff8a70;
+    --color-focus: #ff8a70;
+    --color-outline: #ff8a70;
+    --color-disabled: #5e534b;
+    --color-status: #c9bcb2;
+    --color-progress-track: #332a24;
+    --color-progress-fill: #ff8a70;
+    --color-nav: rgb(32 26 22 / 72%);
+    --color-nav-foreground: #f4ede7;
+    --color-banner: #2a231e;
+    --color-banner-foreground: #f4ede7;
+    --color-viewport: #201a16;
+    --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
+    --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
+    --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
+    --cad-viewport-grid-major: rgba(244, 237, 231, 0.16);
+    --cad-viewport-grid-minor: rgba(244, 237, 231, 0.06);
+    --cad-viewport-gizmo-background: #2a231e;
+    --cad-viewport-gizmo-x: #ff8a70;
+    --cad-viewport-gizmo-y: #5cd68a;
+    --cad-viewport-gizmo-z: #6fc7f2;
+    --cad-viewport-gizmo-label: #f4ede7;
+    --cad-viewport-hover: #ffc57e;
+    --cad-viewport-selection: #ff8a70;
+    --cad-viewport-edge: #cbbfb4;
+    --cad-viewport-annotation: #6fc7f2;
+    --cad-viewport-annotation-label: #b8a99f;
+    --cad-viewport-face-highlight: rgba(255, 197, 126, 0.3);
+    --cad-viewport-light-sky: #e8ddd3;
+    --cad-viewport-light-ground: #4a3e36;
+    --cad-viewport-light-key: #fff6ef;
+    --cad-viewport-light-fill: #ead9cd;
   }
 }
 
 :root.dark {
   color-scheme: dark;
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-mono:
-    'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --color-ink: #dae2fd;
-  --color-muted: #1d2540;
-  --color-muted-foreground: #9ca3af;
-  --color-page: #0b1326;
-  --color-panel: #171f33;
-  --color-background: #0b1326;
-  --color-card: #171f33;
-  --color-foreground: #dae2fd;
-  --color-card-foreground: #dae2fd;
-  --color-border-card: #3e484f;
-  --color-border: #3e484f;
-  --color-border-field: #6a7b98;
+  --color-ink: #f4ede7;
+  --color-muted: #2a231e;
+  --color-muted-foreground: #b8a99f;
+  --color-ink-faint: #94867c;
+  --color-page: #201a16;
+  --color-panel: #2a231e;
+  --color-background: #201a16;
+  --color-card: #2a231e;
+  --color-foreground: #f4ede7;
+  --color-card-foreground: #f4ede7;
+  --color-border-card: #443b34;
+  --color-border: #443b34;
+  --color-border-field: #94867c;
   --color-error: #ff9d9d;
   --color-error-border: #e16b73;
   --color-stale: #f5c96b;
   --color-stale-background: #493812;
   --color-stale-text: #ffe4a4;
-  --color-primary: #8ed5ff;
-  --color-primary-strong: #38bdf8;
-  --color-primary-foreground: #00354a;
-  --color-focus: #38bdf8;
-  --color-outline: #38bdf8;
-  --color-disabled: #5d6a80;
-  --color-status: #c5d0e2;
-  --color-progress-track: #3e484f;
-  --color-progress-fill: #38bdf8;
-  --color-nav: rgb(15 23 42 / 60%);
-  --color-nav-foreground: #dae2fd;
-  --color-banner: #102740;
-  --color-banner-foreground: #dae2fd;
-  --color-viewport: #060e20;
-  --shadow-card: 0 1rem 3rem rgb(0 0 0 / 35%);
-  --cad-viewport-grid-major: rgb(56 189 248 / 35%);
-  --cad-viewport-grid-minor: rgb(56 189 248 / 12%);
-  --cad-viewport-gizmo-background: #060e20;
-  --cad-viewport-edge: #7bd0ff;
-  --cad-viewport-annotation: #d9e1f0;
-  --cad-viewport-annotation-label: #c8d3e7;
-  --cad-viewport-face-highlight: #fbbf24;
-  --cad-viewport-light-sky: #d2e4f6;
-  --cad-viewport-light-ground: #4f637f;
-  --cad-viewport-light-key: #eaf4ff;
-  --cad-viewport-light-fill: #a3cfef;
+  --color-primary: #ff8a70;
+  --color-primary-strong: #cf4429;
+  --color-primary-hover: #cf4429;
+  --color-primary-soft: rgb(214 69 43 / 16%);
+  --color-primary-foreground: #ffffff;
+  --color-success: #5cd68a;
+  --color-success-soft: #23392b;
+  --color-accent-bright: #ff8a70;
+  --color-focus: #ff8a70;
+  --color-outline: #ff8a70;
+  --color-disabled: #5e534b;
+  --color-status: #c9bcb2;
+  --color-progress-track: #332a24;
+  --color-progress-fill: #ff8a70;
+  --color-nav: rgb(32 26 22 / 72%);
+  --color-nav-foreground: #f4ede7;
+  --color-banner: #2a231e;
+  --color-banner-foreground: #f4ede7;
+  --color-viewport: #201a16;
+  --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
+  --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
+  --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
+  --cad-viewport-grid-major: rgba(244, 237, 231, 0.16);
+  --cad-viewport-grid-minor: rgba(244, 237, 231, 0.06);
+  --cad-viewport-gizmo-background: #2a231e;
+  --cad-viewport-gizmo-x: #ff8a70;
+  --cad-viewport-gizmo-y: #5cd68a;
+  --cad-viewport-gizmo-z: #6fc7f2;
+  --cad-viewport-gizmo-label: #f4ede7;
+  --cad-viewport-hover: #ffc57e;
+  --cad-viewport-selection: #ff8a70;
+  --cad-viewport-edge: #cbbfb4;
+  --cad-viewport-annotation: #6fc7f2;
+  --cad-viewport-annotation-label: #b8a99f;
+  --cad-viewport-face-highlight: rgba(255, 197, 126, 0.3);
+  --cad-viewport-light-sky: #e8ddd3;
+  --cad-viewport-light-ground: #4a3e36;
+  --cad-viewport-light-key: #fff6ef;
+  --cad-viewport-light-fill: #ead9cd;
 }
 
 * {
@@ -212,111 +247,7 @@ body {
   }
 }
 
-/* ── Cyber-CAD decoration layer (dark only; light stays utility minimal) ── */
-
-:root.dark body {
-  background-image:
-    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) body {
-    background-image:
-      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-    background-size: 50px 50px;
-  }
-}
-
 /* Anchor targets clear the floating capsule nav in both themes. */
 [id] {
   scroll-margin-top: 6.5rem;
-}
-
-/* Hover gradient border via mask-composite; base state keeps a faint neon
-   hairline so cards read as cyber surfaces even without hover. */
-:root.dark .cyber-card {
-  position: relative;
-}
-
-:root.dark .cyber-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgb(56 189 248 / 55%),
-    rgb(139 92 246 / 45%),
-    rgb(6 182 212 / 60%)
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.35;
-  pointer-events: none;
-  transition: opacity 200ms ease;
-}
-
-:root.dark .cyber-card:hover::before,
-:root.dark .cyber-card:focus-within::before {
-  opacity: 1;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) .cyber-card {
-    position: relative;
-  }
-
-  :root:not(.light):not(.dark) .cyber-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgb(56 189 248 / 55%),
-      rgb(139 92 246 / 45%),
-      rgb(6 182 212 / 60%)
-    );
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.35;
-    pointer-events: none;
-    transition: opacity 200ms ease;
-  }
-
-  :root:not(.light):not(.dark) .cyber-card:hover::before,
-  :root:not(.light):not(.dark) .cyber-card:focus-within::before {
-    opacity: 1;
-  }
-}
-
-:root.dark .glow-text {
-  text-shadow:
-    0 0 16px rgb(56 189 248 / 40%),
-    0 0 40px rgb(56 189 248 / 20%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) .glow-text {
-    text-shadow:
-      0 0 16px rgb(56 189 248 / 40%),
-      0 0 40px rgb(56 189 248 / 20%);
-  }
 }

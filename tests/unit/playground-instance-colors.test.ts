@@ -4,7 +4,8 @@ import { instanceDisplayColor } from '../../src/features/cad/playground/instance
 
 const COLORS = {
   colorHex: '#123456',
-  faceHighlight: '#aaaaaa',
+  hoverColor: '#aaaaaa',
+  selectionColor: '#bbbbbb',
   conflictColor: '#ff0000',
 } as const
 
@@ -26,9 +27,9 @@ describe('playground instance display color precedence', () => {
     expect(instanceDisplayColor(inputs())).toBe(COLORS.colorHex)
   })
 
-  it('emphasizes selection and hover with the highlight color', () => {
+  it('emphasizes selection and hover with the selection color', () => {
     expect(instanceDisplayColor(inputs({ emphasized: true }))).toBe(
-      COLORS.faceHighlight,
+      COLORS.selectionColor,
     )
   })
 
@@ -44,7 +45,7 @@ describe('playground instance display color precedence', () => {
     ).toBe(COLORS.conflictColor)
   })
 
-  it('uses the highlight color for a valid drag preview even when flagged', () => {
+  it('uses the hover color for a valid drag preview even when flagged', () => {
     expect(
       instanceDisplayColor(
         inputs({
@@ -54,7 +55,7 @@ describe('playground instance display color precedence', () => {
           emphasized: true,
         }),
       ),
-    ).toBe(COLORS.faceHighlight)
+    ).toBe(COLORS.hoverColor)
   })
 
   it('uses the conflict color for an overlapping drag preview over emphasis', () => {

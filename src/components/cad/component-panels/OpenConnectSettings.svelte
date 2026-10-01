@@ -39,7 +39,7 @@
   data-testid="openconnect-settings"
 >
   <summary
-    class="cursor-pointer rounded-lg px-3 py-2 font-[650] focus-visible:outline-2 focus-visible:outline-primary"
+    class="cursor-pointer rounded-lg px-3 py-2 font-[650] focus-visible:outline-3 focus-visible:outline-focus"
     >OpenConnect</summary
   >
   <div class="grid gap-3 px-3 pb-3">

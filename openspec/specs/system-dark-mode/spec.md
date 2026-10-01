@@ -8,32 +8,41 @@
 
 ### Requirement: Site appearance follows the system or user color scheme
 
-The site MUST use an explicit light or dark choice made through the shared navigation when one exists; otherwise it MUST select its appearance from the user's active system or browser color-scheme preference. The light appearance MUST follow the **Kinetic Utility** design system (neutral `#f8f9fa` surfaces, white cards with 1px `outline-variant` borders, Neon Blue `#3b82f6` primary, Hanken Grotesk UI text with JetBrains Mono technical labels). The dark appearance MUST follow the **Minimalist Futurism / Cyber-CAD Industrial** design system (deep-space `#0b1326` surfaces, `#38bdf8` neon-blue primary with cyan and purple accents, glassmorphic surfaces, cyan-tinted background grid, glow accents, Inter UI text with Fira Code technical labels). The selected appearance MUST apply consistently to the shared navigation, static Astro pages, CAD workspace panels, form controls, status messages, and viewport container, and the page layout MUST follow the active design system's layout vocabulary (section order and alignment), without changing any existing interaction behavior, content, routes, or model catalog. An explicit user choice MUST persist across localized route navigation and page reloads until the user chooses the other mode.
+The site MUST use an explicit light or dark choice made through the shared
+navigation when one exists; otherwise it MUST select its appearance from the
+user's active system or browser color-scheme preference. The light appearance
+MUST follow the **Human 親和系** warm design system (white `#FFFFFF` page with
+warm `#FFF7F2`/`#F6F1ED` panel surfaces, coral `#CF4429` primary with
+`#FFE9E2` soft tint, warm ink text ramp, Nunito + Noto Sans TC UI text with
+JetBrains Mono technical labels). The dark appearance MUST follow the warm
+dark variant of the same system (warm dark brown `#201A16` grounds with
+`#2A231E`/`#332A24` panels, bright coral `#FF8A70` links and text accents,
+coral `#CF4429` CTAs with white labels, depth conveyed by panel brightness
+steps and warm-white low-alpha borders rather than glow effects). The
+selected appearance MUST apply consistently to the shared navigation, static
+Astro pages, CAD workspace panels, form controls, status messages, and
+viewport container, and the page layout MUST follow the active design
+system's layout vocabulary (section order and alignment), without changing
+any existing interaction behavior, content, routes, or model catalog. An
+explicit user choice MUST persist across localized route navigation and page
+reloads until the user chooses the other mode.
 
-#### Scenario: Light preference keeps the existing light appearance
+#### Scenario: Light appearance applies the warm system
 
-- **WHEN** the browser reports a light color scheme and the user has not selected an explicit mode
-- **THEN** the site MUST render the Kinetic Utility light palette across shared navigation, pages, panels, controls, and viewport container
-- **AND** existing navigation, model selection, parameter editing, restore, validation, and export interactions MUST remain available
+- **WHEN** a user opens the site with a light system preference or an explicit light choice
+- **THEN** shared navigation, static pages, CAD panels, form controls, status messages, and the viewport container MUST render the warm light palette with coral primary actions
+- **AND** no interaction behavior, content, route, or model catalog change is introduced
 
-#### Scenario: Dark preference applies to the desktop workspace
+#### Scenario: Dark appearance applies the warm dark system
 
-- **WHEN** the browser reports a dark color scheme at a viewport wider than 760px and the user has not selected an explicit mode
-- **THEN** the shared navigation, page surfaces, parameter panel, controls, status messages, and viewport container MUST render the Minimalist Futurism dark palette
-- **AND** the CAD workspace MUST remain a usable two-column layout with the existing desktop overflow and viewport boundaries
+- **WHEN** a user opens the site with a dark system preference or an explicit dark choice
+- **THEN** the same surfaces MUST render the warm dark palette with bright coral links and coral CTAs with white labels
+- **AND** depth MUST come from panel brightness steps and warm-white borders rather than glow accents
 
-#### Scenario: Dark preference applies to the mobile workspace
+#### Scenario: Explicit choice persists
 
-- **WHEN** the browser reports a dark color scheme at a viewport of 760px or narrower and the user has not selected an explicit mode
-- **THEN** the shared navigation, page surfaces, parameter panel, controls, status messages, and viewport container MUST render the Minimalist Futurism dark palette
-- **AND** the CAD workspace MUST retain the existing stacked responsive layout without horizontal overflow
-
-#### Scenario: User-selected appearance overrides the system preference
-
-- **WHEN** the browser reports one color scheme and the user selects the other mode through the shared navigation
-- **THEN** the shared navigation, static pages, CAD workspace panels, controls, status messages, and viewport container MUST render using the selected mode
-- **AND** the selected mode MUST remain active after navigating to another localized route or reloading the page
-- **AND** the theme control MUST remain keyboard accessible and expose a localized label for switching to the other mode
+- **WHEN** a user selects a mode from the shared navigation and navigates between localized routes or reloads
+- **THEN** the selected mode MUST remain active until the user chooses the other mode
 
 ### Requirement: Dark controls and states remain readable
 
@@ -67,20 +76,26 @@ The site MUST expose sufficient visual contrast for body text, muted text, borde
 
 ### Requirement: CAD viewport follows the selected appearance
 
-The CAD viewport MUST adapt its rendered background, grid, orientation gizmo, model edge overlay, dimension annotations, and lighting to the selected system or user color scheme. In the dark appearance the viewport scene MUST use the Cyber-CAD Industrial accent treatment: a dark non-distracting surface with neon-cyan-tinted grid lines, edge overlay, and gizmo consistent with the Minimalist Futurism palette. Theme adaptation MUST NOT change the committed model geometry, dimension values, camera framing, orbit controls, model revision, stale state, or export behavior.
+The CAD viewport MUST adapt its rendered background, grid, orientation
+gizmo, model edge overlay, dimension annotations, and lighting to the
+selected system or user color scheme. In the dark appearance the viewport
+scene MUST use the warm dark treatment: a dark warm non-distracting surface
+with warm-white-tinted grid lines, a warm model edge overlay, and a gizmo
+whose axes keep the site-wide hue semantics (X coral, Y success green, Z
+info blue) in brighter variants, consistent with the Human 親和系 palette.
+Theme adaptation MUST NOT change the committed model geometry, dimension
+values, camera framing, orbit controls, model revision, stale state, or
+export behavior.
 
-#### Scenario: Dark viewport remains legible on desktop
+#### Scenario: Viewport scene adapts per appearance
 
-- **WHEN** a committed model is displayed in a desktop viewport while the browser reports a dark color scheme
-- **THEN** the viewport background and grid MUST provide a dark, non-distracting surface with the Cyber-CAD accent treatment
-- **AND** the model shading, geometric edge overlay, dimension annotations, and XYZ orientation gizmo MUST remain distinguishable against that surface
-- **AND** the user MUST be able to orbit the model and inspect the same committed geometry
+- **WHEN** the CAD viewport renders in the light or dark appearance
+- **THEN** background, grids, gizmo, edge overlay, annotations, and lighting MUST resolve from the warm viewport tokens of that appearance
 
-#### Scenario: Changing the active theme source updates the viewport
+#### Scenario: Theme adaptation leaves the model untouched
 
-- **WHEN** the active browser color-scheme preference changes without an explicit user choice, or the user changes the explicit theme choice while the CAD workspace is open
-- **THEN** the site UI and CAD viewport appearance MUST update to the new scheme without requiring a model regeneration or page navigation
-- **AND** the current model revision, camera pose, and parameter values MUST remain unchanged
+- **WHEN** the appearance changes while a model is loaded
+- **THEN** model geometry, dimension values, camera framing, orbit controls, model revision, stale state, and export behavior MUST remain unchanged
 
 ### Requirement: Responsive layout remains independent of theme
 
@@ -94,15 +109,18 @@ The system MUST preserve the existing 760px responsive breakpoint and layout beh
 
 ### Requirement: Decorative theme effects respect reduced motion
 
-The dark appearance MUST present animated decorative effects (pulsing or pinging status dots, scanline and glow pulse animations) as static decoration when the user requests reduced motion through `prefers-reduced-motion`. Decorative layers MUST NOT intercept pointer input, obscure interactive content, or introduce horizontal overflow in either color scheme.
+The site MUST present animated decorative effects (status indicator pulses,
+hover lift, and entrance motions) as static decoration when the user
+requests reduced motion through `prefers-reduced-motion`. Decorative layers
+MUST NOT intercept pointer input, obscure interactive content, or introduce
+horizontal overflow in either color scheme.
 
-#### Scenario: Reduced motion stills animated decorations
+#### Scenario: Reduced motion renders decoration statically
 
-- **WHEN** a user with `prefers-reduced-motion: reduce` opens a localized page in dark appearance
-- **THEN** decorative dots and accents MUST render without looping animation
-- **AND** the page content, navigation, and controls MUST remain fully visible and operable
+- **WHEN** the user agent signals `prefers-reduced-motion` in either color scheme
+- **THEN** status pulses, hover lift, and entrance motions MUST render without animation
 
-#### Scenario: Decorations never block interaction
+#### Scenario: Decoration never blocks interaction
 
-- **WHEN** a user interacts with any navigation item, button, card, or form control while decorative layers are rendered
-- **THEN** the decoration MUST NOT intercept the pointer event or cover the control's hit target
+- **WHEN** decorative layers render in either color scheme
+- **THEN** they MUST NOT intercept pointer input, obscure interactive content, or introduce horizontal overflow

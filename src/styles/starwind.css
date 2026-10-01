@@ -43,8 +43,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
+  /* Surface faces for solid success badges/buttons. Named -surface so the
+     semantic --color-success (text/ink) stays owned by global.css. */
+  --color-success-surface: var(--success-surface);
+  --color-success-surface-foreground: var(--success-surface-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-error-foreground: var(--error-foreground);
@@ -79,77 +81,72 @@
   --popover: var(--color-card);
   --popover-foreground: var(--color-card-foreground);
   /* Solid primary faces use the strong variant so white labels keep 4.5:1
-     (light #0058be) and dark neon faces carry the on-primary label (#00354a). */
+     (coral #cf4429 in both appearances; hover uses --color-primary-hover). */
   --primary: var(--color-primary-strong);
   --primary-foreground: var(--color-primary-foreground);
   --primary-accent: var(--color-primary);
-  --secondary: #e7eaf2;
+  --secondary: #f6f1ed;
   --secondary-foreground: var(--color-foreground);
   --secondary-accent: var(--color-foreground);
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
-  --accent: #eef0f5;
+  --accent: var(--color-muted);
   --accent-foreground: var(--color-foreground);
-  --info: var(--color-sky-300);
-  --info-foreground: var(--color-sky-950);
-  --success: var(--color-green-300);
-  --success-foreground: var(--color-green-950);
-  --warning: var(--color-amber-300);
-  --warning-foreground: var(--color-amber-950);
+  --info: #0284c7;
+  --info-foreground: #ffffff;
+  --success-surface: #1f7a3a;
+  --success-surface-foreground: #ffffff;
+  --warning: #ffb454;
+  --warning-foreground: #4a2e0f;
   --error: var(--color-error);
   --error-foreground: #ffffff;
   --border: var(--color-border);
   --input: var(--color-border-field);
   --outline: var(--color-focus);
-  --radius: 0.625rem;
+  /* Warm shape vocabulary: rounded-lg = 16px, xl = 20px, 2xl = 24px. */
+  --radius: 1rem;
 
   /* sidebar variables */
-  --sidebar-background: var(--color-neutral-50);
-  --sidebar-foreground: var(--color-neutral-950);
+  --sidebar-background: var(--color-muted);
+  --sidebar-foreground: var(--color-foreground);
   --sidebar-primary: var(--color-primary-strong);
   --sidebar-primary-foreground: var(--color-primary-foreground);
-  --sidebar-accent: var(--color-neutral-100);
-  --sidebar-accent-foreground: var(--color-neutral-900);
-  --sidebar-border: var(--color-neutral-200);
-  --sidebar-outline: var(--color-neutral-400);
+  --sidebar-accent: var(--color-muted);
+  --sidebar-accent-foreground: var(--color-foreground);
+  --sidebar-border: var(--color-border);
+  --sidebar-outline: var(--color-outline);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
-    --secondary: #242e4a;
+    --secondary: #332a24;
     --secondary-foreground: var(--color-foreground);
     --secondary-accent: var(--color-foreground);
-    --accent: #242e4a;
+    --accent: var(--color-muted);
+    --accent-foreground: var(--color-foreground);
+    --info: #0b3a54;
+    --info-foreground: #6fc7f2;
+    --success-surface: #23392b;
+    --success-surface-foreground: #5cd68a;
+    --warning: #3e2a10;
+    --warning-foreground: #ffc57e;
     --error-foreground: #58151c;
-
-    /* sidebars variables */
-    --sidebar-background: var(--color-neutral-900);
-    --sidebar-foreground: var(--color-neutral-50);
-    --sidebar-primary: var(--color-primary-strong);
-    --sidebar-primary-foreground: var(--color-primary-foreground);
-    --sidebar-accent: var(--color-neutral-800);
-    --sidebar-accent-foreground: var(--color-neutral-100);
-    --sidebar-border: var(--color-neutral-800);
-    --sidebar-outline: var(--color-neutral-600);
   }
 }
 
 .dark {
-  --secondary: #242e4a;
+  --secondary: #332a24;
   --secondary-foreground: var(--color-foreground);
   --secondary-accent: var(--color-foreground);
-  --accent: #242e4a;
+  --accent: var(--color-muted);
+  --accent-foreground: var(--color-foreground);
+  --info: #0b3a54;
+  --info-foreground: #6fc7f2;
+  --success-surface: #23392b;
+  --success-surface-foreground: #5cd68a;
+  --warning: #3e2a10;
+  --warning-foreground: #ffc57e;
   --error-foreground: #58151c;
-
-  /* sidebars variables */
-  --sidebar-background: var(--color-neutral-900);
-  --sidebar-foreground: var(--color-neutral-50);
-  --sidebar-primary: var(--color-primary-strong);
-  --sidebar-primary-foreground: var(--color-primary-foreground);
-  --sidebar-accent: var(--color-neutral-800);
-  --sidebar-accent-foreground: var(--color-neutral-100);
-  --sidebar-border: var(--color-neutral-800);
-  --sidebar-outline: var(--color-neutral-600);
 }
 
 @layer base {

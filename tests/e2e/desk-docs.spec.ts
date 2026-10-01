@@ -3,24 +3,24 @@ import { expect, test } from '@playwright/test'
 const locales = [
   {
     code: 'zh-Hant',
-    quickStart: 'Desk System 快速入門',
+    quickStart: 'Desk System 怎麼玩',
     board: 'Board (底版)',
     snap: 'Snap (咔咔)',
     gridBox: 'Grid Box (方盒)',
     roundBox: 'Round Box (圓盒)',
-    reference: '共通參考',
-    wall: 'Wall System 快速參考',
+    reference: '名詞與規格小抄',
+    wall: 'Wall System 快速看',
     modelReference: '目前模型與系統',
   },
   {
     code: 'en',
-    quickStart: 'Desk System Quick Start',
+    quickStart: 'How Desk System works',
     board: 'Board',
     snap: 'Snap',
     gridBox: 'Grid Box',
     roundBox: 'Round Box',
-    reference: 'Shared reference',
-    wall: 'Wall System quick reference',
+    reference: 'Terms & specs',
+    wall: 'Wall System, quickly',
     modelReference: 'Current models and systems',
   },
 ] as const
@@ -108,10 +108,10 @@ for (const locale of locales) {
       page.locator(
         '[data-testid="docs-wall-system"] img[src$=".webp"]:not([src$="-dark.webp"])',
       ),
-    ).toHaveCount(5)
+    ).toHaveCount(6)
     await expect(
       page.locator('[data-testid="docs-wall-system"] img[src$="-dark.webp"]'),
-    ).toHaveCount(5)
+    ).toHaveCount(6)
     const diagramAltPatterns = [
       ['desk-system-flow', /Board|流程圖/],
       ['desk-system-board-snap', /Board|俯視/],
@@ -132,16 +132,16 @@ test('Desk quick start remains understandable when SVG assets are unavailable', 
   await page.goto('/en/docs/')
 
   await expect(
-    page.getByRole('heading', { name: 'Desk System Quick Start', exact: true }),
+    page.getByRole('heading', { name: 'How Desk System works', exact: true }),
   ).toBeVisible()
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'Simple placement is enough',
+    'Placement is enough; screws are optional.',
   )
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'do not add a separate locking corner seat',
+    'you print nothing extra',
   )
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'Grid Box is the first example',
+    'Start with a Grid Box',
   )
   await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
 })

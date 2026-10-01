@@ -255,7 +255,9 @@ function exportStlFileName(parameters: ModelParameterValues): string {
   return openGridStackableCylinderStlFileName(parameters)
 }
 
-function exportThreeMfFileName(parameters: ModelParameterValues): string | null {
+function exportThreeMfFileName(
+  parameters: ModelParameterValues,
+): string | null {
   if (!isOpenGridStackableCylinderParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder')
   }

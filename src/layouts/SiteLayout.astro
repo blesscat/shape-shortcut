@@ -1,17 +1,14 @@
 ---
 import '../styles/global.css'
-import '@fontsource/hanken-grotesk/latin-400.css'
-import '@fontsource/hanken-grotesk/latin-500.css'
-import '@fontsource/hanken-grotesk/latin-600.css'
-import '@fontsource/hanken-grotesk/latin-700.css'
+import '@fontsource/nunito/latin-600.css'
+import '@fontsource/nunito/latin-700.css'
+import '@fontsource/nunito/latin-800.css'
+import '@fontsource/nunito/latin-900.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-500.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-700.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-900.css'
 import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
-import '@fontsource/inter/latin-400.css'
-import '@fontsource/inter/latin-500.css'
-import '@fontsource/inter/latin-600.css'
-import '@fontsource/inter/latin-700.css'
-import '@fontsource/fira-code/latin-400.css'
-import '@fontsource/fira-code/latin-600.css'
 import {
   supportProviders,
   type SupportProviderId,
@@ -187,26 +184,8 @@ const supportCopyById: Record<
         driven by scroll position only, so both themes collapse in lockstep. */
     }
     <div class="min-h-screen pt-6">
-      <div class="hidden dark:block" aria-hidden="true">
-        <div
-          class="pointer-events-none fixed inset-x-0 top-0 z-30 h-px animate-pulse bg-linear-to-r from-transparent via-neon to-transparent opacity-70 motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-28 left-[12%] z-0 size-2 animate-pulse rounded-full bg-neon/80 shadow-glow motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-72 right-[18%] z-0 size-1.5 animate-ping rounded-full bg-cyber-purple/70 motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-1/2 left-[24%] z-0 size-1 animate-pulse rounded-full bg-cyber-cyan/60 motion-reduce:animate-none"
-        >
-        </div>
-      </div>
       <nav
-        class="group sticky top-0 z-40 mx-auto flex w-[90%] max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-border bg-nav px-[clamp(1rem,4vw,4rem)] py-4 text-nav-foreground shadow-sm backdrop-blur-md transition-[padding-block,top] duration-200 ease-out motion-reduce:transition-none data-compact:py-1.5 dark:top-6 dark:data-compact:top-2 dark:border-neon/25 dark:shadow-glow"
+        class="group sticky top-0 z-40 mx-auto flex w-[90%] max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-border bg-nav px-[clamp(1rem,4vw,4rem)] py-4 text-nav-foreground shadow-soft backdrop-blur-md transition-[padding-block,top] duration-200 ease-out motion-reduce:transition-none data-compact:py-1.5"
         aria-label={t('navigation.primary')}
         data-site-nav
       >
@@ -238,7 +217,7 @@ const supportCopyById: Record<
         <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <button
             type="button"
-            class="inline-flex size-9 items-center justify-center rounded-full border border-nav-foreground/40 bg-transparent no-underline transition-colors hover:bg-nav-foreground/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-foreground"
+            class="inline-flex size-11 items-center justify-center rounded-full border border-nav-foreground/40 bg-transparent no-underline transition-colors duration-200 hover:bg-nav-foreground/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
             data-theme-toggle
             data-theme-switch-to-light={t('navigation.switchToLight')}
             data-theme-switch-to-dark={t('navigation.switchToDark')}
@@ -280,7 +259,7 @@ const supportCopyById: Record<
             supportProviders.length > 0 && (
               <button
                 type="button"
-                class="cursor-pointer whitespace-nowrap rounded-full bg-primary-strong px-4 py-2 text-sm font-semibold text-white no-underline shadow-glow transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-foreground dark:bg-linear-to-r dark:from-cyber-cyan dark:to-neon dark:text-[#00354a]"
+                class="inline-flex min-h-11 cursor-pointer items-center whitespace-nowrap rounded-full bg-primary-strong px-5 py-2 text-sm font-semibold text-white no-underline transition-[background-color,transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 data-support-dialog-open
                 data-testid="support-trigger"
                 aria-controls="support-dialog"
@@ -296,7 +275,6 @@ const supportCopyById: Record<
         ;(() => {
           const nav = document.querySelector('[data-site-nav]')
           if (!(nav instanceof HTMLElement)) return
-
           // Compact past 48px, relax only below 32px. The compact state
           // shrinks the capsule's padding and folds the secondary links,
           // so content below follows the capsule's height change.
@@ -317,7 +295,7 @@ const supportCopyById: Record<
         supportProviders.length > 0 && (
           <dialog
             id="support-dialog"
-            class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-hidden rounded-2xl border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-black/60 dark:border-neon/25 dark:bg-panel/90 dark:shadow-glow dark:backdrop-blur-xl"
+            class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-hidden rounded-container border border-border bg-card p-0 text-card-foreground shadow-lift backdrop:bg-black/60"
             aria-labelledby="support-dialog-title"
             aria-describedby="support-dialog-description"
             data-testid="support-dialog"
@@ -340,7 +318,7 @@ const supportCopyById: Record<
                 </div>
                 <button
                   type="button"
-                  class="shrink-0 rounded-lg border border-border bg-background px-3 py-2 font-semibold text-foreground shadow-sm hover:bg-foreground/5 focus-visible:ring-3 focus-visible:ring-outline/50"
+                  class="inline-flex min-h-11 shrink-0 items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground shadow-sm hover:bg-foreground/5 focus-visible:ring-3 focus-visible:ring-outline"
                   data-support-dialog-close
                   aria-label={t('support.close')}
                 >
@@ -393,7 +371,7 @@ const supportCopyById: Record<
         <slot />
       </main>
       <footer
-        class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground dark:border-neon/20"
+        class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground"
         aria-label={t('navigation.footer')}
       >
         <div
@@ -489,6 +467,36 @@ const supportCopyById: Record<
           }
         }
       </script>
+      <style is:global>
+        /* Warm capsule nav: the current page renders on the coral soft tint
+           with deep coral text, in both appearances. */
+        /* 44px hit areas on nav links in BOTH states; the compact fold is
+           re-asserted here because this unlayered rule outranks the layered
+           utility. */
+        [data-site-nav] a {
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
+        }
+        [data-site-nav][data-compact] a.group-data-compact\:hidden {
+          display: none;
+        }
+        [data-site-nav] a[aria-current='page'] {
+          background-color: var(--color-primary-soft);
+          color: var(--color-primary-hover);
+          border-radius: 999px;
+          padding-inline: 0.75rem;
+          padding-block: 0.25rem;
+        }
+        :root.dark [data-site-nav] a[aria-current='page'] {
+          color: var(--color-primary);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root:not(.light):not(.dark) [data-site-nav] a[aria-current='page'] {
+            color: var(--color-primary);
+          }
+        }
+      </style>
     </div>
   </body>
 </html>

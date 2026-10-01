@@ -28,27 +28,27 @@ test('localized pages expose branded titles and a shared favicon', async ({
   const pages = [
     {
       path: '/zh-Hant/',
-      title: 'OpenGrid 客製化產生器｜Shape Shortcut 瀏覽器 CAD',
+      title: 'Shape Shortcut｜OpenGrid 模型客製化，調一調就能印',
     },
     {
       path: '/en/',
-      title: 'OpenGrid customizer | Shape Shortcut browser CAD',
+      title: 'Shape Shortcut | OpenGrid customizer — tweak it, print it',
     },
     {
       path: '/en/models',
-      title: 'Choose a CAD model | Shape Shortcut',
+      title: 'Pick one you like, take it home to print | Shape Shortcut',
     },
     {
       path: '/zh-Hant/models',
-      title: '選擇 CAD 模型 | Shape Shortcut',
+      title: '挑一個你喜歡的，帶回家列印 | Shape Shortcut',
     },
     {
       path: '/en/docs/',
-      title: 'Shape Shortcut documentation | Shape Shortcut',
+      title: 'Docs | Shape Shortcut — first time, done right',
     },
     {
       path: '/zh-Hant/docs/',
-      title: 'Shape Shortcut 文件 | Shape Shortcut',
+      title: '文件｜Shape Shortcut — 第一次玩就上手',
     },
     {
       path: '/en/cad/box?system=desk',
@@ -87,12 +87,12 @@ test('localized model chooser exposes localized shell and search metadata', asyn
   await expect(page).toHaveURL(/\/en\/models\/?$/)
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Choose a CAD model' }),
+    page.getByRole('heading', { name: 'Pick one you like, take it home to print' }),
   ).toBeVisible()
   await expect(
     page
       .getByRole('navigation', { name: 'Primary navigation' })
-      .getByRole('link', { name: 'Models', exact: true }),
+      .getByRole('link', { name: 'Pick a model', exact: true }),
   ).toHaveAttribute('aria-current', 'page')
 
   const canonical = page.locator('link[rel="canonical"]')
@@ -132,7 +132,7 @@ test('model chooser keeps compact cards and stable modal details', async ({
     const card = cards.nth(index)
     await expect(card.getByTestId('model-capability-summary')).toHaveCount(0)
     await expect(
-      card.getByRole('button', { name: 'View full details', exact: true }),
+      card.getByRole('button', { name: 'Details', exact: true }),
     ).toBeVisible()
   }
 
@@ -143,7 +143,7 @@ test('model chooser keeps compact cards and stable modal details', async ({
     '[data-entry-key="opengrid-stackable-box-desk"]',
   )
   const opener = parameterCard.getByRole('button', {
-    name: 'View full details',
+    name: 'Details',
     exact: true,
   })
   // Force the page into its scrolled state before the baseline: opening
@@ -223,7 +223,7 @@ test('model chooser details remain readable without narrow-screen overflow', asy
     '[data-entry-key="opengrid-stackable-cylinder-desk"]',
   )
   await card
-    .getByRole('button', { name: 'View full details', exact: true })
+    .getByRole('button', { name: 'Details', exact: true })
     .click()
 
   const dialog = card.getByTestId('model-details-dialog')
@@ -259,7 +259,7 @@ test('traditional Chinese model cards keep the compact presentation', async ({
     const card = cards.nth(index)
     await expect(card.getByTestId('model-capability-summary')).toHaveCount(0)
     await expect(
-      card.getByRole('button', { name: '查看完整資訊', exact: true }),
+      card.getByRole('button', { name: '詳情', exact: true }),
     ).toBeVisible()
   }
   await expect(
@@ -268,7 +268,7 @@ test('traditional Chinese model cards keep the compact presentation', async ({
   await expect(
     page
       .locator('[data-entry-key="opengrid-desk"]')
-      .getByRole('button', { name: '查看完整資訊', exact: true }),
+      .getByRole('button', { name: '詳情', exact: true }),
   ).toBeVisible()
 })
 
@@ -279,26 +279,26 @@ test('localized public pages and CAD controls expose both locales', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant')
   await expect(
     page.getByRole('heading', {
-      name: /把 3D 列印收納模型\s*集中在同一個地方/,
+      name: /桌面好亂？挑個模型調一調\s*，列印出來就對了。/,
     }),
   ).toBeVisible()
 
   await page.goto('/en/docs/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Shape Shortcut documentation' }),
+    page.getByRole('heading', { name: 'First time with Desk System? This page is all you need' }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Parameters and constraints' }),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Shared reference' }),
+    page.getByRole('heading', { name: 'Terms & specs' }),
   ).toBeVisible()
 
   await page.goto('/en/about/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Shape Shortcut by Blesscat' }),
+    page.getByRole('heading', { name: 'Indie developer, and a 3D-printing enthusiast.' }),
   ).toBeVisible()
   await expect(
     page

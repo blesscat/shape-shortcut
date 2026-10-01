@@ -43,9 +43,9 @@ describe('Desk System documentation guide', () => {
     expect(missingLocaleMessageKeys('en')).toEqual([])
     expect(
       translate('zh-Hant', 'docs.deskQuickStart.locating.builtin.noPost'),
-    ).toContain('不需要另加鎖定角座')
+    ).toContain('不用另印鎖定角座')
     expect(
       translate('en', 'docs.deskQuickStart.locating.builtin.noPost'),
-    ).toContain('do not add a separate locking corner seat')
+    ).toContain('you print nothing extra')
   })
 })

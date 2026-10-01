@@ -81,7 +81,7 @@ describe('localized model catalog copy', () => {
   })
 
   it('provides localized dialog actions and detail fallbacks', () => {
-    expect(translate('zh-Hant', 'models.details')).toBe('查看完整資訊')
+    expect(translate('zh-Hant', 'models.details')).toBe('詳情')
     expect(translate('en', 'models.close')).toBe('Close')
     expect(translate('zh-Hant', 'models.fixedParameters')).toBe(
       '固定幾何，沒有可調參數。',

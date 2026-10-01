@@ -1,7 +1,8 @@
 import { tv } from 'tailwind-variants'
 
 const cardBase = [
-  'bg-card text-card-foreground group/card ring-border flex flex-col gap-(--card-spacing) rounded-xl py-(--card-spacing) ring-1',
+  'bg-card text-card-foreground group/card ring-border flex flex-col gap-(--card-spacing) rounded-xl py-(--card-spacing) ring-1 shadow-soft',
+  'transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift',
   'has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0',
   '*:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
 ]

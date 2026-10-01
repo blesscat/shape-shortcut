@@ -87,7 +87,7 @@
   )
   let hoveredTriangleIndex = $state<number | null>(null)
   let highlightGeometry = $state<THREE.BufferGeometry | null>(null)
-  let highlightMaterial = $derived(createHighlightMaterial(theme.faceHighlight))
+  let highlightMaterial = $derived(createHighlightMaterial(theme.hover))
   let controller: FaceHoverController | null = null
 
   $effect(() => {

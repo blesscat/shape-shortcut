@@ -20,7 +20,7 @@ const WEBP_QUALITY = 0.9
  * loudly if the CSS token drifts from the value the previews were built on.
  */
 /* Must match the dark --color-viewport token in src/styles/global.css. */
-const DARK_PREVIEW_BACKGROUND = '#060e20'
+const DARK_PREVIEW_BACKGROUND = '#201a16'
 const CAPTURE_MODEL_PREVIEWS = process.env.CAPTURE_MODEL_PREVIEWS === '1'
 const MODEL_PREVIEW_ID = process.env.MODEL_PREVIEW_ID
 const PREVIEW_DIRECTORY = path.resolve(process.cwd(), 'public/model-previews')

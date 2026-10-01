@@ -91,7 +91,7 @@ test('Desk and Wall Snap entries use isolated presets and context resets', async
   await expect(wallMagnetShape).toBeVisible()
   await expect(wallOffset).toHaveValue('0')
   await expect(
-    page.getByText('目前系統：Wall Related', { exact: true }),
+    page.getByText('目前系統：Wall System', { exact: true }),
   ).toBeVisible()
 
   await page.getByRole('button', { name: '全部恢復預設' }).click()

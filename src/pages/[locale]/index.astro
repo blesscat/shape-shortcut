@@ -36,19 +36,36 @@ const deskFlowDarkPath = `/docs/desk-system/desk-system-flow.${locale}-dark.svg`
 const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
 
-/* Presentational-only title treatment: highlight the model-category phrase
-   and stack the headline on two lines. The translated wording itself is
+/* Presentational-only title treatment: highlight the action phrase and
+   stack the headline on two lines. The translated wording itself is
    unchanged. */
 const homeTitleHtml = (() => {
   const highlighted = t('home.title').replace(
-    /(3D 列印收納模型|3D-printing storage models)/,
-    '<span class="text-primary-strong dark:text-cyber-cyan">$1</span>',
+    /(挑個模型調一調|Pick a model, tweak it)/,
+    '<span class="text-primary-strong dark:text-primary">$1</span>',
   )
   const parts = highlighted.match(/^(.*?)<span[^>]*>([^<]*)<\/span>\s*(.*)$/)
   if (!parts) return highlighted
   const [, before, phrase, after] = parts
-  return `${before}<span class="text-primary-strong dark:text-cyber-cyan">${phrase}</span><br />${after}`
+  return `${before}<span class="text-primary-strong dark:text-primary">${phrase}</span><br />${after}`
 })()
+
+const heroBadges = [
+  { key: 'home.badge.noInstall', testid: 'home-badge-no-install' },
+  { key: 'home.badge.inBrowser', testid: 'home-badge-in-browser' },
+  { key: 'home.badge.freeForever', testid: 'home-badge-free-forever' },
+] as const
+
+const fileCardRows = [
+  {
+    labelKey: 'home.fileCard.whereLabel',
+    valueKey: 'home.fileCard.whereValue',
+  },
+  {
+    labelKey: 'home.fileCard.downloadLabel',
+    valueKey: 'home.fileCard.downloadValue',
+  },
+] as const
 ---
 
 <SiteLayout
@@ -63,17 +80,28 @@ const homeTitleHtml = (() => {
       data-testid="home-hero"
     >
       <div class="grid gap-5 lg:order-2">
-        <Badge
-          tone="primary"
-          appearance="text"
-          eyebrow
-          size="sm"
-          class="w-fit text-primary-strong dark:text-cyber-cyan"
+        <ul
+          class="m-0 flex list-none flex-wrap gap-2 p-0"
+          data-testid="home-hero-badges"
         >
-          {t('home.eyebrow')}
-        </Badge>
+          {
+            heroBadges.map((badge) => (
+              <li>
+                <Badge
+                  tone="primary"
+                  appearance="soft"
+                  size="sm"
+                  class="font-semibold text-primary-hover dark:text-primary"
+                  data-testid={badge.testid}
+                >
+                  {t(badge.key)}
+                </Badge>
+              </li>
+            ))
+          }
+        </ul>
         <h1
-          class="glow-text m-0 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl"
+          class="m-0 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl"
           id="home-title"
           set:html={homeTitleHtml}
         />
@@ -92,58 +120,51 @@ const homeTitleHtml = (() => {
           </Button>
           <Button
             as="a"
-            href={deskBoardPath}
+            href={docsPath}
             variant="outline"
             size="lg"
-            class="w-full border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-neon/60 dark:bg-transparent dark:text-primary dark:hover:bg-neon/10 sm:w-auto"
+            class="w-full border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10 sm:w-auto"
           >
             {t('home.secondaryCta')}
           </Button>
         </div>
         <p class="m-0 text-sm leading-normal text-muted-foreground">
-          <a class={inlineLinkClass} href={docsPath}>{t('home.docsCta')}</a>
-          <span aria-hidden="true"> · </span>{t('home.heroNote')}
+          <a class={inlineLinkClass} href={deskBoardPath}
+            >{t('home.heroNote')}</a
+          >
         </p>
+        <Card size="sm" class="grid gap-3 p-4" data-testid="home-file-card">
+          <dl class="m-0 grid gap-2.5">
+            {
+              fileCardRows.map((row) => (
+                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <dt class="font-mono text-sm font-semibold tracking-wide text-muted-foreground">
+                    {t(row.labelKey)}
+                  </dt>
+                  <dd class="m-0 text-right text-sm font-semibold text-foreground">
+                    {t(row.valueKey)}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </Card>
       </div>
 
       <figure
-        class="cyber-card m-0 grid gap-3 rounded-2xl p-3 lg:order-1"
+        class="m-0 grid content-start gap-3 rounded-container p-3 lg:order-1"
         data-testid="home-hero-visual"
       >
-        <div
-          class="grid gap-3 sm:grid-cols-[minmax(0,1.35fr)_minmax(8rem,0.65fr)]"
-        >
-          <ModelPreviewPicture
-            class="aspect-[16/10] h-full w-full rounded-2xl border border-border bg-muted object-cover shadow-lg"
-            src="/model-previews/opengrid-desk.webp"
-            darkSrc="/model-previews/opengrid-desk-dark.webp"
-            width="640"
-            height="400"
-            loading="eager"
-            alt={t('home.heroVisual.boardAlt')}
-          />
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-1">
-            <ModelPreviewPicture
-              class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
-              src="/model-previews/opengrid-stackable-box-desk.webp"
-              darkSrc="/model-previews/opengrid-stackable-box-desk-dark.webp"
-              width="640"
-              height="400"
-              loading="lazy"
-              alt={t('home.heroVisual.boxAlt')}
-            />
-            <ModelPreviewPicture
-              class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
-              src="/model-previews/opengrid-stackable-cylinder-desk.webp"
-              darkSrc="/model-previews/opengrid-stackable-cylinder-desk-dark.webp"
-              width="640"
-              height="400"
-              loading="lazy"
-              alt={t('home.heroVisual.roundBoxAlt')}
-            />
-          </div>
-        </div>
-        <figcaption class="text-sm leading-normal text-muted-foreground">
+        <ModelPreviewPicture
+          class="aspect-[16/10] h-full w-full rounded-img border border-border bg-muted object-cover shadow-soft"
+          src="/model-previews/opengrid-desk.webp"
+          darkSrc="/model-previews/opengrid-desk-dark.webp"
+          width="640"
+          height="400"
+          loading="eager"
+          alt={t('home.heroVisual.boardAlt')}
+        />
+        <figcaption class="text-sm leading-normal text-ink-faint">
           {t('home.heroVisual.caption')}
         </figcaption>
       </figure>
@@ -166,19 +187,18 @@ const homeTitleHtml = (() => {
         >
           {t('home.capabilities.title')}
         </h2>
+        <p class="m-0 max-w-2xl leading-relaxed text-muted-foreground">
+          {t('home.capabilities.description')}
+        </p>
       </header>
       <div
         class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         aria-label={t('home.features')}
       >
-        <Card
-          as="article"
-          size="sm"
-          class="cyber-card grid gap-3 p-4 shadow-sm"
-        >
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <div class="flex items-center gap-2.5">
             <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-cyber-cyan/30 bg-cyber-cyan/10 text-cyber-cyan"
+              class="grid size-9 shrink-0 place-items-center rounded-lg border border-success/30 bg-success-soft text-success dark:text-success"
             >
               <BrowserIcon class="size-5" aria-hidden="true" />
             </span>
@@ -191,14 +211,10 @@ const homeTitleHtml = (() => {
             {t('home.feature.browser.description')}
           </p>
         </Card>
-        <Card
-          as="article"
-          size="sm"
-          class="cyber-card grid gap-3 p-4 shadow-sm"
-        >
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <div class="flex items-center gap-2.5">
             <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-cyber-purple/30 bg-cyber-purple/10 text-cyber-purple"
+              class="grid size-9 shrink-0 place-items-center rounded-lg border border-amber-600/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400"
             >
               <AdjustmentsIcon class="size-5" aria-hidden="true" />
             </span>
@@ -211,14 +227,10 @@ const homeTitleHtml = (() => {
             {t('home.feature.parameters.description')}
           </p>
         </Card>
-        <Card
-          as="article"
-          size="sm"
-          class="cyber-card grid gap-3 p-4 shadow-sm"
-        >
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <div class="flex items-center gap-2.5">
             <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-neon/30 bg-neon/10 text-neon"
+              class="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary-strong dark:text-primary"
             >
               <Rotate3dIcon class="size-5" aria-hidden="true" />
             </span>
@@ -231,11 +243,7 @@ const homeTitleHtml = (() => {
             {t('home.feature.preview.description')}
           </p>
         </Card>
-        <Card
-          as="article"
-          size="sm"
-          class="cyber-card grid gap-3 p-4 shadow-sm"
-        >
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <div class="flex items-center gap-2.5">
             <span
               class="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary/10 text-primary"
@@ -256,7 +264,7 @@ const homeTitleHtml = (() => {
 
     <Card
       as="section"
-      class="cyber-card grid gap-8 p-5 shadow-lg sm:p-8"
+      class="grid gap-8 p-5 sm:p-8"
       aria-labelledby="home-desk-title"
       data-testid="home-desk-system"
     >
@@ -288,7 +296,7 @@ const homeTitleHtml = (() => {
             loading="lazy"
             alt={t('home.desk.flowAlt')}
           />
-          <figcaption class="text-sm leading-normal text-muted-foreground">
+          <figcaption class="text-sm leading-normal text-ink-faint">
             {t('home.desk.flowCaption')}
           </figcaption>
         </figure>
@@ -297,7 +305,7 @@ const homeTitleHtml = (() => {
           <ol class="m-0 grid gap-6 p-0 sm:grid-cols-2 lg:grid-cols-4">
             <li class="grid justify-items-center gap-3 text-center">
               <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-cyber-cyan font-semibold text-cyan-700 dark:text-cyber-cyan"
+                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
                 >1</span
               >
               <div class="grid gap-1">
@@ -311,7 +319,7 @@ const homeTitleHtml = (() => {
             </li>
             <li class="grid justify-items-center gap-3 text-center">
               <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-neon font-semibold text-sky-700 dark:text-neon"
+                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
                 >2</span
               >
               <div class="grid gap-1">
@@ -339,7 +347,7 @@ const homeTitleHtml = (() => {
             </li>
             <li class="grid justify-items-center gap-3 text-center">
               <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-cyber-purple font-semibold text-violet-700 dark:text-cyber-purple"
+                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
                 >4</span
               >
               <div class="grid gap-1">
@@ -384,10 +392,10 @@ const homeTitleHtml = (() => {
       <div class="grid gap-6 md:grid-cols-2">
         <Card
           as="article"
-          class="cyber-card grid gap-4 p-4 shadow-sm sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
+          class="grid gap-4 p-4 sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
         >
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-desk.webp"
             darkSrc="/model-previews/opengrid-desk-dark.webp"
             width="640"
@@ -409,10 +417,10 @@ const homeTitleHtml = (() => {
         </Card>
         <Card
           as="article"
-          class="cyber-card grid gap-4 p-4 shadow-sm sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
+          class="grid gap-4 p-4 sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
         >
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-wall.webp"
             darkSrc="/model-previews/opengrid-wall-dark.webp"
             width="640"
@@ -437,7 +445,7 @@ const homeTitleHtml = (() => {
 
     <Card
       as="section"
-      class="cyber-card grid gap-6 p-5 shadow-lg sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-8"
+      class="grid gap-6 p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-8"
       aria-labelledby="home-maker-title"
       data-testid="home-maker"
     >
@@ -473,12 +481,12 @@ const homeTitleHtml = (() => {
             href={aboutPath}
             variant="outline"
             size="sm"
-            class="border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-neon/60 dark:bg-transparent dark:text-primary dark:hover:bg-neon/10"
+            class="border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10"
           >
             {t('home.maker.aboutCta')}
           </Button>
           <a
-            class="grid size-10 place-items-center rounded-lg border border-border-field text-foreground transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+            class="grid size-11 place-items-center rounded-full border border-border-field text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
             href="https://github.com/blesscat"
             target="_blank"
             rel="noopener noreferrer"
@@ -487,7 +495,7 @@ const homeTitleHtml = (() => {
             <BrandGithubIcon class="size-4.5" aria-hidden="true" />
           </a>
           <a
-            class="grid size-10 place-items-center rounded-lg border border-border-field text-foreground transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+            class="grid size-11 place-items-center rounded-full border border-border-field text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
             href="mailto:blesscat@gmail.com"
             aria-label={t('home.maker.emailCta')}
           >
@@ -499,7 +507,7 @@ const homeTitleHtml = (() => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class={`${inlineLinkClass} h-auto rounded-none px-0 py-0 text-left hover:bg-transparent`}
+                class={`inline-flex min-h-11 items-center rounded-none px-0 text-left hover:bg-transparent ${inlineLinkClass}`}
                 data-support-dialog-open
                 data-testid="home-maker-support-trigger"
                 aria-controls="support-dialog"
@@ -515,7 +523,7 @@ const homeTitleHtml = (() => {
 
     <Card
       as="section"
-      class="grid gap-4 bg-banner p-6 text-banner-foreground shadow-lg ring-0 sm:p-8 dark:shadow-glow dark:ring-1 dark:ring-neon/25"
+      class="grid gap-4 bg-banner p-6 text-banner-foreground ring-0 sm:p-8"
       aria-labelledby="home-final-title"
     >
       <h2
@@ -528,15 +536,33 @@ const homeTitleHtml = (() => {
         {t('home.final.description')}
       </p>
       <p class="m-0">
-        <Button
-          as="a"
-          href={modelsPath}
-          variant="outline"
-          size="lg"
-          class="no-underline border-transparent bg-primary-strong text-white hover:bg-primary-strong hover:text-white hover:brightness-110 focus-visible:ring-primary-strong/50 dark:bg-[#8ed5ff] dark:text-[#0b1326] dark:hover:bg-[#8ed5ff] dark:hover:text-[#0b1326] dark:focus-visible:ring-[#8ed5ff]/50"
-        >
-          {t('home.final.cta')}
-        </Button>
+        {
+          supportProviders.length > 0 ? (
+            <Button
+              type="button"
+              variant="neon"
+              size="lg"
+              class="no-underline"
+              data-support-dialog-open
+              data-testid="home-final-cta"
+              aria-controls="support-dialog"
+              aria-haspopup="dialog"
+            >
+              {t('home.final.cta')}
+            </Button>
+          ) : (
+            <Button
+              as="a"
+              href={aboutPath}
+              variant="neon"
+              size="lg"
+              class="no-underline"
+              data-testid="home-final-cta"
+            >
+              {t('home.final.cta')}
+            </Button>
+          )
+        }
       </p>
     </Card>
   </div>
