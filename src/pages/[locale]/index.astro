@@ -1,7 +1,6 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro'
 import '../../styles/starwind.css'
-import { Badge } from '../../components/starwind/badge'
 import { Button } from '../../components/starwind/button'
 import { Card } from '../../components/starwind/card'
 import ModelPreviewPicture from '../../components/ModelPreviewPicture.astro'
@@ -36,12 +35,12 @@ const deskFlowDarkPath = `/docs/desk-system/desk-system-flow.${locale}-dark.svg`
 const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
 
-/* Presentational-only title treatment: highlight the model-category phrase
-   and stack the headline on two lines. The translated wording itself is
+/* Presentational-only title treatment: highlight the action phrase and
+   stack the headline on two lines. The translated wording itself is
    unchanged. */
 const homeTitleHtml = (() => {
   const highlighted = t('home.title').replace(
-    /(3D 列印收納模型|3D-printing storage models)/,
+    /(挑個模型調一調|Pick a model, tweak it)/,
     '<span class="text-primary-strong dark:text-primary">$1</span>',
   )
   const parts = highlighted.match(/^(.*?)<span[^>]*>([^<]*)<\/span>\s*(.*)$/)
@@ -49,6 +48,21 @@ const homeTitleHtml = (() => {
   const [, before, phrase, after] = parts
   return `${before}<span class="text-primary-strong dark:text-primary">${phrase}</span><br />${after}`
 })()
+
+const heroBadges = [
+  { key: 'home.badge.noInstall', testid: 'home-badge-no-install' },
+  { key: 'home.badge.inBrowser', testid: 'home-badge-in-browser' },
+  { key: 'home.badge.freeForever', testid: 'home-badge-free-forever' },
+] as const
+
+const fileCardRows = [
+  { labelKey: 'home.fileCard.whereLabel', valueKey: 'home.fileCard.whereValue' },
+  {
+    labelKey: 'home.fileCard.downloadLabel',
+    valueKey: 'home.fileCard.downloadValue',
+  },
+  { labelKey: 'home.fileCard.statusLabel', valueKey: 'home.fileCard.statusValue' },
+] as const
 ---
 
 <SiteLayout
@@ -63,15 +77,21 @@ const homeTitleHtml = (() => {
       data-testid="home-hero"
     >
       <div class="grid gap-5 lg:order-2">
-        <Badge
-          tone="primary"
-          appearance="text"
-          eyebrow
-          size="sm"
-          class="w-fit text-primary-strong dark:text-primary"
+        <ul
+          class="m-0 flex list-none flex-wrap gap-2 p-0"
+          data-testid="home-hero-badges"
         >
-          {t('home.eyebrow')}
-        </Badge>
+          {
+            heroBadges.map((badge) => (
+              <li
+                class="rounded-full bg-primary-soft px-3.5 py-1.5 text-sm font-semibold text-primary-strong dark:text-primary"
+                data-testid={badge.testid}
+              >
+                {t(badge.key)}
+              </li>
+            ))
+          }
+        </ul>
         <h1
           class="m-0 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl"
           id="home-title"
@@ -92,7 +112,7 @@ const homeTitleHtml = (() => {
           </Button>
           <Button
             as="a"
-            href={deskBoardPath}
+            href={docsPath}
             variant="outline"
             size="lg"
             class="w-full border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10 sm:w-auto"
@@ -101,48 +121,45 @@ const homeTitleHtml = (() => {
           </Button>
         </div>
         <p class="m-0 text-sm leading-normal text-muted-foreground">
-          <a class={inlineLinkClass} href={docsPath}>{t('home.docsCta')}</a>
-          <span aria-hidden="true"> · </span>{t('home.heroNote')}
+          <a class={inlineLinkClass} href={deskBoardPath}
+            >{t('home.heroNote')}</a
+          >
         </p>
+        <Card
+          size="sm"
+          class="grid gap-3 p-4 shadow-sm"
+          data-testid="home-file-card"
+        >
+          <dl class="m-0 grid gap-2.5">
+            {
+              fileCardRows.map((row) => (
+                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <dt class="font-mono text-sm font-semibold tracking-wide text-muted-foreground">
+                    {t(row.labelKey)}
+                  </dt>
+                  <dd class="m-0 text-right text-sm font-semibold text-foreground">
+                    {t(row.valueKey)}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </Card>
       </div>
 
       <figure
-        class="m-0 grid gap-3 rounded-2xl p-3 lg:order-1"
+        class="m-0 grid content-start gap-3 rounded-container p-3 lg:order-1"
         data-testid="home-hero-visual"
       >
-        <div
-          class="grid gap-3 sm:grid-cols-[minmax(0,1.35fr)_minmax(8rem,0.65fr)]"
-        >
-          <ModelPreviewPicture
-            class="aspect-[16/10] h-full w-full rounded-2xl border border-border bg-muted object-cover shadow-lg"
-            src="/model-previews/opengrid-desk.webp"
-            darkSrc="/model-previews/opengrid-desk-dark.webp"
-            width="640"
-            height="400"
-            loading="eager"
-            alt={t('home.heroVisual.boardAlt')}
-          />
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-1">
-            <ModelPreviewPicture
-              class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
-              src="/model-previews/opengrid-stackable-box-desk.webp"
-              darkSrc="/model-previews/opengrid-stackable-box-desk-dark.webp"
-              width="640"
-              height="400"
-              loading="lazy"
-              alt={t('home.heroVisual.boxAlt')}
-            />
-            <ModelPreviewPicture
-              class="aspect-[16/10] w-full rounded-xl border border-border bg-muted object-cover"
-              src="/model-previews/opengrid-stackable-cylinder-desk.webp"
-              darkSrc="/model-previews/opengrid-stackable-cylinder-desk-dark.webp"
-              width="640"
-              height="400"
-              loading="lazy"
-              alt={t('home.heroVisual.roundBoxAlt')}
-            />
-          </div>
-        </div>
+        <ModelPreviewPicture
+          class="aspect-[16/10] h-full w-full rounded-card border border-border bg-muted object-cover shadow-soft"
+          src="/model-previews/opengrid-desk.webp"
+          darkSrc="/model-previews/opengrid-desk-dark.webp"
+          width="640"
+          height="400"
+          loading="eager"
+          alt={t('home.heroVisual.boardAlt')}
+        />
         <figcaption class="text-sm leading-normal text-muted-foreground">
           {t('home.heroVisual.caption')}
         </figcaption>
@@ -166,6 +183,9 @@ const homeTitleHtml = (() => {
         >
           {t('home.capabilities.title')}
         </h2>
+        <p class="m-0 max-w-2xl leading-relaxed text-muted-foreground">
+          {t('home.capabilities.description')}
+        </p>
       </header>
       <div
         class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -528,15 +548,33 @@ const homeTitleHtml = (() => {
         {t('home.final.description')}
       </p>
       <p class="m-0">
-        <Button
-          as="a"
-          href={modelsPath}
-          variant="outline"
-          size="lg"
-          class="no-underline border-transparent bg-primary-strong text-white hover:bg-primary-strong hover:text-white hover:brightness-110 focus-visible:ring-primary-strong/50 dark:bg-[#8ed5ff] dark:text-[#0b1326] dark:hover:bg-[#8ed5ff] dark:hover:text-[#0b1326] dark:focus-visible:ring-[#8ed5ff]/50"
-        >
-          {t('home.final.cta')}
-        </Button>
+        {
+          supportProviders.length > 0 ? (
+            <Button
+              type="button"
+              variant="neon"
+              size="lg"
+              class="no-underline"
+              data-support-dialog-open
+              data-testid="home-final-cta"
+              aria-controls="support-dialog"
+              aria-haspopup="dialog"
+            >
+              {t('home.final.cta')}
+            </Button>
+          ) : (
+            <Button
+              as="a"
+              href={aboutPath}
+              variant="neon"
+              size="lg"
+              class="no-underline"
+              data-testid="home-final-cta"
+            >
+              {t('home.final.cta')}
+            </Button>
+          )
+        }
       </p>
     </Card>
   </div>

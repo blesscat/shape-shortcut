@@ -2,7 +2,7 @@
 
 /* Site tokens live here only. The design system is the Human 親和系 warm
    system (design-spec-4.0.0 - 4.2.0-viewport): white and warm surfaces with a
-   coral #D6452B primary in light appearance; warm dark brown #201A16 grounds
+   coral #CF4429 primary in light appearance; warm dark brown #201A16 grounds
    with bright coral #FF8A70 links and unchanged coral CTAs in dark
    appearance; Nunito + Noto Sans TC UI text with JetBrains Mono technical
    labels in both appearances.
@@ -38,10 +38,10 @@
   --color-stale: #d69a34;
   --color-stale-background: #fff4d6;
   --color-stale-text: #69470d;
-  /* The coral CTA face keeps white labels at ~4.6:1 in both appearances;
-     hover deepens to #B93A23 in light and brightens to #E85A40 in dark. */
-  --color-primary: #d6452b;
-  --color-primary-strong: #d6452b;
+  /* The coral CTA face (#cf4429, white labels >=4.6:1 in both appearances)
+     hovers to #B93A23 in light and brightens to #E85A40 in dark. */
+  --color-primary: #cf4429;
+  --color-primary-strong: #cf4429;
   --color-primary-hover: #b93a23;
   --color-primary-soft: #ffe9e2;
   --color-primary-foreground: #ffffff;
@@ -49,13 +49,13 @@
   --color-success-soft: #eaf6ee;
   /* accent-bright is the link/text coral: the CTA color in light, the bright
      variant #FF8A70 in dark. */
-  --color-accent-bright: #d6452b;
-  --color-focus: #d6452b;
-  --color-outline: #d6452b;
+  --color-accent-bright: #cf4429;
+  --color-focus: #cf4429;
+  --color-outline: #cf4429;
   --color-disabled: #c9bbb1;
   --color-status: #5f534b;
   --color-progress-track: #f0e9e3;
-  --color-progress-fill: #d6452b;
+  --color-progress-fill: #cf4429;
   --color-nav: rgb(255 255 255 / 72%);
   --color-nav-foreground: #362a24;
   --color-banner: #fff7f2;
@@ -121,7 +121,7 @@
     --color-stale-background: #493812;
     --color-stale-text: #ffe4a4;
     --color-primary: #ff8a70;
-    --color-primary-strong: #d6452b;
+    --color-primary-strong: #cf4429;
     --color-primary-hover: #e85a40;
     --color-primary-soft: rgb(214 69 43 / 16%);
     --color-primary-foreground: #ffffff;
@@ -182,7 +182,7 @@
   --color-stale-background: #493812;
   --color-stale-text: #ffe4a4;
   --color-primary: #ff8a70;
-  --color-primary-strong: #d6452b;
+  --color-primary-strong: #cf4429;
   --color-primary-hover: #e85a40;
   --color-primary-soft: rgb(214 69 43 / 16%);
   --color-primary-foreground: #ffffff;
