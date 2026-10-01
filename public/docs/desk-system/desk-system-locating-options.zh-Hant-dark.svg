@@ -6,9 +6,9 @@
       <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.12"/>
     </filter>
   </defs>
-  <rect width="1100" height="560" fill="#0b1326"/>
-  <text x="55" y="58" fill="#dae2fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="32" font-weight="750">選擇一種定位方式</text>
-  <text x="55" y="92" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="18">兩種方式都能定位同一個盒位；不可同時使用。</text>
+  <rect width="1100" height="560" fill="#201a16"/>
+  <text x="55" y="58" fill="#f4ede7" font-family="Noto Sans TC, Inter, sans-serif" font-size="32" font-weight="750">選擇一種定位方式</text>
+  <text x="55" y="92" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="18">兩種方式都能定位同一個盒位；不可同時使用。</text>
 
   <g filter="url(#shadow)">
     <rect x="55" y="140" width="465" height="300" rx="24" fill="#451a03" stroke="#fbbf24" stroke-width="3"/>
@@ -20,18 +20,18 @@
   <circle cx="205" cy="255" r="24" fill="#fbbf24" stroke="white" stroke-width="5"/>
   <rect x="185" y="385" width="40" height="35" rx="6" fill="#fbbf24"/>
   <path d="M 205 280 V 385" stroke="#fcd34d" stroke-width="6"/>
-  <text x="320" y="270" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">盒子使用一般角座孔。</text>
-  <text x="320" y="302" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">另外列印並安裝一個</text>
-  <text x="320" y="330" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">獨立 Locating Post。</text>
+  <text x="320" y="270" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">盒子使用一般角座孔。</text>
+  <text x="320" y="302" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">另外列印並安裝一個</text>
+  <text x="320" y="330" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">獨立 Locating Post。</text>
   <text x="320" y="380" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="16" font-weight="700">需要額外零件</text>
 
   <text x="615" y="185" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="24" font-weight="700">B. 內建角座</text>
   <rect x="670" y="255" width="150" height="115" rx="14" fill="#2e1065" stroke="#8b5cf6" stroke-width="3"/>
   <path d="M 745 370 V 415" stroke="#fbbf24" stroke-width="14" stroke-linecap="round"/>
   <circle cx="745" cy="255" r="24" fill="#fbbf24" stroke="white" stroke-width="5"/>
-  <text x="860" y="270" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">選擇盒子的</text>
-  <text x="860" y="302" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">「內建角座」選項。</text>
-  <text x="860" y="330" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">定位座是盒子的一部分。</text>
+  <text x="860" y="270" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">選擇盒子的</text>
+  <text x="860" y="302" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">「內建角座」選項。</text>
+  <text x="860" y="330" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">定位座是盒子的一部分。</text>
   <text x="860" y="380" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="16" font-weight="700">不需要額外 Locating Post</text>
 
   <rect x="245" y="475" width="610" height="50" rx="25" fill="#1e1b4b" stroke="#4338ca" stroke-width="2"/>

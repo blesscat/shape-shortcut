@@ -6,12 +6,12 @@
       <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.12"/>
     </filter>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8a99f"/>
     </marker>
   </defs>
-  <rect width="1400" height="820" fill="#0b1326"/>
-  <text x="70" y="68" fill="#dae2fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="38" font-weight="750">Desk System 快速入門</text>
-  <text x="70" y="108" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="20">Board → Snap → 選擇一種定位方式 → Grid Box／Round Box</text>
+  <rect width="1400" height="820" fill="#201a16"/>
+  <text x="70" y="68" fill="#f4ede7" font-family="Noto Sans TC, Inter, sans-serif" font-size="38" font-weight="750">Desk System 快速入門</text>
+  <text x="70" y="108" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="20">Board → Snap → 選擇一種定位方式 → Grid Box／Round Box</text>
 
   <g filter="url(#shadow)">
     <rect x="70" y="178" width="250" height="190" rx="22" fill="#172554" stroke="#3b82f6" stroke-width="3"/>
@@ -24,47 +24,47 @@
   <circle cx="108" cy="216" r="22" fill="#3b82f6"/>
   <text x="108" y="224" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">1</text>
   <text x="145" y="224" fill="#93c5fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="27" font-weight="700">Board（底版）</text>
-  <text x="105" y="275" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">列印並放在桌面上</text>
-  <text x="105" y="308" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">直接放置即可</text>
-  <text x="105" y="337" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">螺絲孔固定：非必要</text>
+  <text x="105" y="275" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">列印並放在桌面上</text>
+  <text x="105" y="308" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">直接放置即可</text>
+  <text x="105" y="337" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">螺絲孔固定：非必要</text>
 
   <circle cx="428" cy="216" r="22" fill="#2dd4bf"/>
   <text x="428" y="224" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">2</text>
   <text x="465" y="224" fill="#5eead4" font-family="Noto Sans TC, Inter, sans-serif" font-size="27" font-weight="700">Snap（咔咔）</text>
-  <text x="425" y="275" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">每個盒子位置一個</text>
-  <text x="425" y="308" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">準備對應的 Snap</text>
-  <text x="425" y="337" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">再放入容器</text>
+  <text x="425" y="275" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">每個盒子位置一個</text>
+  <text x="425" y="308" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">準備對應的 Snap</text>
+  <text x="425" y="337" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">再放入容器</text>
 
-  <path d="M 320 273 H 380" fill="none" stroke="#9ca3af" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M 320 273 H 380" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
   <rect x="710" y="155" width="300" height="60" rx="30" fill="#451a03" stroke="#fbbf24" stroke-width="3"/>
   <circle cx="746" cy="185" r="22" fill="#fbbf24"/>
   <text x="746" y="193" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">3</text>
   <text x="780" y="193" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">選擇一種定位方式</text>
-  <path d="M 640 273 H 700" fill="none" stroke="#9ca3af" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M 640 273 H 700" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
   <path d="M 860 215 V 275 M 860 275 H 750 M 860 275 H 970" fill="none" stroke="#fbbf24" stroke-width="4"/>
   <circle cx="860" cy="275" r="7" fill="#fbbf24"/>
 
   <text x="700" y="340" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">獨立 Locating Post</text>
   <text x="700" y="367" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="17" font-weight="650">（獨立零件）</text>
-  <text x="700" y="402" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">使用一般角座孔</text>
-  <text x="700" y="430" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">列印並安裝定位柱</text>
+  <text x="700" y="402" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">使用一般角座孔</text>
+  <text x="700" y="430" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">列印並安裝定位柱</text>
   <text x="700" y="458" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="15" font-weight="650">定位柱：額外 1 個零件</text>
 
   <text x="1000" y="342" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">內建角座</text>
-  <text x="1000" y="382" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">選擇盒子的內建角座</text>
-  <text x="1000" y="413" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">不需要額外 Locating Post</text>
+  <text x="1000" y="382" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">選擇盒子的內建角座</text>
+  <text x="1000" y="413" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">不需要額外 Locating Post</text>
   <text x="1000" y="447" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="16" font-weight="650">定位座：盒子的一部分</text>
 
-  <path d="M 800 475 V 505 H 1180 V 530" fill="none" stroke="#9ca3af" stroke-width="4" marker-end="url(#arrow)"/>
-  <path d="M 1100 475 V 505" fill="none" stroke="#9ca3af" stroke-width="4"/>
+  <path d="M 800 475 V 505 H 1180 V 530" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M 1100 475 V 505" fill="none" stroke="#b8a99f" stroke-width="4"/>
   <circle cx="1040" cy="578" r="22" fill="#8b5cf6"/>
   <text x="1040" y="586" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">4</text>
   <text x="1080" y="586" fill="#c4b5fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">Grid Box／Round Box</text>
-  <text x="1035" y="635" fill="#c8d3e7" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">列印後放入已定位的格位</text>
-  <text x="1035" y="670" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">第一個範例使用 Grid Box</text>
-  <text x="1035" y="700" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">Round Box 使用相同流程</text>
+  <text x="1035" y="635" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">列印後放入已定位的格位</text>
+  <text x="1035" y="670" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">第一個範例使用 Grid Box</text>
+  <text x="1035" y="700" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">Round Box 使用相同流程</text>
 
   <rect x="70" y="650" width="865" height="80" rx="18" fill="#1e1b4b" stroke="#4338ca" stroke-width="2"/>
   <text x="103" y="688" fill="#a5b4fc" font-family="Noto Sans TC, Inter, sans-serif" font-size="18" font-weight="700">第一版 Quick Start 範圍</text>
-  <text x="103" y="716" fill="#9ca3af" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">先說明系統流程；切片與列印設定留待後續。</text>
+  <text x="103" y="716" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">先說明系統流程；切片與列印設定留待後續。</text>
 </svg>
