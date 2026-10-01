@@ -14,10 +14,11 @@
    heading 文字（per-model e2e 以 exact name 查詢）。
 3. **空隱藏**：面板內的 base／containers／tools 區若為空則整區不渲染
    （HSW 面板只有容器區）。
-4. **文案**（zh-Hant；en 另配同語氣）：面板頭「先挑容器／工具在下面等你」、
-   容器區標籤「容器／真的拿來裝東西的」、工具區提示「小幫手，不裝東西」、
-   收合預覽「組裝小工具和定位柱、分隔牆這些配件收在這區，需要再展開。」、
-   展開／收合切換文字以雙 span 純 CSS 交換。
+4. **文案**（zh-Hant；en 另配同語氣）：面板頭為系統標題＋提示「工具在下面
+   等你」（最終採用；草稿的「先挑容器」標題未使用）、容器區標籤「容器／真的
+   拿來裝東西的」、工具區提示「小幫手，不裝東西」、收合預覽「組裝小工具和
+   定位柱、分隔牆這些配件收在這區，需要再展開。」、展開／收合切換文字以雙
+   span 純 CSS 交換。
 5. **Token 對應**：`--ss-mint`→`bg-success-soft`＋`text-success`、
    `--ss-coral-tint`→`bg-primary-soft`＋`text-primary-hover(dark:primary)`、
    面板＝`rounded-2xl border-border bg-card`。分類徽章雙編碼不變。

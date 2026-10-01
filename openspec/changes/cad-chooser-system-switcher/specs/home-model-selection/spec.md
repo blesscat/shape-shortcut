@@ -190,3 +190,150 @@ existing model-specific route.
   OpenConnect 面紙盒
 - **AND** 工具與配件區展開後 MUST 依序顯示 Wall Cover、Label Card、
   Label Slot Test
+
+### Requirement: 系列相對模型選擇名稱
+
+The `/models` chooser MUST use a selection-only label for each visible model
+card so that a family prefix already represented by the series heading is not
+repeated. The series heading MUST remain `OpenGrid 系列`; the former
+`其他模型` group heading MUST be replaced by the `HSW` option of the system
+switcher, and the current panels MUST remain distinguishable by their panel
+headings（`Desk System`、`Wall System`、`HSW`）. The current visible card
+labels MUST be:
+
+- OpenGrid: `Board (底版)`、`Snap (咔咔)`、`Locating Post (定位柱)`、
+  `divider (分隔牆)`、`Grid Box (方盒)`、`Round Box (圓盒)`、`Snap Remover`、
+  `Open Shelf (斜開格櫃)`
+- HSW 面板: `六角蜂巢`
+
+Base and tool/accessory/test cards MUST keep the full selection label as
+their heading. Container cards MAY present the v2 palette split—heading shows
+the localized primary name with the secondary original-name line rendered
+adjacent（例：`方盒`＋`Grid Box`）—provided the pair reproduces the selection
+label, and the full selection label remains the accessible name of the edit
+link and the details-dialog title. The corresponding edit links MUST use the
+same catalog selection label in their accessible names. Outside the `/models`
+chooser, the current catalog display names MUST remain `opengrid board
+(底版)`, `Snap (咔咔)`, `Locating Post (定位柱)`, `divider (分隔牆)`,
+`Grid Box (方盒)`, `Round Box (圓盒)`, `Snap Remover`, and `六角蜂巢`
+respectively.
+
+#### Scenario: 模型選擇頁使用系列相對名稱
+
+- **WHEN** 使用者開啟 `/models` 並切換至任一系統面板
+- **THEN** 基礎區與工具區的卡片標題 MUST 分別顯示完整 selection label
+  （`Board (底版)`、`Snap (咔咔)`、`Locating Post (定位柱)`、
+  `divider (分隔牆)`、`Snap Remover` 等）
+- **AND** 容器卡 MUST 以在地化主名搭配次要原文行呈現（`方盒`＋`Grid Box`），
+  且主名＋次要行 MUST 對應其 selection label
+- **AND** 編輯入口的 accessible name MUST 分別使用 `編輯 Board (底版)`、
+  `編輯 Snap (咔咔)`、`編輯 Locating Post (定位柱)`、`編輯 divider (分隔牆)`、
+  `編輯 Grid Box (方盒)`、`編輯 Round Box (圓盒)`、`編輯 Snap Remover`、
+  `編輯 Open Shelf (斜開格櫃)` 與 `編輯 六角蜂巢`
+- **AND** `OpenGrid 系列` 標題 MUST 仍存在，面板 MUST 以 `Desk System`、
+  `Wall System`、`HSW` 標題區分
+
+#### Scenario: 其他頁面維持完整模型名稱
+
+- **WHEN** 使用者離開 `/models` 並查看目前模型的 CAD workspace 或其他既有
+  模型識別文案
+- **THEN** 系統 MUST 維持目前 catalog display name，例如
+  `opengrid board (底版)`、`Snap (咔咔)`、`Locating Post (定位柱)`、
+  `divider (分隔牆)`、`Grid Box (方盒)`、`Round Box (圓盒)`、
+  `OpenGrid Open Shelf (斜開格櫃)` 與 `六角蜂巢`
+
+### Requirement: 首頁模型選擇
+
+The system MUST provide a static model-selection page at `/models` driven by
+the registered model catalog. Every model rendered in the chooser MUST have
+an understandable display name, a catalog-provided static preview image, a
+concise model description, and a link to its model-specific CAD route. The
+chooser MUST NOT require a visible capability summary, adjustable-settings
+label, or fixed-geometry label on each model card. Detailed parameter names,
+ranges, constraints, units, and export formats MUST remain available in
+server-rendered HTML through an accessible out-of-flow details presentation
+initiated by a per-card details action. The chooser MUST NOT use a generic
+schema field count as the sole source of truth for custom or conditional
+parameter presentations, and MUST NOT invent a raw numeric count for such
+presentations. The chooser MUST present the OpenGrid series first（its Desk
+and Wall system panels），followed by the HSW system panel containing
+`hsw-cell`, including the OpenGrid entries `opengrid`, `opengrid-pillar`,
+`opengrid-divider`, `opengrid-stackable-box`, `opengrid-stackable-cylinder`,
+`opengrid-snap`, `opengrid-snap-remover`, and `opengrid-open-shelf`.
+Registered models excluded from chooser visibility (`box`, `modular-grid-base`,
+and `hexagonal-column`) MAY remain available through direct CAD routes but
+MUST NOT be rendered as chooser entries. The root path `/` MUST remain a
+separate static product homepage and MUST link to `/models` without rendering
+the model chooser. The `/models` page MUST expose a page-level selection
+heading. The series and the system panels MUST remain distinguishable by the
+`OpenGrid 系列` heading and the segmented switcher's panel headings
+（`Desk System`、`Wall System`、`HSW`）with spacing or separators, without
+requiring redundant family badges or an outer visual panel around the entire
+chooser. Container cards MAY omit the on-card description line（v2 palette
+cards present the name pair instead）provided the description remains
+available in the card's details presentation. Model cards MUST use an adaptive
+layout that uses more than two columns when a wide viewport has enough room
+and collapses to one column on a narrow viewport.
+
+#### Scenario: 真正首頁不顯示模型選擇器
+
+- **WHEN** 使用者開啟 `/`
+- **THEN** 首頁 MUST 顯示產品介紹與前往模型選擇頁的明確入口
+- **AND** 首頁 MUST NOT 顯示模型選擇卡片或初始化 CAD Worker、Svelte CAD
+  workspace
+- **AND** 前往模型選擇的入口 MUST 導向 `/models`
+
+#### Scenario: 模型選擇頁顯示目前模型與預覽
+
+- **WHEN** 使用者開啟 `/models` 並切換至任一系統面板
+- **THEN** 頁面 MUST 依 OpenGrid 系列（Desk、Wall 面板）與 HSW 面板的順序
+  顯示可理解的模型名稱
+- **AND** OpenGrid 面板 MUST 顯示 `opengrid`、`opengrid-pillar`、
+  `opengrid-divider`、`opengrid-stackable-box`、`opengrid-stackable-cylinder`、
+  `opengrid-snap`、`opengrid-snap-remover` 與 `opengrid-open-shelf`
+- **AND** HSW 面板 MUST 顯示 `hsw-cell`
+- **AND** 每個可見模型 MUST 顯示其 catalog-provided static preview image、
+  可理解模型名稱與 `編輯 →` 入口
+- **AND** 每個 preview image MUST expose alternative text that identifies the
+  model it represents
+- **AND** `box`、`box-normal`、`modular-grid-base` 與 `hexagonal-column` MUST
+  NOT appear as chooser entries
+- **AND** `/models` MUST NOT 初始化 CAD Worker、WebAssembly CAD kernel、
+  WebGL renderer 或 Svelte CAD workspace
+- **AND** 頁面 MUST 顯示選擇模型的頁面標題，而不以整個 chooser 的外框 panel
+  包住內容
+- **AND** OpenGrid 系列與三個系統面板 MUST 以 `OpenGrid 系列` 標題與
+  `Desk System`、`Wall System`、`HSW` 面板標題（含間距或分隔線）區分
+- **AND** 模型卡片 MUST 使用可依可用寬度調整欄數的排列；寬版視窗在有足夠
+  模型時 MUST 能顯示三欄以上，窄版視窗 MUST 收合為單欄
+
+#### Scenario: 模型卡片保留按需參數詳情
+
+- **WHEN** 使用者開啟 `/models`
+- **THEN** 每個模型卡片 MUST 顯示預覽、模型名稱與編輯入口；基礎與工具卡
+  MUST 於卡面顯示一句話簡介，容器卡的簡介 MUST 於詳情呈現
+- **AND** 卡片 MUST NOT 在詳情開啟前顯示可調整設定或固定幾何 capability
+  summary
+- **AND** 卡片的詳情入口 MUST 仍能提供完整參數名稱、範圍、限制、單位與匯出
+  格式
+
+#### Scenario: 預覽圖片無法載入時仍可選擇模型
+
+- **GIVEN** 可見模型的 preview image 無法載入
+- **WHEN** 使用者開啟 `/models`
+- **THEN** 該卡片 MUST 顯示可理解的預覽 placeholder 或 fallback
+- **AND** 該卡片 MUST 仍顯示模型名稱與 `編輯 →` 入口
+- **AND** fallback MUST NOT prevent navigation to the model-specific CAD
+  route
+
+#### Scenario: 選擇 HSW 六角蜂巢
+
+- **WHEN** 使用者在 `/models` 選擇 `hsw-cell`
+- **THEN** 選擇入口 MUST 導向 `/cad/hsw-cell`
+- **AND** CAD workspace MUST 以 `modelId=hsw-cell` 初始化
+
+#### Scenario: 選擇 OpenGrid
+
+- **WHEN** 使用者在 `/models` 選擇 `opengrid`
+- **THEN** 選擇入口 MUST 導向 `/cad/opengrid`
+- **AND** CAD workspace MUST 以 `modelId=opengrid` 初始化

@@ -148,9 +148,11 @@ const systemTabs = [
                 >
                   {panel.title}
                 </h3>
-                <span class="text-xs font-bold text-muted-foreground">
-                  {t('models.panel.hint')}
-                </span>
+                {panel.zones.tools.length > 0 && (
+                  <span class="text-xs font-bold text-muted-foreground">
+                    {t('models.panel.hint')}
+                  </span>
+                )}
               </div>
               <div class="grid gap-5 px-2 pb-3 sm:px-3">
                 {panel.zones.base.length > 0 && (

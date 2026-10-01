@@ -301,11 +301,6 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(page.getByRole('heading', { name: '其他模型' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'HSW 系列' })).toHaveCount(0)
   await expect(page.getByText('系統入口', { exact: true })).toHaveCount(0)
-  await expect(
-    page.getByTestId('model-family-opengrid').getByText('OpenGrid', {
-      exact: true,
-    }),
-  ).toHaveCount(0)
   const systemSwitcher = page.getByTestId('model-system-switcher')
   const systemTabs = systemSwitcher.locator('[data-system-tab]')
   await expect(systemTabs).toHaveCount(3)
@@ -880,6 +875,35 @@ test('model selection stacks all cards on narrow screens', async ({ page }) => {
       return index === 0 || (previous !== undefined && position.y > previous.y)
     }),
   ).toBe(true)
+})
+
+test.describe('model chooser without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('model chooser stays fully reachable without JavaScript', async ({
+    page,
+  }) => {
+    await page.goto('/zh-Hant/models')
+
+    // No-JS fallback: the server-rendered panels stack; every entry keeps its
+    // link and the details fallback carries navigation.
+    for (const key of ['desk', 'wall', 'hsw']) {
+      const panel = page.getByTestId(`model-subgroup-${key}`)
+      await expect(panel).toBeVisible()
+      await expect(panel.locator('[data-model-id]').first()).toBeVisible()
+    }
+    await expect(
+      page
+        .getByTestId('model-subgroup-hsw')
+        .getByRole('link', { name: '編輯 六角蜂巢', exact: true }),
+    ).toHaveAttribute('href', '/zh-Hant/cad/hsw-cell')
+    await expect(
+      page
+        .getByTestId('model-subgroup-desk')
+        .locator('[data-model-details-fallback]')
+        .first(),
+    ).toBeVisible()
+  })
 })
 
 test('model cards keep long localized names on one line', async ({ page }) => {

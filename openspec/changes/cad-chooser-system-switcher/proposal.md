@@ -30,9 +30,12 @@ Snap 置頂）、容器大圖卡（圖在上、珊瑚徽章、中文大字＋英
 
 ## Impact
 
-- `src/pages/[locale]/models.astro`、`src/components/cad/ModelCard.astro`、
-  `src/i18n/messages/models.ts`
+- `src/pages/[locale]/models.astro`、`src/components/cad/ModelCard.astro`
+  （抽出 `src/components/cad/ModelCardPreview.astro` 與
+  `src/components/cad/ModelCardDialog.astro`）、`src/i18n/messages/models.ts`
 - Tests: `tests/e2e/home.spec.ts`、`tests/e2e/localization.spec.ts`、
-  `tests/e2e/model-card-previews.spec.ts`（選擇器結構相關斷言）
+  `tests/e2e/model-card-previews.spec.ts`、`tests/e2e/starwind-non-cad.spec.ts`
+  及 `tests/e2e/opengrid-{pillar,divider,snap-remover}.spec.ts`（切換器互動、
+  新 testid 與卡片版型相關斷言）
 - 不變：模型 ID／路由／selection label／詳情 dialog 內容／首頁摘要；
   v1、v3 設計稿與 favicon 重設計皆不在本 change 範圍（站長已拍板）。

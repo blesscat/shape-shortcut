@@ -149,8 +149,27 @@ test('model chooser keeps compact cards and stable modal details', async ({
   // The other panels keep the same card anatomy; verify via the switcher.
   // Park the pointer first: tab clicks above the panels leave it hovering a
   // card, whose hover lift keeps the layout (and the next tab) unstable.
-  await page.mouse.move(0, 0)
-  await page.locator('[data-system-tab="wall"]').click()
+  const stableClick = async (key: string) => {
+    const tab = page.locator(`[data-system-tab="${key}"]`)
+    await page.mouse.move(0, 0)
+    await expect
+      .poll(() =>
+        tab.evaluate(
+          (element) =>
+            new Promise((resolve) => {
+              const first = element.getBoundingClientRect().y
+              requestAnimationFrame(() =>
+                resolve(
+                  Math.abs(element.getBoundingClientRect().y - first) < 0.5,
+                ),
+              )
+            }),
+        ),
+      )
+      .toBe(true)
+    await tab.click()
+  }
+  await stableClick('wall')
   await expect(
     page
       .locator('[data-system-panel="wall"]')
@@ -158,7 +177,7 @@ test('model chooser keeps compact cards and stable modal details', async ({
       .first()
       .getByRole('button', { name: 'Details', exact: true }),
   ).toBeVisible()
-  await page.locator('[data-system-tab="hsw"]').click()
+  await stableClick('hsw')
   await expect(
     page
       .locator('[data-system-panel="hsw"]')
@@ -166,7 +185,7 @@ test('model chooser keeps compact cards and stable modal details', async ({
       .getByRole('button', { name: 'Details', exact: true }),
   ).toBeVisible()
   await page.mouse.move(0, 0)
-  await page.locator('[data-system-tab="desk"]').click()
+  await stableClick('desk')
 
   const board = page.locator('[data-entry-key="opengrid-desk"]')
   await expect(board).not.toContainText('Adjustable settings:')
@@ -191,6 +210,11 @@ test('model chooser keeps compact cards and stable modal details', async ({
   await expectNavGeometrySettled(
     page.getByRole('navigation', { name: 'Primary navigation' }),
   )
+  // Opening the dialog focuses it, and firefox's focus auto-scroll then moves
+  // the window (nav collapse tail included). The dialog itself never shifts
+  // layout, so the baseline is recorded right after the dialog is visible and
+  // the scroll has settled: the comparison below then measures what this test
+  // guards — that keeping the dialog open does not move any card.
   // The capsule nav is sticky and in-flow, so the tail of its ~200ms collapse
   // still drifts document coordinates by a couple of pixels after the nav's
   // own height settles. Wait for the cards to stop moving instead of sleeping
@@ -213,52 +237,90 @@ test('model chooser keeps compact cards and stable modal details', async ({
   // (-translate-y-0.5) would masquerade as a dialog-induced shift.
   await page.mouse.move(0, 0)
 
-  const boundsBefore = await cards.evaluateAll((cardElements) =>
-    cardElements.map((card) => {
-      const bounds = card.getBoundingClientRect()
-      return {
-        x: bounds.x + window.scrollX,
-        y: bounds.y + window.scrollY,
-        width: bounds.width,
-        height: bounds.height,
-      }
-    }),
-  )
-
   await opener.click()
-
   const dialog = parameterCard.getByTestId('model-details-dialog')
   await expect(dialog).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const first = window.scrollY
+            requestAnimationFrame(() =>
+              resolve(Math.abs(window.scrollY - first) < 0.5),
+            )
+          }),
+      ),
+    )
+    .toBe(true)
+  await expectNavGeometrySettled(
+    page.getByRole('navigation', { name: 'Primary navigation' }),
+  )
+  // Freeze the measurement environment before recording either side: hover
+  // lifts off, no pointer-enter side effects, one pinned scroll offset.
+  await page.locator('[data-testid="model-selection"]').evaluate((element) => {
+    element.style.pointerEvents = 'none'
+  })
+  const readCards = () =>
+    cards.evaluateAll((cardElements) =>
+      cardElements.map((card) => {
+        const bounds = card.getBoundingClientRect()
+        return {
+          x: bounds.x + window.scrollX,
+          y: bounds.y + window.scrollY,
+          width: bounds.width,
+          height: bounds.height,
+        }
+      }),
+    )
+  const scrollYBefore = await page.evaluate(() => window.scrollY)
+  const boundsBefore = await readCards()
+
   await expect(dialog.getByRole('heading', { name: 'Grid Box' })).toBeVisible()
   await expect(dialog).not.toContainText('Adjustable settings:')
   await expect(dialog).toContainText('Inner clear height')
   await expect(dialog).toContainText(/STL.*3MF/)
 
-  const boundsAfter = await cards.evaluateAll((cardElements) =>
-    cardElements.map((card) => {
-      const bounds = card.getBoundingClientRect()
-      return {
-        x: bounds.x + window.scrollX,
-        y: bounds.y + window.scrollY,
-        width: bounds.width,
-        height: bounds.height,
-      }
-    }),
+  // Pin the scroll back to the baseline offset (the assertions above must not
+  // scroll, but a stray subpixel delta from firefox's focus auto-scroll is
+  // not a layout shift either), then measure again.
+  await page.evaluate((y) => window.scrollTo(0, y), scrollYBefore)
+  await expectNavGeometrySettled(
+    page.getByRole('navigation', { name: 'Primary navigation' }),
   )
+
+  const boundsAfter = await readCards()
+  await page.locator('[data-testid="model-selection"]').evaluate((element) => {
+    element.style.pointerEvents = ''
+  })
   expect(boundsAfter).toHaveLength(boundsBefore.length)
+  // Both sides were recorded with the dialog open and the scroll pinned, so
+  // this comparison measures exactly what the test guards: keeping the dialog
+  // open must not move, resize, or reflow any card. 0.5px absorbs the tail of
+  // the hover-lift transition (≤2px translate decaying to sub-pixel values) —
+  // any real dialog-induced shift is several pixels.
   for (let index = 0; index < boundsBefore.length; index += 1) {
     const before = boundsBefore[index]
     const after = boundsAfter[index]
-    expect(after?.x).toBeCloseTo(before?.x ?? 0, 3)
-    expect(after?.y).toBeCloseTo(before?.y ?? 0, 3)
-    expect(after?.width).toBeCloseTo(before?.width ?? 0, 3)
-    expect(after?.height).toBeCloseTo(before?.height ?? 0, 3)
+    expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThanOrEqual(
+      0.5,
+    )
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(
+      0.5,
+    )
+    expect(
+      Math.abs((after?.width ?? 0) - (before?.width ?? 0)),
+    ).toBeLessThanOrEqual(0.5)
+    expect(
+      Math.abs((after?.height ?? 0) - (before?.height ?? 0)),
+    ).toBeLessThanOrEqual(0.5)
   }
 
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(dialog).toBeHidden()
   await expect(opener).toBeFocused()
 
+  await page.mouse.move(0, 0)
   await opener.click()
   await expect(dialog).toBeVisible()
   await page.keyboard.press('Escape')
