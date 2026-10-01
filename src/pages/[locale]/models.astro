@@ -105,6 +105,22 @@ function parameterSummary(definition: ModelDefinition): string[] {
 function detailsDialogIdFor(definition: ModelDefinition): string {
   return `model-details-${definition.id}-${definition.systemContext ?? 'legacy'}`
 }
+
+/* Warm system tag tint: Desk on coral soft, Wall on mint soft, HSW neutral. */
+function systemTagClassFor(definition: ModelDefinition): string {
+  if (definition.systemContext === 'desk')
+    return 'bg-primary-soft text-primary-strong dark:text-primary'
+  if (definition.systemContext === 'wall')
+    return 'bg-success-soft text-success dark:text-success'
+  return 'bg-muted text-muted-foreground'
+}
+
+function systemTagFor(definition: ModelDefinition): string | null {
+  if (definition.systemContext === 'desk') return t('models.context.desk')
+  if (definition.systemContext === 'wall') return t('models.context.wall')
+  if (definition.id === 'hsw-cell') return 'HSW'
+  return null
+}
 ---
 
 <SiteLayout
@@ -250,6 +266,14 @@ function detailsDialogIdFor(definition: ModelDefinition): string {
                               <h3 class="text-2xl font-semibold leading-tight">
                                 {selectionLabel}
                               </h3>
+                            )}
+                            {systemTagFor(definition) && (
+                              <span
+                                class={`-mt-1 w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${systemTagClassFor(definition)}`}
+                                data-testid="model-system-tag"
+                              >
+                                {systemTagFor(definition)}
+                              </span>
                             )}
                             <p class="m-0 text-sm leading-normal text-muted-foreground">
                               {description}

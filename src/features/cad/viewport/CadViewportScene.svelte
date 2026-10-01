@@ -101,6 +101,9 @@
     }
   }
 
+  /* Axis/label/background colors update through gizmo.set() on theme
+     changes; passing a fresh options object as props would rebuild the
+     gizmo containers and leak duplicate elements. */
   $effect(() => {
     const gizmo = viewportGizmo
     if (!gizmo) return
@@ -145,7 +148,7 @@
   {/if}
 </T.PerspectiveCamera>
 {#if presentation === 'workspace' && orbitControls}
-  <Gizmo bind:ref={viewportGizmo} controls={orbitControls} {...gizmoOptions()} />
+  <Gizmo bind:ref={viewportGizmo} controls={orbitControls} {...CAD_VIEWPORT_GIZMO} />
 {/if}
 {#key modelRevision}
   <Bounds margin={boundsMarginFor(presentation)} animate={false}>

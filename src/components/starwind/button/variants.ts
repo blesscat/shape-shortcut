@@ -15,10 +15,12 @@ const buttonVariantStyles = {
   primary:
     'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/50',
   /* Warm CTA: solid coral face with white label in both appearances; hover
-     deepens in light and brightens in dark via the primary-hover token. */
+     deepens in light and brightens in dark via the primary-hover token and
+     lifts the surface (transform only, disabled under reduced motion). */
   neon: [
     'bg-primary-strong text-primary-foreground shadow-xs',
     'hover:bg-primary-hover focus-visible:ring-primary-strong/50',
+    'motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift',
     'dark:shadow-none',
   ].join(' '),
   secondary:

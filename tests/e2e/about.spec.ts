@@ -3,19 +3,19 @@ import { expect, test } from '@playwright/test'
 const aboutCases = [
   {
     path: '/zh-Hant/about/',
-    heading: 'Shape Shortcut by Blesscat',
+    heading: '獨立開發者，也是 3D 列印愛好者。',
     role: '獨立開發者、3D 列印愛好者',
     portraitAlt: 'Blesscat 的插畫肖像',
-    story: '為什麼做 Shape Shortcut？',
+    story: '為什麼做這個',
     feature: 'MakerWorld Customizer',
     email: 'blesscat@gmail.com',
   },
   {
     path: '/en/about/',
-    heading: 'Shape Shortcut by Blesscat',
+    heading: 'Indie developer, and a 3D-printing enthusiast.',
     role: 'Independent developer, 3D-printing enthusiast',
     portraitAlt: 'Illustrated portrait of Blesscat',
-    story: 'Why Shape Shortcut?',
+    story: 'Why I built this',
     feature: 'MakerWorld Customizer',
     email: 'blesscat@gmail.com',
   },

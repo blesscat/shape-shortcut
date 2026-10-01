@@ -275,7 +275,6 @@ const supportCopyById: Record<
         ;(() => {
           const nav = document.querySelector('[data-site-nav]')
           if (!(nav instanceof HTMLElement)) return
-
           // Compact past 48px, relax only below 32px. The compact state
           // shrinks the capsule's padding and folds the secondary links,
           // so content below follows the capsule's height change.
@@ -468,6 +467,27 @@ const supportCopyById: Record<
           }
         }
       </script>
+      <style is:global>
+        /* Warm capsule nav: the current page renders on the coral soft tint
+           with deep coral text, in both appearances. */
+        [data-site-nav] a[aria-current='page'] {
+          background-color: var(--color-primary-soft);
+          color: var(--color-primary-strong);
+          border-radius: 999px;
+          padding-inline: 0.75rem;
+          padding-block: 0.25rem;
+        }
+        :root.dark [data-site-nav] a[aria-current='page'] {
+          color: var(--color-primary);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root:not(.light):not(.dark)
+            [data-site-nav]
+            a[aria-current='page'] {
+            color: var(--color-primary);
+          }
+        }
+      </style>
     </div>
   </body>
 </html>
