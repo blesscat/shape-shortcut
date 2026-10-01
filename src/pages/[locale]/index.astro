@@ -91,7 +91,7 @@ const fileCardRows = [
                   tone="primary"
                   appearance="soft"
                   size="sm"
-                  class="font-semibold"
+                  class="font-semibold text-primary-hover dark:text-primary"
                   data-testid={badge.testid}
                 >
                   {t(badge.key)}
@@ -486,7 +486,7 @@ const fileCardRows = [
             {t('home.maker.aboutCta')}
           </Button>
           <a
-            class="grid size-10 place-items-center rounded-lg border border-border-field text-foreground transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+            class="grid size-11 place-items-center rounded-full border border-border-field text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
             href="https://github.com/blesscat"
             target="_blank"
             rel="noopener noreferrer"
@@ -495,7 +495,7 @@ const fileCardRows = [
             <BrandGithubIcon class="size-4.5" aria-hidden="true" />
           </a>
           <a
-            class="grid size-10 place-items-center rounded-lg border border-border-field text-foreground transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+            class="grid size-11 place-items-center rounded-full border border-border-field text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
             href="mailto:blesscat@gmail.com"
             aria-label={t('home.maker.emailCta')}
           >
@@ -507,7 +507,7 @@ const fileCardRows = [
                 type="button"
                 variant="ghost"
                 size="sm"
-                class={`${inlineLinkClass} h-auto rounded-none px-0 py-0 text-left hover:bg-transparent`}
+                class={`inline-flex min-h-11 items-center rounded-none px-0 text-left hover:bg-transparent ${inlineLinkClass}`}
                 data-support-dialog-open
                 data-testid="home-maker-support-trigger"
                 aria-controls="support-dialog"

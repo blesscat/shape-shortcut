@@ -470,10 +470,16 @@ const supportCopyById: Record<
       <style is:global>
         /* Warm capsule nav: the current page renders on the coral soft tint
            with deep coral text, in both appearances. */
-        [data-site-nav]:not([data-compact]) a {
+        /* 44px hit areas on nav links in BOTH states; the compact fold is
+           re-asserted here because this unlayered rule outranks the layered
+           utility. */
+        [data-site-nav] a {
           display: inline-flex;
           align-items: center;
           min-height: 44px;
+        }
+        [data-site-nav][data-compact] a.group-data-compact\:hidden {
+          display: none;
         }
         [data-site-nav] a[aria-current='page'] {
           background-color: var(--color-primary-soft);

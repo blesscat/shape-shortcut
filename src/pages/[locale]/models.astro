@@ -109,9 +109,8 @@ function detailsDialogIdFor(definition: ModelDefinition): string {
 /* Warm system tag tint: Desk on coral soft, Wall on mint soft, HSW neutral. */
 function systemTagClassFor(definition: ModelDefinition): string {
   if (definition.systemContext === 'desk')
-    return 'bg-primary-soft text-primary-strong dark:text-primary'
-  if (definition.systemContext === 'wall')
-    return 'bg-success-soft text-success dark:text-success'
+    return 'bg-primary-soft text-primary-hover dark:text-primary'
+  if (definition.systemContext === 'wall') return 'bg-success-soft text-success'
   return 'bg-muted text-muted-foreground'
 }
 
@@ -148,7 +147,7 @@ function systemTagFor(definition: ModelDefinition): string | null {
         {t('models.lede')}
       </p>
       <a
-        class="inline-flex w-fit items-center rounded-lg border border-border bg-background px-4 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+        class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-5 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
         data-testid="playground-entry"
         href={localizedPathFor(locale, '/cad/playground')}
       >
@@ -229,7 +228,7 @@ function systemTagFor(definition: ModelDefinition): string | null {
                           <Card
                             as="article"
                             size="sm"
-                            class="grid gap-3 p-3 transition-shadow  sm:p-4"
+                            class="grid gap-3 p-3  sm:p-4"
                             data-model-id={definition.id}
                             data-entry-key={`${definition.id}-${definition.systemContext ?? 'legacy'}`}
                             data-system-context={definition.systemContext}
@@ -281,7 +280,7 @@ function systemTagFor(definition: ModelDefinition): string | null {
                             <div class="grid gap-2 text-sm leading-normal">
                               <Dialog>
                                 <DialogTrigger
-                                  class="inline-flex w-fit items-center rounded-lg border border-border bg-background px-3 py-2 font-semibold text-foreground hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+                                  class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
                                   data-model-details-open={dialogId}
                                   aria-controls={dialogId}
                                   hidden
@@ -289,7 +288,7 @@ function systemTagFor(definition: ModelDefinition): string | null {
                                   {t('models.details')}
                                 </DialogTrigger>
                                 <a
-                                  class="inline-flex w-fit items-center rounded-lg border border-border bg-background px-3 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline/50"
+                                  class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
                                   data-model-details-fallback
                                   href={cadPath}
                                 >

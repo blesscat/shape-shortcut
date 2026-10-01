@@ -60,7 +60,7 @@
   <button
     bind:this={trigger}
     type="button"
-    class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-border-field bg-panel px-3 py-2 font-semibold shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-border-field bg-panel px-3 py-2 font-semibold shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     aria-expanded={open}
     aria-controls={`${id}-palette`}
     onclick={() => {

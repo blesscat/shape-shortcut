@@ -38,10 +38,10 @@ const buttonVariantStyles = {
 }
 
 const buttonSizeStyles = {
-  sm: "h-9 px-4 text-sm has-[>svg]:px-3 [&_svg:not([class*='size-'])]:size-3.5",
+  sm: "h-11 px-4 text-sm has-[>svg]:px-3 [&_svg:not([class*='size-'])]:size-3.5",
   md: "h-11 px-5 text-base has-[>svg]:px-4 [&_svg:not([class*='size-'])]:size-4.5",
   lg: "h-12 px-8 text-lg has-[>svg]:px-6 [&_svg:not([class*='size-'])]:size-5",
-  'icon-sm': "size-9 [&_svg:not([class*='size-'])]:size-3.5",
+  'icon-sm': "size-11 [&_svg:not([class*='size-'])]:size-3.5",
   icon: "size-11 [&_svg:not([class*='size-'])]:size-4.5",
   'icon-lg': "size-12 [&_svg:not([class*='size-'])]:size-5",
 }
