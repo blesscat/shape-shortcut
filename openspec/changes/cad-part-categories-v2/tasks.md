@@ -14,7 +14,7 @@
 ## 3. i18n 與首頁
 
 - [x] 3.1 `messages/models.ts` 新增 `models.category.*` 五鍵與 `models.zone.base`／`models.zone.containers`／`models.zone.tools`（zh-Hant＋en）
-- [x] 3.2 `messages/home.ts` 新增 `home.system.deskCategorySummary`／`home.system.wallCategorySummary`（zh-Hant＋en，親和腔、無模型數量與 28 mm），首頁 Desk/Wall 起始卡各加一行摘要
+- [x] 3.2 `messages/home.ts` 新增 `home.explore.desk.categorySummary`／`home.explore.wall.categorySummary`（zh-Hant＋en，親和腔、無模型數量與 28 mm），首頁 Desk/Wall 起始卡各加一行摘要
 - [x] 3.3 `localization.spec.ts` 補分類徽章與首頁摘要的兩語系斷言
 
 ## 4. e2e 與驗證
