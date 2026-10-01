@@ -32,23 +32,23 @@
 
 ## 5. Page composition and component styling
 
-- [ ] 5.1 Restyle the shared navigation capsule (pill radius, `aria-current` coral soft tint + deep coral text) and header CTA per prototype
-- [ ] 5.2 Restyle buttons, cards, system tags (Desk coral-soft / Wall mint-soft / HSW neutral), spec tables, and popovers/dialogs to the warm shape vocabulary (20px cards, 24px containers, pill controls, soft→lift hover)
+- [x] 5.1 Restyle the shared navigation capsule (pill radius, `aria-current` coral soft tint + deep coral text) and header CTA per prototype
+- [x] 5.2 Restyle buttons, cards, system tags (Desk coral-soft / Wall mint-soft / HSW neutral), spec tables, and popovers/dialogs to the warm shape vocabulary (20px cards, 24px containers, pill controls, soft→lift hover)
 - [x] 5.3 Update the homepage composition to the prototype section order (hero + note, where-it-runs card, four-feature band, four-step desk band, desk-or-wall band, about teaser, support banner) across both locales
-- [ ] 5.4 Verify motion rules (transform/opacity only, 180–260ms, reduced-motion disables lift/entrance) and focus/target thresholds (3px coral outline, ≥44px) on restyled surfaces
+- [x] 5.4 Verify motion rules (transform/opacity only, 180–260ms, reduced-motion disables lift/entrance) and focus/target thresholds (3px coral outline, ≥44px) on restyled surfaces
 
 ## 6. Docs diagrams (dark-only warm)
 
-- [ ] 6.1 Warm the dark neutral slots in `scripts/desk-diagrams/palette.mjs` toward the warm dark tokens; keep accent hue coding untouched
-- [ ] 6.2 Regenerate dark diagram variants only; verify light SVGs remain byte-identical (`git status` shows no light SVG changes)
+- [x] 6.1 Warm the dark neutral slots in `scripts/desk-diagrams/palette.mjs` toward the warm dark tokens; keep accent hue coding untouched
+- [x] 6.2 Regenerate dark diagram variants only; verify light SVGs remain byte-identical (`git status` shows no light SVG changes)
 
 ## 7. Model previews
 
 - [x] 7.1 Update the capture suite's expected background constants to the warm viewport colors (light `#F7F3EF`, dark `#201A16`)
-- [ ] 7.2 Run `pnpm capture:model-previews`; verify both variants regenerate for every visible entry and verification passes
+- [x] 7.2 Run `pnpm capture:model-previews`; verify both variants regenerate for every visible entry and verification passes
 
 ## 8. Acceptance sweep
 
-- [ ] 8.1 Contrast assertions: body/muted text ≥4.5:1 across key surfaces in both appearances; CTA white-on-coral ≈4.6:1 intact
-- [ ] 8.2 Dark acceptance: compare rendered dark pages against `dark-preview.html` baseline (grounds, bright coral links, panel layering)
-- [ ] 8.3 Final cross-cutting gate: full vitest suite, targeted e2e (home, models, system-dark-mode, cad-viewport-*, model-card-previews), and full dev-server e2e pass; `openspec validate human-warm-restyle`
+- [x] 8.1 Contrast assertions: body/muted text ≥4.5:1 across key surfaces in both appearances; CTA white-on-coral ≈4.6:1 intact
+- [x] 8.2 Dark acceptance: compare rendered dark pages against `dark-preview.html` baseline (grounds, bright coral links, panel layering)
+- [x] 8.3 Final cross-cutting gate: full vitest suite, targeted e2e (home, models, system-dark-mode, cad-viewport-*, model-card-previews), and full dev-server e2e pass; `openspec validate human-warm-restyle`

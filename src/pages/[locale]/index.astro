@@ -1,6 +1,7 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro'
 import '../../styles/starwind.css'
+import { Badge } from '../../components/starwind/badge'
 import { Button } from '../../components/starwind/button'
 import { Card } from '../../components/starwind/card'
 import ModelPreviewPicture from '../../components/ModelPreviewPicture.astro'
@@ -83,11 +84,16 @@ const fileCardRows = [
         >
           {
             heroBadges.map((badge) => (
-              <li
-                class="rounded-full bg-primary-soft px-3.5 py-1.5 text-sm font-semibold text-primary-strong dark:text-primary"
-                data-testid={badge.testid}
-              >
-                {t(badge.key)}
+              <li>
+                <Badge
+                  tone="primary"
+                  appearance="soft"
+                  size="sm"
+                  class="font-semibold"
+                  data-testid={badge.testid}
+                >
+                  {t(badge.key)}
+                </Badge>
               </li>
             ))
           }
