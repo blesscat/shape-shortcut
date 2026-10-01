@@ -4,18 +4,29 @@ import { skipHeadlessFirefoxWithoutWebGL, waitForCadReady } from './helpers'
 test('OpenGrid divider is listed with independent directional controls', async ({
   page,
 }) => {
-  await page.goto('/models')
+  // Pin the localized path: the card links are emitted with the active
+  // locale, and the assertions below expect the zh-Hant wording.
+  await page.goto('/zh-Hant/models')
+
+  // The divider lives in the collapsed tools zone; expand the zones so the
+  // card re-enters the accessibility tree.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
+
   const modelLink = page
     .getByRole('heading', { name: 'divider (分隔牆)', exact: true })
     .locator('..')
     .getByRole('link', { name: '編輯 divider (分隔牆)', exact: true })
   await expect(modelLink).toHaveAttribute(
     'href',
-    '/cad/opengrid-divider?system=desk',
+    '/zh-Hant/cad/opengrid-divider?system=desk',
   )
   await modelLink.click()
 
-  await expect(page).toHaveURL('/cad/opengrid-divider?system=desk')
+  await expect(page).toHaveURL('/zh-Hant/cad/opengrid-divider?system=desk')
   await expect(
     page.getByRole('heading', { name: '目前編輯：divider (分隔牆)' }),
   ).toBeVisible()
@@ -28,7 +39,11 @@ test('OpenGrid divider is listed with independent directional controls', async (
   await expect(
     page.getByTestId('opengrid-divider-honeycomb-mode'),
   ).toBeVisible()
-  await expect(page.getByRole('checkbox')).toHaveCount(1)
+  // #160 added the two-color rim toggle next to the honeycomb one.
+  await expect(
+    page.getByTestId('opengrid-divider-top-rim-enabled'),
+  ).toBeVisible()
+  await expect(page.getByRole('checkbox')).toHaveCount(2)
   await expect(page.getByText(/Full|Lite|Heavy|螺絲|接頭孔/)).toHaveCount(0)
 
   for (const name of ['左臂（X）', '右臂（X）', '上臂（Y）', '下臂（Y）']) {

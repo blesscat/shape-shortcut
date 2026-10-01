@@ -110,7 +110,9 @@ Tool／Test piece）與 `models.zone.base`、`models.zone.containers`、
 - Wall en: "The wall board and Snap are your base. Shelves, organizers, and
   the tissue box are containers; tools stay tucked below."
 
-摘要不含模型數量與 28 mm 格距，不改卡片既有預覽／標題／連結。
+摘要不含模型數量與 28 mm 格距，不改卡片既有預覽／標題／連結。最終鍵名採
+既有 explore 區命名：`home.explore.desk.categorySummary` 與
+`home.explore.wall.categorySummary`（design 草稿原寫 `home.system.*`）。
 
 ### 5. 測試策略
 

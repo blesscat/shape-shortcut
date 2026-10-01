@@ -8,14 +8,28 @@ test('OpenGrid Snap Remover previews and exports without parameter controls', as
   test.setTimeout(120_000)
   skipHeadlessFirefoxWithoutWebGL(browserName)
 
-  await page.goto('/models')
+  // Pin the localized path: the card links are emitted with the active
+  // locale, and the assertions below expect the zh-Hant wording.
+  await page.goto('/zh-Hant/models')
+
+  // The Snap Remover lives in the collapsed tools zone; expand the zones so
+  // the card re-enters the accessibility tree.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
+
   const modelLink = page
     .getByRole('heading', { name: 'Snap Remover', exact: true })
     .locator('..')
     .getByRole('link', { name: '編輯 Snap Remover', exact: true })
-  await expect(modelLink).toHaveAttribute('href', '/cad/opengrid-snap-remover')
+  await expect(modelLink).toHaveAttribute(
+    'href',
+    '/zh-Hant/cad/opengrid-snap-remover?system=desk',
+  )
   await modelLink.click()
-  await expect(page).toHaveURL('/cad/opengrid-snap-remover')
+  await expect(page).toHaveURL('/zh-Hant/cad/opengrid-snap-remover?system=desk')
   await expect(
     page.getByRole('heading', {
       name: '目前編輯：OpenGrid Snap Remover',

@@ -378,6 +378,13 @@ test('home, model selection, and docs are static Astro pages', async ({
   await page.mouse.move(0, 0)
   await expect(deskZoneTools).toHaveAttribute('open')
   await expect(wallZoneTools).toHaveAttribute('open')
+  // Native disclosure semantics: the collapsed section must also be operable
+  // with the keyboard alone (collapse with Enter, then re-open).
+  await wallZoneTools.locator('summary').focus()
+  await page.keyboard.press('Enter')
+  await expect(wallZoneTools).not.toHaveAttribute('open')
+  await page.keyboard.press('Enter')
+  await expect(wallZoneTools).toHaveAttribute('open')
   await expect(
     deskZoneTools
       .getByTestId('model-tools-grid')
@@ -846,7 +853,7 @@ test('model selection stacks all cards on narrow screens', async ({ page }) => {
   expect(positions.length).toBeGreaterThan(0)
   const cardX = positions[0]?.x
   if (cardX === undefined) throw new Error('Expected narrow model cards')
-  // The collapsed tools panel contributes a 1px border, so stacked cards may
+  // The expanded tools panel contributes a 1px border, so stacked cards may
   // sit 1px off; anything beyond that breaks the single-column guarantee.
   expect(positions.every((position) => Math.abs(position.x - cardX) < 2)).toBe(
     true,

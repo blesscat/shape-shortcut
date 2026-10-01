@@ -8,7 +8,17 @@ import {
 test('OpenGrid pillar is listed in its family and exposes locking and positioning modes', async ({
   page,
 }) => {
-  await page.goto('/models')
+  // Pin the localized path: the card links are emitted with the active
+  // locale, and the assertions below expect the zh-Hant wording.
+  await page.goto('/zh-Hant/models')
+
+  // Locating Post lives in the collapsed tools zone; expand the zones so the
+  // card re-enters the accessibility tree.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
 
   const modelLink = page
     .getByRole('heading', { name: 'Locating Post (定位柱)', exact: true })

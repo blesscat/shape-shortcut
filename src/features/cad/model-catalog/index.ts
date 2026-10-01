@@ -268,10 +268,14 @@ export function partitionByPartZone(
       tools.push(definition)
     }
   }
+  // Unclassified definitions share a finite sentinel rank; Infinity would
+  // make two unclassified entries compare as NaN (Infinity - Infinity) and
+  // rely on V8 treating NaN as 0 to preserve order.
+  const unclassifiedRank = Number.MAX_SAFE_INTEGER
   const rankFor = (definition: ModelDefinition<ModelPreviewImage>) =>
     definition.partCategory
       ? partZoneRank[definition.partCategory]
-      : Number.POSITIVE_INFINITY
+      : unclassifiedRank
   tools.sort((a, b) => rankFor(a) - rankFor(b))
   return { base, containers, tools }
 }

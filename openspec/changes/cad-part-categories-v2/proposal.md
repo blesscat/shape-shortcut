@@ -46,14 +46,16 @@ None.
 ## Impact
 
 - `src/features/cad/model-catalog/`（types, per-definition annotations, and a
-  zone-partitioning helper）, `src/pages/[locale]/models.astro`,
-  `src/pages/[locale]/index.astro`, `src/i18n/messages/models.ts`,
-  `src/i18n/messages/home.ts`.
+  zone-partitioning helper）, `src/pages/[locale]/models.astro`, the new
+  `src/components/cad/ModelCard.astro`（chooser card markup extracted from
+  models.astro）, `src/pages/[locale]/index.astro`,
+  `src/i18n/messages/models.ts`, `src/i18n/messages/home.ts`.
 - No changes to model IDs, routes, parameter contracts, geometry, exports, CAD
   workspace, playground, or viewport theme. Existing model IDs are
   intentionally preserved; no new OpenGrid component is added. Chooser-hidden
   legacy models（`box`、`modular-grid-base`、`hexagonal-column`）are not
   modified.
-- Tests: extend `tests/unit/model-catalog.test.ts`; update
-  `tests/e2e/home.spec.ts`, `tests/e2e/localization.spec.ts`, and
-  `tests/e2e/system-dark-mode.spec.ts` where they assert chooser structure.
+- Tests: extend `tests/unit/model-catalog.test.ts` and
+  `tests/unit/opengrid-system-entry-context.test.ts`（subgroup order）; update
+  `tests/e2e/home.spec.ts` and `tests/e2e/localization.spec.ts`.
+  `tests/e2e/system-dark-mode.spec.ts` stays green untouched.

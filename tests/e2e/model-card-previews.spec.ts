@@ -280,6 +280,14 @@ test('model cards expose static previews and preserve selection on image failure
     route.abort(),
   )
   await page.goto('/models')
+
+  // Accessory, tool, and test-piece cards live in the collapsed tools zone; expand the zones so the
+  // cards re-enter the accessibility tree.
+  const toolsSections = page.getByTestId('model-zone-tools')
+  const toolsCount = await toolsSections.count()
+  for (let index = 0; index < toolsCount; index += 1) {
+    await toolsSections.nth(index).locator('summary').click()
+  }
   const locale = 'zh-Hant' as const
 
   for (const definition of VISIBLE_MODEL_DEFINITIONS) {

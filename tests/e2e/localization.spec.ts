@@ -170,8 +170,22 @@ test('model chooser keeps compact cards and stable modal details', async ({
     page.getByRole('navigation', { name: 'Primary navigation' }),
   )
   // The capsule nav is sticky and in-flow, so the tail of its ~200ms collapse
-  // still drifts document coordinates by a couple of pixels. Let it finish.
-  await page.waitForTimeout(250)
+  // still drifts document coordinates by a couple of pixels after the nav's
+  // own height settles. Wait for the cards to stop moving instead of sleeping
+  // a fixed duration.
+  await expect
+    .poll(() =>
+      cards.first().evaluate(
+        (card) =>
+          new Promise((resolve) => {
+            const first = card.getBoundingClientRect().top
+            requestAnimationFrame(() =>
+              resolve(Math.abs(card.getBoundingClientRect().top - first) < 0.5),
+            )
+          }),
+      ),
+    )
+    .toBe(true)
   await page.evaluate(() => document.fonts.ready)
   // Expansion clicks park the pointer over a card; the hover lift
   // (-translate-y-0.5) would masquerade as a dialog-induced shift.
