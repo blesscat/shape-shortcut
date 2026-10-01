@@ -18,11 +18,21 @@ describe('locale translation foundation', () => {
   })
 
   it('translates a known message and interpolates named values', () => {
-    expect(translate('zh-Hant', 'test.greeting', { name: 'Ada' })).toBe(
-      '你好，Ada！',
+    expect(
+      translate('zh-Hant', 'panel.tissueBox.mountingGrid', {
+        columns: '2',
+        rows: '3',
+      }),
+    ).toBe(
+      'OpenConnect 接口孔陣列：X 2 欄 × Y 3 列（接口平面的左右／上下；安裝後上下對應 Z）。',
     )
-    expect(translate('en', 'test.greeting', { name: 'Ada' })).toBe(
-      'Hello, Ada!',
+    expect(
+      translate('en', 'panel.tissueBox.mountingGrid', {
+        columns: '2',
+        rows: '3',
+      }),
+    ).toBe(
+      'OpenConnect socket grid: X 2 columns × Y 3 rows (left/right and up/down on the mounting plane; installed up/down corresponds to Z).',
     )
   })
 
