@@ -101,7 +101,7 @@ export const zh = {
     '模型選擇頁是目前所有可用產生器的入口。以下用系統情境整理主要模型；實際參數、範圍與匯出格式請以模型詳情和 CAD 工作區為準。',
   'docs.modelReference.desk.title': 'Desk System',
   'docs.modelReference.desk.body': '桌面 Board、Snap、定位方式與收納盒。',
-  'docs.modelReference.wall.title': 'Wall Related',
+  'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
     '牆面 Board、Snap、Wall Cover 與 OpenConnect Shelf。',
   'docs.modelReference.hsw.title': 'HSW',
@@ -238,7 +238,7 @@ export const en: { [Key in keyof typeof zh]: string } = {
   'docs.modelReference.desk.title': 'Desk System',
   'docs.modelReference.desk.body':
     'Desk Boards, Snaps, locating methods, and containers.',
-  'docs.modelReference.wall.title': 'Wall Related',
+  'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
     'Wall Boards, Snaps, Wall Covers, and OpenConnect Shelf.',
   'docs.modelReference.hsw.title': 'HSW',

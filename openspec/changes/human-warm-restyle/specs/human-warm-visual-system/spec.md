@@ -89,15 +89,24 @@ hover lifts and entrance animations MUST be disabled.
 
 ### Requirement: Interaction accessibility thresholds
 
-Interactive targets MUST present a clickable area of at least 44px in both
-appearances, and keyboard focus MUST be visible as a 3px coral outline on
-the warm token system.
+Interactive targets on the shared chrome and the non-CAD pages — including
+links, buttons, tags, and the theme and language controls — MUST present a
+clickable area of at least 44px in both appearances, and keyboard focus MUST
+be visible as a 3px coral outline on the warm token system. Inside the CAD
+workspace the warm shell treatment applies (rounded panels, pill controls,
+and the same 3px coral focus), while dense parameter controls keep their
+established compact sizing.
 
 #### Scenario: Targets and focus meet thresholds
 
-- **WHEN** a user interacts with links, buttons, tags, or theme and language controls in either appearance
+- **WHEN** a user interacts with links, buttons, tags, or theme and language controls on the shared chrome or a non-CAD page in either appearance
 - **THEN** each target MUST offer at least a 44px clickable area
 - **AND** keyboard focus MUST render a visible 3px coral outline
+
+#### Scenario: CAD workspace keeps warm focus
+
+- **WHEN** a user interacts with CAD workspace controls via keyboard
+- **THEN** focus MUST render with the 3px coral outline token
 
 ### Requirement: Warm CAD viewport theme
 

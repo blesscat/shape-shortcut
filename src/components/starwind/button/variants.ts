@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 const buttonBase = [
   'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold whitespace-nowrap',
   '[&_svg]:pointer-events-none [&_svg]:shrink-0',
-  'transition-all outline-none focus-visible:ring-3',
+  'transition-all duration-200 outline-none focus-visible:ring-3',
   'disabled:pointer-events-none disabled:opacity-50',
   'data-disabled:pointer-events-none data-disabled:opacity-50',
   'aria-invalid:border-error aria-invalid:focus-visible:ring-error/40',
@@ -30,7 +30,7 @@ const buttonVariantStyles = {
   ghost: 'hover:bg-muted hover:text-foreground focus-visible:ring-outline/50',
   info: 'bg-info text-info-foreground hover:bg-info/90 focus-visible:ring-info/50',
   success:
-    'bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/50',
+    'bg-success-surface text-success-surface-foreground hover:bg-success-surface/90 focus-visible:ring-success-surface/50',
   warning:
     'bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/50',
   error:

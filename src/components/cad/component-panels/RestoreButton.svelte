@@ -12,7 +12,7 @@
 
 {#if visible}
   <button
-    class="absolute top-1/2 right-0 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md border border-border-field bg-panel p-0 text-ink shadow-sm hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    class="absolute top-1/2 right-0 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md border border-border-field bg-panel p-0 text-ink shadow-sm hover:bg-page focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     type="button"
     aria-label={translate(locale, 'common.restore', { label })}
     title={translate(locale, 'common.restoreTitle')}

@@ -81,8 +81,6 @@ export const zh = {
   'home.fileCard.whereValue': '你的瀏覽器裡',
   'home.fileCard.downloadLabel': '能下載什麼',
   'home.fileCard.downloadValue': 'STL · 雙色 3MF',
-  'home.fileCard.statusLabel': '現在的狀態',
-  'home.fileCard.statusValue': 'Prototype，還在長大',
 }
 
 export const en: { [Key in keyof typeof zh]: string } = {
@@ -167,6 +165,4 @@ export const en: { [Key in keyof typeof zh]: string } = {
   'home.fileCard.whereValue': 'Your browser',
   'home.fileCard.downloadLabel': 'What you get',
   'home.fileCard.downloadValue': 'STL · dual-color 3MF',
-  'home.fileCard.statusLabel': 'Status',
-  'home.fileCard.statusValue': 'Prototype, still growing',
 }

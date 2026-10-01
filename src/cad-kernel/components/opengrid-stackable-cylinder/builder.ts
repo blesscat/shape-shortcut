@@ -1941,8 +1941,7 @@ export function buildOpenGridStackableCylinderWithParts(
   }
 
   assertGenerationCurrent(context)
-  const splitZ =
-    normalizedParameters.height - normalizedParameters.topRimHeight
+  const splitZ = normalizedParameters.height - normalizedParameters.topRimHeight
   const derived =
     openGridStackableCylinderDerivedGeometryFor(normalizedParameters)
   const cutterRadius = derived.radius + 20

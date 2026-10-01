@@ -62,9 +62,15 @@ const openConnectOrganizerPath = localizedCadPathFor(
   title={t('docs.metaTitle')}
   description={t('docs.description')}
 >
-  <Card as="article" class="grid gap-10 p-5 shadow-lg sm:p-8">
+  <Card as="article" class="grid gap-10 p-5 sm:p-8">
     <header class="grid gap-3">
-      <Badge variant="primary" eyebrow size="sm" class="w-fit">
+      <Badge
+        tone="primary"
+        appearance="soft"
+        eyebrow
+        size="sm"
+        class="w-fit font-semibold text-primary-strong dark:text-primary"
+      >
         {t('docs.eyebrow')}
       </Badge>
       <h1 class="text-4xl font-semibold leading-tight">{t('docs.title')}</h1>
@@ -329,11 +335,11 @@ const openConnectOrganizerPath = localizedCadPathFor(
               <Card
                 as="a"
                 size="sm"
-                class="grid gap-2 p-3 no-underline transition-shadow hover:shadow-md"
+                class="grid gap-2 p-3 no-underline transition-shadow "
                 href={entry.href}
               >
                 <ModelPreviewPicture
-                  class="aspect-[16/10] w-full rounded-lg border border-border object-cover"
+                  class="aspect-[16/10] w-full rounded-img border border-border object-cover"
                   src={entry.previewImage.src}
                   darkSrc={entry.previewImage.darkSrc}
                   width="640"
@@ -373,7 +379,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
       <div class="grid gap-4 sm:grid-cols-2">
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-wall.webp"
             darkSrc="/model-previews/opengrid-wall-dark.webp"
             width="640"
@@ -394,7 +400,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         </Card>
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-snap-wall.webp"
             darkSrc="/model-previews/opengrid-snap-wall-dark.webp"
             width="640"
@@ -413,7 +419,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         </Card>
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-wall-cover-wall.webp"
             darkSrc="/model-previews/opengrid-wall-cover-wall-dark.webp"
             width="640"
@@ -434,7 +440,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         </Card>
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-shelf-wall.webp"
             darkSrc="/model-previews/opengrid-openconnect-shelf-wall-dark.webp"
             width="640"
@@ -455,7 +461,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         </Card>
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-organizer-wall.webp"
             darkSrc="/model-previews/opengrid-openconnect-organizer-wall-dark.webp"
             width="640"
@@ -476,7 +482,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         </Card>
         <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
+            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-tissue-box-wall.webp"
             darkSrc="/model-previews/opengrid-openconnect-tissue-box-wall-dark.webp"
             width="640"

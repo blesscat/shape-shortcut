@@ -24,6 +24,7 @@
      muted TEXT is --color-muted-foreground. */
   --color-muted: #fff7f2;
   --color-muted-foreground: #6e5f57;
+  --color-ink-faint: #8a7b72;
   --color-page: #ffffff;
   --color-panel: #fff7f2;
   --color-background: #ffffff;
@@ -39,7 +40,7 @@
   --color-stale-background: #fff4d6;
   --color-stale-text: #69470d;
   /* The coral CTA face (#cf4429, white labels >=4.6:1 in both appearances)
-     hovers to #B93A23 in light and brightens to #E85A40 in dark. */
+     hovers to #B93A23 in light; dark hover keeps the face and lifts instead. */
   --color-primary: #cf4429;
   --color-primary-strong: #cf4429;
   --color-primary-hover: #b93a23;
@@ -106,6 +107,7 @@
     --color-ink: #f4ede7;
     --color-muted: #2a231e;
     --color-muted-foreground: #b8a99f;
+    --color-ink-faint: #94867c;
     --color-page: #201a16;
     --color-panel: #2a231e;
     --color-background: #201a16;
@@ -122,7 +124,7 @@
     --color-stale-text: #ffe4a4;
     --color-primary: #ff8a70;
     --color-primary-strong: #cf4429;
-    --color-primary-hover: #e85a40;
+    --color-primary-hover: #cf4429;
     --color-primary-soft: rgb(214 69 43 / 16%);
     --color-primary-foreground: #ffffff;
     --color-success: #5cd68a;
@@ -167,6 +169,7 @@
   --color-ink: #f4ede7;
   --color-muted: #2a231e;
   --color-muted-foreground: #b8a99f;
+  --color-ink-faint: #94867c;
   --color-page: #201a16;
   --color-panel: #2a231e;
   --color-background: #201a16;
@@ -183,7 +186,7 @@
   --color-stale-text: #ffe4a4;
   --color-primary: #ff8a70;
   --color-primary-strong: #cf4429;
-  --color-primary-hover: #e85a40;
+  --color-primary-hover: #cf4429;
   --color-primary-soft: rgb(214 69 43 / 16%);
   --color-primary-foreground: #ffffff;
   --color-success: #5cd68a;

@@ -148,7 +148,11 @@
   {/if}
 </T.PerspectiveCamera>
 {#if presentation === 'workspace' && orbitControls}
-  <Gizmo bind:ref={viewportGizmo} controls={orbitControls} {...CAD_VIEWPORT_GIZMO} />
+  <Gizmo
+    bind:ref={viewportGizmo}
+    controls={orbitControls}
+    {...CAD_VIEWPORT_GIZMO}
+  />
 {/if}
 {#key modelRevision}
   <Bounds margin={boundsMarginFor(presentation)} animate={false}>

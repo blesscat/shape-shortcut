@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 const badgeBase = [
   'inline-flex items-center gap-1.5 rounded-full font-medium whitespace-nowrap',
   '[&_svg]:pointer-events-none [&_svg]:shrink-0',
-  'transition-all outline-none focus-visible:ring-3',
+  'transition-all duration-200 outline-none focus-visible:ring-3',
   'aria-invalid:border-error aria-invalid:focus-visible:ring-error/40',
 ] as const
 
@@ -16,7 +16,8 @@ const badgeVariantStyles = {
     'border-border focus-visible:border-outline focus-visible:ring-outline/50 border',
   ghost: 'bg-foreground/10 text-foreground focus-visible:ring-outline/50',
   info: 'bg-info text-info-foreground focus-visible:ring-info/50',
-  success: 'bg-success text-success-foreground focus-visible:ring-success/50',
+  success:
+    'bg-success-surface text-success-surface-foreground focus-visible:ring-success-surface/50',
   warning: 'bg-warning text-warning-foreground focus-visible:ring-warning/50',
   error: 'bg-error text-error-foreground focus-visible:ring-error/50',
 } as const
@@ -99,7 +100,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
   {
     isLink: true,
     variant: 'success',
-    className: 'hover:bg-success/80',
+    className: 'hover:bg-success-surface/80',
   },
   {
     isLink: true,
@@ -161,7 +162,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     isLink: true,
     tone: 'success',
     appearance: 'solid',
-    className: 'hover:bg-success/80',
+    className: 'hover:bg-success-surface/80',
   },
   {
     isLink: true,
@@ -215,7 +216,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     isLink: true,
     tone: 'success',
     appearance: 'soft',
-    className: 'hover:bg-success/20',
+    className: 'hover:bg-success-surface/20',
   },
   {
     isLink: true,
@@ -269,7 +270,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     isLink: true,
     tone: 'success',
     appearance: 'outline',
-    className: 'hover:bg-success/10',
+    className: 'hover:bg-success-surface/10',
   },
   {
     isLink: true,
@@ -321,7 +322,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     tone: 'success',
     appearance: 'solid',
     className:
-      'bg-success text-success-foreground focus-visible:ring-success/50',
+      'bg-success-surface text-success-surface-foreground focus-visible:ring-success-surface/50',
   },
   {
     tone: 'warning',
@@ -370,7 +371,8 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
   {
     tone: 'success',
     appearance: 'soft',
-    className: 'bg-success/10 text-foreground focus-visible:ring-success/50',
+    className:
+      'bg-success-surface/10 text-foreground focus-visible:ring-success-surface/50',
   },
   {
     tone: 'warning',
@@ -421,7 +423,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     tone: 'success',
     appearance: 'outline',
     className:
-      'border border-success text-foreground focus-visible:ring-success/50',
+      'border border-success text-foreground focus-visible:ring-success-surface/50',
   },
   {
     tone: 'warning',
@@ -472,7 +474,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
   {
     tone: 'success',
     appearance: 'text',
-    className: 'text-success focus-visible:ring-success/50',
+    className: 'text-success focus-visible:ring-success-surface/50',
   },
   {
     tone: 'warning',
@@ -526,7 +528,7 @@ const badgeCompoundVariants: BadgeCompoundVariant[] = [
     tone: 'success',
     appearance: 'frosted',
     className:
-      'border-success/40 text-foreground focus-visible:ring-success/50',
+      'border-success/40 text-foreground focus-visible:ring-success-surface/50',
   },
   {
     tone: 'warning',
