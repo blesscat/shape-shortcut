@@ -1,17 +1,14 @@
 ---
 import '../styles/global.css'
-import '@fontsource/hanken-grotesk/latin-400.css'
-import '@fontsource/hanken-grotesk/latin-500.css'
-import '@fontsource/hanken-grotesk/latin-600.css'
-import '@fontsource/hanken-grotesk/latin-700.css'
+import '@fontsource/nunito/latin-600.css'
+import '@fontsource/nunito/latin-700.css'
+import '@fontsource/nunito/latin-800.css'
+import '@fontsource/nunito/latin-900.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-500.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-700.css'
+import '@fontsource/noto-sans-tc/chinese-traditional-900.css'
 import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
-import '@fontsource/inter/latin-400.css'
-import '@fontsource/inter/latin-500.css'
-import '@fontsource/inter/latin-600.css'
-import '@fontsource/inter/latin-700.css'
-import '@fontsource/fira-code/latin-400.css'
-import '@fontsource/fira-code/latin-600.css'
 import {
   supportProviders,
   type SupportProviderId,
@@ -187,26 +184,8 @@ const supportCopyById: Record<
         driven by scroll position only, so both themes collapse in lockstep. */
     }
     <div class="min-h-screen pt-6">
-      <div class="hidden dark:block" aria-hidden="true">
-        <div
-          class="pointer-events-none fixed inset-x-0 top-0 z-30 h-px animate-pulse bg-linear-to-r from-transparent via-neon to-transparent opacity-70 motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-28 left-[12%] z-0 size-2 animate-pulse rounded-full bg-neon/80 shadow-glow motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-72 right-[18%] z-0 size-1.5 animate-ping rounded-full bg-cyber-purple/70 motion-reduce:animate-none"
-        >
-        </div>
-        <div
-          class="pointer-events-none fixed top-1/2 left-[24%] z-0 size-1 animate-pulse rounded-full bg-cyber-cyan/60 motion-reduce:animate-none"
-        >
-        </div>
-      </div>
       <nav
-        class="group sticky top-0 z-40 mx-auto flex w-[90%] max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-border bg-nav px-[clamp(1rem,4vw,4rem)] py-4 text-nav-foreground shadow-sm backdrop-blur-md transition-[padding-block,top] duration-200 ease-out motion-reduce:transition-none data-compact:py-1.5 dark:top-6 dark:data-compact:top-2 dark:border-neon/25 dark:shadow-glow"
+        class="group sticky top-0 z-40 mx-auto flex w-[90%] max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-border bg-nav px-[clamp(1rem,4vw,4rem)] py-4 text-nav-foreground shadow-soft backdrop-blur-md transition-[padding-block,top] duration-200 ease-out motion-reduce:transition-none data-compact:py-1.5"
         aria-label={t('navigation.primary')}
         data-site-nav
       >
@@ -280,7 +259,7 @@ const supportCopyById: Record<
             supportProviders.length > 0 && (
               <button
                 type="button"
-                class="cursor-pointer whitespace-nowrap rounded-full bg-primary-strong px-4 py-2 text-sm font-semibold text-white no-underline shadow-glow transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nav-foreground dark:bg-linear-to-r dark:from-cyber-cyan dark:to-neon dark:text-[#00354a]"
+                class="cursor-pointer whitespace-nowrap rounded-full bg-primary-strong px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-outline"
                 data-support-dialog-open
                 data-testid="support-trigger"
                 aria-controls="support-dialog"
@@ -317,7 +296,7 @@ const supportCopyById: Record<
         supportProviders.length > 0 && (
           <dialog
             id="support-dialog"
-            class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-hidden rounded-2xl border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-black/60 dark:border-neon/25 dark:bg-panel/90 dark:shadow-glow dark:backdrop-blur-xl"
+            class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-hidden rounded-container border border-border bg-card p-0 text-card-foreground shadow-lift backdrop:bg-black/60"
             aria-labelledby="support-dialog-title"
             aria-describedby="support-dialog-description"
             data-testid="support-dialog"
@@ -393,7 +372,7 @@ const supportCopyById: Record<
         <slot />
       </main>
       <footer
-        class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground dark:border-neon/20"
+        class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground"
         aria-label={t('navigation.footer')}
       >
         <div

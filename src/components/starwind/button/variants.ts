@@ -1,7 +1,7 @@
 import { tv } from 'tailwind-variants'
 
 const buttonBase = [
-  'inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap',
+  'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold whitespace-nowrap',
   '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   'transition-all outline-none focus-visible:ring-3',
   'disabled:pointer-events-none disabled:opacity-50',
@@ -14,14 +14,12 @@ const buttonVariantStyles = {
     'bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-outline/50',
   primary:
     'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/50',
-  /* Light keeps the solid Kinetic deep blue; dark layers the Cyber-CAD neon
-     gradient over a solid #38bdf8 face (the computed backgroundColor stays
-     constant for the home CTA contrast check) with the on-primary dark label.
-     Hover boosts brightness via filter so backgroundColor never changes. */
+  /* Warm CTA: solid coral face with white label in both appearances; hover
+     deepens in light and brightens in dark via the primary-hover token. */
   neon: [
     'bg-primary-strong text-primary-foreground shadow-xs',
-    'hover:brightness-110 focus-visible:ring-primary-strong/50',
-    'dark:bg-neon dark:bg-linear-to-r dark:from-cyber-cyan dark:to-neon dark:text-[#00354a] dark:shadow-glow dark:focus-visible:ring-neon/50',
+    'hover:bg-primary-hover focus-visible:ring-primary-strong/50',
+    'dark:shadow-none',
   ].join(' '),
   secondary:
     'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] focus-visible:ring-secondary/50',

@@ -62,7 +62,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
   title={`${t('docs.title')} | Shape Shortcut`}
   description={t('docs.description')}
 >
-  <Card as="article" class="cyber-card grid gap-10 p-5 shadow-lg sm:p-8">
+  <Card as="article" class="grid gap-10 p-5 shadow-lg sm:p-8">
     <header class="grid gap-3">
       <Badge variant="primary" eyebrow size="sm" class="w-fit">
         {t('docs.eyebrow')}
@@ -136,7 +136,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
           {t('docs.deskQuickStart.workflowHeading')}
         </h3>
         <ol class="grid gap-4">
-          <Card as="li" size="sm" class="cyber-card p-4" data-step="board">
+          <Card as="li" size="sm" class="p-4" data-step="board">
             <h4 class="font-semibold">
               <a
                 class="text-foreground underline underline-offset-4"
@@ -151,7 +151,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
               {t('docs.deskQuickStart.step.board.note')}
             </p>
           </Card>
-          <Card as="li" size="sm" class="cyber-card p-4" data-step="snap">
+          <Card as="li" size="sm" class="p-4" data-step="snap">
             <h4 class="font-semibold">
               <a
                 class="text-foreground underline underline-offset-4"
@@ -163,7 +163,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
               {t('docs.deskQuickStart.step.snap.body')}
             </p>
           </Card>
-          <Card as="li" size="sm" class="cyber-card p-4" data-step="locating">
+          <Card as="li" size="sm" class="p-4" data-step="locating">
             <h4 class="font-semibold">
               {t('docs.deskQuickStart.step.locating.title')}
             </h4>
@@ -171,7 +171,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
               {t('docs.deskQuickStart.step.locating.body')}
             </p>
           </Card>
-          <Card as="li" size="sm" class="cyber-card p-4" data-step="container">
+          <Card as="li" size="sm" class="p-4" data-step="container">
             <h4 class="font-semibold">
               {t('docs.deskQuickStart.step.container.title')}
             </h4>
@@ -216,7 +216,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
           {t('docs.deskQuickStart.locatingHeading')}
         </h3>
         <div class="grid gap-4 md:grid-cols-2">
-          <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+          <Card as="article" size="sm" class="grid gap-2 p-4">
             <h4 class="font-semibold">
               <a
                 class="text-foreground underline underline-offset-4"
@@ -228,7 +228,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
               {t('docs.deskQuickStart.locating.separate.body')}
             </p>
           </Card>
-          <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+          <Card as="article" size="sm" class="grid gap-2 p-4">
             <h4 class="font-semibold">
               {t('docs.deskQuickStart.locating.builtin.title')}
             </h4>
@@ -326,7 +326,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
               <Card
                 as="a"
                 size="sm"
-                class="cyber-card grid gap-2 p-3 no-underline transition-shadow hover:shadow-md"
+                class="grid gap-2 p-3 no-underline transition-shadow hover:shadow-md"
                 href={entry.href}
               >
                 <ModelPreviewPicture
@@ -368,7 +368,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         <p class="max-w-3xl leading-normal">{t('docs.wall.intro')}</p>
       </header>
       <div class="grid gap-4 sm:grid-cols-2">
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-wall.webp"
@@ -389,7 +389,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={wallBoardPath}>{t('docs.wall.board.cta')}</a
           >
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-snap-wall.webp"
@@ -408,7 +408,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={wallSnapPath}>{t('docs.wall.snap.cta')}</a
           >
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-wall-cover-wall.webp"
@@ -429,7 +429,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={wallCoverPath}>{t('docs.wall.cover.cta')}</a
           >
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-shelf-wall.webp"
@@ -450,7 +450,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={openConnectShelfPath}>{t('docs.wall.shelf.cta')}</a
           >
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-organizer-wall.webp"
@@ -471,7 +471,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             href={openConnectOrganizerPath}>{t('docs.wall.organizer.cta')}</a
           >
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-3 p-4">
+        <Card as="article" size="sm" class="grid gap-3 p-4">
           <ModelPreviewPicture
             class="aspect-[16/10] w-full rounded-lg border border-border bg-muted object-cover"
             src="/model-previews/opengrid-openconnect-tissue-box-wall.webp"
@@ -511,7 +511,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
         <p class="max-w-3xl leading-normal">{t('docs.modelReference.body')}</p>
       </header>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+        <Card as="article" size="sm" class="grid gap-2 p-4">
           <h3 class="m-0 text-xl font-semibold">
             {t('docs.modelReference.desk.title')}
           </h3>
@@ -519,7 +519,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             {t('docs.modelReference.desk.body')}
           </p>
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+        <Card as="article" size="sm" class="grid gap-2 p-4">
           <h3 class="m-0 text-xl font-semibold">
             {t('docs.modelReference.wall.title')}
           </h3>
@@ -527,7 +527,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             {t('docs.modelReference.wall.body')}
           </p>
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+        <Card as="article" size="sm" class="grid gap-2 p-4">
           <h3 class="m-0 text-xl font-semibold">
             {t('docs.modelReference.hsw.title')}
           </h3>
@@ -535,7 +535,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
             {t('docs.modelReference.hsw.body')}
           </p>
         </Card>
-        <Card as="article" size="sm" class="cyber-card grid gap-2 p-4">
+        <Card as="article" size="sm" class="grid gap-2 p-4">
           <h3 class="m-0 text-xl font-semibold">
             {t('docs.modelReference.other.title')}
           </h3>

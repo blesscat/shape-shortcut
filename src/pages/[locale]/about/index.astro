@@ -33,7 +33,7 @@ const docsPath = publicPathFor(locale, 'docs')
   description={t('about.description')}
 >
   <article class="grid gap-10" data-testid="about-page">
-    <Card as="header" class="cyber-card p-5 shadow-lg sm:p-8">
+    <Card as="header" class="p-5 shadow-lg sm:p-8">
       <div class="flex flex-col items-center gap-6">
         <img
           class="aspect-square w-28 shrink-0 rounded-2xl border border-border bg-muted object-cover sm:w-36"
@@ -69,7 +69,7 @@ const docsPath = publicPathFor(locale, 'docs')
 
     <Card
       as="section"
-      class="cyber-card grid gap-3 p-5 shadow-sm sm:p-8"
+      class="grid gap-3 p-5 shadow-sm sm:p-8"
       aria-labelledby="about-story-title"
       data-testid="about-story"
     >
@@ -86,7 +86,7 @@ const docsPath = publicPathFor(locale, 'docs')
 
     <Card
       as="section"
-      class="cyber-card grid gap-3 p-5 shadow-sm sm:p-8"
+      class="grid gap-3 p-5 shadow-sm sm:p-8"
       aria-labelledby="about-project-title"
       data-testid="about-project"
     >
@@ -103,7 +103,7 @@ const docsPath = publicPathFor(locale, 'docs')
 
     <Card
       as="section"
-      class="grid gap-5 bg-banner p-5 text-banner-foreground shadow-lg ring-0 sm:p-8 dark:shadow-glow dark:ring-1 dark:ring-neon/25"
+      class="grid gap-5 bg-banner p-5 text-banner-foreground shadow-lg ring-0 sm:p-8"
       aria-labelledby="about-links-title"
       data-testid="about-links"
     >
@@ -135,7 +135,7 @@ const docsPath = publicPathFor(locale, 'docs')
           href="mailto:blesscat@gmail.com"
           variant="outline"
           size="lg"
-          class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50 dark:!border-neon/40 dark:!bg-transparent dark:!text-[#dae2fd] dark:hover:!bg-white/10 dark:focus-visible:ring-neon/50"
+          class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50"
         >
           {t('about.email')}
         </Button>
@@ -145,7 +145,7 @@ const docsPath = publicPathFor(locale, 'docs')
               type="button"
               variant="outline"
               size="lg"
-              class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50 dark:!border-neon/40 dark:!bg-transparent dark:!text-[#dae2fd] dark:hover:!bg-white/10 dark:focus-visible:ring-neon/50"
+              class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50"
               data-support-dialog-open
               data-testid="about-support-trigger"
               aria-controls="support-dialog"
