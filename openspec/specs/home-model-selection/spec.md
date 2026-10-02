@@ -719,6 +719,22 @@ with a friendly hint, a visible teaser line while collapsed, and an
 - **AND** 工具與配件區收合時 MUST 顯示提示語與預覽文案，MUST NOT 顯示模型
   數量
 
+### Requirement: 系統面板標頭與本體分離
+
+Each `/models` system panel MUST present visible top separation between the
+先挑容器 head's bottom hairline and the first zone rendered in the panel body
+so the divider never rests directly on panel content. The separation MUST be
+present in both light and dark color schemes and on every system panel
+（Desk／Wall／HSW）.
+
+#### Scenario: 面板本體與標頭分隔線保留上緣間距
+
+- **WHEN** 使用者檢視 `/models` 任一系統面板
+- **THEN** 面板本體第一個分區的頂緣與標頭底部分隔線之間 MUST 有可見間距，
+  且間距量測 MUST 大於零
+- **AND** 淺色與深色主題、三個系統面板皆 MUST 成立
+- **AND** 標頭、分隔線、分區順序與既有卡片版型 MUST 維持不變
+
 ### Requirement: 首頁系統卡分類摘要
 
 The localized homepage Desk System and Wall System starting cards MUST each
