@@ -158,6 +158,17 @@ const supportCopyById: Record<
           themeMediaQuery?.addListener?.(handleSystemThemeChange)
         }
 
+        // The choice is per-browser, not per page: keep every already-open
+        // tab in step when another tab stores a new theme, and re-apply
+        // after back/forward restores a page from the bfcache (scripts do
+        // not re-run on those restores).
+        window.addEventListener('storage', (event) => {
+          if (event.key === themeStorageKey || event.key === null) syncTheme()
+        })
+        window.addEventListener('pageshow', (event) => {
+          if (event.persisted) syncTheme()
+        })
+
         document.addEventListener('DOMContentLoaded', () => {
           const toggle = document.querySelector('[data-theme-toggle]')
           if (!(toggle instanceof HTMLButtonElement)) return
