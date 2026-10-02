@@ -3,9 +3,7 @@
 ## Purpose
 
 定義以 repository 內 `hsw-cell.step` 為 canonical B-Rep asset 的獨立六角蜂巢 component，包括參數、排列、bounds、單一 solid、無圓角、Worker lifetime 與效能要求。HSW 只共用平台層的 model/message/revision/export lifecycle；不得使用 `box` 或 `modular-grid-base` 的 component-specific builder、assembly、template cache 或 fillet 流程。
-
 ## Requirements
-
 ### Requirement: HSW parameters and canonical asset
 
 The system MUST provide an `hsw-cell` component with `rows` and `columns` as positive integers in the inclusive range 1–20. The component MUST use the colocated `hsw-cell.step` as its canonical runtime geometry asset. Each generated cell MUST preserve the asset's original scale, orientation, and fixed 8 mm height; the component MUST NOT create a cutter or rebuild the cell procedurally for every request.
@@ -222,3 +220,33 @@ The HSW catalog definition MUST provide the deterministic STEP filename `hsw-cel
 - **THEN** the request MUST be correlated to that HSW model revision and Worker epoch
 - **AND** the suggested filename MUST be `hsw-cell-2x2.step`
 - **AND** the downloaded bytes MUST be non-empty exact STEP output from the committed HSW B-Rep
+
+### Requirement: hsw-cell dimension calculation
+
+The `hsw-cell` dimension calculator MUST derive `columns` and `rows` from the
+canonical cell envelope and stagger layout owned by this capability: it MUST
+choose the greatest legal column count within the existing 1–20 range whose
+width fits `targetX` and whose single-row envelope also fits `targetY`, then
+choose the greatest legal row count whose envelope depth fits `targetY`. The
+calculation MUST account for the additional half-row depth required when
+columns are greater than one. Component-specific envelope constants and
+stagger rules MUST remain owned by this capability rather than by the shared
+dimension-calculator capability.
+
+#### Scenario: Staggered depth limits the calculation
+
+- **GIVEN** targets that can contain a 2 × 2 `hsw-cell` envelope but not a
+  third column or row
+- **WHEN** the user calculates cells from the target X and Y dimensions
+- **THEN** the calculator MUST produce `columns=2` and `rows=2`
+- **AND** it MUST use the envelope including the additional half-row depth for
+  multiple columns
+
+#### Scenario: Target below one cell envelope is rejected
+
+- **WHEN** a target cannot contain one legal `hsw-cell` envelope in the
+  requested direction
+- **THEN** the calculator MUST reject the target with an accessible
+  field-level diagnostic
+- **AND** the current rows and columns MUST remain unchanged
+

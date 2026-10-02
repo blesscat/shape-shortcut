@@ -11,7 +11,7 @@ export const zh = {
     'OpenGrid 向上傾斜的 OpenConnect 掛牆面紙盒',
   'models.title': '挑一個你喜歡的，帶回家列印',
   'models.description':
-    'OpenGrid 與 HSW 系列的瀏覽器 CAD 模型：挑一個、調參數、直接下載列印。',
+    'OpenGrid 系列與獨立模型的瀏覽器 CAD 模型：挑一個、調參數、直接下載列印。',
   'models.series': '模型上架區',
   'models.adjustableSettingsMultiple': '可調整設定（多項）',
   'models.details': '詳情',
@@ -153,7 +153,7 @@ export const zh = {
     '包含官方 OpenGrid 網格模型與自製相容配件。',
   'models.family.otherDescription': '其他獨立的 CAD component。',
   'models.lede':
-    'OpenGrid 和 HSW 系列都在這裡，而且會一直長新東西。看中哪個就點「詳情」，或直接去 CAD 工作區動手調。',
+    'OpenGrid 系列和獨立模型都在這裡，而且會一直長新東西。看中哪個就點「詳情」，或直接去 CAD 工作區動手調。',
 }
 
 export const en: { [Key in keyof typeof zh]: string } = {
@@ -167,7 +167,7 @@ export const en: { [Key in keyof typeof zh]: string } = {
     'OpenGrid upward-tilted OpenConnect wall tissue holder',
   'models.title': 'Pick one you like, take it home to print',
   'models.description':
-    'Browser CAD models from the OpenGrid and HSW series: pick one, tweak it, download and print.',
+    'Browser CAD models from the OpenGrid series and standalone models: pick one, tweak it, download and print.',
   'models.series': 'Model shelf',
   'models.adjustableSettingsMultiple': 'Adjustable settings (multiple)',
   'models.details': 'Details',
@@ -306,5 +306,5 @@ export const en: { [Key in keyof typeof zh]: string } = {
     'Official OpenGrid grid models and compatible custom accessories.',
   'models.family.otherDescription': 'Other independent CAD components.',
   'models.lede':
-    'The OpenGrid and HSW series live here, and new stuff keeps arriving. Found one? Open the details, or head straight to the CAD workspace.',
+    'The OpenGrid series and standalone models live here, and new stuff keeps arriving. Found one? Open the details, or head straight to the CAD workspace.',
 }

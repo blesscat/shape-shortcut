@@ -30,7 +30,7 @@ test('grid dimension calculators apply counts and preserve manual controls', asy
       expectedRows: '2',
       expectedDimensions: 'X 47.69 mm、Y 59 mm',
       invalidX: '20',
-      invalidMessage: 'HSW',
+      invalidMessage: '27.25',
     },
   ]
 

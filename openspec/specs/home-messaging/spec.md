@@ -2,10 +2,8 @@
 
 ## Purpose
 
-定義首頁行銷訊息的靜態可觀察要求：差異化主張（本機運算、模型下載永久免費、STL 與 Wall Cover 雙色 3MF 下載）必須出現在第一屏、搜尋 metadata 與 hero 文案分離、HSW 不在首頁被點名為主打系統，以及 prototype 聲明的披露位置。
-
+定義首頁行銷訊息的靜態可觀察要求：差異化主張（本機運算、模型下載永久免費、STL 與 Wall Cover 雙色 3MF 下載）必須出現在第一屏、搜尋 metadata 與 hero 文案分離、非 OpenGrid 的系統或獨立模型不在首頁被點名為主打，以及 prototype 聲明的披露位置。
 ## Requirements
-
 ### Requirement: 首頁差異化主張
 
 每一個支援 locale 的首頁 MUST 在 server-rendered 的可見文案中同時呈現以下三個產品主張，且呈現不得依賴 CAD Worker 或任何 client-side script：
@@ -27,31 +25,6 @@
 - **THEN** 首頁可見文案 MUST 以英文呈現相同的三個主張
 - **AND** 首頁可見文案與搜尋 metadata MUST NOT 宣稱提供 STEP 匯出
 
-### Requirement: 首頁搜尋 metadata 與 hero 文案分離
-
-首頁的 document title 與 meta description MUST 來自搜尋用途專屬的 localized 資源，允許與 hero 可見段落使用不同的字串。title MUST 同時包含 `OpenGrid` 與 `Shape Shortcut`，且 title 與 meta description MUST NOT 出現 HSW 字樣。meta description MUST 與 hero 段落一樣使用頁面所屬 locale。
-
-#### Scenario: metadata 與 hero 文案各自獨立
-
-- **WHEN** 檢視任一 locale 首頁的 HTML head
-- **THEN** title MUST 同時包含 `OpenGrid` 與 `Shape Shortcut`
-- **AND** meta description MUST 來自與 hero 可見段落不同的字串，且為該頁面 locale
-
-#### Scenario: 搜尋 metadata 不點名 HSW
-
-- **WHEN** 檢視任一 locale 首頁的 title 與 meta description
-- **THEN** 兩者 MUST NOT 包含 HSW 字樣
-
-### Requirement: 首頁不主打 HSW
-
-首頁的可見文案 MUST NOT 將 HSW 點名為主打系統，也 MUST NOT 提供 HSW 專屬的入口。`hsw-cell` MUST 仍可從首頁經由 localized 模型選擇頁入口間別抵達（可見性細節由 `home-model-selection` 規範）。
-
-#### Scenario: 首頁文案不點名 HSW 但模型仍可達
-
-- **WHEN** 使用者閱讀任一 locale 首頁的可見文案
-- **THEN** 文案 MUST NOT 將 HSW 呈現為主打系統或提供 HSW 專屬入口
-- **AND** 使用者 MUST 能從首頁前往模型選擇頁並找到 `hsw-cell`
-
 ### Requirement: Prototype 聲明位置
 
 首頁 hero 區 MUST NOT 顯示 prototype 或施工中性質的免責聲明；prototype 狀態 MUST 保留在首頁的 maker 區塊與 about 頁披露。hero 區 MAY 陳述模型系列持續擴充的正向資訊。
@@ -66,3 +39,29 @@
 
 - **WHEN** 使用者檢視首頁 maker 區塊或 about 頁
 - **THEN** 頁面 MUST 仍披露專案目前為 prototype 狀態
+
+### Requirement: 搜尋 metadata 與 hero 文案分離
+
+首頁的 document title 與 meta description MUST 來自搜尋用途專屬的 localized 資源，允許與 hero 可見段落使用不同的字串。title MUST 同時包含 `OpenGrid` 與 `Shape Shortcut`，且 title 與 meta description MUST NOT 出現 `OpenGrid` 以外的系統或模型名稱字樣（例如 HSW）。meta description MUST 與 hero 段落一樣使用頁面所屬 locale。
+
+#### Scenario: metadata 與 hero 文案各自獨立
+
+- **WHEN** 檢視任一 locale 首頁的 HTML head
+- **THEN** title MUST 同時包含 `OpenGrid` 與 `Shape Shortcut`
+- **AND** meta description MUST 來自與 hero 可見段落不同的字串，且為該頁面 locale
+
+#### Scenario: 搜尋 metadata 只點名 OpenGrid
+
+- **WHEN** 檢視任一 locale 首頁的 title 與 meta description
+- **THEN** 兩者 MUST NOT 包含 `OpenGrid` 以外的系統或模型名稱字樣（例如 HSW）
+
+### Requirement: 首頁不主打單一非 OpenGrid 系統
+
+首頁的可見文案 MUST NOT 將任何非 OpenGrid 的系統或獨立模型點名為主打系統，也 MUST NOT 為其提供首頁專屬入口。`hsw-cell` 等獨立模型 MUST 仍可從首頁經由 localized 模型選擇頁入口間接抵達（可見性細節由 `home-model-selection` 規範）。
+
+#### Scenario: 首頁文案不點名非 OpenGrid 系統但模型仍可達
+
+- **WHEN** 使用者閱讀任一 locale 首頁的可見文案
+- **THEN** 文案 MUST NOT 將任何非 OpenGrid 的系統或獨立模型（例如 HSW）呈現為主打系統或提供專屬入口
+- **AND** 使用者 MUST 能從首頁前往模型選擇頁並找到 `hsw-cell`
+

@@ -292,12 +292,12 @@ test('model cards expose static previews and preserve selection on image failure
     // The switcher keeps non-active panels out of the accessibility tree;
     // visit each card's own system panel before asserting on it, expanding
     // its collapsed tools zone so tool/accessory cards stay reachable.
-    const system = definition.systemContext ?? 'hsw'
+    const system = definition.systemContext ?? 'other'
     if (system !== activeSystem) {
       await page.locator(`[data-system-tab="${system}"]`).click()
       activeSystem = system
     }
-    if (system !== 'hsw') {
+    if (system !== 'other') {
       const tools = page.getByTestId(`model-zone-tools-${system}`)
       if ((await tools.getAttribute('open')) === null) {
         await tools.locator('summary').click()
