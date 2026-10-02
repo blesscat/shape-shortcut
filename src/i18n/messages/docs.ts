@@ -104,11 +104,9 @@ export const zh = {
   'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
     '牆面 Board、Snap、Wall Cover 與 OpenConnect Shelf。',
-  'docs.modelReference.hsw.title': 'HSW',
-  'docs.modelReference.hsw.body': '六角蜂巢與可調六角柱等 HSW 元件。',
   'docs.modelReference.other.title': '其他元件',
   'docs.modelReference.other.body':
-    '不屬於單一系統、但適合獨立使用的 CAD component。',
+    '不屬於單一系統、但適合獨立使用的 CAD component，例如六角蜂巢。',
   'docs.modelReference.cta': '前往模型選擇 →',
   'docs.referenceHeading': '名詞與規格小抄',
   'docs.referenceBody':
@@ -241,12 +239,9 @@ export const en: { [Key in keyof typeof zh]: string } = {
   'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
     'Wall Boards, Snaps, Wall Covers, and OpenConnect Shelf.',
-  'docs.modelReference.hsw.title': 'HSW',
-  'docs.modelReference.hsw.body':
-    'Hexagonal honeycombs and adjustable HSW columns.',
   'docs.modelReference.other.title': 'Other components',
   'docs.modelReference.other.body':
-    'CAD components that can be useful outside one system.',
+    'CAD components that can be useful outside one system, such as the hexagonal honeycomb.',
   'docs.modelReference.cta': 'Go to model selection →',
   'docs.referenceHeading': 'Terms & specs',
   'docs.referenceBody':

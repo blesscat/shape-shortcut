@@ -29,7 +29,7 @@ const otherGroup = modelGroups.find((group) => group.key === 'other')
 const systemSubgroups = opengridGroup?.subgroups ?? []
 const deskSubgroup = systemSubgroups.find((subgroup) => subgroup.key === 'desk')
 const wallSubgroup = systemSubgroups.find((subgroup) => subgroup.key === 'wall')
-const hswDefinitions = otherGroup?.definitions ?? []
+const otherDefinitions = otherGroup?.definitions ?? []
 
 const deskZones = deskSubgroup
   ? partitionByPartZone(deskSubgroup.definitions)
@@ -37,12 +37,12 @@ const deskZones = deskSubgroup
 const wallZones = wallSubgroup
   ? partitionByPartZone(wallSubgroup.definitions)
   : null
-const hswZones = partitionByPartZone(hswDefinitions)
+const otherZones = partitionByPartZone(otherDefinitions)
 
 const systemTabs = [
   { key: 'desk', label: 'Desk' },
   { key: 'wall', label: 'Wall' },
-  { key: 'hsw', label: t('models.switcher.other') },
+  { key: 'other', label: t('models.switcher.other') },
 ] as const
 ---
 
@@ -123,10 +123,10 @@ const systemTabs = [
             labelledBy: 'model-subgroup-wall-title',
           },
           {
-            key: 'hsw',
+            key: 'other',
             title: t('models.switcher.other'),
-            zones: hswZones,
-            labelledBy: 'model-subgroup-hsw-title',
+            zones: otherZones,
+            labelledBy: 'model-subgroup-other-title',
           },
         ].map((panel) =>
           panel.zones ? (

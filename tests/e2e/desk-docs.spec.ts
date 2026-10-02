@@ -11,6 +11,8 @@ const locales = [
     reference: '名詞與規格小抄',
     wall: 'Wall System 快速看',
     modelReference: '目前模型與系統',
+    otherCard: '其他元件',
+    honeycomb: '六角蜂巢',
   },
   {
     code: 'en',
@@ -22,6 +24,8 @@ const locales = [
     reference: 'Terms & specs',
     wall: 'Wall System, quickly',
     modelReference: 'Current models and systems',
+    otherCard: 'Other components',
+    honeycomb: 'hexagonal honeycomb',
   },
 ] as const
 
@@ -44,6 +48,21 @@ for (const locale of locales) {
     await expect(page.getByTestId('docs-model-reference')).toContainText(
       locale.modelReference,
     )
+
+    // Model reference presents Desk/Wall system cards plus one standalone
+    // models card; standalone models are individual entries, not a system.
+    const modelReference = page.getByTestId('docs-model-reference')
+    await expect(modelReference.locator('article')).toHaveCount(3)
+    await expect(
+      modelReference.getByRole('heading', {
+        name: locale.otherCard,
+        exact: true,
+      }),
+    ).toBeVisible()
+    await expect(modelReference).toContainText(locale.honeycomb)
+    await expect(
+      modelReference.getByRole('heading', { name: 'HSW', exact: true }),
+    ).toHaveCount(0)
 
     const steps = page
       .getByTestId('desk-quick-start')

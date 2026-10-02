@@ -105,7 +105,6 @@ function detailsDialogId(): string {
 function systemTag(): string | null {
   if (definition.systemContext === 'desk') return t('models.context.desk')
   if (definition.systemContext === 'wall') return t('models.context.wall')
-  if (definition.id === 'hsw-cell') return 'HSW'
   return null
 }
 

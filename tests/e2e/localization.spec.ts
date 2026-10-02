@@ -177,10 +177,10 @@ test('model chooser keeps compact cards and stable modal details', async ({
       .first()
       .getByRole('button', { name: 'Details', exact: true }),
   ).toBeVisible()
-  await stableClick('hsw')
+  await stableClick('other')
   await expect(
     page
-      .locator('[data-system-panel="hsw"]')
+      .locator('[data-system-panel="other"]')
       .locator('[data-model-id="hsw-cell"]')
       .getByRole('button', { name: 'Details', exact: true }),
   ).toBeVisible()

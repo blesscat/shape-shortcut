@@ -54,12 +54,8 @@ Astro site shell（layouts/ + pages/）
          CAD Worker（workers/ + cad-kernel/）
          ├─ OpenCascade WASM / replicad initialization
          ├─ component registry
-         ├─ box B-Rep builder
-         ├─ modular-grid-base builder + STEP template
-         ├─ hsw-cell builder + STEP template
-         ├─ hexagonal-column builder + STEP template
-         ├─ OpenGrid stackable-box / stackable-cylinder / organizer-box builders
-         ├─ OpenGrid Wall Cover supplied STEP builder + named body/text parts
+         ├─ component-local builders（部分含 canonical STEP template）
+         │  （cad-kernel/components/<component>/，每個 component 一個目錄）
          ├─ scene proxy builders（cad-kernel/scene/，規劃級包絡 B-Rep）
          ├─ preview mesh generation
          └─ STEP / binary STL / Wall Cover 3MF export
@@ -128,7 +124,7 @@ pages/
 - 內建 component：X/Y 置中於世界原點、底面位於 Z=0 的 `box`、`modular-grid-base`、`hsw-cell`、`hexagonal-column`、OpenGrid stackable models 與 `opengrid-organizer-box`。
 - `box` 參數：`width`、`depth`、`height`，單位為 mm。
 - `modular-grid-base` 參數：`rows`、`columns` 格數 slider，範圍為 1–20 格；每格為 20 × 20 mm，高度固定 5 mm，最大寬/深為 400 mm。預切除 `cell-template.step` 會複製、平移、融合後，只對整體外側四角套用 R2.5 mm 圓角。
-- `hsw-cell` 參數：`rows`、`columns` 格數 slider，範圍為 1–20 格；使用固定約 27.25 × 23.60 × 8 mm 的平頂六角 canonical `hsw-cell.step`，columns 沿 X 方向交錯排列成蜂巢，整體不套用額外圓角。路由為 `/cad/hsw-cell`，輸出檔名為 `hsw-cell-{columns}x{rows}.step` 與 `hsw-cell-{columns}x{rows}.stl`。
+- `hsw-cell` 參數：`rows`、`columns` 格數 slider，範圍為 1–20 格；它是獨立 component 之一，canonical 資產、交錯排列與路由細節以 `openspec/specs/hsw-cell/spec.md` 為準，輸出檔名為 `hsw-cell-{columns}x{rows}.step` 與 `hsw-cell-{columns}x{rows}.stl`。
 - `hexagonal-column` 參數：`height` 文字輸入=1–500 mm、slider=1–200 mm、`count`、`gap` 與 `orientation`，路由為 `/cad/hexagonal-column`；它保持獨立 component contract，列平面 footprint 安全上限維持 500 mm。
 - OpenGrid stackable-box 與 stackable-cylinder 都以 `detachable-corner-seat`（`鎖定角座`）為預設，並提供 `none`（`無角座`）、`detachable-corner-seat`（`鎖定角座`）、`integrated`（`內建角座`）三種互斥座模式；舊的 `hole` 值會正規化為 `detachable-corner-seat`。`integrated` 會在既有定位位置融合 Ø5 mm × 3.8 mm、由 Z=-3.8 mm 延伸至 Z=0 的實體圓座，底部採 0.2 mm 導角；兩者的 STEP/STL 檔名都包含唯一的 `-seats-none`、`-seats-detachable-corner-seat` 或 `-seats-integrated` 後綴。
 - OpenGrid Open Shelf 固定使用四個 OpenGrid 角落定位柱，沿用同一個 Ø5 mm × 3.8 mm 內建座契約與 0.2 mm 底部導角，柱體仍直接融合到底板且不提供座模式選擇。
@@ -240,7 +236,7 @@ pnpm test:e2e:firefox
 
 `test:e2e:firefox` 需要 Linux 的 Xvfb；沒有 Xvfb 時可用等價的 headed Firefox + 虛擬桌面指令執行。
 
-B-Rep 效能 benchmark 是 opt-in，HSW benchmark 會使用 canonical STEP、production preview 設定與 1×1、2×2、5×5、10×10、20×20 fixture，先分開記錄 cold asset import，再 warm up 並量測至少五次，輸出 asset loading、assembly/fuse、mesh、total 的 median/P95 與環境資訊：
+B-Rep 效能 benchmark 是 opt-in，目前以 `hsw-cell` 為量測對象，使用 canonical STEP、production preview 設定與 1×1、2×2、5×5、10×10、20×20 fixture，先分開記錄 cold asset import，再 warm up 並量測至少五次，輸出 asset loading、assembly/fuse、mesh、total 的 median/P95 與環境資訊：
 
 ```bash
 RUN_CAD_BENCHMARK=1 pnpm exec vitest run tests/worker/hsw-cell-benchmark.test.ts

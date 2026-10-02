@@ -306,7 +306,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(systemTabs).toHaveCount(3)
   await expect(systemTabs.nth(0)).toHaveAttribute('data-system-tab', 'desk')
   await expect(systemTabs.nth(1)).toHaveAttribute('data-system-tab', 'wall')
-  await expect(systemTabs.nth(2)).toHaveAttribute('data-system-tab', 'hsw')
+  await expect(systemTabs.nth(2)).toHaveAttribute('data-system-tab', 'other')
   await expect(systemTabs.nth(0)).toHaveAttribute('aria-pressed', 'true')
   await expect(systemTabs.nth(1)).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByTestId('model-selection')).toHaveCSS(
@@ -325,13 +325,13 @@ test('home, model selection, and docs are static Astro pages', async ({
 
   const deskSystem = page.getByTestId('model-subgroup-desk')
   const wallRelated = page.getByTestId('model-subgroup-wall')
-  const hswPanel = page.getByTestId('model-subgroup-hsw')
+  const standalonePanel = page.getByTestId('model-subgroup-other')
   await expect(
     deskSystem.getByRole('heading', { name: 'Desk System' }),
   ).toBeVisible()
   // Scripting collapses the chooser to one visible system panel.
   await expect(wallRelated).toBeHidden()
-  await expect(hswPanel).toBeHidden()
+  await expect(standalonePanel).toBeHidden()
 
   // V2 zones (cad-part-categories-v2): pinned base row, container hero grid,
   // tools collapsed by default and expandable in place.
@@ -371,7 +371,9 @@ test('home, model selection, and docs are static Astro pages', async ({
       .getByTestId('model-tools-grid-desk')
       .locator('[data-model-id="opengrid-snap-remover"]'),
   ).toBeVisible()
-  await expect(hswPanel.locator('[data-model-id="hsw-cell"]')).toHaveCount(1)
+  await expect(
+    standalonePanel.locator('[data-model-id="hsw-cell"]'),
+  ).toHaveCount(1)
   // Native disclosure semantics: the collapsed section must also be operable
   // with the keyboard alone (collapse with Enter, then re-open).
   await deskZoneTools.locator('summary').focus()
@@ -450,7 +452,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   ).length
   expect(containerFirstRowCount).toBeGreaterThanOrEqual(3)
   await expect(wallRelated.locator('[data-model-id]')).toHaveCount(8)
-  await expect(hswPanel.locator('[data-model-id]')).toHaveCount(1)
+  await expect(standalonePanel.locator('[data-model-id]')).toHaveCount(1)
   const expectHeadBodySeparation = async (
     panel: ReturnType<typeof page.locator>,
   ) => {
@@ -492,10 +494,15 @@ test('home, model selection, and docs are static Astro pages', async ({
       .locator('[data-model-id="opengrid-label-slot-test"]'),
   ).toBeVisible()
   await systemTabs.nth(2).click()
-  await expect(hswPanel).toBeVisible()
-  await expectHeadBodySeparation(hswPanel)
+  await expect(standalonePanel).toBeVisible()
+  await expectHeadBodySeparation(standalonePanel)
+  // Standalone entries carry no system badge; system tags derive purely from
+  // catalog systemContext (desk/wall only).
   await expect(
-    hswPanel
+    standalonePanel.locator('[data-testid="model-system-tag"]'),
+  ).toHaveCount(0)
+  await expect(
+    standalonePanel
       .locator('[data-model-id="hsw-cell"]')
       .getByRole('link', { name: '編輯 六角蜂巢', exact: true }),
   ).toBeVisible()
@@ -908,14 +915,14 @@ test.describe('model chooser without JavaScript', () => {
 
     // No-JS fallback: the server-rendered panels stack; every entry keeps its
     // link and the details fallback carries navigation.
-    for (const key of ['desk', 'wall', 'hsw']) {
+    for (const key of ['desk', 'wall', 'other']) {
       const panel = page.getByTestId(`model-subgroup-${key}`)
       await expect(panel).toBeVisible()
       await expect(panel.locator('[data-model-id]').first()).toBeVisible()
     }
     await expect(
       page
-        .getByTestId('model-subgroup-hsw')
+        .getByTestId('model-subgroup-other')
         .getByRole('link', { name: '編輯 六角蜂巢', exact: true }),
     ).toHaveAttribute('href', '/zh-Hant/cad/hsw-cell')
     await expect(

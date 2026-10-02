@@ -3,9 +3,7 @@
 Provide a localized, visual first-use guide that lets a new user understand and
 assemble the project's primary OpenGrid Desk System before using advanced CAD
 parameters or print-setting references.
-
 ## Requirements
-
 ### Requirement: Desk System Quick Start is the primary documentation entry
 
 The localized public Docs page MUST present a `Desk System Quick Start` as its
@@ -202,13 +200,19 @@ CAD Worker.
 The Docs page MUST describe the current user-facing model families and their
 purpose without presenting retired or hidden model IDs as current chooser
 entries. Model and common-reference content MUST include links to the model
-selection page or the applicable CAD route for further action.
+selection page or the applicable CAD route for further action. The reference
+MUST present the OpenGrid `Desk System` and `Wall System` contexts as the
+system groups and MUST present standalone models（例如 `hsw-cell`）as
+individual model entries rather than a separate system.
 
 #### Scenario: Current model families are discoverable
 
 - **WHEN** a user reads the localized Docs reference section
-- **THEN** the page MUST identify OpenGrid, HSW, Desk, and Wall contexts in
-  user-facing terms
+- **THEN** the page MUST identify the OpenGrid `Desk System` and `Wall System`
+  contexts in user-facing terms
+- **AND** it MUST present standalone models such as `hsw-cell` as individual
+  model entries instead of a dedicated system card
 - **AND** it MUST provide a navigable path to the current model chooser
 - **AND** the page MUST not initialize the CAD runtime merely to render the
   reference
+
