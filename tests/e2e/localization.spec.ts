@@ -403,7 +403,7 @@ test('localized public pages and CAD controls expose both locales', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant')
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*，列印出來就對了。/,
+      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
     }),
   ).toBeVisible()
 

@@ -4,7 +4,7 @@ export const zh = {
   'home.metaTitle': 'Shape Shortcut｜OpenGrid 模型客製化，調一調就能印',
   'home.metaDescription':
     'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：挑一個 OpenGrid 收納模型，調好尺寸、即時預覽、直接下載 STL——不用裝軟體，也不用花錢。',
-  'home.title': '桌面好亂？挑個模型調一調，列印出來就對了。',
+  'home.title': '桌面好亂？挑個模型調一調\n列印出來就對了。',
   'home.description':
     'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：挑一個 OpenGrid 收納模型，調好尺寸、即時預覽、直接下載——不用裝軟體，也不用花錢。',
   'home.primaryCta': '來挑模型 →',
@@ -91,7 +91,7 @@ export const en: { [Key in keyof typeof zh]: string } = {
   'home.metaTitle': 'Shape Shortcut | OpenGrid customizer — tweak it, print it',
   'home.metaDescription':
     'Shape Shortcut is a no-install, browser-based CAD tool: pick an OpenGrid storage model, dial in the size, preview it live, and download the STL — no software to install, no cost.',
-  'home.title': 'Desk messy? Pick a model, tweak it, print it.',
+  'home.title': 'Desk messy? Pick a model, tweak it\nprint it.',
   'home.description':
     'Shape Shortcut is a no-install, browser-based CAD tool. Pick an OpenGrid storage model, dial in the size, preview it live, and download — everything runs in your browser.',
   'home.primaryCta': 'Browse models →',
