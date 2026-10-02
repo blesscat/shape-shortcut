@@ -87,6 +87,9 @@ importers:
       sass:
         specifier: ^1.102.0
         version: 1.102.0
+      svelte-check:
+        specifier: ^4.7.6
+        version: 4.7.6(picomatch@4.0.5)(svelte@5.56.8)(typescript@6.0.3)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -1182,6 +1185,10 @@ packages:
     peerDependencies:
       acorn: ^8.9.0
 
+  '@sveltejs/load-config@0.2.3':
+    resolution: {integrity: sha512-VT3qmUb8pRV2QrZjd8iAmtg8lf4W0TIjZbvXtz5MKei/q96teWZgGJyyidJzOjzZzvdq616eSRVeMYIQChUTAQ==}
+    engines: {node: '>= 18.0.0'}
+
   '@sveltejs/vite-plugin-svelte@7.2.0':
     resolution: {integrity: sha512-1SpkuMSRLfugrVX+IrKfE1RUegzo8AQzKQ6qQPfVzbcWi5IhuTPaKb5ZrLpucleFznkc4/RTeSPoRnGWFxX+EQ==}
     engines: {node: ^20.19 || ^22.12 || >=24}
@@ -1460,6 +1467,10 @@ packages:
 
   character-entities-legacy@3.0.0:
     resolution: {integrity: sha512-RpPp0asT/6ufRm//AJVwpViZbGM/MkjQFxJccQRHmISF/22NBtsHqAWmL+/pmkPWoIUJdWyeVleTl1wydHATVQ==}
+
+  chokidar@4.0.3:
+    resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
+    engines: {node: '>= 14.16.0'}
 
   chokidar@5.0.0:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
@@ -1988,6 +1999,10 @@ packages:
     resolution: {integrity: sha512-vc4lgl8YVxR2aundPnVPTIcL46UQKK+ebW7yinXNE1Y9joFS0JoakMazr7r3M8DXRvaemKS8EEmszkv/b05qUw==}
     engines: {node: '>=22.0.0'}
 
+  mri@1.2.0:
+    resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
+    engines: {node: '>=4'}
+
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
@@ -2130,6 +2145,10 @@ packages:
   radix3@1.1.2:
     resolution: {integrity: sha512-b484I/7b8rDEdSDKckSSBA8knMpcdsXudlE/LNL639wFoHKwLbEkQFZHWEYwDC0wa0FKUcCY+GAF73Z7wxNVFA==}
 
+  readdirp@4.1.2:
+    resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
+    engines: {node: '>= 14.18.0'}
+
   readdirp@5.0.0:
     resolution: {integrity: sha512-9u/XQ1pvrQtYyMpZe7DXKv2p5CNvyVwzUB6uhLAnQwHMSgKMBR62lc7AHljaeteeHXn11XTAaLLUVZYVZyuRBQ==}
     engines: {node: '>= 20.19.0'}
@@ -2166,6 +2185,10 @@ packages:
 
   s.color@0.0.15:
     resolution: {integrity: sha512-AUNrbEUHeKY8XsYr/DYpl+qk5+aM+DChopnWOPEzn8YKzOhv4l2zH6LzZms3tOZP3wwdOyc0RmTciyi46HLIuA==}
+
+  sade@1.8.1:
+    resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
+    engines: {node: '>=6'}
 
   sass-formatter@0.7.9:
     resolution: {integrity: sha512-CWZ8XiSim+fJVG0cFLStwDvft1VI7uvXdCNJYXhDvowiv+DsbD1nXLiQ4zrE5UBvj5DWZJ93cwN0NX5PMsr1Pw==}
@@ -2251,6 +2274,14 @@ packages:
   supports-color@10.2.2:
     resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==}
     engines: {node: '>=18'}
+
+  svelte-check@4.7.6:
+    resolution: {integrity: sha512-t2scM//ZuVbSY/T2w6FSBw1v9s2NEmh/g+sy1lqtosW5ylBV5AF4wFb1Ts9Kf3MbfPDUDJDZ9L436YT0SPTdvw==}
+    engines: {node: '>= 18.0.0'}
+    hasBin: true
+    peerDependencies:
+      svelte: ^4.0.0 || ^5.0.0-next.0
+      typescript: ^5.0.0 || ^6.0.0
 
   svelte2tsx@0.7.59:
     resolution: {integrity: sha512-Itj7Wz9WIiGFl/uJa58+rf43ajezaljKK/KTOHq5abUjto56xe+o5SOzLwSoeJ5hma9NZEstpZiazFW2q1nZPQ==}
@@ -3502,6 +3533,8 @@ snapshots:
     dependencies:
       acorn: 8.18.0
 
+  '@sveltejs/load-config@0.2.3': {}
+
   '@sveltejs/vite-plugin-svelte@7.2.0(svelte@5.56.8)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.102.0))':
     dependencies:
       deepmerge: 4.3.1
@@ -3847,6 +3880,10 @@ snapshots:
   character-entities-html4@2.1.0: {}
 
   character-entities-legacy@3.0.0: {}
+
+  chokidar@4.0.3:
+    dependencies:
+      readdirp: 4.1.2
 
   chokidar@5.0.0:
     dependencies:
@@ -4364,6 +4401,8 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  mri@1.2.0: {}
+
   mrmime@2.0.1: {}
 
   nanoid@3.3.16: {}
@@ -4480,6 +4519,8 @@ snapshots:
 
   radix3@1.1.2: {}
 
+  readdirp@4.1.2: {}
+
   readdirp@5.0.0: {}
 
   regex-recursion@6.0.2:
@@ -4532,6 +4573,10 @@ snapshots:
       '@rolldown/binding-win32-x64-msvc': 1.2.1
 
   s.color@0.0.15: {}
+
+  sade@1.8.1:
+    dependencies:
+      mri: 1.2.0
 
   sass-formatter@0.7.9:
     dependencies:
@@ -4676,6 +4721,19 @@ snapshots:
       s.color: 0.0.15
 
   supports-color@10.2.2: {}
+
+  svelte-check@4.7.6(picomatch@4.0.5)(svelte@5.56.8)(typescript@6.0.3):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      '@sveltejs/load-config': 0.2.3
+      chokidar: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.5)
+      picocolors: 1.1.1
+      sade: 1.8.1
+      svelte: 5.56.8
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - picomatch
 
   svelte2tsx@0.7.59(svelte@5.56.8)(typescript@6.0.3):
     dependencies:
