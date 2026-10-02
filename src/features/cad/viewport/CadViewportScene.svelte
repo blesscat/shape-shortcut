@@ -32,6 +32,7 @@
     CAD_VIEWPORT_GRID_ROTATION,
   } from './coordinates'
   import type { CadViewportTheme } from './theme'
+  import { isBoardSubstrateModel } from './board-parts'
   import type { CadViewportPresentation } from './presentation'
   import type { ViewportGeometryTiming } from './geometry-timing'
   import type { FaceHoverState } from './face-hover'
@@ -44,6 +45,7 @@
     partMeshes?: ModelPartMeshSnapshot[]
     modelRevision: string
     parameters: ModelParameterValues | null
+    modelId?: string | null
     theme: CadViewportTheme
     presentation: CadViewportPresentation
     onPreparationTiming?: (timing: ViewportGeometryTiming) => void
@@ -67,11 +69,14 @@
     partMeshes,
     modelRevision,
     parameters,
+    modelId = null,
     theme,
     presentation,
     onPreparationTiming,
     onFaceHover,
   }: Props = $props()
+
+  let isBoardModel = $derived(modelId != null && isBoardSubstrateModel(modelId))
 
   let enableFaceHover = $derived(
     presentation === 'workspace' && onFaceHover !== undefined,
@@ -162,7 +167,11 @@
           <ModelMesh
             mesh={part.mesh}
             {theme}
-            materialColor={colorForCadViewportPart(part.name, colors)}
+            materialColor={isBoardModel && part.name === 'body'
+              ? theme.boardFace
+              : colorForCadViewportPart(part.name, colors)}
+            edgeColor={isBoardModel ? theme.boardEdge : undefined}
+            contactShadow={isBoardModel ? theme.contactShadow : undefined}
             {onPreparationTiming}
             {enableFaceHover}
             {onFaceHover}
@@ -172,7 +181,9 @@
     {:else}
       <ModelMesh
         {mesh}
-        materialColor={colors.primary}
+        materialColor={isBoardModel ? theme.boardFace : colors.primary}
+        edgeColor={isBoardModel ? theme.boardEdge : undefined}
+        contactShadow={isBoardModel ? theme.contactShadow : undefined}
         {theme}
         {onPreparationTiming}
         {enableFaceHover}

@@ -21,7 +21,16 @@
     CAD_VIEWPORT_CAMERA,
     CAD_VIEWPORT_GRID_ROTATION,
   } from '../viewport/coordinates'
-  import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
+  import {
+    CAD_VIEWPORT_CONFIG,
+    CAD_VIEWPORT_LIGHTING,
+  } from '../viewport/config'
+  import {
+    createBoardContactShadowGeometry,
+    createContactShadowMaterial,
+    createErrorHatchMaterial,
+    isBoardSubstrateModel,
+  } from '../viewport/board-parts'
   import { getModelDefinition } from '../model-catalog'
   import { sceneProxyCacheKey } from './filenames'
   import { instanceDisplayColor } from './instance-colors'
@@ -130,8 +139,10 @@
 
   type InstancedEntry = {
     instanceId: string
+    modelId: string
     colorHex: string
     matrix: THREE.Matrix4
+    overlapping: boolean
   }
 
   type InstancedGroup = {
@@ -139,6 +150,14 @@
     mesh: THREE.InstancedMesh
     material: THREE.MeshStandardMaterial
     entries: InstancedEntry[]
+  }
+
+  /** Board-only extras shared by every instance of one model group. */
+  type BoardSharedAssets = {
+    edgesGeometry: THREE.EdgesGeometry
+    shadowGeometry: THREE.PlaneGeometry
+    edgesMaterial: THREE.LineBasicMaterial
+    shadowMaterial: THREE.MeshBasicMaterial
   }
 
   let renderer: THREE.WebGLRenderer | null = null
@@ -202,11 +221,42 @@
       }
     })
   }
+
+  /**
+   * Remove and dispose the scene marking assets: board edge lines and
+   * contact shadows (Part D v2 board trio) plus the overlap hatch overlays.
+   * Overlay meshes reference cached group geometry, so only materials and
+   * the board-only geometries are disposed here.
+   */
+  function disposeOverlayAssets(): void {
+    if (contentGroup) {
+      for (const edges of boardEdgeLines) contentGroup.remove(edges)
+      for (const shadow of boardShadows) contentGroup.remove(shadow)
+      for (const overlay of overlapOverlays) contentGroup.remove(overlay)
+    }
+    for (const shared of boardSharedAssets) {
+      shared.edgesGeometry.dispose()
+      shared.shadowGeometry.dispose()
+      shared.edgesMaterial.dispose()
+      shared.shadowMaterial.dispose()
+    }
+    for (const material of overlapHatchMaterials) material.dispose()
+    boardEdgeLines = []
+    boardShadows = []
+    overlapOverlays = []
+    boardSharedAssets = []
+    overlapHatchMaterials = []
+  }
   let frameHandle = 0
   let resizeObserver: ResizeObserver | null = null
   let unobserveTheme: (() => void) | null = null
   const geometryCache = new Map<string, THREE.BufferGeometry>()
   let instancedGroups: InstancedGroup[] = []
+  let boardEdgeLines: THREE.LineSegments[] = []
+  let boardShadows: THREE.Mesh[] = []
+  let overlapOverlays: THREE.Mesh[] = []
+  let boardSharedAssets: BoardSharedAssets[] = []
+  let overlapHatchMaterials: THREE.MeshBasicMaterial[] = []
   let placeholderMeshes: THREE.Mesh[] = []
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
@@ -217,7 +267,6 @@
   let appliedViewMode: PlaygroundViewMode | null = null
   const CAMERA_POSE_CHANGE_EPSILON = 0.000001
   const CLICK_DRAG_THRESHOLD_PX = 5
-  const INVALID_PREVIEW_COLOR_FALLBACK = '#c44747'
 
   const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
     'background',
@@ -233,11 +282,17 @@
     'annotationLabel',
     'hover',
     'selection',
+    'selectionFill',
+    'error',
+    'errorFill',
     'faceHighlight',
     'hemisphereSky',
     'hemisphereGround',
     'keyLight',
     'oppositeFill',
+    'boardFace',
+    'boardEdge',
+    'contactShadow',
   ]
 
   function sameTheme(a: CadViewportTheme, b: CadViewportTheme): boolean {
@@ -337,17 +392,10 @@
     return matrix
   }
 
-  function invalidPreviewColor(): string {
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue('--color-error-border')
-        .trim() || INVALID_PREVIEW_COLOR_FALLBACK
-    )
-  }
-
   function displayColorFor(
     instanceId: string,
     colorHex: string,
+    modelId: string,
     theme: CadViewportTheme,
   ): string {
     return instanceDisplayColor({
@@ -358,10 +406,13 @@
       ),
       emphasized:
         instanceId === selectedInstanceId || instanceId === hoveredInstanceId,
-      colorHex,
+      // Board substrates rest on the Part D board-face token (4.2.1) so the
+      // plate stays a visible step away from the scene ground; functional
+      // states (drag preview, overlap conflict, selection) still outrank it.
+      colorHex: isBoardSubstrateModel(modelId) ? theme.boardFace : colorHex,
       hoverColor: theme.hover,
       selectionColor: theme.selection,
-      conflictColor: invalidPreviewColor(),
+      conflictColor: theme.error,
     })
   }
 
@@ -371,7 +422,12 @@
         group.mesh.setColorAt(
           index,
           new THREE.Color(
-            displayColorFor(entry.instanceId, entry.colorHex, theme),
+            displayColorFor(
+              entry.instanceId,
+              entry.colorHex,
+              entry.modelId,
+              theme,
+            ),
           ),
         )
       })
@@ -381,11 +437,16 @@
     for (const placeholder of placeholderMeshes) {
       const instanceId = placeholder.userData.playgroundInstanceId
       const colorHex = placeholder.userData.playgroundColorHex
-      if (typeof instanceId !== 'string' || typeof colorHex !== 'string') {
+      const modelId = placeholder.userData.playgroundModelId
+      if (
+        typeof instanceId !== 'string' ||
+        typeof colorHex !== 'string' ||
+        typeof modelId !== 'string'
+      ) {
         continue
       }
       const material = placeholder.material as THREE.MeshBasicMaterial
-      material.color.set(displayColorFor(instanceId, colorHex, theme))
+      material.color.set(displayColorFor(instanceId, colorHex, modelId, theme))
     }
   }
 
@@ -403,6 +464,7 @@
       ;(placeholder.material as THREE.Material).dispose()
     }
     placeholderMeshes = []
+    disposeOverlayAssets()
 
     const ready = instances.filter(
       (instance) => instance.mesh && instance.meshState === 'ready',
@@ -415,8 +477,10 @@
       const cacheKey = sceneProxyCacheKey(instance.modelId, instance.parameters)
       const entry: InstancedEntry = {
         instanceId: instance.id,
+        modelId: instance.modelId,
         colorHex: instance.colorPrimary,
         matrix: matrixFor(instance, viewMode),
+        overlapping: instance.overlapping,
       }
       const existing = groups.get(cacheKey)
       if (existing) existing.entries.push(entry)
@@ -449,6 +513,64 @@
         material,
         entries: group.entries,
       })
+      // Board substrates get the Part D v2 trio (design-spec-4.2.1): a
+      // dedicated outline plus a contact shadow under the plate, so the
+      // board reads even in a static light-mode scene.
+      const boardModelId = group.entries[0]?.modelId
+      if (boardModelId && isBoardSubstrateModel(boardModelId)) {
+        const edgesGeometry = new THREE.EdgesGeometry(
+          geometry,
+          CAD_VIEWPORT_CONFIG.edgeThresholdAngle,
+        )
+        const shadowGeometry = createBoardContactShadowGeometry(geometry)
+        const edgesMaterial = new THREE.LineBasicMaterial({
+          color: new THREE.Color(theme.boardEdge),
+        })
+        const shadowMaterial = createContactShadowMaterial(theme.contactShadow)
+        boardSharedAssets.push({
+          edgesGeometry,
+          shadowGeometry,
+          edgesMaterial,
+          shadowMaterial,
+        })
+        for (const entry of group.entries) {
+          const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial)
+          edges.matrixAutoUpdate = false
+          edges.matrix.copy(entry.matrix)
+          edges.renderOrder = 1
+          contentGroup.add(edges)
+          boardEdgeLines.push(edges)
+          const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial)
+          shadow.matrixAutoUpdate = false
+          shadow.matrix.copy(entry.matrix)
+          shadow.renderOrder = -1
+          contentGroup.add(shadow)
+          boardShadows.push(shadow)
+        }
+      }
+    }
+    // Overlap conflicts get the Part D v2 error hatch (+45°) on top of the
+    // conflict-colored instance; the accompanying text warning lives in the
+    // Playground panel, so the state never relies on color alone.
+    if (
+      instancedGroups.some((group) =>
+        group.entries.some((entry) => entry.overlapping),
+      )
+    ) {
+      const hatchMaterial = createErrorHatchMaterial(theme.error)
+      overlapHatchMaterials.push(hatchMaterial)
+      for (const group of instancedGroups) {
+        for (const entry of group.entries) {
+          if (!entry.overlapping) continue
+          const overlay = new THREE.Mesh(group.mesh.geometry, hatchMaterial)
+          overlay.matrixAutoUpdate = false
+          overlay.matrix.copy(entry.matrix)
+          overlay.renderOrder = 2
+          overlay.userData.instanceId = entry.instanceId
+          contentGroup.add(overlay)
+          overlapOverlays.push(overlay)
+        }
+      }
     }
     for (const instance of instances) {
       if (instance.meshState !== 'pending' || !instance.bounds) continue
@@ -489,6 +611,7 @@
       )
       placeholder.userData.playgroundInstanceId = instance.id
       placeholder.userData.playgroundColorHex = instance.colorPrimary
+      placeholder.userData.playgroundModelId = instance.modelId
       contentGroup.add(placeholder)
       placeholderMeshes.push(placeholder)
     }
@@ -713,6 +836,13 @@
       if (index < 0) continue
       group.mesh.setMatrixAt(index, matrix)
       group.mesh.instanceMatrix.needsUpdate = true
+      const overlay = overlapOverlays.find(
+        (candidate) => candidate.userData.instanceId === instanceId,
+      )
+      if (overlay) {
+        overlay.matrix.copy(matrix)
+        overlay.matrixWorldNeedsUpdate = true
+      }
       return
     }
 
@@ -1056,6 +1186,7 @@
         ;(placeholder.material as THREE.Material).dispose()
       }
       placeholderMeshes = []
+      disposeOverlayAssets()
       for (const geometry of geometryCache.values()) geometry.dispose()
       geometryCache.clear()
       renderer.domElement.removeEventListener(
