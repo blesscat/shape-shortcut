@@ -42,7 +42,7 @@ const hswZones = partitionByPartZone(hswDefinitions)
 const systemTabs = [
   { key: 'desk', label: 'Desk' },
   { key: 'wall', label: 'Wall' },
-  { key: 'hsw', label: 'HSW' },
+  { key: 'hsw', label: t('models.switcher.other') },
 ] as const
 ---
 
@@ -99,12 +99,7 @@ const systemTabs = [
             type="button"
             data-system-tab={tab.key}
             aria-pressed={tab.key === 'desk' ? 'true' : 'false'}
-            class:list={[
-              'min-h-9 rounded-full px-4 py-1.5 text-sm font-extrabold transition-colors duration-200 ease-out focus-visible:ring-3 focus-visible:ring-outline',
-              tab.key === 'desk'
-                ? 'bg-primary text-primary-foreground shadow-soft'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            ]}
+            class="min-h-9 rounded-full px-4 py-1.5 text-sm font-extrabold text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-outline aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:shadow-soft aria-pressed:hover:bg-primary"
           >
             {tab.label}
           </button>
@@ -129,7 +124,7 @@ const systemTabs = [
           },
           {
             key: 'hsw',
-            title: 'HSW',
+            title: t('models.switcher.other'),
             zones: hswZones,
             labelledBy: 'model-subgroup-hsw-title',
           },
@@ -141,7 +136,7 @@ const systemTabs = [
               data-testid={`model-subgroup-${panel.key}`}
               data-system-panel={panel.key}
             >
-              <div class="flex items-baseline gap-2 border-b border-border px-4 py-3.5">
+              <div class="flex items-baseline gap-2 border-b border-border px-4 py-4">
                 <h3
                   class="m-0 text-[15px] font-black leading-snug"
                   id={panel.labelledBy}

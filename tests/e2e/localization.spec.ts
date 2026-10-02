@@ -261,6 +261,11 @@ test('model chooser keeps compact cards and stable modal details', async ({
   await page.locator('[data-testid="model-selection"]').evaluate((element) => {
     element.style.pointerEvents = 'none'
   })
+  // The opener click re-hovers the card (its -translate-y-0.5 lift runs on a
+  // 200ms transition), and the freeze above ends that hover. Let the lift
+  // decay fully BEFORE the baseline, otherwise the decay tail lands between
+  // the two measurements and masquerades as a 2px dialog-induced shift.
+  await page.waitForTimeout(300)
   const readCards = () =>
     cards.evaluateAll((cardElements) =>
       cardElements.map((card) => {
@@ -294,11 +299,11 @@ test('model chooser keeps compact cards and stable modal details', async ({
     element.style.pointerEvents = ''
   })
   expect(boundsAfter).toHaveLength(boundsBefore.length)
-  // Both sides were recorded with the dialog open and the scroll pinned, so
-  // this comparison measures exactly what the test guards: keeping the dialog
-  // open must not move, resize, or reflow any card. 0.5px absorbs the tail of
-  // the hover-lift transition (≤2px translate decaying to sub-pixel values) —
-  // any real dialog-induced shift is several pixels.
+  // Both sides were recorded with the dialog open, the scroll pinned, and
+  // the hover lift already decayed (300ms wait above), so this comparison
+  // measures exactly what the test guards: keeping the dialog open must not
+  // move, resize, or reflow any card. 0.5px absorbs subpixel noise — any
+  // real dialog-induced shift is several pixels.
   for (let index = 0; index < boundsBefore.length; index += 1) {
     const before = boundsBefore[index]
     const after = boundsAfter[index]
