@@ -37,18 +37,16 @@ const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
 
 /* Presentational-only title treatment: highlight the action phrase and
-   stack the headline on two lines. The translated wording itself is
-   unchanged. */
-const homeTitleHtml = (() => {
-  const highlighted = t('home.title').replace(
+   stack the headline on two lines. Each locale's copy carries an explicit
+   newline where the headline should break, and the comma that the break
+   replaces is left out of the copy so no rendered line starts with
+   punctuation. */
+const homeTitleHtml = t('home.title')
+  .replace(
     /(挑個模型調一調|Pick a model, tweak it)/,
     '<span class="text-primary-strong dark:text-primary">$1</span>',
   )
-  const parts = highlighted.match(/^(.*?)<span[^>]*>([^<]*)<\/span>\s*(.*)$/)
-  if (!parts) return highlighted
-  const [, before, phrase, after] = parts
-  return `${before}<span class="text-primary-strong dark:text-primary">${phrase}</span><br />${after}`
-})()
+  .replace(/\n/g, '<br />')
 
 const heroBadges = [
   { key: 'home.badge.noInstall', testid: 'home-badge-no-install' },

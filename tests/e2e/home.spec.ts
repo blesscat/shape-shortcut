@@ -222,7 +222,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(page).toHaveURL(/\/zh-Hant\/$/)
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*，列印出來就對了。/,
+      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-hero')).toBeVisible()
@@ -671,7 +671,7 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   )
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*，列印出來就對了。/,
+      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-in-browser')).toBeVisible()
@@ -721,7 +721,7 @@ test('English homepage uses localized promotional content and routes', async ({
   )
   await expect(
     page.getByRole('heading', {
-      name: /Desk messy\?\s*Pick a model, tweak it\s*,\s*print it\./,
+      name: /Desk messy\?\s*Pick a model, tweak it\s*print it\./,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-free-forever')).toBeVisible()
