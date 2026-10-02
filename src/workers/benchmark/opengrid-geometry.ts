@@ -1,5 +1,4 @@
 import { getOC, measureVolume, type Shape3D } from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import { exportStlBytes, exportStepBytes } from '../../cad-kernel/export'
 import {
   buildOpenGridBenchmarkShape,
@@ -20,6 +19,8 @@ import type {
   OpenGridParameters,
   OpenGridVariant,
 } from '../../cad-contract/units'
+import { deleteShape } from '../../cad-kernel/lifetime/dispose'
+import { countSolids } from '../../cad-kernel/shape-query/solids'
 
 export const OPENGRID_BENCHMARK_RUNS = 5
 export const OPENGRID_BENCHMARK_WARMUP_RUNS = 1
@@ -264,14 +265,6 @@ export type RunOpenGridBenchmarkOptions = {
   sampleTimeoutMs?: number
 }
 
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Benchmark cleanup must not hide the measured operation result.
-  }
-}
-
 function emptyTiming(): OpenGridBenchmarkTiming {
   return {
     profileMs: null,
@@ -295,25 +288,6 @@ function readBounds(shape: Shape3D): BoxBounds {
     return { min, max }
   } finally {
     boundingBox.delete()
-  }
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
   }
 }
 
