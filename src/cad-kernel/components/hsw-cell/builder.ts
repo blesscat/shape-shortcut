@@ -18,6 +18,7 @@ import {
   type BooleanOperationReporter,
   type BooleanOperationScope,
 } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const hswCellTemplateUrl = new URL('./hsw-cell.step', import.meta.url)
 
@@ -49,14 +50,6 @@ type CellOffset = [number, number]
 type AssemblyTimings = {
   cloneTranslateMs: number
   fuseMs: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
 }
 
 class OwnedShapeGroup {

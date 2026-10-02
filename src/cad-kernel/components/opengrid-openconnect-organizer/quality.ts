@@ -5,7 +5,6 @@ import {
   measureVolume,
   type Shape3D,
 } from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import {
   boundsForOpenGridOpenConnectOrganizer,
   openGridOpenConnectOrganizerLayoutFor,
@@ -20,6 +19,8 @@ import { applyOpenGridOpenConnectOrganizerOwnedTransforms } from './builder'
 import { placeOpenGridOpenConnectShelfLockedSlot } from '../opengrid-openconnect-shelf/slot'
 import { openGridLabelSlotLayoutFor } from '../../../cad-contract/units/opengrid-label-shared'
 import { inspectOrganizerLabelSlot } from './label-slot'
+import { deleteShape } from '../../lifetime/dispose'
+import { countSolids, isBRepValid } from '../../shape-query/solids'
 
 type MeshLike = {
   bounds: { min: number[]; max: number[] }
@@ -64,14 +65,6 @@ const PROBE_VOLUME_TOLERANCE = 0.002
 const QUALITY_BATCH_SIZE = 16
 const SEPARATION_PROBE_INSET = 0.05
 
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the quality result.
-  }
-}
-
 function assertGenerationCurrent(
   context: OpenGridOpenConnectOrganizerQualityContext,
 ): void {
@@ -86,35 +79,6 @@ async function yieldAtQualityBoundary(
   assertGenerationCurrent(context)
   await context.yieldToEventLoop?.()
   assertGenerationCurrent(context)
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
-}
-
-function isBRepValid(shape: Shape3D): boolean {
-  const oc = getOC()
-  const analyzer = new oc.BRepCheck_Analyzer(shape.wrapped, true, true)
-  try {
-    return analyzer.IsValid_2()
-  } finally {
-    analyzer.delete()
-  }
 }
 
 function boundsOf(shape: Shape3D): ModelBounds {

@@ -39,6 +39,7 @@ import {
 } from '../../lattice/opengrid-honeycomb'
 import { makeOpenGridIntegratedSeat } from '../opengrid-locating-assembly/integrated'
 import { toGeometryError } from '../../geometry-errors'
+import { deleteShape } from '../../lifetime/dispose'
 
 const HONEYCOMB_CUT_BATCH_SIZE = 128
 
@@ -56,14 +57,6 @@ export type OpenGridOpenShelfBuildContext = {
 
 type Point2D = [number, number]
 type Point3D = [number, number, number]
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
-}
 
 function assertGenerationCurrent(context: OpenGridOpenShelfBuildContext): void {
   if (context.isGenerationCurrent && !context.isGenerationCurrent()) {

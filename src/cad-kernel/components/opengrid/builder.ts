@@ -49,6 +49,7 @@ import {
   type BooleanOperationScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 export type OpenGridBuildContext = {
   getOpenGridPrototype?: (variant: OpenGridVariant) => Promise<Shape3D>
@@ -101,14 +102,6 @@ export const OPENGRID_PROTOTYPE_TEMPLATE_URLS: Readonly<
   Lite: new URL('./opengrid-lite-cell.step', import.meta.url),
   Heavy: new URL('./opengrid-heavy-cell.step', import.meta.url),
   Hybrid: new URL('./opengrid-heavy-cell.step', import.meta.url),
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
 }
 
 function assertGenerationCurrent(context: OpenGridBuildContext): void {

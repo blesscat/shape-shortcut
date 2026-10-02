@@ -20,6 +20,7 @@ import {
   OPENGRID_LABEL_CARD_SCREW_SIDE,
 } from '../../../cad-contract/units'
 import { makeOpenGridLabelCardTextShape } from '../opengrid-label-card/flat-text'
+import { deleteShape } from '../../lifetime/dispose'
 
 export type OpenGridLabelCardNativePart = {
   name: 'body' | 'accent'
@@ -30,14 +31,6 @@ export type OpenGridLabelCardMultipartBuild = {
   shape: Shape3D
   qualityShape: Shape3D
   parts: OpenGridLabelCardNativePart[]
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the primary geometry error.
-  }
 }
 
 function cloneShape(shape: Shape3D): Shape3D {

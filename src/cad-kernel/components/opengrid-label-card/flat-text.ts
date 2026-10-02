@@ -12,20 +12,13 @@ import {
   normalizeOpenGridLabelCardText,
 } from '../../../cad-contract/units'
 import { loadOpenGridWallCoverFont } from '../opengrid-wall-cover/flat-text'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const LABEL_CARD_TEXT_CONFIGURATION = {
   depth: OPENGRID_LABEL_CARD_CONFIGURATION.accentDepth,
   fontSize: OPENGRID_LABEL_GRID.textFontSize,
   fontFamily: 'Noto Sans CJK TC Bold',
 } as const
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Preserve the primary geometry error during cleanup.
-  }
-}
 
 function assertGlyphSupported(character: string): void {
   const font = getFont(LABEL_CARD_TEXT_CONFIGURATION.fontFamily)

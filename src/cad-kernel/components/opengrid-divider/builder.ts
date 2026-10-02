@@ -25,6 +25,7 @@ import {
   type BooleanOperationScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 export type OpenGridDividerBuildContext = {
   yieldToEventLoop?: () => Promise<void>
@@ -36,14 +37,6 @@ export type OpenGridDividerBuildContext = {
     unit?: 'steps'
   }) => void
   booleanOperations?: BooleanOperationReporter
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
 }
 
 function assertGenerationCurrent(context: OpenGridDividerBuildContext): void {

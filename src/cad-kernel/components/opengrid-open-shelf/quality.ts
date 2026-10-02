@@ -1,5 +1,4 @@
-import { getOC, measureVolume, type Shape3D } from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
+import { measureVolume, type Shape3D } from 'replicad'
 import {
   boundsForOpenGridOpenShelf,
   openGridOpenShelfFrontToRearElevationFor,
@@ -12,6 +11,8 @@ import {
   type OpenGridOpenShelfParameters,
 } from '../../../cad-contract/units'
 import { openGridOpenShelfHoneycombCellCountFor } from '../../lattice/opengrid-honeycomb'
+import { closeEnough } from '../../shape-query/compare'
+import { countSolids } from '../../shape-query/solids'
 
 type MeshLike = {
   bounds: { min: number[]; max: number[] }
@@ -23,29 +24,6 @@ export type OpenGridOpenShelfQualityReport = {
   volume: number
   honeycombMode: boolean
   honeycombCellCount: number
-}
-
-function closeEnough(first: number, second: number, tolerance = 0.15): boolean {
-  return Math.abs(first - second) <= tolerance
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
 }
 
 type FaceBounds = {

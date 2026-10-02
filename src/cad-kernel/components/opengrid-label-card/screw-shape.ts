@@ -3,6 +3,7 @@ import { extrudeContourGroup } from './icon-shape'
 import { groupPolygonContours, type PathPolygon } from './svg-path'
 import { screwOutlineContours16 } from './screw-outline'
 import { OPENGRID_LABEL_CARD_SCREW_SIDE } from '../../../cad-contract/units/opengrid-label-card'
+import { deleteShape } from '../../lifetime/dispose'
 
 /** Shaft-length mapping from the `M<dia>x<len>` designation to grid units. */
 export const OPENGRID_LABEL_SCREW_SHAFT = {
@@ -39,14 +40,6 @@ export function parseOpenGridLabelScrewShaftUnits(
   if (length === undefined || !Number.isFinite(length) || length <= 0)
     return OPENGRID_LABEL_SCREW_SHAFT.stub
   return shaftUnitsForOpenGridLabelScrewLength(length)
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the primary geometry error.
-  }
 }
 
 /**

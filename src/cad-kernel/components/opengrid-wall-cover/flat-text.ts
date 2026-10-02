@@ -12,6 +12,7 @@ import {
   OPENGRID_WALL_COVER_CONFIGURATION,
   normalizeOpenGridWallCoverText,
 } from '../../../cad-contract/units'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const OPENGRID_WALL_COVER_TEXT_CONFIGURATION = {
   depth: 0.4,
@@ -28,14 +29,6 @@ let fontLoadPromise: Promise<void> | null = null
 
 export function openGridWallCoverTextTopZ(): number {
   return OPENGRID_SNAP_CONFIGURATION.variantHeights.Lite
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Preserve the primary geometry error during cleanup.
-  }
 }
 
 function arrayBufferFor(data: ArrayBuffer | ArrayBufferView): ArrayBuffer {

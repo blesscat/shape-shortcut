@@ -12,6 +12,7 @@ import {
   OPENGRID_WALL_COVER_TEXT_CONFIGURATION,
   openGridWallCoverTextTopZ,
 } from './flat-text'
+import { deleteShape } from '../../lifetime/dispose'
 
 const QUALITY_TOLERANCE = 0.05
 const BODY_ENVELOPE_TOLERANCE = 0.45
@@ -23,14 +24,6 @@ export type OpenGridWallCoverQualityReport = {
   referenceBounds: ModelBounds
   solidCount: number
   meshTriangleCount: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Quality cleanup must not hide the primary diagnostic.
-  }
 }
 
 function readBounds(shape: Shape3D): ModelBounds {

@@ -6,6 +6,7 @@ import {
   SvgPathParseError,
   type PathPolygon,
 } from './svg-path'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const LABEL_CARD_ICON_CONFIGURATION = {
   /** Nominal rendered icon size on the plate face (square bounding box). */
@@ -14,14 +15,6 @@ export const LABEL_CARD_ICON_CONFIGURATION = {
   /** Maximum flattened points per icon across all subpaths. */
   maxPoints: 4000,
 } as const
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the primary geometry error.
-  }
-}
 
 function scaleAndCenterPolygons(
   polygons: readonly PathPolygon[],
