@@ -88,7 +88,7 @@ const systemTabs = [
         (progressive enhancement — without JS all panels stack). */
     }
     <div
-      class="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-soft"
+      class="flex flex-wrap items-center gap-1 rounded-full border border-border bg-card p-1 shadow-soft"
       role="group"
       aria-label={t('models.switcher.label')}
       data-testid="model-system-switcher"
@@ -136,25 +136,26 @@ const systemTabs = [
         ].map((panel) =>
           panel.zones ? (
             <section
-              class="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"
+              class="overflow-hidden rounded-[20px] border border-border bg-muted shadow-soft"
               aria-labelledby={panel.labelledBy}
               data-testid={`model-subgroup-${panel.key}`}
               data-system-panel={panel.key}
             >
-              <div class="flex items-baseline gap-2 px-4 pt-4 sm:px-5">
+              <div class="flex items-baseline gap-2 border-b border-border px-4 py-3.5">
                 <h3
                   class="m-0 text-[15px] font-black leading-snug"
                   id={panel.labelledBy}
                 >
-                  {panel.title}
+                  {t('models.panel.title')}
+                  <span class="sr-only">（{panel.title}）</span>
                 </h3>
                 {panel.zones.tools.length > 0 && (
-                  <span class="text-xs font-bold text-muted-foreground">
+                  <span class="text-[12.5px] font-bold text-muted-foreground">
                     {t('models.panel.hint')}
                   </span>
                 )}
               </div>
-              <div class="grid gap-5 px-2 pb-3 sm:px-3">
+              <div class="grid gap-4 px-4 pb-4">
                 {panel.zones.base.length > 0 && (
                   <div
                     role="group"
@@ -169,7 +170,7 @@ const systemTabs = [
                 )}
                 {panel.zones.containers.length > 0 && (
                   <div class="grid gap-2">
-                    <div class="flex items-baseline gap-2 px-1">
+                    <div class="flex items-baseline gap-2">
                       <span class="text-[13px] font-black tracking-wide">
                         {t('models.zone.containers')}
                       </span>
@@ -181,7 +182,7 @@ const systemTabs = [
                       role="group"
                       aria-label={t('models.zone.containers')}
                       data-testid={`model-zone-containers-${panel.key}`}
-                      class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                      class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
                     >
                       {panel.zones.containers.map((definition) => (
                         <ModelCard {definition} {locale} />
@@ -191,18 +192,18 @@ const systemTabs = [
                 )}
                 {panel.zones.tools.length > 0 && (
                   <details
-                    class="group rounded-xl border border-border bg-background"
+                    class="group"
                     data-testid={`model-zone-tools-${panel.key}`}
                   >
-                    <summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-2 [&::-webkit-details-marker]:hidden">
                       <span class="text-[15px] font-black">
                         {t('models.zone.tools')}
                       </span>
-                      <span class="text-xs font-bold text-muted-foreground">
+                      <span class="text-[12.5px] font-bold text-muted-foreground">
                         {t('models.zone.toolsHint')}
                       </span>
                       <span
-                        class="ms-auto flex items-center gap-1 text-xs font-extrabold text-primary-hover dark:text-primary"
+                        class="ms-auto flex items-center gap-1 text-[13px] font-extrabold text-primary"
                         aria-hidden="true"
                       >
                         <span class="group-open:hidden">
@@ -212,12 +213,12 @@ const systemTabs = [
                           ▾ {t('models.zone.collapse')}
                         </span>
                       </span>
-                      <span class="block w-full text-xs font-semibold leading-normal text-muted-foreground">
+                      <span class="mt-2 block w-full rounded-[12px] bg-[#f6f1ed] px-3.5 py-2.5 text-[13px] font-bold leading-normal text-muted-foreground dark:bg-[#332a24]">
                         {t('models.zone.toolsTeaser')}
                       </span>
                     </summary>
                     <div
-                      class="grid gap-2 border-t border-border py-2"
+                      class="grid gap-2 px-0 py-3"
                       data-testid={`model-tools-grid-${panel.key}`}
                     >
                       {panel.zones.tools.map((definition) => (
