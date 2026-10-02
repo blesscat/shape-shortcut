@@ -451,10 +451,29 @@ test('home, model selection, and docs are static Astro pages', async ({
   expect(containerFirstRowCount).toBeGreaterThanOrEqual(3)
   await expect(wallRelated.locator('[data-model-id]')).toHaveCount(8)
   await expect(hswPanel.locator('[data-model-id]')).toHaveCount(1)
+  const expectHeadBodySeparation = async (
+    panel: ReturnType<typeof page.locator>,
+  ) => {
+    // v2 palette spacing (home-model-selection 系統面板標頭與本體分離):
+    // the 先挑容器 hairline must not rest on the panel body's first zone.
+    const gap = await panel.evaluate((element) => {
+      const head = element.querySelector('h3')?.parentElement
+      const body = head?.nextElementSibling
+      const firstZone = body?.firstElementChild
+      if (!head || !body || !firstZone) return null
+      return (
+        firstZone.getBoundingClientRect().top -
+        head.getBoundingClientRect().bottom
+      )
+    })
+    if (gap === null) throw new Error('Panel head/body structure missing')
+    expect(gap).toBeGreaterThan(0)
+  }
   // Switching systems shows exactly one panel at a time.
   await systemTabs.nth(1).click()
   await expect(wallRelated).toBeVisible()
   await expect(deskSystem).toBeHidden()
+  await expectHeadBodySeparation(wallRelated)
   await expect(systemTabs.nth(1)).toHaveAttribute('aria-pressed', 'true')
   await expect(systemTabs.nth(0)).toHaveAttribute('aria-pressed', 'false')
   await expect(editLinkFor(wallRelated, 'Board (底版)')).toHaveAttribute(
@@ -474,6 +493,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   ).toBeVisible()
   await systemTabs.nth(2).click()
   await expect(hswPanel).toBeVisible()
+  await expectHeadBodySeparation(hswPanel)
   await expect(
     hswPanel
       .locator('[data-model-id="hsw-cell"]')
@@ -482,6 +502,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   await systemTabs.nth(0).click()
   await expect(deskSystem).toBeVisible()
   await expect(wallRelated).toBeHidden()
+  await expectHeadBodySeparation(deskSystem)
   for (const displayName of ['方塊', '模組化網格底板', '可調六角柱']) {
     await expect(
       page.getByRole('heading', { name: displayName, exact: true }),
