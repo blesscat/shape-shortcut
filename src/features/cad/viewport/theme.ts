@@ -17,20 +17,26 @@ export type CadViewportTheme = {
   annotationLabel: string
   hover: string
   selection: string
+  selectionFill: string
+  error: string
+  errorFill: string
   faceHighlight: string
   hemisphereSky: string
   hemisphereGround: string
   keyLight: string
   oppositeFill: string
+  boardFace: string
+  boardEdge: string
+  contactShadow: string
 }
 
-/* Warm light viewport theme (design-tokens.css Part D-A). Dark values arrive
-   via the CSS tokens; this constant only backstops token-less contexts such
-   as light-mode thumbnails. */
+/* Warm light viewport theme (design-tokens.css Part D-A, v2 / 4.2.1). Dark
+   values arrive via the CSS tokens; this constant only backstops token-less
+   contexts such as light-mode thumbnails. */
 export const CAD_VIEWPORT_THEME_FALLBACK = {
   background: '#f7f3ef',
   gridMajor: 'rgba(54, 42, 36, 0.18)',
-  gridMinor: 'rgba(54, 42, 36, 0.07)',
+  gridMinor: 'rgba(54, 42, 36, 0.1)',
   gizmoBackground: '#fff7f2',
   gizmoX: '#c8401f',
   gizmoY: '#1f7a3a',
@@ -40,12 +46,18 @@ export const CAD_VIEWPORT_THEME_FALLBACK = {
   annotation: '#0284c7',
   annotationLabel: '#6e5f57',
   hover: '#ffb454',
-  selection: '#d6452b',
+  selection: '#0284c7',
+  selectionFill: 'rgba(2, 132, 199, 0.14)',
+  error: '#d6452b',
+  errorFill: 'rgba(214, 69, 43, 0.16)',
   faceHighlight: 'rgba(255, 180, 84, 0.35)',
   hemisphereSky: '#ffffff',
   hemisphereGround: '#c9bcb2',
   keyLight: '#ffffff',
   oppositeFill: '#f3eae2',
+  boardFace: '#efe6dc',
+  boardEdge: '#3a2e27',
+  contactShadow: 'rgba(59, 43, 36, 0.2)',
 } as const satisfies CadViewportTheme
 
 type ThemeTokenReader = (name: string) => string
@@ -134,6 +146,21 @@ export function resolveCadViewportTheme(
       '--cad-viewport-selection',
       CAD_VIEWPORT_THEME_FALLBACK.selection,
     ),
+    selectionFill: readThemeToken(
+      readToken,
+      '--cad-viewport-selection-fill',
+      CAD_VIEWPORT_THEME_FALLBACK.selectionFill,
+    ),
+    error: readThemeToken(
+      readToken,
+      '--cad-viewport-error',
+      CAD_VIEWPORT_THEME_FALLBACK.error,
+    ),
+    errorFill: readThemeToken(
+      readToken,
+      '--cad-viewport-error-fill',
+      CAD_VIEWPORT_THEME_FALLBACK.errorFill,
+    ),
     faceHighlight: readThemeToken(
       readToken,
       '--cad-viewport-face-highlight',
@@ -158,6 +185,21 @@ export function resolveCadViewportTheme(
       readToken,
       '--cad-viewport-light-fill',
       CAD_VIEWPORT_THEME_FALLBACK.oppositeFill,
+    ),
+    boardFace: readThemeToken(
+      readToken,
+      '--cad-viewport-board-face',
+      CAD_VIEWPORT_THEME_FALLBACK.boardFace,
+    ),
+    boardEdge: readThemeToken(
+      readToken,
+      '--cad-viewport-board-edge',
+      CAD_VIEWPORT_THEME_FALLBACK.boardEdge,
+    ),
+    contactShadow: readThemeToken(
+      readToken,
+      '--cad-viewport-contact-shadow',
+      CAD_VIEWPORT_THEME_FALLBACK.contactShadow,
     ),
   }
 }

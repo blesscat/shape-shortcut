@@ -36,6 +36,7 @@
     colors?: ModelColors
     onColorsChange?: (colors: ModelColors) => void
     locale: Locale
+    modelId?: string | null
     mesh: MeshSnapshot | null
     partMeshes?: ModelPartMeshSnapshot[]
     modelRevision: string | null
@@ -50,6 +51,7 @@
     colors = DEFAULT_MODEL_COLORS,
     onColorsChange,
     locale,
+    modelId = null,
     mesh,
     partMeshes,
     modelRevision,
@@ -178,6 +180,7 @@
           {modelRevision}
           {parameters}
           {locale}
+          {modelId}
           theme={viewportTheme}
           {presentation}
           colors={presentation === 'thumbnail' ? DEFAULT_MODEL_COLORS : colors}
