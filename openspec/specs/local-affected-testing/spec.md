@@ -3,9 +3,7 @@
 ## Purpose
 
 Provide predictable local test commands that select tests affected by Git changes while keeping memory-heavy native CAD execution bounded and preserving a deliberate full-suite path.
-
 ## Requirements
-
 ### Requirement: Local tests are separated by resource class
 
 The project MUST expose distinct fast and CAD test groups. Fast tests MUST be eligible for normal file parallelism, while the CAD group MUST run no more than one test file at a time. A full local run MUST complete the fast group before starting the CAD group so their worker pools do not overlap.
@@ -88,3 +86,30 @@ The project MUST retain an explicit local command that runs every existing Vites
 
 - **WHEN** the local affected-testing capability is installed
 - **THEN** no CI workflow or remote test automation MUST be added
+
+### Requirement: CAD test files fit the per-process native CAD memory budget
+
+Each CAD-group test file MUST complete a whole-file run in a single fresh
+worker process without the native OpenCascade heap collapsing partway through.
+When a file's failing cases all pass in fresh processes but the whole-file run
+reports native geometry errors from some point onward, the file MUST be split
+along a thematic boundary so that every resulting file fits the budget, and
+harness code shared by the split files MUST live in a non-test utility module.
+
+#### Scenario: Whole-file collapse is recovered by splitting
+
+- **WHEN** a CAD test file passes each failing case in a fresh process while
+  the whole-file run reports native OCCT failures from a point onward
+- **THEN** the file MUST be split so each resulting file completes a
+  whole-file run without native geometry collapse
+- **AND** the split files MUST remain in the CAD group
+
+#### Scenario: Split harness stays shared and unselected
+
+- **WHEN** split CAD test files share wasm setup, fixtures, parameters, or
+  probe helpers
+- **THEN** the shared helpers MUST live in a utility module that vitest does
+  not select as a test file
+- **AND** each split file MUST initialise the native runtime in its own
+  beforeAll
+

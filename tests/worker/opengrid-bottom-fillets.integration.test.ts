@@ -147,7 +147,7 @@ describe('OpenGrid bottom edge finishing', () => {
     }
   }, 180_000)
 
-  it('keeps the stackable box base fillet and chamfers integrated seats', () => {
+  it('cuts square-section board-corner relief and chamfers integrated seats', () => {
     const parameters: OpenGridStackableBoxParameters = {
       ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
       cornerSeatMode: 'integrated',
@@ -155,13 +155,17 @@ describe('OpenGrid bottom edge finishing', () => {
     const shape = buildOpenGridStackableBox(parameters)
     try {
       const records = faceRecordsFor(shape)
+      // The square-section board-corner relief is cut at every grid junction,
+      // so it supersedes the R0.5 bottom-edge fillet band (see the
+      // square-section-only relief requirement). The finishing gate asserts
+      // the relief termination surface near the chamfer-start datum instead.
       expect(
         hasBottomFillet(records, {
-          minimumPlanSpan: 1,
-          minimumZ: 0,
-          maximumZ: BOTTOM_FILLET_RADIUS,
-          minimumZSpan: BOTTOM_FILLET_RADIUS * 0.7,
-          surfaceTypes: ['TORUS'],
+          minimumPlanSpan: 2.5,
+          minimumZ: 2.325 - 0.15,
+          maximumZ: 2.325 + 0.15,
+          minimumZSpan: 0,
+          surfaceTypes: ['PLANE'],
         }),
       ).toBe(true)
       expect(hasIntegratedSeatChamfer(records)).toBe(true)
