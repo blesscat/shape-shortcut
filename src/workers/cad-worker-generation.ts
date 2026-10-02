@@ -67,6 +67,7 @@ import type {
   ProgressEmitter,
   SupersededReason,
 } from './cad-worker-types'
+import { deleteShape } from '../cad-kernel/lifetime/dispose'
 
 type GenerateCommand = Extract<WorkerCommand, { kind: 'model.generate' }>
 
@@ -86,14 +87,6 @@ export type CadWorkerGenerationContext = {
 
 function yieldToWorkerEventLoop(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0))
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Keep the original Worker error when native cleanup is already incomplete.
-  }
 }
 
 function deleteBuildShapes(

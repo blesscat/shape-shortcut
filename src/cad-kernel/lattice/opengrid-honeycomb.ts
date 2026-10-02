@@ -55,6 +55,7 @@ import {
   type OpenGridStackableBoxParameters,
   type OpenGridStackableCylinderParameters,
 } from '../../cad-contract/units'
+import { deleteShape } from '../lifetime/dispose'
 
 // Re-export the replicad-free lattice API so existing worker-side imports
 // keep working; the client bundle imports './opengrid-honeycomb-cells'
@@ -93,14 +94,6 @@ function assertHoneycombGenerationCurrent(
 ): void {
   if (context.isGenerationCurrent && !context.isGenerationCurrent()) {
     throw new Error('STALE_GENERATION')
-  }
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
   }
 }
 

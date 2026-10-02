@@ -1,11 +1,4 @@
-import {
-  getOC,
-  makeBox,
-  makeCompound,
-  measureVolume,
-  type Shape3D,
-} from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
+import { makeBox, makeCompound, measureVolume, type Shape3D } from 'replicad'
 import {
   boundsForOpenGrid,
   cellCenterForOpenGrid,
@@ -18,6 +11,8 @@ import {
 } from '../../../cad-contract/units'
 import type { MeshSnapshot } from '../../../cad-contract/messages'
 import type { MeshData } from '../../mesh'
+import { deleteShape } from '../../lifetime/dispose'
+import { countSolids, isBRepValid } from '../../shape-query/solids'
 
 export type OpenGridQualityReport = {
   passed: boolean
@@ -28,14 +23,6 @@ export type OpenGridQualityReport = {
   solidCount: number | null
   cellOpeningCount: number
   meshTriangleCount: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Quality cleanup must not hide the original diagnostic.
-  }
 }
 
 function isClose(first: number, second: number): boolean {
@@ -60,35 +47,6 @@ function boundsMatch(actual: ModelBounds, expected: ModelBounds): boolean {
     const expectedCoordinate = [...expected.min, ...expected.max][index]
     return isClose(coordinate, expectedCoordinate)
   })
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
-}
-
-function isBRepValid(shape: Shape3D): boolean {
-  const oc = getOC()
-  const analyzer = new oc.BRepCheck_Analyzer(shape.wrapped, true, true)
-  try {
-    return analyzer.IsValid_2()
-  } finally {
-    analyzer.delete()
-  }
 }
 
 function meshIsFinite(mesh: MeshData | MeshSnapshot): boolean {

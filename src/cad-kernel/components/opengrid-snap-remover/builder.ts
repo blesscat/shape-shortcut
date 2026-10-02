@@ -1,4 +1,5 @@
 import { importSTEP, type Shape3D } from 'replicad'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const openGridSnapRemoverAssetUrl = new URL(
   './snap remover.step',
@@ -7,14 +8,6 @@ export const openGridSnapRemoverAssetUrl = new URL(
 
 export type OpenGridSnapRemoverBuildContext = {
   isGenerationCurrent?: () => boolean
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
 }
 
 function assertNonEmptyShape(shape: Shape3D): void {

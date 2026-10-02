@@ -43,6 +43,8 @@ import {
   openGridSnapOpenConnectNotchSegmentsFor,
   type OpenGridSnapOpenConnectAnchor,
 } from './openconnect'
+import { deleteShape } from '../../lifetime/dispose'
+import { countSolids } from '../../shape-query/solids'
 
 export const OPENGRID_SNAP_REFERENCE_URLS: Readonly<
   Record<OpenGridSnapProfile, Record<OpenGridSnapVariant, URL>>
@@ -102,14 +104,6 @@ export type OpenGridSnapReferenceReport = {
   height: number
 }
 
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the original import or geometry error.
-  }
-}
-
 function deleteDistinctShapes(shapes: Array<Shape3D | null | undefined>): void {
   const deleted = new Set<Shape3D>()
   for (const shape of shapes) {
@@ -144,25 +138,6 @@ function boundsMatch(actual: ModelBounds, expected: ModelBounds): boolean {
     const expectedCoordinate = [...expected.min, ...expected.max][index]
     return isClose(coordinate, expectedCoordinate)
   })
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
 }
 
 function assertMillimetreStepUnits(source: string): void {

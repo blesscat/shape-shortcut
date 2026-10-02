@@ -31,6 +31,8 @@ import {
 import type { MeshSnapshot } from '../../../cad-contract/messages'
 import type { MeshData } from '../../mesh'
 import { OPENGRID_SNAP_BOUNDARY_PROFILE } from './boundary'
+import { deleteShape } from '../../lifetime/dispose'
+import { isBRepValid } from '../../shape-query/solids'
 
 const QUALITY_TOLERANCE = 0.05
 // Meshing an offset assembly can add a small OCC boundary epsilon to the
@@ -57,14 +59,6 @@ export type OpenGridSnapQualityReport = {
   optionalFeatureProbeVolumes: number[]
   magnetHoleProbeVolumes: number[]
   meshTriangleCount: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Quality cleanup must not hide the original diagnostic.
-  }
 }
 
 function deleteDistinctShapes(shapes: Array<Shape3D | null | undefined>): void {
@@ -1033,16 +1027,6 @@ function meshIsFinite(mesh: MeshData | MeshSnapshot): boolean {
     [...positions, ...normals].every(Number.isFinite) &&
     [...indices].every(Number.isSafeInteger)
   )
-}
-
-function isBRepValid(shape: Shape3D): boolean {
-  const oc = getOC()
-  const analyzer = new oc.BRepCheck_Analyzer(shape.wrapped, true, true)
-  try {
-    return analyzer.IsValid_2()
-  } finally {
-    analyzer.delete()
-  }
 }
 
 function solidBoundsFor(shape: Shape3D): ModelBounds[] {

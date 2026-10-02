@@ -1,5 +1,6 @@
 import { isShape3D, makeCylinder, type Shape3D } from 'replicad'
 import { OPENGRID_LOCATING_ASSEMBLY_CONFIGURATION } from '../../../cad-contract/units'
+import { deleteShape } from '../../lifetime/dispose'
 
 const GEOMETRY_TOLERANCE = 0.02
 
@@ -11,14 +12,6 @@ type PointOnEdge = {
 type EdgeWithPoints = {
   startPoint: PointOnEdge
   endPoint: PointOnEdge
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the primary geometry error.
-  }
 }
 
 function edgeIsAtZ(edge: EdgeWithPoints, z: number): boolean {

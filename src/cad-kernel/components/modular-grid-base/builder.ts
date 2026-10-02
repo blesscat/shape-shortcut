@@ -19,6 +19,7 @@ import {
   PROTOTYPE_CONFIGURATION,
   type ModularGridBaseParameters,
 } from '../../../cad-contract/units'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const modularGridBaseTemplateUrl = new URL(
   './board-cell-template.step',
@@ -49,14 +50,6 @@ export type ModularGridAssemblyStrategy = 'sequential' | 'balanced'
 
 export const BALANCED_ASSEMBLY_MIN_CELLS = 100
 export const BALANCED_ASSEMBLY_BLOCK_SIZE = 4
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
-}
 
 class OwnedShapeGroup {
   private readonly shapes = new Set<Shape3D>()

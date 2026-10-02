@@ -34,6 +34,7 @@ import {
   loadOpenGridOpenConnectShelfLockedSlot,
   placeOpenGridOpenConnectShelfLockedSlot,
 } from '../opengrid-openconnect-shelf/slot'
+import { deleteShape } from '../../lifetime/dispose'
 
 type Point2D = [number, number]
 
@@ -57,14 +58,6 @@ const CAVITY_BOTTOM_OVERLAP = 0.02
 const EDGE_COORDINATE_TOLERANCE = 0.02
 const FUSION_OVERLAP =
   OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.fusionOverlap
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
-}
 
 function assertGenerationCurrent(
   context: OpenGridOpenConnectOrganizerBuildContext,

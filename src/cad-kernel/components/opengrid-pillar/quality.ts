@@ -1,5 +1,4 @@
-import { getOC, makeCylinder, measureVolume, type Shape3D } from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
+import { makeCylinder, measureVolume, type Shape3D } from 'replicad'
 import {
   boundsForPillar,
   pillarBodyDiameterForParameters,
@@ -10,6 +9,8 @@ import {
 } from '../../../cad-contract/units'
 import type { MeshSnapshot } from '../../../cad-contract/messages'
 import type { MeshData } from '../../mesh'
+import { deleteShape } from '../../lifetime/dispose'
+import { countSolids, isBRepValid } from '../../shape-query/solids'
 
 const QUALITY_TOLERANCE = 0.05
 const PROBE_VOLUME_EPSILON = 1e-8
@@ -22,14 +23,6 @@ export type PillarQualityReport = {
   volume: number | null
   solidCount: number | null
   meshTriangleCount: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Quality cleanup must not hide the original diagnostic.
-  }
 }
 
 function readBounds(shape: Shape3D): ModelBounds {
@@ -50,35 +43,6 @@ function boundsMatch(actual: ModelBounds, expected: ModelBounds): boolean {
     const expectedCoordinate = [...expected.min, ...expected.max][index]
     return Math.abs(coordinate - expectedCoordinate) <= QUALITY_TOLERANCE
   })
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
-}
-
-function isBRepValid(shape: Shape3D): boolean {
-  const oc = getOC()
-  const analyzer = new oc.BRepCheck_Analyzer(shape.wrapped, true, true)
-  try {
-    return analyzer.IsValid_2()
-  } finally {
-    analyzer.delete()
-  }
 }
 
 function typedArray<T extends Float32Array | Uint32Array>(

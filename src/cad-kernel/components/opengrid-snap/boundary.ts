@@ -14,6 +14,7 @@ import {
   type BooleanOperationScope,
   type BooleanOperationReporter,
 } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 type BoundaryInterfaceX = 'left' | 'right' | null
 type BoundaryInterfaceY = 'bottom' | 'top' | null
@@ -44,14 +45,6 @@ export const OPENGRID_SNAP_BOUNDARY_PROFILE = {
   diagonalCornerInset: OPENGRID_CONFIGURATION.intersectionDistance,
   seamOverlap: 0.2,
 } as const
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the original geometry error.
-  }
-}
 
 function extrudeProfile(
   plane: 'YZ' | 'XZ',

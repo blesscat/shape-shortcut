@@ -1,13 +1,6 @@
 import { makeBox, measureVolume, type Shape3D } from 'replicad'
 import type { NativeModelPart } from '../../lifetime'
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
-}
+import { deleteShape } from '../../lifetime/dispose'
 
 function cloneShape(shape: Shape3D): Shape3D {
   return shape.clone()

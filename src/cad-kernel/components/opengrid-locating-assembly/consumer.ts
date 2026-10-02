@@ -16,6 +16,7 @@ import {
   placeOpenGridDetachableCornerSeatSocketShape,
   type OpenGridDetachableCornerSeatSocketPlacement,
 } from './reference'
+import { deleteShape } from '../../lifetime/dispose'
 
 export type OpenGridDetachableCornerSeatConsumerContext = {
   detachableCornerSeatReference?: Shape3D
@@ -32,14 +33,6 @@ export type OpenGridDetachableCornerSeatConsumerQualityRecord = {
   socketVoidResidualVolume: number
   maleCollisionVolume: number
   roofVolume: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the primary geometry diagnostic.
-  }
 }
 
 function assertGenerationCurrent(

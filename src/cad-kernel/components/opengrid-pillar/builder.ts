@@ -19,6 +19,7 @@ import {
   type PillarParameters,
 } from '../../../cad-contract/units'
 import type { BooleanOperationReporter } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 const GEOMETRY_TOLERANCE = 0.02
 const SLOT_CUTTER_OVERLAP = 0.01
@@ -38,14 +39,6 @@ type PointOnEdge = {
 type EdgeWithPoints = {
   startPoint: PointOnEdge
   endPoint: PointOnEdge
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the primary geometry error.
-  }
 }
 
 function deleteUniqueShapes(shapes: readonly Shape3D[]): void {

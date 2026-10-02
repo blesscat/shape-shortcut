@@ -1,5 +1,6 @@
 import { importSTEP, type Shape3D } from 'replicad'
 import type { ModelBounds } from '../../../cad-contract/units'
+import { deleteShape } from '../../lifetime/dispose'
 
 type Point3D = readonly [number, number, number]
 
@@ -22,14 +23,6 @@ export const openGridOpenConnectShelfLockedSlotAssetUrl = new URL(
   './assets/openconnect-slot-negative-lock.step',
   import.meta.url,
 )
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
-}
 
 function boundsForShape(shape: Shape3D): number[][] {
   const bounds = shape.boundingBox

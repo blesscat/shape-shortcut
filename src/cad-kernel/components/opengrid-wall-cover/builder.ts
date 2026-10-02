@@ -21,6 +21,7 @@ import { openGridSnapOpenConnectNotchSegmentsFor } from '../opengrid-snap/openco
 import { makeOpenGridWallCoverTextGlyphShape } from './flat-text'
 import type { BooleanOperationScope } from '../../boolean-progress'
 import { measureBooleanInScope } from '../../boolean-progress'
+import { deleteShape } from '../../lifetime/dispose'
 
 export {
   importOpenGridSnapReference,
@@ -52,14 +53,6 @@ export type OpenGridWallCoverMultipartBuild = {
   shape: Shape3D
   qualityShape: Shape3D
   parts: OpenGridWallCoverNativePart[]
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not hide the primary geometry error.
-  }
 }
 
 function deleteDistinctShapes(shapes: Array<Shape3D | null | undefined>): void {

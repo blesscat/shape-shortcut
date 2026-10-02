@@ -1,6 +1,5 @@
 import {
   deserializeShape,
-  getOC,
   makeBox,
   makeCylinder,
   makeCompound,
@@ -8,7 +7,6 @@ import {
   Sketcher,
   type Shape3D,
 } from 'replicad'
-import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import type { NativeModelPart } from '../../lifetime'
 import {
   boundsForOpenGridStackableCylinder,
@@ -45,6 +43,8 @@ import {
   cutOpenGridDetachableCornerSeatConsumers,
   type OpenGridDetachableCornerSeatConsumerContext,
 } from '../opengrid-locating-assembly/consumer'
+import { deleteShape } from '../../lifetime/dispose'
+import { countSolids, isBRepValid } from '../../shape-query/solids'
 
 const HONEYCOMB_CUT_BATCH_SIZE = 128
 
@@ -132,14 +132,6 @@ export type OpenGridStackableCylinderInterfaceQualityReport = {
   matingIntersectionVolume: number
   internalFilletFaceCount: number
   internalFilletHeight: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the original geometry error.
-  }
 }
 
 function cloneShape(shape: Shape3D): Shape3D {
@@ -621,35 +613,6 @@ function readBounds(shape: Shape3D): Bounds {
     return boundingBox.bounds as Bounds
   } finally {
     boundingBox.delete()
-  }
-}
-
-function countSolids(shape: Shape3D): number {
-  const oc = getOC()
-  const solidType = oc.TopAbs_ShapeEnum
-    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
-  const shapeType = oc.TopAbs_ShapeEnum
-    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
-  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
-  let count = 0
-  try {
-    while (explorer.More()) {
-      count += 1
-      explorer.Next()
-    }
-    return count
-  } finally {
-    explorer.delete()
-  }
-}
-
-function isBRepValid(shape: Shape3D): boolean {
-  const oc = getOC()
-  const analyzer = new oc.BRepCheck_Analyzer(shape.wrapped, true, true)
-  try {
-    return analyzer.IsValid_2()
-  } finally {
-    analyzer.delete()
   }
 }
 

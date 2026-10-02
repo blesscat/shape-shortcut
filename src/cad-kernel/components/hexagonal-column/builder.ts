@@ -18,6 +18,7 @@ import {
   type HexagonalColumnOrientation,
   type HexagonalColumnParameters,
 } from '../../../cad-contract/units'
+import { deleteShape } from '../../lifetime/dispose'
 
 export const hexagonalColumnReferenceUrl = new URL(
   './hexagonal.step',
@@ -77,14 +78,6 @@ export type HexagonalColumnPrototypeOptions = {
   crossSectionRotationDegrees?: number
   startTransitionLength?: number
   endTransitionLength?: number
-}
-
-function deleteShape(shape: { delete?: () => void } | null | undefined): void {
-  try {
-    shape?.delete?.()
-  } catch {
-    // Cleanup must not replace the primary geometry error.
-  }
 }
 
 class OwnedShapeGroup {
