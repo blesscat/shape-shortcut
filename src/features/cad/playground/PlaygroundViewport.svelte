@@ -27,6 +27,7 @@
   } from '../viewport/config'
   import {
     createBoardContactShadowGeometry,
+    createBoardSurfaceGroup,
     createContactShadowMaterial,
     createErrorHatchMaterial,
     isBoardSubstrateModel,
@@ -168,10 +169,11 @@
   let contentGroup: THREE.Group | null = null
   let grid: THREE.Group | null = null
 
-  /** Rectangular cell grid centered on the origin, in the plane of `mode`. */
+  /** Rectangular cell grid centered on the origin, in the plane of `mode`.
+      The Part D v2 planning surface (board face + outline + contact shadow)
+      rides along in the same group so it inherits the mode rotation. */
   function buildGridLines(
-    minorColor: string,
-    majorColor: string,
+    theme: CadViewportTheme,
     cellsX: number,
     cellsY: number,
     mode: PlaygroundViewMode,
@@ -192,6 +194,13 @@
       target.push(-sizeX / 2, 0, z, sizeX / 2, 0, z)
     }
     const group = new THREE.Group()
+    group.add(
+      createBoardSurfaceGroup(sizeX, sizeY, {
+        boardFace: theme.boardFace,
+        boardEdge: theme.boardEdge,
+        contactShadow: theme.contactShadow,
+      }),
+    )
     const addLines = (points: number[], color: string) => {
       const geometry = new THREE.BufferGeometry()
       geometry.setAttribute(
@@ -205,8 +214,8 @@
         ),
       )
     }
-    addLines(minor, minorColor)
-    addLines(major, majorColor)
+    addLines(minor, theme.gridMinor)
+    addLines(major, theme.gridMajor)
     if (mode === 'desktop') {
       group.rotation.set(...CAD_VIEWPORT_GRID_ROTATION)
     }
@@ -215,7 +224,7 @@
 
   function disposeGrid(target: THREE.Group): void {
     target.traverse((child) => {
-      if (child instanceof THREE.LineSegments) {
+      if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
         child.geometry.dispose()
         ;(child.material as THREE.Material).dispose()
       }
@@ -1121,8 +1130,7 @@
     scene.add(fill)
 
     grid = buildGridLines(
-      theme.gridMinor,
-      theme.gridMajor,
+      theme,
       Math.max(Math.round(gridSize.x), 1),
       Math.max(Math.round(gridSize.y), 1),
       viewMode,
@@ -1239,8 +1247,7 @@
       disposeGrid(grid)
     }
     grid = buildGridLines(
-      theme.gridMinor,
-      theme.gridMajor,
+      theme,
       Math.max(Math.round(gridSize.x), 1),
       Math.max(Math.round(gridSize.y), 1),
       viewMode,

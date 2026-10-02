@@ -11,7 +11,7 @@
     interactivity,
     type GizmoOptions,
   } from '@threlte/extras'
-  import { Color } from 'three'
+  import { Color, DoubleSide } from 'three'
   import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js'
   import type {
     MeshSnapshot,
@@ -141,6 +141,17 @@
     args={[1000, 20, theme.gridMajor, theme.gridMinor]}
     rotation={CAD_VIEWPORT_GRID_ROTATION}
   />
+  <!-- Planning surface (viewport fix ①): one step under the grid so the
+       light theme no longer floats lines on the background color. -->
+  <T.Mesh position={[0, 0, -0.2]} renderOrder={-2}>
+    <T.PlaneGeometry args={[1000, 1000]} />
+    <T.MeshStandardMaterial
+      color={theme.boardFace}
+      roughness={0.95}
+      metalness={0}
+      side={DoubleSide}
+    />
+  </T.Mesh>
 {/if}
 <T.PerspectiveCamera
   makeDefault
