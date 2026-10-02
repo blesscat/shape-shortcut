@@ -193,6 +193,7 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
   id: 'opengrid-openconnect-organizer',
   buildKey: 'opengrid-openconnect-organizer',
   family: 'opengrid',
+  partCategory: 'container',
   supportedSystemContexts: ['wall'],
   displayName: 'models.model.opengrid-openconnect-organizer.name',
   selectionLabel: 'models.model.opengrid-openconnect-organizer.selection',

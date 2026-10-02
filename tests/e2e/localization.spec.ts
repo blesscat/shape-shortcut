@@ -87,7 +87,9 @@ test('localized model chooser exposes localized shell and search metadata', asyn
   await expect(page).toHaveURL(/\/en\/models\/?$/)
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Pick one you like, take it home to print' }),
+    page.getByRole('heading', {
+      name: 'Pick one you like, take it home to print',
+    }),
   ).toBeVisible()
   await expect(
     page
@@ -115,8 +117,16 @@ test('model chooser keeps compact cards and stable modal details', async ({
 }) => {
   await page.goto('/en/models')
 
-  const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
-  await expect(cards).not.toHaveCount(0)
+  // Tools live in a collapsed zone by default; expand the Desk panel's zone
+  // so every card is measurable and visible before the layout assertions
+  // below (the switcher keeps the other panels out of layout).
+  await page.getByTestId('model-zone-tools-desk').locator('summary').click()
+
+  const cards = page
+    .locator('[data-testid="model-selection"]')
+    .locator('[data-system-panel="desk"]')
+    .locator('[data-model-id]')
+  await expect(cards).toHaveCount(10)
   const staticResponse = await page.request.get('/en/models')
   expect(staticResponse.ok()).toBe(true)
   const staticHtml = await staticResponse.text()
@@ -135,6 +145,47 @@ test('model chooser keeps compact cards and stable modal details', async ({
       card.getByRole('button', { name: 'Details', exact: true }),
     ).toBeVisible()
   }
+
+  // The other panels keep the same card anatomy; verify via the switcher.
+  // Park the pointer first: tab clicks above the panels leave it hovering a
+  // card, whose hover lift keeps the layout (and the next tab) unstable.
+  const stableClick = async (key: string) => {
+    const tab = page.locator(`[data-system-tab="${key}"]`)
+    await page.mouse.move(0, 0)
+    await expect
+      .poll(() =>
+        tab.evaluate(
+          (element) =>
+            new Promise((resolve) => {
+              const first = element.getBoundingClientRect().y
+              requestAnimationFrame(() =>
+                resolve(
+                  Math.abs(element.getBoundingClientRect().y - first) < 0.5,
+                ),
+              )
+            }),
+        ),
+      )
+      .toBe(true)
+    await tab.click()
+  }
+  await stableClick('wall')
+  await expect(
+    page
+      .locator('[data-system-panel="wall"]')
+      .locator('[data-model-id]')
+      .first()
+      .getByRole('button', { name: 'Details', exact: true }),
+  ).toBeVisible()
+  await stableClick('hsw')
+  await expect(
+    page
+      .locator('[data-system-panel="hsw"]')
+      .locator('[data-model-id="hsw-cell"]')
+      .getByRole('button', { name: 'Details', exact: true }),
+  ).toBeVisible()
+  await page.mouse.move(0, 0)
+  await stableClick('desk')
 
   const board = page.locator('[data-entry-key="opengrid-desk"]')
   await expect(board).not.toContainText('Adjustable settings:')
@@ -159,53 +210,122 @@ test('model chooser keeps compact cards and stable modal details', async ({
   await expectNavGeometrySettled(
     page.getByRole('navigation', { name: 'Primary navigation' }),
   )
-
-  const boundsBefore = await cards.evaluateAll((cardElements) =>
-    cardElements.map((card) => {
-      const bounds = card.getBoundingClientRect()
-      return {
-        x: bounds.x + window.scrollX,
-        y: bounds.y + window.scrollY,
-        width: bounds.width,
-        height: bounds.height,
-      }
-    }),
-  )
+  // Opening the dialog focuses it, and firefox's focus auto-scroll then moves
+  // the window (nav collapse tail included). The dialog itself never shifts
+  // layout, so the baseline is recorded right after the dialog is visible and
+  // the scroll has settled: the comparison below then measures what this test
+  // guards — that keeping the dialog open does not move any card.
+  // The capsule nav is sticky and in-flow, so the tail of its ~200ms collapse
+  // still drifts document coordinates by a couple of pixels after the nav's
+  // own height settles. Wait for the cards to stop moving instead of sleeping
+  // a fixed duration.
+  await expect
+    .poll(() =>
+      cards.first().evaluate(
+        (card) =>
+          new Promise((resolve) => {
+            const first = card.getBoundingClientRect().top
+            requestAnimationFrame(() =>
+              resolve(Math.abs(card.getBoundingClientRect().top - first) < 0.5),
+            )
+          }),
+      ),
+    )
+    .toBe(true)
+  await page.evaluate(() => document.fonts.ready)
+  // Expansion clicks park the pointer over a card; the hover lift
+  // (-translate-y-0.5) would masquerade as a dialog-induced shift.
+  await page.mouse.move(0, 0)
 
   await opener.click()
-
   const dialog = parameterCard.getByTestId('model-details-dialog')
   await expect(dialog).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const first = window.scrollY
+            requestAnimationFrame(() =>
+              resolve(Math.abs(window.scrollY - first) < 0.5),
+            )
+          }),
+      ),
+    )
+    .toBe(true)
+  await expectNavGeometrySettled(
+    page.getByRole('navigation', { name: 'Primary navigation' }),
+  )
+  // Freeze the measurement environment before recording either side: hover
+  // lifts off, no pointer-enter side effects, one pinned scroll offset.
+  await page.locator('[data-testid="model-selection"]').evaluate((element) => {
+    element.style.pointerEvents = 'none'
+  })
+  // The opener click re-hovers the card (its -translate-y-0.5 lift runs on a
+  // 200ms transition), and the freeze above ends that hover. Let the lift
+  // decay fully BEFORE the baseline, otherwise the decay tail lands between
+  // the two measurements and masquerades as a 2px dialog-induced shift.
+  await page.waitForTimeout(300)
+  const readCards = () =>
+    cards.evaluateAll((cardElements) =>
+      cardElements.map((card) => {
+        const bounds = card.getBoundingClientRect()
+        return {
+          x: bounds.x + window.scrollX,
+          y: bounds.y + window.scrollY,
+          width: bounds.width,
+          height: bounds.height,
+        }
+      }),
+    )
+  const scrollYBefore = await page.evaluate(() => window.scrollY)
+  const boundsBefore = await readCards()
+
   await expect(dialog.getByRole('heading', { name: 'Grid Box' })).toBeVisible()
   await expect(dialog).not.toContainText('Adjustable settings:')
   await expect(dialog).toContainText('Inner clear height')
   await expect(dialog).toContainText(/STL.*3MF/)
 
-  const boundsAfter = await cards.evaluateAll((cardElements) =>
-    cardElements.map((card) => {
-      const bounds = card.getBoundingClientRect()
-      return {
-        x: bounds.x + window.scrollX,
-        y: bounds.y + window.scrollY,
-        width: bounds.width,
-        height: bounds.height,
-      }
-    }),
+  // Pin the scroll back to the baseline offset (the assertions above must not
+  // scroll, but a stray subpixel delta from firefox's focus auto-scroll is
+  // not a layout shift either), then measure again.
+  await page.evaluate((y) => window.scrollTo(0, y), scrollYBefore)
+  await expectNavGeometrySettled(
+    page.getByRole('navigation', { name: 'Primary navigation' }),
   )
+
+  const boundsAfter = await readCards()
+  await page.locator('[data-testid="model-selection"]').evaluate((element) => {
+    element.style.pointerEvents = ''
+  })
   expect(boundsAfter).toHaveLength(boundsBefore.length)
+  // Both sides were recorded with the dialog open, the scroll pinned, and
+  // the hover lift already decayed (300ms wait above), so this comparison
+  // measures exactly what the test guards: keeping the dialog open must not
+  // move, resize, or reflow any card. 0.5px absorbs subpixel noise — any
+  // real dialog-induced shift is several pixels.
   for (let index = 0; index < boundsBefore.length; index += 1) {
     const before = boundsBefore[index]
     const after = boundsAfter[index]
-    expect(after?.x).toBeCloseTo(before?.x ?? 0, 3)
-    expect(after?.y).toBeCloseTo(before?.y ?? 0, 3)
-    expect(after?.width).toBeCloseTo(before?.width ?? 0, 3)
-    expect(after?.height).toBeCloseTo(before?.height ?? 0, 3)
+    expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThanOrEqual(
+      0.5,
+    )
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(
+      0.5,
+    )
+    expect(
+      Math.abs((after?.width ?? 0) - (before?.width ?? 0)),
+    ).toBeLessThanOrEqual(0.5)
+    expect(
+      Math.abs((after?.height ?? 0) - (before?.height ?? 0)),
+    ).toBeLessThanOrEqual(0.5)
   }
 
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(dialog).toBeHidden()
   await expect(opener).toBeFocused()
 
+  await page.mouse.move(0, 0)
   await opener.click()
   await expect(dialog).toBeVisible()
   await page.keyboard.press('Escape')
@@ -222,9 +342,7 @@ test('model chooser details remain readable without narrow-screen overflow', asy
   const card = page.locator(
     '[data-entry-key="opengrid-stackable-cylinder-desk"]',
   )
-  await card
-    .getByRole('button', { name: 'Details', exact: true })
-    .click()
+  await card.getByRole('button', { name: 'Details', exact: true }).click()
 
   const dialog = card.getByTestId('model-details-dialog')
   await expect(dialog).toBeVisible()
@@ -252,8 +370,14 @@ test('traditional Chinese model cards keep the compact presentation', async ({
 }) => {
   await page.goto('/zh-Hant/models')
 
-  const cards = page.locator('[data-testid="model-selection"] [data-model-id]')
-  await expect(cards).not.toHaveCount(0)
+  await page.getByTestId('model-zone-tools-desk').locator('summary').click()
+  await page.mouse.move(0, 0)
+
+  const cards = page
+    .locator('[data-testid="model-selection"]')
+    .locator('[data-system-panel="desk"]')
+    .locator('[data-model-id]')
+  await expect(cards).toHaveCount(10)
   const cardCount = await cards.count()
   for (let index = 0; index < cardCount; index += 1) {
     const card = cards.nth(index)
@@ -286,7 +410,9 @@ test('localized public pages and CAD controls expose both locales', async ({
   await page.goto('/en/docs/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'First time with Desk System? This page is all you need' }),
+    page.getByRole('heading', {
+      name: 'First time with Desk System? This page is all you need',
+    }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Parameters and constraints' }),
@@ -298,7 +424,9 @@ test('localized public pages and CAD controls expose both locales', async ({
   await page.goto('/en/about/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
-    page.getByRole('heading', { name: 'Indie developer, and a 3D-printing enthusiast.' }),
+    page.getByRole('heading', {
+      name: 'Indie developer, and a 3D-printing enthusiast.',
+    }),
   ).toBeVisible()
   await expect(
     page
@@ -370,4 +498,54 @@ test('publishes canonical localized sitemap URLs', async ({ request }) => {
   expect(body).toContain(`<loc>${origin}/en/</loc>`)
   expect(body).toContain(`<loc>${origin}/zh-Hant/cad/opengrid</loc>`)
   expect(body).not.toContain(`<loc>${origin}/cad/opengrid</loc>`)
+})
+
+test('model chooser badges and home summaries expose localized part categories', async ({
+  page,
+}) => {
+  const deskBaseBadge = () =>
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-base-desk')
+      .locator(
+        '[data-model-id="opengrid"] [data-testid="model-category-badge"]',
+      )
+
+  await page.goto('/en/models')
+  await expect(deskBaseBadge()).toHaveText('Base')
+  await expect(
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-containers-desk')
+      .locator(
+        '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
+      ),
+  ).toHaveText('Container')
+
+  await page.goto('/en/')
+  await expect(
+    page.getByTestId('home-explore-desk-category-summary'),
+  ).toContainText('Board and Snap are your base')
+  await expect(
+    page.getByTestId('home-explore-wall-category-summary'),
+  ).toContainText('Shelves, organizers, and the tissue box are containers')
+
+  await page.goto('/zh-Hant/models')
+  await expect(deskBaseBadge()).toHaveText('基礎')
+  await expect(
+    page
+      .getByTestId('model-subgroup-desk')
+      .getByTestId('model-zone-containers-desk')
+      .locator(
+        '[data-model-id="opengrid-stackable-box"] [data-testid="model-category-badge"]',
+      ),
+  ).toHaveText('容器')
+
+  await page.goto('/zh-Hant/')
+  await expect(
+    page.getByTestId('home-explore-desk-category-summary'),
+  ).toContainText('底版跟 Snap 是基礎')
+  await expect(
+    page.getByTestId('home-explore-wall-category-summary'),
+  ).toContainText('層架、方格、面紙盒都是容器')
 })

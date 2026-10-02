@@ -213,6 +213,7 @@ export const opengridOrganizerBoxDefinition: ModelDefinition = {
   id: 'opengrid-organizer-box',
   buildKey: 'opengrid-organizer-box',
   family: 'opengrid',
+  partCategory: 'container',
   supportedSystemContexts: ['desk'],
   displayName: 'models.model.opengrid-organizer-box.name',
   selectionLabel: 'models.model.opengrid-organizer-box.selection',

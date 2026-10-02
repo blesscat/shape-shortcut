@@ -270,6 +270,7 @@ export const opengridStackableCylinderDefinition: ModelDefinition = {
   id: 'opengrid-stackable-cylinder',
   buildKey: 'opengrid-stackable-cylinder',
   family: 'opengrid',
+  partCategory: 'container',
   supportedSystemContexts: ['desk'],
   displayName: 'models.model.opengrid-stackable-cylinder.name',
   selectionLabel: 'models.model.opengrid-stackable-cylinder.selection',

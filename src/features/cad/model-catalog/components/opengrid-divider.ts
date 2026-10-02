@@ -168,6 +168,7 @@ export const opengridDividerDefinition: ModelDefinition = {
   id: 'opengrid-divider',
   buildKey: 'opengrid-divider',
   family: 'opengrid',
+  partCategory: 'accessory',
   supportedSystemContexts: ['desk'],
   displayName: 'models.model.opengrid-divider.name',
   selectionLabel: 'models.model.opengrid-divider.selection',

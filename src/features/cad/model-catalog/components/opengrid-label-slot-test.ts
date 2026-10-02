@@ -47,6 +47,7 @@ export const opengridLabelSlotTestDefinition: ModelDefinition = {
   id: 'opengrid-label-slot-test',
   buildKey: 'opengrid-label-slot-test',
   family: 'opengrid',
+  partCategory: 'test',
   displayName: 'models.model.opengrid-label-slot-test.name',
   selectionLabel: 'models.model.opengrid-label-slot-test.selection',
   selectionDescription: 'models.model.opengrid-label-slot-test.description',

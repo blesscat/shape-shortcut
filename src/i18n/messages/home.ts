@@ -53,11 +53,15 @@ export const zh = {
     '桌面派的好朋友：Board、Snap 加幾個可調收納盒，書桌立刻整齊。',
   'home.explore.desk.cta': '玩 Desk System →',
   'home.explore.desk.alt': 'OpenGrid Desk System Board 與收納盒預覽',
+  'home.explore.desk.categorySummary':
+    '底版跟 Snap 是基礎，先挑喜歡的容器，小工具都收在下面。',
   'home.explore.wall.title': 'OpenGrid Wall',
   'home.explore.wall.description':
     '牆面派看這邊：Board 配 Snap 掛上牆，Wall Cover 還能雙色列印。',
   'home.explore.wall.cta': '玩 Wall System →',
   'home.explore.wall.alt': 'OpenGrid Wall Board 底板預覽',
+  'home.explore.wall.categorySummary':
+    '底版和 Snap 是基礎，層架、方格、面紙盒都是容器，小工具收在下面。',
   'home.final.title': '覺得有用？請它喝杯咖啡',
   'home.final.description':
     '挑一個模型、調好參數、印出來——如果這個專案幫上了忙，一杯咖啡能讓它長得更好。',
@@ -137,11 +141,15 @@ export const en: { [Key in keyof typeof zh]: string } = {
     "The desk person's friend: a Board, some Snaps, a few adjustable boxes, and the desk sorts itself out.",
   'home.explore.desk.cta': 'Try Desk System →',
   'home.explore.desk.alt': 'OpenGrid Desk System Board and container preview',
+  'home.explore.desk.categorySummary':
+    'Board and Snap are your base. Pick the containers you like first — tools are tucked away below.',
   'home.explore.wall.title': 'OpenGrid Wall',
   'home.explore.wall.description':
     'For wall people: Board + Snap go up, and Wall Cover prints in two colors.',
   'home.explore.wall.cta': 'Try Wall System →',
   'home.explore.wall.alt': 'OpenGrid Wall Board preview',
+  'home.explore.wall.categorySummary':
+    'The wall board and Snap are your base. Shelves, organizers, and the tissue box are containers; tools stay tucked below.',
   'home.final.title': 'Found it useful? Buy it a coffee.',
   'home.final.description':
     'Pick a model, tune it, print it. If this project helped, one coffee keeps it growing.',

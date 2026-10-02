@@ -1,0 +1,360 @@
+---
+import { Button } from '../starwind/button'
+import ModelCardPreview from './ModelCardPreview.astro'
+import ModelCardDialog from './ModelCardDialog.astro'
+import {
+  displayParameterLabel,
+  modelSelectionLabelFor,
+  parameterPresentationFor,
+  parameterStaticSummaryKeysFor,
+  unitLabelFor,
+  type ModelDefinition,
+  type ModelPreviewImage,
+} from '../../features/cad/model-catalog'
+import { translate, type Locale } from '../../i18n'
+import { localizedCadPathFor } from '../../i18n/routes'
+
+interface Props {
+  definition: ModelDefinition<ModelPreviewImage>
+  locale: Locale
+}
+
+const { definition, locale } = Astro.props
+const t = (key: string, values?: Record<string, string | number | boolean>) =>
+  translate(locale, key, values)
+
+function previewImage() {
+  if (!definition.previewImage) {
+    throw new Error(`MODEL_PREVIEW_MISSING:${definition.id}`)
+  }
+  return definition.previewImage
+}
+
+function modelText(field: 'name' | 'description' | 'alt') {
+  return t(`models.model.${definition.id}.${field}`)
+}
+
+/* v2 palette variants, derived from catalog metadata (design: 版型映射).
+   base → mint hero row; container → image-top card; the rest → row. */
+type CardVariant = 'hero' | 'big' | 'row'
+
+function variantFor(category: ModelDefinition['partCategory']): CardVariant {
+  if (category === 'base') return 'hero'
+  if (category === 'container') return 'big'
+  return 'row'
+}
+
+const variant = variantFor(definition.partCategory)
+
+/* Split the localized selection label into a primary line and a secondary
+   original-name line（設計稿容器卡：中文大字＋英文小字）. Series-relative
+   labels stay the heading source of truth; names without a parenthesized
+   suffix render as a single line. */
+function splitDisplayName(fullName: string): {
+  primary: string
+  secondary: string | null
+} {
+  const match = fullName.match(/^(.*?)\s*[（(]\s*(.+?)\s*[)）]\s*$/)
+  if (!match) return { primary: fullName, secondary: null }
+  if (locale === 'zh-Hant') {
+    return { primary: match[2] ?? fullName, secondary: match[1] || null }
+  }
+  return { primary: match[1] ?? fullName, secondary: match[2] || null }
+}
+
+function translatedSummaryFor(key: string | undefined): string | undefined {
+  if (!key) return undefined
+  const summary = t(key)
+  if (summary.startsWith('⟦')) return undefined
+  return summary
+}
+
+function translatedStaticSummariesFor(): string[] {
+  return parameterStaticSummaryKeysFor(definition)
+    .map((key) => translatedSummaryFor(key))
+    .filter((summary): summary is string => summary !== undefined)
+}
+
+function parameterSummary(): string[] {
+  const presentation = parameterPresentationFor(definition)
+  const staticSummaries = translatedStaticSummariesFor()
+  if (staticSummaries.length > 0) return staticSummaries
+
+  if (presentation.kind === 'fixed') {
+    return [t('models.fixedParameters')]
+  }
+
+  if (definition.parameterSchema.length === 0) {
+    return [t('models.adjustableSettingsMultiple')]
+  }
+
+  return definition.parameterSchema.map((field) =>
+    t('models.parameterRange', {
+      label: displayParameterLabel(field, locale),
+      min: field.min,
+      max: field.max,
+      unit: unitLabelFor(locale, field.unit),
+    }),
+  )
+}
+
+function detailsDialogId(): string {
+  return `model-details-${definition.id}-${definition.systemContext ?? 'legacy'}`
+}
+
+function systemTag(): string | null {
+  if (definition.systemContext === 'desk') return t('models.context.desk')
+  if (definition.systemContext === 'wall') return t('models.context.wall')
+  if (definition.id === 'hsw-cell') return 'HSW'
+  return null
+}
+
+const preview = previewImage()
+const selectionLabel = t(modelSelectionLabelFor(definition))
+const description = modelText('description')
+const previewAlt = modelText('alt')
+const parameterDetails = parameterSummary()
+const dialogId = detailsDialogId()
+const cadPath = localizedCadPathFor(
+  locale,
+  definition.id,
+  definition.systemContext,
+)
+const systemTagText = systemTag()
+const categoryText = definition.partCategory
+  ? t(`models.category.${definition.partCategory}`)
+  : null
+const { primary: primaryName, secondary: secondaryName } =
+  variant === 'big'
+    ? splitDisplayName(selectionLabel)
+    : { primary: selectionLabel, secondary: null }
+
+const entryKey = `${definition.id}-${definition.systemContext ?? 'legacy'}`
+
+/* Category badge styling: text + tint (never color alone). Container rides
+   the coral soft tint, base the mint tint, the rest stay neutral. */
+function categoryBadgeClass(): string {
+  if (definition.partCategory === 'container')
+    return 'bg-primary-soft text-primary-hover dark:text-primary'
+  if (definition.partCategory === 'base') return 'text-success'
+  return 'bg-muted text-muted-foreground'
+}
+
+/* v2 palette metrics (design-tokens: --r-ctl 12px, tile padding 8px,
+   prow/prow-thumb 64/84px, nm 14.5px/800, en 11.5px/700 mono). Radii are
+   explicit px because starwind's theme redefines the Tailwind radius scale
+   (rounded-xl = 20px). Big cards use --ss-bg (white / dark #201a16) so they
+   read against the --ss-panel page panel in both themes, flat at rest like
+   the mockup's .tile (shadow on hover only). */
+const heroWrapper =
+  'grid grid-cols-[84px_1fr_auto] items-center gap-3 rounded-[12px] border-2 border-transparent bg-success-soft p-2.5 transition-[transform,box-shadow] duration-200 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft'
+const bigWrapper =
+  'grid content-start gap-1.5 rounded-[12px] border-2 border-transparent bg-background p-2 transition-[transform,box-shadow] duration-200 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft'
+const rowWrapper =
+  'grid grid-cols-[64px_1fr_auto] items-center gap-3 rounded-[12px] border-2 border-transparent bg-background p-2 transition-transform duration-200 ease-out motion-safe:hover:-translate-y-0.5'
+const wrapperClass =
+  variant === 'hero' ? heroWrapper : variant === 'big' ? bigWrapper : rowWrapper
+
+/* Render plate: cool periwinkle in light (--ss mockup renders), one warm
+   step lighter than the panel in dark. The exported preview webps carry the
+   same baked plate color, so object-contain keeps the box and plate in tune. */
+const previewBoxClass =
+  'relative grid aspect-[8/5] place-items-center overflow-hidden rounded-[8px] border border-border bg-[#eef1f7] dark:bg-[#332a24]'
+
+const triggerClass =
+  'inline-flex min-h-9 items-center rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline'
+const editLinkClass =
+  'inline-flex min-h-9 items-center rounded-full px-2 py-1 text-xs font-bold text-primary-hover no-underline hover:bg-primary-soft focus-visible:ring-3 focus-visible:ring-outline dark:text-primary'
+---
+
+<article
+  class={wrapperClass}
+  data-model-id={definition.id}
+  data-entry-key={entryKey}
+  data-system-context={definition.systemContext}
+  data-sw-card={variant === 'big' ? '' : undefined}
+>
+  <ModelCardPreview
+    {preview}
+    {previewAlt}
+    fallbackLabel={t('models.previewUnavailable')}
+    boxClass={previewBoxClass}
+    picturePadding={variant === 'big' ? 'p-1' : 'p-0.5'}
+    overlayBadge={variant === 'big' && categoryText
+      ? { text: categoryText, category: definition.partCategory ?? '' }
+      : null}
+  />
+  {
+    variant === 'hero' && (
+      <>
+        <div class="grid min-w-0 gap-1">
+          <h4 class="m-0 break-words text-[15px] font-black leading-snug">
+            {selectionLabel}
+          </h4>
+          <p class="m-0 line-clamp-1 text-[12.5px] font-bold leading-normal text-muted-foreground">
+            {description}
+          </p>
+          <div class="flex flex-wrap items-center gap-1">
+            <ModelCardDialog
+              {selectionLabel}
+              {description}
+              {dialogId}
+              {cadPath}
+              {parameterDetails}
+              detailsLabel={t('models.details')}
+              closeLabel={t('models.close')}
+              parametersLabel={t('models.parameters')}
+              exportLine={t('models.exportFormatsLine', {
+                label: t('models.exportFormats'),
+                value: t('models.exportFormatsValue'),
+              })}
+              {triggerClass}
+            />
+            <Button
+              as="a"
+              href={cadPath}
+              variant="ghost"
+              size="sm"
+              class={`no-underline ${editLinkClass}`}
+              aria-label={t('models.editAria', { name: selectionLabel })}
+            >
+              {t('models.edit')}
+            </Button>
+          </div>
+        </div>
+        <div class="grid justify-items-end gap-2">
+          {categoryText && (
+            <span
+              class="text-xs font-black text-success"
+              data-testid="model-category-badge"
+              data-part-category={definition.partCategory}
+            >
+              {categoryText}
+            </span>
+          )}
+          {systemTagText && (
+            <span
+              class="rounded-full bg-background px-2 py-0.5 text-[11px] font-bold text-muted-foreground"
+              data-testid="model-system-tag"
+            >
+              {systemTagText}
+            </span>
+          )}
+        </div>
+      </>
+    )
+  }
+  {
+    variant === 'big' && (
+      <div class="grid gap-1">
+        <div class="grid gap-0.5">
+          <h4 class="m-0 break-words text-[14.5px] font-extrabold leading-tight">
+            {primaryName}
+          </h4>
+          {secondaryName && (
+            <span class="font-mono text-[11.5px] font-bold text-muted-foreground">
+              {secondaryName}
+            </span>
+          )}
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          {systemTagText && (
+            <span
+              class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground"
+              data-testid="model-system-tag"
+            >
+              {systemTagText}
+            </span>
+          )}
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+          <ModelCardDialog
+            {selectionLabel}
+            {description}
+            {dialogId}
+            {cadPath}
+            {parameterDetails}
+            detailsLabel={t('models.details')}
+            closeLabel={t('models.close')}
+            parametersLabel={t('models.parameters')}
+            exportLine={t('models.exportFormatsLine', {
+              label: t('models.exportFormats'),
+              value: t('models.exportFormatsValue'),
+            })}
+            {triggerClass}
+          />
+          <Button
+            as="a"
+            href={cadPath}
+            variant="ghost"
+            size="sm"
+            class={`no-underline ${editLinkClass}`}
+            aria-label={t('models.editAria', { name: selectionLabel })}
+          >
+            {t('models.edit')}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  {
+    variant === 'row' && (
+      <>
+        <div class="grid min-w-0 gap-0.5">
+          <h4 class="m-0 break-words text-sm font-black leading-snug">
+            {selectionLabel}
+          </h4>
+          <p class="m-0 line-clamp-1 text-xs font-semibold leading-normal text-muted-foreground">
+            {description}
+          </p>
+          {categoryText && (
+            <span
+              class={`w-fit rounded-full px-2 py-0.5 text-[11px] font-bold ${categoryBadgeClass()}`}
+              data-testid="model-category-badge"
+              data-part-category={definition.partCategory}
+            >
+              {categoryText}
+            </span>
+          )}
+        </div>
+        <div class="grid justify-items-end gap-1.5">
+          {systemTagText && (
+            <span
+              class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground"
+              data-testid="model-system-tag"
+            >
+              {systemTagText}
+            </span>
+          )}
+          <div class="flex flex-wrap items-center gap-1">
+            <ModelCardDialog
+              {selectionLabel}
+              {description}
+              {dialogId}
+              {cadPath}
+              {parameterDetails}
+              detailsLabel={t('models.details')}
+              closeLabel={t('models.close')}
+              parametersLabel={t('models.parameters')}
+              exportLine={t('models.exportFormatsLine', {
+                label: t('models.exportFormats'),
+                value: t('models.exportFormatsValue'),
+              })}
+              {triggerClass}
+            />
+            <Button
+              as="a"
+              href={cadPath}
+              variant="ghost"
+              size="sm"
+              class={`no-underline ${editLinkClass}`}
+              aria-label={t('models.editAria', { name: selectionLabel })}
+            >
+              {t('models.edit')}
+            </Button>
+          </div>
+        </div>
+      </>
+    )
+  }
+</article>

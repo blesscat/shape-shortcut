@@ -410,6 +410,12 @@ const fileCardRows = [
             <p class="m-0 text-sm leading-normal text-muted-foreground">
               {t('home.explore.desk.description')}
             </p>
+            <p
+              class="m-0 text-sm leading-normal text-ink-faint"
+              data-testid="home-explore-desk-category-summary"
+            >
+              {t('home.explore.desk.categorySummary')}
+            </p>
             <a class={inlineLinkClass} href={deskBoardPath}
               >{t('home.explore.desk.cta')}</a
             >
@@ -434,6 +440,12 @@ const fileCardRows = [
             </h3>
             <p class="m-0 text-sm leading-normal text-muted-foreground">
               {t('home.explore.wall.description')}
+            </p>
+            <p
+              class="m-0 text-sm leading-normal text-ink-faint"
+              data-testid="home-explore-wall-category-summary"
+            >
+              {t('home.explore.wall.categorySummary')}
             </p>
             <a class={inlineLinkClass} href={wallBoardPath}
               >{t('home.explore.wall.cta')}</a

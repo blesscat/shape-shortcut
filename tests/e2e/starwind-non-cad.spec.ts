@@ -29,6 +29,7 @@ test('localized public Astro pages expose shared surfaces without CAD runtime', 
   // Wall System tag text renders bright green on the mint soft tint, never
   // the same color as its background.
   await page.goto('/zh-Hant/models')
+  await page.locator('[data-system-tab="wall"]').click()
   const wallTag = page.locator('[data-testid="model-system-tag"]').filter({
     hasText: 'Wall System',
   })

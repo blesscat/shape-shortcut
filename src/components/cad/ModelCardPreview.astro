@@ -1,0 +1,55 @@
+---
+import ModelPreviewPicture from '../ModelPreviewPicture.astro'
+import type { ModelPreviewImage } from '../../features/cad/model-catalog'
+
+interface Props {
+  preview: ModelPreviewImage
+  previewAlt: string
+  fallbackLabel: string
+  boxClass: string
+  picturePadding?: string
+  overlayBadge?: { text: string; category: string } | null
+}
+
+const {
+  preview,
+  previewAlt,
+  fallbackLabel,
+  boxClass,
+  picturePadding = 'p-1',
+  overlayBadge = null,
+} = Astro.props
+---
+
+<div class={boxClass} data-testid="model-preview">
+  <div
+    class="p-2 text-center text-xs text-muted-foreground"
+    data-testid="model-preview-fallback"
+    hidden
+    role="img"
+    aria-label={previewAlt}
+  >
+    {fallbackLabel}
+  </div>
+  <ModelPreviewPicture
+    src={preview.src}
+    darkSrc={preview.darkSrc}
+    width={preview.width}
+    height={preview.height}
+    alt={previewAlt}
+    loading="lazy"
+    class={`h-full w-full object-contain ${picturePadding}`}
+    onerror="if (this.offsetParent) { this.hidden = true; this.closest('[data-testid=model-preview]')?.querySelector('[data-testid=model-preview-fallback]')?.removeAttribute('hidden') }"
+  />
+  {
+    overlayBadge && (
+      <span
+        class="absolute start-1.5 top-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-hover dark:text-primary"
+        data-testid="model-category-badge"
+        data-part-category={overlayBadge.category}
+      >
+        {overlayBadge.text}
+      </span>
+    )
+  }
+</div>

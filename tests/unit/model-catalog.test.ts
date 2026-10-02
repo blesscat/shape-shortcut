@@ -5,6 +5,7 @@ import {
   getModelDefinition,
   modelIdForCadPath,
   modelDefinitions,
+  partitionByPartZone,
 } from '../../src/features/cad/model-catalog'
 import {
   OPENGRID_CONFIGURATION,
@@ -40,20 +41,20 @@ describe('CAD component catalog', () => {
     expect(visibleDefinitions.map((definition) => definition.id)).toEqual([
       'opengrid',
       'opengrid-snap',
-      'opengrid-pillar',
-      'opengrid-divider',
-      'opengrid-organizer-box',
       'opengrid-stackable-box',
       'opengrid-stackable-cylinder',
-      'opengrid-snap-remover',
+      'opengrid-organizer-box',
       'opengrid-open-shelf',
+      'opengrid-snap-remover',
+      'opengrid-pillar',
+      'opengrid-divider',
       'opengrid-label-card',
       'opengrid',
       'opengrid-snap',
-      'opengrid-wall-cover',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-wall-cover',
       'opengrid-label-card',
       'opengrid-label-slot-test',
       'hsw-cell',
@@ -105,20 +106,20 @@ describe('CAD component catalog', () => {
     expect(groups[0]?.definitions.map((definition) => definition.id)).toEqual([
       'opengrid',
       'opengrid-snap',
-      'opengrid-pillar',
-      'opengrid-divider',
-      'opengrid-organizer-box',
       'opengrid-stackable-box',
       'opengrid-stackable-cylinder',
-      'opengrid-snap-remover',
+      'opengrid-organizer-box',
       'opengrid-open-shelf',
+      'opengrid-snap-remover',
+      'opengrid-pillar',
+      'opengrid-divider',
       'opengrid-label-card',
       'opengrid',
       'opengrid-snap',
-      'opengrid-wall-cover',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-wall-cover',
       'opengrid-label-card',
       'opengrid-label-slot-test',
     ])
@@ -188,17 +189,17 @@ describe('CAD component catalog', () => {
       'hexagonal-column',
       'opengrid',
       'opengrid-snap',
-      'opengrid-wall-cover',
-      'opengrid-pillar',
-      'opengrid-divider',
-      'opengrid-organizer-box',
       'opengrid-stackable-box',
       'opengrid-stackable-cylinder',
-      'opengrid-snap-remover',
+      'opengrid-organizer-box',
       'opengrid-open-shelf',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-snap-remover',
+      'opengrid-pillar',
+      'opengrid-divider',
+      'opengrid-wall-cover',
       'opengrid-label-card',
       'opengrid-label-slot-test',
     ])
@@ -1037,5 +1038,89 @@ describe('CAD component catalog', () => {
     ).toBe(
       'opengrid-stackable-cylinder-d56-h20-seats-detachable-corner-seat-bottom-plate.step',
     )
+  })
+
+  it('annotates every chooser-visible model with a ratified part category', () => {
+    const visibleDefinitions = groupModelDefinitions().flatMap(
+      (group) => group.definitions,
+    )
+
+    expect(visibleDefinitions.length).toBeGreaterThan(0)
+    for (const definition of visibleDefinitions) {
+      expect(definition.partCategory).toBeDefined()
+    }
+
+    expect(getModelDefinition('opengrid')?.partCategory).toBe('base')
+    expect(getModelDefinition('opengrid-snap')?.partCategory).toBe('base')
+    expect(getModelDefinition('opengrid-stackable-box')?.partCategory).toBe(
+      'container',
+    )
+    expect(getModelDefinition('hsw-cell')?.partCategory).toBe('container')
+    expect(getModelDefinition('opengrid-pillar')?.partCategory).toBe(
+      'accessory',
+    )
+    expect(getModelDefinition('opengrid-snap-remover')?.partCategory).toBe(
+      'tool',
+    )
+    expect(getModelDefinition('opengrid-label-slot-test')?.partCategory).toBe(
+      'test',
+    )
+    expect(getModelDefinition('box')?.partCategory).toBeUndefined()
+    expect(
+      getModelDefinition('modular-grid-base')?.partCategory,
+    ).toBeUndefined()
+    expect(getModelDefinition('hexagonal-column')?.partCategory).toBeUndefined()
+  })
+
+  it('partitions each subgroup into base/containers/tools zones in order', () => {
+    const groups = groupModelDefinitions()
+    const desk = groups[0]?.subgroups?.find(
+      (subgroup) => subgroup.key === 'desk',
+    )
+    const wall = groups[0]?.subgroups?.find(
+      (subgroup) => subgroup.key === 'wall',
+    )
+    if (!desk || !wall) throw new Error('MISSING_SUBGROUP')
+
+    const deskZones = partitionByPartZone(desk.definitions)
+    expect(deskZones.base.map((definition) => definition.id)).toEqual([
+      'opengrid',
+      'opengrid-snap',
+    ])
+    expect(deskZones.containers.map((definition) => definition.id)).toEqual([
+      'opengrid-stackable-box',
+      'opengrid-stackable-cylinder',
+      'opengrid-organizer-box',
+      'opengrid-open-shelf',
+    ])
+    expect(deskZones.tools.map((definition) => definition.id)).toEqual([
+      'opengrid-snap-remover',
+      'opengrid-pillar',
+      'opengrid-divider',
+      'opengrid-label-card',
+    ])
+
+    const wallZones = partitionByPartZone(wall.definitions)
+    expect(wallZones.base.map((definition) => definition.id)).toEqual([
+      'opengrid',
+      'opengrid-snap',
+    ])
+    expect(wallZones.containers.map((definition) => definition.id)).toEqual([
+      'opengrid-openconnect-shelf',
+      'opengrid-openconnect-organizer',
+      'opengrid-openconnect-tissue-box',
+    ])
+    expect(wallZones.tools.map((definition) => definition.id)).toEqual([
+      'opengrid-wall-cover',
+      'opengrid-label-card',
+      'opengrid-label-slot-test',
+    ])
+
+    const unclassified = partitionByPartZone([getModelDefinition('box')!])
+    expect(unclassified.base).toEqual([])
+    expect(unclassified.containers).toEqual([])
+    expect(unclassified.tools.map((definition) => definition.id)).toEqual([
+      'box',
+    ])
   })
 })

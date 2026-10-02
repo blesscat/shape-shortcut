@@ -138,6 +138,7 @@ export const opengridSnapDefinition: ModelDefinition = {
   id: 'opengrid-snap',
   buildKey: 'opengrid-snap',
   family: 'opengrid',
+  partCategory: 'base',
   supportedSystemContexts: ['desk', 'wall'],
   displayName: 'models.model.opengrid-snap.name',
   selectionLabel: 'models.model.opengrid-snap.selection',

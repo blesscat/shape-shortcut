@@ -148,13 +148,13 @@ describe('OpenGrid system entry context', () => {
     ).toEqual([
       'opengrid',
       'opengrid-snap',
-      'opengrid-pillar',
-      'opengrid-divider',
-      'opengrid-organizer-box',
       'opengrid-stackable-box',
       'opengrid-stackable-cylinder',
-      'opengrid-snap-remover',
+      'opengrid-organizer-box',
       'opengrid-open-shelf',
+      'opengrid-snap-remover',
+      'opengrid-pillar',
+      'opengrid-divider',
       'opengrid-label-card',
     ])
     expect(
@@ -164,10 +164,10 @@ describe('OpenGrid system entry context', () => {
     ).toEqual([
       'opengrid',
       'opengrid-snap',
-      'opengrid-wall-cover',
       'opengrid-openconnect-shelf',
       'opengrid-openconnect-organizer',
       'opengrid-openconnect-tissue-box',
+      'opengrid-wall-cover',
       'opengrid-label-card',
       'opengrid-label-slot-test',
     ])
