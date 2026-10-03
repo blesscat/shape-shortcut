@@ -8,6 +8,7 @@
     OPENGRID_ORGANIZER_BOX_CONFIGURATION,
     OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
     openGridOrganizerBoxLayoutFor,
+    type ModelParameterKey,
     type OpenGridLocatingSeatMode,
     type OpenGridOrganizerBoxBoxMode,
     type OpenGridOrganizerBoxParameters,
@@ -172,6 +173,12 @@
     return ['holeDiameter']
   }
 
+  function sizeSectionFieldKeysForRawParameters(): ReadonlyArray<
+    (typeof numericKeys)[number]
+  > {
+    return [...sizeFieldKeysForRawParameters(), 'holeDepth', 'bottomThickness']
+  }
+
   function wallFieldFor(): ParameterFieldDefinition {
     const field = fieldFor('wallThickness')
     if (bodyModeForRawParameters() !== 'stackable') return field
@@ -184,7 +191,7 @@
   const wallValue = $derived(valueFor(wallField))
 
   function layoutForRawParameters() {
-    const numberFor = (key: string, fallback: number): number =>
+    const numberFor = (key: ModelParameterKey, fallback: number): number =>
       Number(rawParameters[key] ?? String(fallback))
     const candidate = {
       holeCountX: numberFor(
@@ -570,7 +577,7 @@
     </select>
   </ParameterField>
 
-  {#each [...sizeFieldKeysForRawParameters(), 'holeDepth', 'bottomThickness'] as fieldKey (fieldKey)}
+  {#each sizeSectionFieldKeysForRawParameters() as fieldKey (fieldKey)}
     {@const field = fieldFor(fieldKey)}
     {@const value = valueFor(field)}
     <ParameterField

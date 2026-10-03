@@ -5,6 +5,7 @@
   import type { MeshSnapshot } from '../../../cad-contract/messages'
   import type {
     ModelBounds,
+    ModelId,
     ModelParameterValues,
   } from '../../../cad-contract/units'
   import {
@@ -64,7 +65,7 @@
   type PlaygroundViewportInstance = {
     id: string
     name: string
-    modelId: string
+    modelId: ModelId
     parameters: ModelParameterValues
     mesh: MeshSnapshot | null
     bounds: ModelBounds | null
@@ -724,9 +725,9 @@
 
   function applyViewMode(theme: CadViewportTheme): void {
     if (grid) {
-      grid.rotation.set(
-        ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
-      )
+      const gridRotation: [number, number, number] =
+        viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]
+      grid.rotation.set(...gridRotation)
     }
     applyCameraPose(viewMode)
     rebuildScene(theme)
@@ -1197,14 +1198,17 @@
       disposeOverlayAssets()
       for (const geometry of geometryCache.values()) geometry.dispose()
       geometryCache.clear()
-      renderer.domElement.removeEventListener(
-        'pointerdown',
-        handlePointerDownCapture,
-        true,
-      )
-      renderer.dispose()
-      renderer.domElement.remove()
-      renderer = null
+      const activeRenderer = renderer
+      if (activeRenderer) {
+        activeRenderer.domElement.removeEventListener(
+          'pointerdown',
+          handlePointerDownCapture,
+          true,
+        )
+        activeRenderer.dispose()
+        activeRenderer.domElement.remove()
+        renderer = null
+      }
       scene = null
       camera = null
       contentGroup = null

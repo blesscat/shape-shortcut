@@ -120,7 +120,7 @@
         {t('cad.action.stl')}
       </button>
     {/if}
-    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-card' || (modelId === 'opengrid-stackable-cylinder' && Boolean((parameters as Record<string, unknown>)?.topRimEnabled)) || modelId === 'opengrid-label-tag'}
+    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-card' || (modelId === 'opengrid-stackable-cylinder' && Boolean((parameters as Record<string, unknown>)?.topRimEnabled))}
       <button
         class={ACTION_BUTTON_CLASS}
         type="button"
