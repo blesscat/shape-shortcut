@@ -1,66 +1,5 @@
 import * as THREE from 'three'
 
-export type BoardSurfaceTokens = {
-  boardFace: string
-  boardEdge: string
-}
-
-/** The grid lines are authored in the local XZ plane (y = 0), so the
-    surface children use the same plane with small y offsets: the face sits
-    below the lines and the outline floats just above them. Callers mount
-    the group with the same rotation as the grid. The -π/2 turn points the
-    face normal along local +Y — world +Z (up) once the desktop grid
-    rotation applies, and out of the wall toward the camera in wall mode —
-    so the face is lit, not dark. */
-function planeInGridXZ(sizeX: number, sizeY: number): THREE.PlaneGeometry {
-  const plane = new THREE.PlaneGeometry(sizeX, sizeY)
-  plane.rotateX(-Math.PI / 2)
-  return plane
-}
-
-/**
- * The planning surface under the grid lines (viewport fix ①): a plate one
- * step from the scene ground (--vp-board-face) with an outline
- * (--vp-board-edge) marking its rim. Models keep their own colors on top
- * of it; the --vp-contact-shadow token stays defined for the spec package
- * (design-spec-4.2.1) but rendering no longer paints halo rings.
- */
-export function createBoardSurfaceGroup(
-  sizeX: number,
-  sizeY: number,
-  tokens: BoardSurfaceTokens,
-): THREE.Group {
-  const group = new THREE.Group()
-
-  const face = new THREE.Mesh(
-    planeInGridXZ(sizeX * 1.02, sizeY * 1.02),
-    new THREE.MeshStandardMaterial({
-      color: new THREE.Color(tokens.boardFace),
-      roughness: 0.95,
-      metalness: 0,
-    }),
-  )
-  face.position.y = -0.06
-  face.renderOrder = -2
-  group.add(face)
-
-  const halfX = (sizeX * 1.02) / 2
-  const halfY = (sizeY * 1.02) / 2
-  const outline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-halfX, 0.02, -halfY),
-      new THREE.Vector3(halfX, 0.02, -halfY),
-      new THREE.Vector3(halfX, 0.02, halfY),
-      new THREE.Vector3(-halfX, 0.02, halfY),
-    ]),
-    new THREE.LineBasicMaterial({ color: new THREE.Color(tokens.boardEdge) }),
-  )
-  outline.renderOrder = 1
-  group.add(outline)
-
-  return group
-}
-
 const HATCH_TEXTURE_SIZE = 64
 const HATCH_LINE_WIDTH = 10
 const HATCH_SPACING = 24
@@ -101,7 +40,9 @@ function getErrorHatchTexture(): THREE.CanvasTexture {
 
 /**
  * Overlay material for overlapping instances: error color (+45° hatch) so a
- * conflict reads even next to the blue selection or in grayscale.
+ * conflict reads even next to the blue selection or in grayscale. 4.2.2
+ * removed the planning plate and halo rings; the grid tokens alone carry
+ * the light theme, so this hatch is the file's only renderer.
  */
 export function createErrorHatchMaterial(
   color: string,

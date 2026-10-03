@@ -23,10 +23,7 @@
     CAD_VIEWPORT_GRID_ROTATION,
   } from '../viewport/coordinates'
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
-  import {
-    createBoardSurfaceGroup,
-    createErrorHatchMaterial,
-  } from '../viewport/board-parts'
+  import { createErrorHatchMaterial } from '../viewport/board-parts'
   import { getModelDefinition } from '../model-catalog'
   import { sceneProxyCacheKey } from './filenames'
   import { instanceDisplayColor } from './instance-colors'
@@ -157,8 +154,8 @@
   let grid: THREE.Group | null = null
 
   /** Rectangular cell grid centered on the origin, in the plane of `mode`.
-      The Part D v2 planning surface (board face + outline + contact shadow)
-      rides along in the same group so it inherits the mode rotation. */
+      4.2.2: lines only — the planning plate is gone (it hid the model
+      underside), so the strengthened grid tokens carry the light theme. */
   function buildGridLines(
     theme: CadViewportTheme,
     cellsX: number,
@@ -181,12 +178,6 @@
       target.push(-sizeX / 2, 0, z, sizeX / 2, 0, z)
     }
     const group = new THREE.Group()
-    group.add(
-      createBoardSurfaceGroup(sizeX, sizeY, {
-        boardFace: theme.boardFace,
-        boardEdge: theme.boardEdge,
-      }),
-    )
     const addLines = (points: number[], color: string) => {
       const geometry = new THREE.BufferGeometry()
       geometry.setAttribute(
