@@ -57,6 +57,7 @@ export const messages = {
   'cad.wallCover.threeMfNote': '雙色效果僅適用於 3MF。',
   'cad.labelCard.threeMfNote': '雙色效果僅適用於 3MF。',
   'cad.action.retry': '重試',
+  'cad.presets.opengrid-stackable-box.3x3-desk-style': '3×3 測試樣式',
   'cad.system.current': '目前系統：{name}',
   'cad.error.title.initializing': 'CAD engine 載入失敗',
   'cad.error.title.exporting': 'CAD 匯出失敗',

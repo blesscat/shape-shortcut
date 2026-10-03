@@ -86,6 +86,19 @@ export type FixedStepDownload = {
   fileName: string
 }
 
+/**
+ * A named parameter preset authored on a component definition. `overrides`
+ * carries only the fields that differ from the definition's
+ * `defaultParameters`; the merged result must pass the component's
+ * `validateParameters` before it may be applied.
+ */
+export type ModelPreset = {
+  id: string
+  /** Stable translation key; never render this value directly. */
+  labelKey: string
+  overrides: Partial<ModelParameterValues>
+}
+
 /** Axis-angle rotation in the authored coordinate frame. */
 export type WallDisplayRotation = {
   axis: readonly [number, number, number]
@@ -142,6 +155,8 @@ export type ModelDefinition<
   parameterSchema: ReadonlyArray<ParameterField>
   parameterPresentation?: ModelParameterPresentation
   defaultParameters: ModelParameterValues
+  /** Named parameter presets shown as apply buttons; optional. */
+  presets?: ReadonlyArray<ModelPreset>
   previewMetadata: { centeredOnXY: boolean; baseAtZ: number }
   previewImage?: PreviewImage
   validateParameters: (parameters: unknown) => ModelValidation

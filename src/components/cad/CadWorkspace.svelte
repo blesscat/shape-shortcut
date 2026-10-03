@@ -138,6 +138,11 @@
     resetVersion += 1
   }
 
+  function handleApplyPreset(presetId: string): void {
+    controller?.onApplyPreset(presetId)
+    resetVersion += 1
+  }
+
   function handleDownloadSettings(): void {
     const current = snapshot
     if (!current) return
@@ -190,6 +195,7 @@
       onRetry={handleRetry}
       {resetVersion}
       onRestoreDefaults={handleRestoreDefaults}
+      onApplyPreset={handleApplyPreset}
       onDownloadSettings={handleDownloadSettings}
     />
     <CadViewport
