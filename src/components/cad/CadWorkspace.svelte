@@ -194,7 +194,6 @@
     />
     <CadViewport
       {locale}
-      modelId={modelId}
       {colors}
       onColorsChange={(next) => colorStore?.set(next)}
       mesh={snapshot.state.committed?.mesh ?? null}

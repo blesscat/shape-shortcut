@@ -15,10 +15,6 @@
   import { readFaceTriangleRanges } from '../worker-client'
   import type { CadViewportTheme } from './theme'
   import { createViewportEdgeMaterial } from './edge-lines'
-  import {
-    createBoardContactShadowGeometry,
-    createContactShadowMaterial,
-  } from './board-parts'
   import { ViewportEdgePreparation } from './edge-preparation'
   import {
     measureViewportGeometry,
@@ -29,8 +25,6 @@
     mesh: MeshSnapshot
     theme: CadViewportTheme
     materialColor?: string
-    edgeColor?: string
-    contactShadow?: string
     onPreparationTiming?: (timing: ViewportGeometryTiming) => void
     enableFaceHover?: boolean
     onFaceHover?: (hover: FaceHoverState | null) => void
@@ -40,8 +34,6 @@
     mesh,
     theme,
     materialColor,
-    edgeColor,
-    contactShadow,
     onPreparationTiming,
     enableFaceHover = false,
     onFaceHover,
@@ -84,16 +76,8 @@
   let material = $derived(
     createMaterial(materialColor ?? CAD_VIEWPORT_CONFIG.modelColor),
   )
-  let shadowGeometry = $derived(
-    contactShadow ? createBoardContactShadowGeometry(geometry) : null,
-  )
-  let shadowMaterial = $derived(
-    contactShadow ? createContactShadowMaterial(contactShadow) : null,
-  )
   let edgeGeometry = $state<THREE.EdgesGeometry | null>(null)
-  let edgeMaterial = $derived(
-    createViewportEdgeMaterial(edgeColor ?? theme.edge),
-  )
+  let edgeMaterial = $derived(createViewportEdgeMaterial(theme.edge))
   let edgePreparation = new ViewportEdgePreparation({
     onTiming: (timing) => onPreparationTiming?.(timing),
   })
@@ -159,16 +143,6 @@
   })
 
   $effect(() => {
-    const currentShadowGeometry = shadowGeometry
-    return () => currentShadowGeometry?.dispose()
-  })
-
-  $effect(() => {
-    const currentShadowMaterial = shadowMaterial
-    return () => currentShadowMaterial?.dispose()
-  })
-
-  $effect(() => {
     const currentHighlightMaterial = highlightMaterial
     return () => currentHighlightMaterial.dispose()
   })
@@ -205,14 +179,6 @@
   })
 </script>
 
-{#if shadowGeometry && shadowMaterial}
-  <T.Mesh
-    geometry={shadowGeometry}
-    material={shadowMaterial}
-    renderOrder={-1}
-    dispose={false}
-  />
-{/if}
 <T.Mesh {geometry} {material} dispose={false} {...faceHoverEventProps} />
 {#if edgeGeometry}
   <T.LineSegments
