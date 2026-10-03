@@ -23,16 +23,12 @@ test('Desk System starts the stackable-box with its thin-shell preset', async ({
     page.getByRole('textbox', { name: '盒內淨高（Z）' }),
   ).toHaveValue('30')
   const topRimGroup = page.getByRole('radiogroup', { name: '上緣' })
-  await expect(
-    topRimGroup.getByRole('radio', { name: '平頂' }),
-  ).toBeChecked()
+  await expect(topRimGroup.getByRole('radio', { name: '平頂' })).toBeChecked()
   await expect(
     topRimGroup.getByRole('radio', { name: '堆疊' }),
   ).not.toBeChecked()
   const bottomGroup = page.getByRole('radiogroup', { name: '盒底' })
-  await expect(
-    bottomGroup.getByRole('radio', { name: '薄殼' }),
-  ).toBeChecked()
+  await expect(bottomGroup.getByRole('radio', { name: '薄殼' })).toBeChecked()
   await expect(page.getByRole('radio', { name: '底版模式' })).toHaveCount(0)
 })
 

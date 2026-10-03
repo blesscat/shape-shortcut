@@ -42,11 +42,17 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
     .toBeTruthy()
 }
 
+async function openParameterDrawer(page: Page): Promise<void> {
+  await page.getByTestId('cad-params-pill').click()
+  await expect(page.getByTestId('cad-params-drawer')).toBeVisible()
+}
+
 test('restore actions keep narrow controls stable and usable', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/cad/opengrid')
+  await openParameterDrawer(page)
 
   const variant = page.getByRole('combobox', { name: 'OpenGrid 板型' })
   const variantBefore = await readControlBox(variant)
@@ -92,6 +98,7 @@ test('restore actions keep narrow controls stable and usable', async ({
   expectControlBoxToStayStable(targetXBefore, await readControlBox(targetX))
 
   await page.goto('/cad/hexagonal-column')
+  await openParameterDrawer(page)
   const orientation = page.getByRole('combobox', { name: '擺放方向' })
   const orientationBefore = await readControlBox(orientation)
   await orientation.selectOption('standing')

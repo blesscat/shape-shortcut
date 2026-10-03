@@ -156,10 +156,7 @@ describe('tissue box real geometry', () => {
           ]
         if (cell.wall === 'bottom') {
           point = cell.clipToSlotSafetyRing
-            ? [
-                ...openingProbePoint(cell),
-                p.bottomThickness / 2,
-              ]
+            ? [...openingProbePoint(cell), p.bottomThickness / 2]
             : [centroid[0]!, centroid[1]!, p.bottomThickness / 2]
         }
         expect(volumeAt(saved, p, point)).toBeLessThan(1e-6)

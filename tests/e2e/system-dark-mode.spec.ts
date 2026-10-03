@@ -260,28 +260,21 @@ test('live system theme changes preserve the committed CAD viewport state', asyn
   })
 })
 
-test('dark mobile CAD workspace remains stacked without horizontal overflow', async ({
+test('dark mobile CAD workspace keeps the parameter drawer usable without horizontal overflow', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await page.goto('/cad/hexagonal-column')
+    const pill = page.getByTestId('cad-params-pill')
+    const drawer = page.getByTestId('cad-params-drawer')
+    await expect(pill).toBeVisible()
+    await pill.click()
+    await expect(drawer).toBeVisible()
     await expect(page.getByRole('combobox', { name: '擺放方向' })).toBeVisible()
+    await expect(page.getByTestId('cad-viewport')).toBeVisible()
 
-    const layout = page.getByTestId('cad-workspace')
-    const panel = page.getByTestId('cad-workspace-panel')
-    const viewport = page.getByTestId('cad-viewport')
-    await expect(layout).toBeVisible()
-    const panelBox = await panel.boundingBox()
-    const viewportBox = await viewport.boundingBox()
-    if (!panelBox || !viewportBox) {
-      throw new Error('Expected mobile workspace boxes')
-    }
-
-    expect(viewportBox.y).toBeGreaterThanOrEqual(
-      panelBox.y + panelBox.height - 1,
-    )
     expect(
       await page.evaluate(
         () =>
@@ -294,5 +287,9 @@ test('dark mobile CAD workspace remains stacked without horizontal overflow', as
         () => getComputedStyle(document.documentElement).colorScheme,
       ),
     ).toBe(colorScheme)
+
+    await page.keyboard.press('Escape')
+    await expect(drawer).toBeHidden()
+    await expect(pill).toBeFocused()
   }
 })

@@ -1,20 +1,19 @@
 <script lang="ts">
   import PlaygroundViewport from '../../../features/cad/playground/PlaygroundViewport.svelte'
   import { PLAYGROUND_GRID_CELLS_DEFAULT } from '../../../features/cad/playground/grid-size'
-  import PlaygroundInstancePanel from './PlaygroundInstancePanel.svelte'
-  import { PLAYGROUND_SCENE_MAX_INSTANCES } from '../../../cad-contract/scene'
+  import PlaygroundSidebar from './PlaygroundSidebar.svelte'
+  import BottomParameterDrawer from '../BottomParameterDrawer.svelte'
   import {
     createPlaygroundStore,
     type PlaygroundSnapshot,
   } from '../../../features/cad/playground/store'
-  import {
-    getModelDefinition,
-    modelDefinitions,
-  } from '../../../features/cad/model-catalog'
+  import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
   import { translate, type Locale } from '../../../i18n'
   import { onMount } from 'svelte'
   import type { ModelParameterKey } from '../../../cad-contract/units'
-  import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
+
+  // Must stay identical to the `max-cad` custom variant in global.css.
+  const NARROW_MEDIA_QUERY = '(max-width: 760px)'
 
   type Props = {
     locale: Locale
@@ -26,9 +25,37 @@
   let snapshot = $state<PlaygroundSnapshot | null>(null)
   let addModelId = $state('')
   let fileInput = $state<HTMLInputElement | null>(null)
+  let isNarrow = $state(false)
+  let drawerOpen = $state(false)
+  let pillButton = $state<HTMLButtonElement | null>(null)
 
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(locale, key, values)
+
+  $effect(() => {
+    const query = window.matchMedia(NARROW_MEDIA_QUERY)
+    isNarrow = query.matches
+    const onChange = (event: MediaQueryListEvent): void => {
+      isNarrow = event.matches
+      // Crossing the breakpoint unmounts the drawer branch; a stale open
+      // flag would spring the drawer open without user intent when
+      // returning to the narrow layout.
+      drawerOpen = false
+    }
+    query.addEventListener('change', onChange)
+    return () => {
+      query.removeEventListener('change', onChange)
+    }
+  })
+
+  function openDrawer(): void {
+    drawerOpen = true
+  }
+
+  function closeDrawer(): void {
+    drawerOpen = false
+    pillButton?.focus()
+  }
 
   onMount(() => {
     const nextStore = createPlaygroundStore()
@@ -43,13 +70,6 @@
     }
   })
 
-  let selectableModels = $derived(
-    modelDefinitions
-      .filter((definition) =>
-        modelVisibleInViewMode(definition.id, snapshot?.viewMode ?? 'desktop'),
-      )
-      .map((definition) => definition.id),
-  )
   let visibleInstances = $derived(
     (snapshot?.instances ?? []).filter((instance) =>
       modelVisibleInViewMode(instance.modelId, snapshot?.viewMode ?? 'desktop'),
@@ -60,14 +80,21 @@
       (instance) => instance.id === snapshot?.selectedInstanceId,
     ) ?? null,
   )
-
-  $effect(() => {
-    // Reset the pending add-model choice when the current orientation does
-    // not offer it.
-    if (addModelId && !selectableModels.includes(addModelId as never)) {
-      addModelId = ''
-    }
-  })
+  let viewportInstances = $derived(
+    visibleInstances.map((instance) => ({
+      id: instance.id,
+      name: `#${instance.id.replace('inst-', '')} ${modelName(instance.modelId)}${instance.label ? ` · ${instance.label}` : ''}`,
+      modelId: instance.modelId,
+      parameters: instance.parameters,
+      mesh: instance.mesh,
+      bounds: instance.bounds,
+      placement: instance.placement,
+      colorPrimary: instance.colors.primary,
+      meshState: instance.meshState,
+      overlapping:
+        snapshot?.overlappingInstanceIds.includes(instance.id) ?? false,
+    })),
+  )
 
   function modelName(id: string): string {
     return t(`models.model.${id}.name`)
@@ -178,7 +205,7 @@
               y: Number(event.currentTarget.value),
             })
             event.currentTarget.value = String(
-              store?.getSnapshot().gridSize.y ?? PLAYGROUND_GRID_CELLS_DEFAULT,
+              store?.getSnapshot().gridSize.x ?? PLAYGROUND_GRID_CELLS_DEFAULT,
             )
           }}
         />
@@ -228,127 +255,49 @@
 
   {#if snapshot}
     <div
-      class="grid items-start grid-cols-[minmax(240px,340px)_minmax(0,1fr)] gap-4 max-cad:grid-cols-1"
+      class={isNarrow
+        ? 'relative min-w-0'
+        : 'grid min-w-0 items-start grid-cols-[minmax(240px,340px)_minmax(0,1fr)] gap-4'}
     >
-      <aside
-        class="grid max-h-[calc(100dvh-14rem)] gap-4 overflow-auto rounded-2xl border border-border-card bg-panel p-4"
-        data-testid="playground-sidebar"
-      >
-        <div class="grid gap-2">
-          <label class="font-[650]" for="playground-add-model">
-            {t('playground.addComponent')}
-            {` (${visibleInstances.length}/${PLAYGROUND_SCENE_MAX_INSTANCES})`}
-          </label>
-          <div class="flex items-center gap-2">
-            <select
-              id="playground-add-model"
-              data-testid="playground-add-model"
-              bind:value={addModelId}
-              class="w-full rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
-            >
-              <option value="" disabled>{t('playground.chooseModel')}</option>
-              {#each selectableModels as id (id)}
-                <option value={id}>{modelName(id)}</option>
-              {/each}
-            </select>
-            <button
-              class="shrink-0 rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
-              data-testid="playground-add"
-              disabled={!addModelId}
-              onclick={handleAdd}
-            >
-              {t('playground.add')}
-            </button>
-          </div>
-        </div>
-
-        {#if visibleInstances.length === 0}
-          <p class="m-0 text-sm text-muted-foreground">
-            {t('playground.empty')}
-          </p>
-        {:else}
-          <ul class="m-0 grid list-none gap-1 p-0">
-            {#each visibleInstances as instance (instance.id)}
-              <li>
-                <button
-                  class="w-full rounded-lg px-2 py-2 text-left text-base hover:bg-page {snapshot.selectedInstanceId ===
-                  instance.id
-                    ? 'border border-border-card bg-page font-[650]'
-                    : 'border border-transparent'}"
-                  data-testid="playground-instance-{instance.id}"
-                  data-state={instance.meshState}
-                  onclick={() => store?.select(instance.id)}
-                >
-                  <span
-                    class="inline-block h-3 w-3 rounded-full align-middle"
-                    style:background={instance.colors.primary}
-                  ></span>
-                  {`#${instance.id.replace('inst-', '')} ${modelName(instance.modelId)}`}
-                  {#if instance.label}
-                    <span class="text-muted-foreground">· {instance.label}</span
-                    >
-                  {/if}
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-
-        {#if selectedInstance}
-          <PlaygroundInstancePanel
-            {locale}
-            instance={selectedInstance}
-            fields={getModelDefinition(selectedInstance.modelId)
-              ?.parameterSchema ?? []}
-            onParameterChange={(key, value) =>
-              store?.setParameter(
-                selectedInstance.id,
-                key as ModelParameterKey,
-                value,
-              )}
-            onLabelChange={(label) =>
-              store?.setLabel(selectedInstance.id, label)}
-            onPlacementChange={(cellX, cellY, rotation) =>
-              store?.setPlacement(
-                selectedInstance.id,
-                cellX,
-                cellY,
-                rotation as 0 | 90 | 180 | 270,
-              )}
-            onColorsChange={(primary, secondary) =>
-              store?.setInstanceColors(selectedInstance.id, {
-                primary,
-                secondary,
-              })}
-            onExport={(format) =>
-              store?.exportInstance(selectedInstance.id, format)}
-            onDuplicate={() => store?.duplicateInstance(selectedInstance.id)}
-            onDelete={() => store?.removeInstance(selectedInstance.id)}
-            onRetry={() => store?.retryInstance(selectedInstance.id)}
-          />
-        {/if}
-
-        {#if snapshot.workerState === 'initializing'}
-          <p class="m-0 text-sm text-muted-foreground" aria-live="polite">
-            {t('playground.worker.initializing')}
-          </p>
-        {/if}
-      </aside>
-
+      {#if !isNarrow}
+        <PlaygroundSidebar
+          {locale}
+          {snapshot}
+          {visibleInstances}
+          {selectedInstance}
+          bind:addModelId
+          variant="panel"
+          onAdd={handleAdd}
+          onSelect={(instanceId) => store?.select(instanceId)}
+          onParameterChange={(key, value) =>
+            store?.setParameter(
+              selectedInstance!.id,
+              key as ModelParameterKey,
+              value,
+            )}
+          onLabelChange={(label) =>
+            store?.setLabel(selectedInstance!.id, label)}
+          onPlacementChange={(cellX, cellY, rotation) =>
+            store?.setPlacement(
+              selectedInstance!.id,
+              cellX,
+              cellY,
+              rotation as 0 | 90 | 180 | 270,
+            )}
+          onColorsChange={(primary, secondary) =>
+            store?.setInstanceColors(selectedInstance!.id, {
+              primary,
+              secondary,
+            })}
+          onExport={(format) =>
+            store?.exportInstance(selectedInstance!.id, format)}
+          onDuplicate={() => store?.duplicateInstance(selectedInstance!.id)}
+          onDelete={() => store?.removeInstance(selectedInstance!.id)}
+          onRetry={() => store?.retryInstance(selectedInstance!.id)}
+        />
+      {/if}
       <PlaygroundViewport
-        instances={visibleInstances.map((instance) => ({
-          id: instance.id,
-          name: `#${instance.id.replace('inst-', '')} ${modelName(instance.modelId)}${instance.label ? ` · ${instance.label}` : ''}`,
-          modelId: instance.modelId,
-          parameters: instance.parameters,
-          mesh: instance.mesh,
-          bounds: instance.bounds,
-          placement: instance.placement,
-          colorPrimary: instance.colors.primary,
-          meshState: instance.meshState,
-          overlapping:
-            snapshot?.overlappingInstanceIds.includes(instance.id) ?? false,
-        }))}
+        instances={viewportInstances}
         selectedInstanceId={snapshot.selectedInstanceId}
         viewMode={snapshot.viewMode}
         gridSize={snapshot.gridSize}
@@ -370,6 +319,63 @@
           )
         }}
       />
+      {#if isNarrow}
+        <button
+          bind:this={pillButton}
+          class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border-card bg-panel px-4 py-2 text-base font-semibold text-ink shadow-card hover:bg-page focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          type="button"
+          data-testid="playground-sidebar-pill"
+          aria-expanded={drawerOpen}
+          aria-controls="playground-sidebar-drawer"
+          aria-label={t('playground.drawer.open')}
+          onclick={openDrawer}
+        >
+          {t('playground.drawer.title')}
+        </button>
+        <BottomParameterDrawer
+          open={drawerOpen}
+          onClose={closeDrawer}
+          label={t('playground.drawer.title')}
+          closeLabel={t('playground.drawer.close')}
+          testId="playground-sidebar-drawer"
+        >
+          <PlaygroundSidebar
+            {locale}
+            {snapshot}
+            {visibleInstances}
+            {selectedInstance}
+            bind:addModelId
+            variant="drawer"
+            onAdd={handleAdd}
+            onSelect={(instanceId) => store?.select(instanceId)}
+            onParameterChange={(key, value) =>
+              store?.setParameter(
+                selectedInstance!.id,
+                key as ModelParameterKey,
+                value,
+              )}
+            onLabelChange={(label) =>
+              store?.setLabel(selectedInstance!.id, label)}
+            onPlacementChange={(cellX, cellY, rotation) =>
+              store?.setPlacement(
+                selectedInstance!.id,
+                cellX,
+                cellY,
+                rotation as 0 | 90 | 180 | 270,
+              )}
+            onColorsChange={(primary, secondary) =>
+              store?.setInstanceColors(selectedInstance!.id, {
+                primary,
+                secondary,
+              })}
+            onExport={(format) =>
+              store?.exportInstance(selectedInstance!.id, format)}
+            onDuplicate={() => store?.duplicateInstance(selectedInstance!.id)}
+            onDelete={() => store?.removeInstance(selectedInstance!.id)}
+            onRetry={() => store?.retryInstance(selectedInstance!.id)}
+          />
+        </BottomParameterDrawer>
+      {/if}
     </div>
   {:else}
     <div class="rounded-2xl border border-border-card bg-panel p-5">

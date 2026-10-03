@@ -29,6 +29,10 @@ async function openCompactPlayground(page: Page): Promise<void> {
 }
 
 async function addReadyBox(page: Page): Promise<void> {
+  const pill = page.getByTestId('playground-sidebar-pill')
+  const drawer = page.getByTestId('playground-sidebar-drawer')
+  await pill.click()
+  await expect(drawer).toBeVisible()
   await page.getByTestId('playground-add-model').selectOption('box')
   await page.getByTestId('playground-add').click()
   await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
@@ -36,6 +40,8 @@ async function addReadyBox(page: Page): Promise<void> {
     'ready',
     { timeout: 120_000 },
   )
+  await drawer.getByRole('button', { name: '關閉場景面板' }).click()
+  await expect(drawer).toBeHidden()
 }
 
 async function findInstancePoint(page: Page): Promise<ViewportPoint> {
@@ -95,7 +101,16 @@ function oneFingerDragFrames(start: ViewportPoint): MobileTouchFrame[] {
 }
 
 async function selectedCellX(page: Page): Promise<number> {
-  return Number(await page.locator('#playground-cell-x').inputValue())
+  // The instance editor lives inside the sidebar drawer; open it to read the
+  // committed cell, then close it again so canvas gestures stay unobstructed.
+  await page.getByTestId('playground-sidebar-pill').click()
+  const value = Number(await page.locator('#playground-cell-x').inputValue())
+  await page
+    .getByTestId('playground-sidebar-drawer')
+    .getByRole('button', { name: '關閉場景面板' })
+    .click()
+  await expect(page.getByTestId('playground-sidebar-drawer')).toBeHidden()
+  return value
 }
 
 test('one touch drags an instance while empty-space touch remains a camera gesture', async ({
