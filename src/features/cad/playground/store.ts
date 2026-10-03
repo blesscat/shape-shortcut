@@ -83,6 +83,12 @@ export type PlaygroundSnapshot = {
   sceneColors: ModelColors
   workerState: PlaygroundWorkerState
   diagnostic: DiagnosticDescriptor | null
+  /**
+   * Informational outcome of the last scene import: some imported instances
+   * reference components the active scene orientation does not display.
+   * Cleared on orientation switch or the next import; never persisted.
+   */
+  importNotice: DiagnosticDescriptor | null
   viewMode: PlaygroundViewMode
   gridSize: PlaygroundGridSize
   /**
@@ -157,6 +163,28 @@ function downloadBytes(bytes: ArrayBuffer, fileName: string, mime: string) {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
+/**
+ * Informational import outcome: how many imported instances reference
+ * components the active scene orientation does not display. `null` when
+ * every imported instance is visible in the current orientation.
+ */
+function orientationNoticeFor(
+  imported: PlaygroundInstance[],
+  viewMode: PlaygroundViewMode,
+): DiagnosticDescriptor | null {
+  const hiddenCount = imported.filter(
+    (instance) => !modelVisibleInViewMode(instance.modelId, viewMode),
+  ).length
+  if (hiddenCount === 0) return null
+  return {
+    messageId:
+      viewMode === 'desktop'
+        ? 'playground.import.hiddenInWallMode'
+        : 'playground.import.hiddenInDesktopMode',
+    params: { count: hiddenCount },
+  }
+}
+
 type PendingOperation = {
   instanceId: string
   kind: 'generate' | 'export'
@@ -213,6 +241,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let sceneColors: ModelColors = { ...DEFAULT_MODEL_COLORS }
   let workerState: PlaygroundWorkerState = 'initializing'
   let diagnostic: DiagnosticDescriptor | null = null
+  let importNotice: DiagnosticDescriptor | null = null
   let disposed = false
   let engineReady = false
   let nextInstanceNumber = 1
@@ -674,6 +703,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     gridSize: { ...gridSize },
     workerState,
     diagnostic: diagnostic ? { ...diagnostic } : null,
+    importNotice: importNotice ? { ...importNotice } : null,
     overlappingInstanceIds: [...overlappingInstanceIds(placedCellEntries())],
   })
 
@@ -694,6 +724,8 @@ export function createPlaygroundStore(): PlaygroundStore {
     },
     setViewMode(next) {
       viewMode = next
+      // The notice describes visibility under the previous orientation.
+      importNotice = null
       // A selection from the other system's component list would render as
       // hidden in the newly active orientation.
       if (
@@ -902,6 +934,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         parsed = JSON.parse(text)
       } catch {
         diagnostic = { messageId: 'diagnostic.sceneFileMalformed' }
+        importNotice = null
         emit()
         return false
       }
@@ -910,6 +943,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       const result = parsePlaygroundSceneFile(parsed, DEFAULT_MODEL_COLORS)
       if (!result.valid) {
         diagnostic = result.error
+        importNotice = null
         emit()
         return false
       }
@@ -980,6 +1014,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       sceneColors = { ...result.scene.colors }
       selectedInstanceId = instances[0]?.id ?? null
       diagnostic = null
+      importNotice = orientationNoticeFor(instances, viewMode)
       emit()
       for (const instance of instances) scheduleGenerate(instance)
       return true

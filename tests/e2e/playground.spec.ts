@@ -337,6 +337,38 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-1')
   })
 
+  test('notifies when imported components belong to the other orientation', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    // Build a wall-only scene by exporting it from the playground itself.
+    await page.getByTestId('playground-mode-wall').click()
+    await page
+      .getByTestId('playground-add-model')
+      .selectOption('opengrid-openconnect-tissue-box')
+    await page.getByTestId('playground-add').click()
+    const sceneDownload = page.waitForEvent('download')
+    await page.getByTestId('playground-export-scene').click()
+    const sceneFile = await sceneDownload
+    const sceneText = readFileSync((await sceneFile.path())!, 'utf-8')
+
+    await page.getByTestId('playground-mode-desktop').click()
+    await page.getByTestId('playground-import-input').setInputFiles({
+      name: 'wall-scene.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(sceneText),
+    })
+    await expect(page.getByTestId('playground-import-notice')).toBeVisible()
+    await expect(
+      page.locator('[data-testid^="playground-instance-inst"]'),
+    ).toHaveCount(0)
+
+    await page.getByTestId('playground-mode-wall').click()
+    await expect(page.getByTestId('playground-import-notice')).toHaveCount(0)
+    await expect(
+      page.locator('[data-testid^="playground-instance-inst"]'),
+    ).toHaveCount(1)
+  })
   test('rejects scene files with unknown models without changing the scene', async ({
     page,
   }) => {
@@ -362,6 +394,7 @@ test.describe('OpenGrid playground planner', () => {
     })
 
     await expect(page.getByTestId('playground-diagnostic')).toBeVisible()
+    await expect(page.getByTestId('playground-import-notice')).toHaveCount(0)
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
   })

@@ -105,6 +105,10 @@ export const messages = {
     'The scene is empty. Pick a model and press "Add" to start planning.',
   'playground.scene.import': 'Import scene file',
   'playground.scene.export': 'Download scene file',
+  'playground.import.hiddenInWallMode':
+    '{count} imported component(s) belong to the wall orientation; switch to Wall to see them.',
+  'playground.import.hiddenInDesktopMode':
+    '{count} imported component(s) belong to the desktop orientation; switch to Desktop to see them.',
   'playground.instance.label': 'Label (optional, used in export names)',
   'playground.instance.labelPlaceholder': 'e.g. bottom left',
   'playground.instance.duplicate': 'Duplicate',
