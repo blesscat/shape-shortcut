@@ -10,19 +10,16 @@
   import type { ExportFormat } from '../../features/cad/download'
   import type { OpenGridSystemContext } from '../../features/cad/system-entry-context'
   import { getModelDefinition } from '../../features/cad/model-catalog'
-  import type { ModelPreset } from '../../features/cad/model-catalog'
   import type { RawParameters } from './workspace/types'
-  import ComponentParameterPanel from './component-panels/index.svelte'
-  import PresetButtonRow from './component-panels/PresetButtonRow.svelte'
-  import { translate, type Locale } from '../../i18n'
-
-  const ACTION_BUTTON_CLASS =
-    'cursor-pointer rounded-lg border-0 bg-primary px-[0.8rem] py-[0.6rem] text-base text-white disabled:cursor-not-allowed disabled:bg-disabled'
+  import CadPanelParameters from './component-panels/CadPanelParameters.svelte'
+  import CadPanelActions from './component-panels/CadPanelActions.svelte'
+  import CadPanelNotes from './component-panels/CadPanelNotes.svelte'
 
   type Props = {
-    locale: Locale
+    locale: import('../../i18n').Locale
     state: CadState
     modelId: ModelId
+    showParameters: boolean
     systemContext?: OpenGridSystemContext
     parameters: ModelParameterValues
     rawParameters: RawParameters
@@ -47,6 +44,7 @@
     locale,
     state,
     modelId,
+    showParameters,
     systemContext,
     parameters,
     rawParameters,
@@ -64,114 +62,29 @@
     onRestoreDefaults,
     onApplyPreset,
   }: Props = $props()
-
-  const t = (key: string, values?: Record<string, string | number | boolean>) =>
-    translate(locale, key, values)
-
-  function hasParameterControlsFor(modelId: ModelId): boolean {
-    if (
-      modelId === 'opengrid' ||
-      modelId === 'opengrid-pillar' ||
-      modelId === 'opengrid-wall-cover' ||
-      modelId === 'opengrid-label-card'
-    ) {
-      return true
-    }
-    return (getModelDefinition(modelId)?.parameterSchema.length ?? 0) > 0
-  }
-
   const presetsFor = (id: ModelId): ReadonlyArray<ModelPreset> =>
     getModelDefinition(id)?.presets ?? []
 </script>
 
 <div
-  class="sticky top-4 self-start grid min-h-0 max-h-[calc(100dvh-16rem)] gap-4 overflow-y-auto rounded-2xl border border-border-card bg-panel p-4 max-cad:static max-cad:max-h-none max-cad:overflow-visible"
+  class="sticky top-4 self-start grid min-h-0 max-h-[calc(100dvh-16rem)] gap-4 overflow-y-auto rounded-2xl border border-border-card bg-panel p-4"
   data-testid="cad-workspace-panel"
 >
-  {#if hasParameterControlsFor(modelId)}
-    <PresetButtonRow
-      {locale}
-      presets={presetsFor(modelId)}
-      onRestore={onRestoreDefaults}
-      {onApplyPreset}
-    />
-    {#key resetVersion}
-      <ComponentParameterPanel
-        {locale}
-        {modelId}
-        {systemContext}
-        {parameters}
-        {rawParameters}
-        {fieldErrors}
-        {onInputChange}
-        {onSystemContextChange}
-        {onOpenGridParametersChange}
-        {onOpenGridDimensionCalculationInvalid}
-      />
-    {/key}
-  {/if}
-  <div class="flex flex-wrap gap-[0.6rem]">
-    {#if import.meta.env.DEV}
-      <button
-        class={ACTION_BUTTON_CLASS}
-        type="button"
-        disabled={!canExport}
-        onclick={() => onExport('step')}
-      >
-        {t('cad.action.step')}
-      </button>
-    {/if}
-    {#if modelId !== 'opengrid-wall-cover'}
-      <button
-        class={ACTION_BUTTON_CLASS}
-        type="button"
-        disabled={!canExport}
-        onclick={() => onExport('stl')}
-      >
-        {t('cad.action.stl')}
-      </button>
-    {/if}
-    {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-card' || (modelId === 'opengrid-stackable-cylinder' && Boolean((parameters as Record<string, unknown>)?.topRimEnabled)) || modelId === 'opengrid-label-tag'}
-      <button
-        class={ACTION_BUTTON_CLASS}
-        type="button"
-        disabled={!canExportThreeMf}
-        onclick={() => onExport('3mf')}
-      >
-        {t('cad.action.threeMf')}
-      </button>
-    {/if}
-    {#if state.status === 'recoverable-error' || state.status === 'fatal-worker-error'}
-      <button class={ACTION_BUTTON_CLASS} type="button" onclick={onRetry}>
-        {t('cad.action.retry')}
-      </button>
-    {/if}
-    {#if onDownloadSettings}
-      <button
-        class={ACTION_BUTTON_CLASS}
-        type="button"
-        data-testid="cad-download-settings"
-        disabled={state.status !== 'ready' && state.status !== 'generating'}
-        onclick={onDownloadSettings}
-      >
-        {t('workspace.downloadSettings')}
-      </button>
-    {/if}
-  </div>
-  {#if modelId === 'opengrid-wall-cover'}
-    <p
-      class="m-0 text-sm leading-6 text-muted-foreground"
-      data-testid="opengrid-wall-cover-three-mf-note"
-    >
-      {t('cad.wallCover.threeMfNote')}
-    </p>
-  {/if}
-  {#if modelId === 'opengrid-label-card'}
-    <p
-      class="m-0 text-sm leading-6 text-muted-foreground"
-      data-testid="opengrid-label-card-three-mf-note"
-    >
-      {t('cad.labelCard.threeMfNote')}
-    </p>
-  {/if}
+  <CadPanelParameters
+    {locale}
+    {modelId}
+    {showParameters}
+    presets={presetsFor(modelId)}
+    {systemContext}
+    {parameters}
+    {rawParameters}
+    {fieldErrors}
+    {onInputChange}
+    {onSystemContextChange}
+    {onOpenGridParametersChange}
+    {onOpenGridDimensionCalculationInvalid}
+    {resetVersion}
+    {onRestoreDefaults}
+    {onApplyPreset}
+  />
 </div>

@@ -875,8 +875,6 @@ describe('OpenGrid stackable-cylinder contract', () => {
       topRimEnabled: false,
       topRimHeight: 2,
     })
-    expect(openGridStackableCylinderThreeMfFileName(disabled)).toMatch(
-      /\.3mf$/,
-    )
+    expect(openGridStackableCylinderThreeMfFileName(disabled)).toMatch(/\.3mf$/)
   })
 })

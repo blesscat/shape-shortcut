@@ -4,6 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   integrations: [svelte()],
+  // The dev toolbar overlays the bottom of the viewport and intercepts
+  // pointer events aimed at the fixed bottom drawer controls under test.
+  devToolbar: {
+    enabled: process.env.PLAYWRIGHT_E2E !== '1',
+  },
   server: {
     host: true,
     port: 3456,

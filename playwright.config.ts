@@ -35,7 +35,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `pnpm dev --host 127.0.0.1 --port ${playwrightPort}`,
+    command: `PLAYWRIGHT_E2E=1 pnpm dev --host 127.0.0.1 --port ${playwrightPort}`,
     url: playwrightBaseUrl,
     reuseExistingServer: !process.env.CI,
   },
