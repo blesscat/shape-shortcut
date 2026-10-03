@@ -731,16 +731,8 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     )
 
     for (const [baseline, shape, cutter] of [
-      [
-        boxBaseline,
-        box,
-        completeBottomCutter(boxCutters),
-      ],
-      [
-        cylinderBaseline,
-        cylinder,
-        completeBottomCutter(cylinderCutters),
-      ],
+      [boxBaseline, box, completeBottomCutter(boxCutters)],
+      [cylinderBaseline, cylinder, completeBottomCutter(cylinderCutters)],
     ] as const) {
       expectThroughFloorOpening(baseline, shape, cutter)
     }
@@ -1027,9 +1019,7 @@ describe('OpenGrid honeycomb material-saving builders', () => {
     expect(openGridStackableBoxHoneycombCellCountFor(smallBox)).toBeGreaterThan(
       0,
     )
-    expect(
-      openGridStackableBoxBottomHoneycombCellCountFor(smallBox),
-    ).toBe(0)
+    expect(openGridStackableBoxBottomHoneycombCellCountFor(smallBox)).toBe(0)
     expect(cylinderCellCount).toBeGreaterThan(0)
     expect(openGridStackableCylinderHoneycombCellCountFor(smallCylinder)).toBe(
       0,
