@@ -337,6 +337,38 @@ The playground MUST import a scene JSON file describing `schemaVersion`, a kind 
 - **WHEN** the file is imported
 - **THEN** the instance MUST use the normalized value
 
+### Requirement: 匯入方向可見性提示
+
+After a successful scene import, the playground MUST compare the imported instances against the set of components the current scene orientation displays. When at least one imported instance references a component that the current scene orientation does not display, the playground MUST show an informational notice stating how many imported instances belong to the other scene orientation and naming that orientation (desktop or wall). The notice MUST be informational: it MUST NOT reject the import, MUST NOT modify the imported scene, and MUST disappear once the user switches to a scene orientation that displays the remaining instances or starts another import. A rejected import MUST NOT show this notice; the existing import diagnostics keep precedence.
+
+#### Scenario: All imported instances belong to the other orientation
+
+- **GIVEN** the playground is in the desktop scene orientation
+- **WHEN** the user imports a well-formed scene file whose instances all reference wall-only components
+- **THEN** the import MUST succeed
+- **AND** the notice MUST state that the imported instances belong to the wall orientation
+
+#### Scenario: Some imported instances belong to the other orientation
+
+- **GIVEN** the playground is in the desktop scene orientation
+- **WHEN** the user imports a well-formed scene file mixing desk components and wall-only components
+- **THEN** the import MUST succeed and the desk instances MUST be visible
+- **AND** the wall-only instances MUST stay hidden in the desktop orientation
+- **AND** the notice MUST state how many imported instances belong to the wall orientation
+
+#### Scenario: Notice clears after switching orientation
+
+- **GIVEN** an import produced the orientation notice
+- **WHEN** the user switches to the scene orientation named by the notice
+- **THEN** the previously hidden instances MUST become visible
+- **AND** the notice MUST no longer be shown
+
+#### Scenario: Rejected import shows no orientation notice
+
+- **WHEN** the user imports a malformed scene file
+- **THEN** the import MUST be rejected with the existing import diagnostic
+- **AND** the orientation notice MUST NOT appear
+
 ### Requirement: 場景 JSON 匯出
 
 The playground MUST export the current scene as a JSON file containing the schema version, kind marker, grid system, scene palette, and every instance with its optional `label`, `parameters`, placement, and effective colors. The exported file MUST be importable by the playground again and MUST be accepted as a single-instance settings file when it contains exactly one instance.
