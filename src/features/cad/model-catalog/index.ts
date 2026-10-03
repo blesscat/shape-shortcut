@@ -45,6 +45,7 @@ export type {
   ModelFamilyGroup,
   ModelFamilyMetadata,
   ModelParameterPresentation,
+  ModelPreset,
   ModelPreviewImage,
   ModelSelectionSubgroup,
   PartCategory,
