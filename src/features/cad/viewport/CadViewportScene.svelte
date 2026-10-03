@@ -11,6 +11,7 @@
     interactivity,
     type GizmoOptions,
   } from '@threlte/extras'
+  import { untrack, type ComponentProps } from 'svelte'
   import { Color, DoubleSide } from 'three'
   import type { OrbitControls as OrbitControlsInstance } from 'three/examples/jsm/controls/OrbitControls.js'
   import type {
@@ -57,10 +58,7 @@
     return 1.25
   }
 
-  type ViewportGizmoHandle = {
-    set: (options?: GizmoOptions) => ViewportGizmoHandle
-    update: (controls?: boolean) => ViewportGizmoHandle
-  }
+  type ViewportGizmoHandle = NonNullable<ComponentProps<typeof Gizmo>['ref']>
 
   let {
     colors = DEFAULT_MODEL_COLORS,
@@ -82,7 +80,9 @@
     presentation === 'workspace' && onFaceHover !== undefined,
   )
 
-  if (presentation === 'workspace') {
+  // interactivity() injects a Threlte plugin and must run exactly once at
+  // init, so this intentionally reads only the mount-time presentation.
+  if (untrack(() => presentation) === 'workspace') {
     interactivity()
   }
   let orbitControls = $state<OrbitControlsInstance | undefined>(undefined)

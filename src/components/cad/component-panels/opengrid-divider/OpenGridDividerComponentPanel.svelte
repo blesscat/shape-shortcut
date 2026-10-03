@@ -3,6 +3,7 @@
     displayParameterLabel,
     opengridDividerDefinition,
     unitLabelFor,
+    type ParameterField as ParameterFieldDefinition,
   } from '../../../../features/cad/model-catalog'
   import {
     OPENGRID_DIVIDER_CONFIGURATION,
@@ -10,6 +11,8 @@
     openGridDividerAlignmentInfoFor,
     openGridDividerHoneycombMinHeightFor,
     validateOpenGridDividerParameters,
+    type ModelParameterKey,
+    type OpenGridDividerAlignmentMode,
     type OpenGridDividerParameters,
   } from '../../../../cad-contract/units'
   import { openGridDividerHoneycombCellGroupsFor } from '../../../../cad-kernel/lattice/opengrid-honeycomb-cells'
@@ -78,7 +81,32 @@
     return Number.isFinite(parsed) ? parsed : fallback
   }
 
-  let alignmentMode = $derived(
+  type DividerNumericParameterKey = Exclude<
+    keyof OpenGridDividerParameters,
+    'alignmentMode' | 'pegLengthMode' | 'honeycombMode' | 'topRimEnabled'
+  >
+
+  const DIVIDER_NUMERIC_PARAMETER_KEYS: ReadonlyArray<DividerNumericParameterKey> =
+    [
+      'left',
+      'right',
+      'up',
+      'down',
+      'height',
+      'wallThickness',
+      'boxFitWallGrids',
+      'endClearance',
+      'pegDiameterIncrement',
+      'topRimHeight',
+    ]
+
+  function isDividerNumericKey(
+    key: ModelParameterKey,
+  ): key is DividerNumericParameterKey {
+    return (DIVIDER_NUMERIC_PARAMETER_KEYS as readonly string[]).includes(key)
+  }
+
+  let alignmentMode: OpenGridDividerAlignmentMode = $derived(
     rawParameters.alignmentMode === 'box-fit' ? 'box-fit' : 'free',
   )
   // Box-fit ignores the frozen directional arm counts: the wall is the single
@@ -122,6 +150,7 @@
         rawParameters.pegLengthMode as OpenGridDividerParameters['pegLengthMode']
     }
     for (const key of schema) {
+      if (!isDividerNumericKey(key.key)) continue
       const rawValue = rawParameters[key.key]
       if (rawValue === undefined || rawValue.trim() === '') continue
       const value = Number(rawValue)
@@ -159,7 +188,7 @@
       rawParameters.honeycombMode !== 'true',
   )
 
-  const topRimHeightField = $derived.by(() => {
+  const topRimHeightField = $derived.by((): ParameterFieldDefinition => {
     const height = rawNumber('height')
     const max = Math.max(
       OPENGRID_DIVIDER_CONFIGURATION.minTopRimHeight,

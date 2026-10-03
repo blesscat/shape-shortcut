@@ -4,6 +4,7 @@
     OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION,
     OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
     validateOpenGridOpenConnectOrganizerParameters,
+    type ModelParameterKey,
     type OpenGridOpenConnectOrganizerParameters,
     type OpenGridOpenConnectOrganizerShape,
     type OpenGridOpenConnectOrganizerSpacingMode,
@@ -129,8 +130,19 @@
     return ['holeDiameter']
   }
 
+  function sizeSectionFieldKeysForRawParameters(): ReadonlyArray<
+    (typeof numericKeys)[number]
+  > {
+    return [
+      ...sizeFieldKeysForRawParameters(),
+      'holeDepth',
+      'bottomThickness',
+      'edgeThickness',
+    ]
+  }
+
   function layoutForRawParameters() {
-    const numberFor = (key: string, fallback: number): number =>
+    const numberFor = (key: ModelParameterKey, fallback: number): number =>
       Number(rawParameters[key] ?? String(fallback))
     const spacingMode = spacingModeForRawParameters()
     const holeSpacingX = numberFor(
@@ -191,6 +203,11 @@
       topRimHeight: numberFor(
         'topRimHeight',
         OPENGRID_OPENCONNECT_ORGANIZER_CONFIGURATION.defaultTopRimHeight,
+      ),
+      labelSlotEnabled: rawParameters.labelSlotEnabled === 'true',
+      labelGridUnits: numberFor(
+        'labelGridUnits',
+        OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS.labelGridUnits,
       ),
     } satisfies OpenGridOpenConnectOrganizerParameters
     const validation = validateOpenGridOpenConnectOrganizerParameters(candidate)
@@ -406,7 +423,7 @@
     {translate(locale, 'parameter.organizerThicknessHelp')}
   </p>
 
-  {#each [...sizeFieldKeysForRawParameters(), 'holeDepth', 'bottomThickness', 'edgeThickness'] as fieldKey (fieldKey)}
+  {#each sizeSectionFieldKeysForRawParameters() as fieldKey (fieldKey)}
     {@const field = fieldFor(fieldKey)}
     {@const value = valueFor(field)}
     <ParameterField

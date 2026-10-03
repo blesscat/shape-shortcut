@@ -455,14 +455,20 @@
   function updateCorner(field: keyof OpenGridCornerFlags, event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     updateParameters({
-      chamferCorners: { [field]: event.currentTarget.checked },
+      chamferCorners: {
+        ...parameters.chamferCorners,
+        [field]: event.currentTarget.checked,
+      },
     })
   }
 
   function updateSide(field: keyof OpenGridSideFlags, event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     updateParameters({
-      connectorSides: { [field]: event.currentTarget.checked },
+      connectorSides: {
+        ...parameters.connectorSides,
+        [field]: event.currentTarget.checked,
+      },
     })
   }
 
@@ -472,7 +478,10 @@
   ): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
     updateParameters({
-      targetFrameSides: { [field]: event.currentTarget.checked },
+      targetFrameSides: {
+        ...parameters.targetFrameSides,
+        [field]: event.currentTarget.checked,
+      },
     })
   }
 
