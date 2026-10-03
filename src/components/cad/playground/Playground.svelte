@@ -11,7 +11,7 @@
     getModelDefinition,
     modelDefinitions,
   } from '../../../features/cad/model-catalog'
-  import { translate, type Locale } from '../../../i18n'
+  import { translate, type Locale, type MessageValues } from '../../../i18n'
   import { onMount } from 'svelte'
   import type { ModelParameterKey } from '../../../cad-contract/units'
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
@@ -27,7 +27,7 @@
   let addModelId = $state('')
   let fileInput = $state<HTMLInputElement | null>(null)
 
-  const t = (key: string, values?: Record<string, string | number>) =>
+  const t = (key: string, values?: MessageValues) =>
     translate(locale, key, values)
 
   onMount(() => {

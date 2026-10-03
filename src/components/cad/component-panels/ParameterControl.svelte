@@ -13,6 +13,8 @@
     field: ParameterField
     value: string
     error?: ValidationIssue
+    /** DOM id of the rendered error message; defaults to `${field.key}-error`. */
+    errorId?: string
     disabled?: boolean
     onChange: (value: string) => void
   }
@@ -22,6 +24,7 @@
     field,
     value,
     error,
+    errorId,
     disabled = false,
     onChange,
   }: Props = $props()
@@ -29,9 +32,13 @@
   let controlLabel = $derived(displayParameterLabel(field, locale))
   let unitLabel = $derived(unitLabelFor(locale, field.unit))
 
+  let describedBy = $derived(
+    error ? (errorId ?? `${field.key}-error`) : undefined,
+  )
+
   let commonProps = $derived({
     'aria-invalid': Boolean(error),
-    'aria-describedby': error ? `${field.key}-error` : undefined,
+    'aria-describedby': describedBy,
     disabled,
     min: field.min,
     max: field.max,
@@ -55,7 +62,7 @@
         step={field.step}
         direction={field.sliderDirection}
         {error}
-        describedBy={error ? `${field.key}-error` : undefined}
+        {describedBy}
         {disabled}
         {onChange}
       />

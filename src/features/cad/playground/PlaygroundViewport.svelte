@@ -5,6 +5,7 @@
   import type { MeshSnapshot } from '../../../cad-contract/messages'
   import type {
     ModelBounds,
+    ModelId,
     ModelParameterValues,
   } from '../../../cad-contract/units'
   import {
@@ -22,6 +23,7 @@
     CAD_VIEWPORT_GRID_ROTATION,
   } from '../viewport/coordinates'
   import { CAD_VIEWPORT_LIGHTING } from '../viewport/config'
+  import { createErrorHatchMaterial } from '../viewport/board-parts'
   import { getModelDefinition } from '../model-catalog'
   import { sceneProxyCacheKey } from './filenames'
   import { instanceDisplayColor } from './instance-colors'
@@ -54,7 +56,7 @@
   type PlaygroundViewportInstance = {
     id: string
     name: string
-    modelId: string
+    modelId: ModelId
     parameters: ModelParameterValues
     mesh: MeshSnapshot | null
     bounds: ModelBounds | null
@@ -130,8 +132,10 @@
 
   type InstancedEntry = {
     instanceId: string
+    modelId: string
     colorHex: string
     matrix: THREE.Matrix4
+    overlapping: boolean
   }
 
   type InstancedGroup = {
@@ -149,10 +153,11 @@
   let contentGroup: THREE.Group | null = null
   let grid: THREE.Group | null = null
 
-  /** Rectangular cell grid centered on the origin, in the plane of `mode`. */
+  /** Rectangular cell grid centered on the origin, in the plane of `mode`.
+      4.2.2: lines only — the planning plate is gone (it hid the model
+      underside), so the strengthened grid tokens carry the light theme. */
   function buildGridLines(
-    minorColor: string,
-    majorColor: string,
+    theme: CadViewportTheme,
     cellsX: number,
     cellsY: number,
     mode: PlaygroundViewMode,
@@ -186,8 +191,8 @@
         ),
       )
     }
-    addLines(minor, minorColor)
-    addLines(major, majorColor)
+    addLines(minor, theme.gridMinor)
+    addLines(major, theme.gridMajor)
     if (mode === 'desktop') {
       group.rotation.set(...CAD_VIEWPORT_GRID_ROTATION)
     }
@@ -196,17 +201,33 @@
 
   function disposeGrid(target: THREE.Group): void {
     target.traverse((child) => {
-      if (child instanceof THREE.LineSegments) {
+      if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
         child.geometry.dispose()
         ;(child.material as THREE.Material).dispose()
       }
     })
+  }
+
+  /**
+   * Remove and dispose the scene marking assets: the overlap hatch overlays.
+   * Overlay meshes reference cached group geometry, so only materials are
+   * disposed here.
+   */
+  function disposeOverlayAssets(): void {
+    if (contentGroup) {
+      for (const overlay of overlapOverlays) contentGroup.remove(overlay)
+    }
+    for (const material of overlapHatchMaterials) material.dispose()
+    overlapOverlays = []
+    overlapHatchMaterials = []
   }
   let frameHandle = 0
   let resizeObserver: ResizeObserver | null = null
   let unobserveTheme: (() => void) | null = null
   const geometryCache = new Map<string, THREE.BufferGeometry>()
   let instancedGroups: InstancedGroup[] = []
+  let overlapOverlays: THREE.Mesh[] = []
+  let overlapHatchMaterials: THREE.MeshBasicMaterial[] = []
   let placeholderMeshes: THREE.Mesh[] = []
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
@@ -217,7 +238,6 @@
   let appliedViewMode: PlaygroundViewMode | null = null
   const CAMERA_POSE_CHANGE_EPSILON = 0.000001
   const CLICK_DRAG_THRESHOLD_PX = 5
-  const INVALID_PREVIEW_COLOR_FALLBACK = '#c44747'
 
   const THEME_FIELDS: ReadonlyArray<keyof CadViewportTheme> = [
     'background',
@@ -233,11 +253,17 @@
     'annotationLabel',
     'hover',
     'selection',
+    'selectionFill',
+    'error',
+    'errorFill',
     'faceHighlight',
     'hemisphereSky',
     'hemisphereGround',
     'keyLight',
     'oppositeFill',
+    'boardFace',
+    'boardEdge',
+    'contactShadow',
   ]
 
   function sameTheme(a: CadViewportTheme, b: CadViewportTheme): boolean {
@@ -337,14 +363,6 @@
     return matrix
   }
 
-  function invalidPreviewColor(): string {
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue('--color-error-border')
-        .trim() || INVALID_PREVIEW_COLOR_FALLBACK
-    )
-  }
-
   function displayColorFor(
     instanceId: string,
     colorHex: string,
@@ -361,7 +379,7 @@
       colorHex,
       hoverColor: theme.hover,
       selectionColor: theme.selection,
-      conflictColor: invalidPreviewColor(),
+      conflictColor: theme.error,
     })
   }
 
@@ -403,6 +421,7 @@
       ;(placeholder.material as THREE.Material).dispose()
     }
     placeholderMeshes = []
+    disposeOverlayAssets()
 
     const ready = instances.filter(
       (instance) => instance.mesh && instance.meshState === 'ready',
@@ -415,8 +434,10 @@
       const cacheKey = sceneProxyCacheKey(instance.modelId, instance.parameters)
       const entry: InstancedEntry = {
         instanceId: instance.id,
+        modelId: instance.modelId,
         colorHex: instance.colorPrimary,
         matrix: matrixFor(instance, viewMode),
+        overlapping: instance.overlapping,
       }
       const existing = groups.get(cacheKey)
       if (existing) existing.entries.push(entry)
@@ -449,6 +470,29 @@
         material,
         entries: group.entries,
       })
+    }
+    // Overlap conflicts get the Part D v2 error hatch (+45°) on top of the
+    // conflict-colored instance; the accompanying text warning lives in the
+    // Playground panel, so the state never relies on color alone.
+    if (
+      instancedGroups.some((group) =>
+        group.entries.some((entry) => entry.overlapping),
+      )
+    ) {
+      const hatchMaterial = createErrorHatchMaterial(theme.error)
+      overlapHatchMaterials.push(hatchMaterial)
+      for (const group of instancedGroups) {
+        for (const entry of group.entries) {
+          if (!entry.overlapping) continue
+          const overlay = new THREE.Mesh(group.mesh.geometry, hatchMaterial)
+          overlay.matrixAutoUpdate = false
+          overlay.matrix.copy(entry.matrix)
+          overlay.renderOrder = 2
+          overlay.userData.instanceId = entry.instanceId
+          contentGroup.add(overlay)
+          overlapOverlays.push(overlay)
+        }
+      }
     }
     for (const instance of instances) {
       if (instance.meshState !== 'pending' || !instance.bounds) continue
@@ -489,6 +533,7 @@
       )
       placeholder.userData.playgroundInstanceId = instance.id
       placeholder.userData.playgroundColorHex = instance.colorPrimary
+      placeholder.userData.playgroundModelId = instance.modelId
       contentGroup.add(placeholder)
       placeholderMeshes.push(placeholder)
     }
@@ -592,9 +637,9 @@
 
   function applyViewMode(theme: CadViewportTheme): void {
     if (grid) {
-      grid.rotation.set(
-        ...(viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]),
-      )
+      const gridRotation: [number, number, number] =
+        viewMode === 'desktop' ? CAD_VIEWPORT_GRID_ROTATION : [0, 0, 0]
+      grid.rotation.set(...gridRotation)
     }
     applyCameraPose(viewMode)
     rebuildScene(theme)
@@ -713,6 +758,13 @@
       if (index < 0) continue
       group.mesh.setMatrixAt(index, matrix)
       group.mesh.instanceMatrix.needsUpdate = true
+      const overlay = overlapOverlays.find(
+        (candidate) => candidate.userData.instanceId === instanceId,
+      )
+      if (overlay) {
+        overlay.matrix.copy(matrix)
+        overlay.matrixWorldNeedsUpdate = true
+      }
       return
     }
 
@@ -991,8 +1043,7 @@
     scene.add(fill)
 
     grid = buildGridLines(
-      theme.gridMinor,
-      theme.gridMajor,
+      theme,
       Math.max(Math.round(gridSize.x), 1),
       Math.max(Math.round(gridSize.y), 1),
       viewMode,
@@ -1056,16 +1107,20 @@
         ;(placeholder.material as THREE.Material).dispose()
       }
       placeholderMeshes = []
+      disposeOverlayAssets()
       for (const geometry of geometryCache.values()) geometry.dispose()
       geometryCache.clear()
-      renderer.domElement.removeEventListener(
-        'pointerdown',
-        handlePointerDownCapture,
-        true,
-      )
-      renderer.dispose()
-      renderer.domElement.remove()
-      renderer = null
+      const activeRenderer = renderer
+      if (activeRenderer) {
+        activeRenderer.domElement.removeEventListener(
+          'pointerdown',
+          handlePointerDownCapture,
+          true,
+        )
+        activeRenderer.dispose()
+        activeRenderer.domElement.remove()
+        renderer = null
+      }
       scene = null
       camera = null
       contentGroup = null
@@ -1108,8 +1163,7 @@
       disposeGrid(grid)
     }
     grid = buildGridLines(
-      theme.gridMinor,
-      theme.gridMajor,
+      theme,
       Math.max(Math.round(gridSize.x), 1),
       Math.max(Math.round(gridSize.y), 1),
       viewMode,

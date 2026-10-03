@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* Site tokens live here only. The design system is the Human 親和系 warm
-   system (design-spec-4.0.0 - 4.2.0-viewport): white and warm surfaces with a
+   system (design-spec-4.0.0 - 4.2.2-viewport): white and warm surfaces with a
    coral #CF4429 primary in light appearance; warm dark brown #201A16 grounds
    with bright coral #FF8A70 links and unchanged coral CTAs in dark
    appearance; Nunito + Noto Sans TC UI text with JetBrains Mono technical
@@ -80,15 +80,24 @@
 
 :root {
   color-scheme: light;
-  --cad-viewport-grid-major: rgba(54, 42, 36, 0.18);
-  --cad-viewport-grid-minor: rgba(54, 42, 36, 0.07);
+  /* 4.2.2: no planning plate — the grid itself carries the light theme
+     (review: the plate hid the model underside), so the lines must read
+     on their own. */
+  --cad-viewport-grid-major: rgba(54, 42, 36, 0.55);
+  --cad-viewport-grid-minor: rgba(54, 42, 36, 0.3);
   --cad-viewport-gizmo-background: #fff7f2;
   --cad-viewport-gizmo-x: #c8401f;
   --cad-viewport-gizmo-y: #1f7a3a;
   --cad-viewport-gizmo-z: #0284c7;
   --cad-viewport-gizmo-label: #362a24;
   --cad-viewport-hover: #ffb454;
-  --cad-viewport-selection: #d6452b;
+  --cad-viewport-selection: #0284c7;
+  --cad-viewport-selection-fill: rgba(2, 132, 199, 0.14);
+  --cad-viewport-error: #d6452b;
+  --cad-viewport-error-fill: rgba(214, 69, 43, 0.16);
+  --cad-viewport-board-face: #efe6dc;
+  --cad-viewport-board-edge: #3a2e27;
+  --cad-viewport-contact-shadow: rgba(59, 43, 36, 0.2);
   --cad-viewport-edge: #3a2e27;
   --cad-viewport-annotation: #0284c7;
   --cad-viewport-annotation-label: #6e5f57;
@@ -144,15 +153,21 @@
     --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
     --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
     --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
-    --cad-viewport-grid-major: rgba(244, 237, 231, 0.16);
-    --cad-viewport-grid-minor: rgba(244, 237, 231, 0.06);
+    --cad-viewport-grid-major: rgba(244, 237, 231, 0.24);
+    --cad-viewport-grid-minor: rgba(244, 237, 231, 0.1);
     --cad-viewport-gizmo-background: #2a231e;
     --cad-viewport-gizmo-x: #ff8a70;
     --cad-viewport-gizmo-y: #5cd68a;
     --cad-viewport-gizmo-z: #6fc7f2;
     --cad-viewport-gizmo-label: #f4ede7;
     --cad-viewport-hover: #ffc57e;
-    --cad-viewport-selection: #ff8a70;
+    --cad-viewport-selection: #6fc7f2;
+    --cad-viewport-selection-fill: rgba(111, 199, 242, 0.16);
+    --cad-viewport-error: #ff8a70;
+    --cad-viewport-error-fill: rgba(255, 138, 112, 0.18);
+    --cad-viewport-board-face: #262019;
+    --cad-viewport-board-edge: #cbbfb4;
+    --cad-viewport-contact-shadow: rgba(0, 0, 0, 0.45);
     --cad-viewport-edge: #cbbfb4;
     --cad-viewport-annotation: #6fc7f2;
     --cad-viewport-annotation-label: #b8a99f;
@@ -206,15 +221,21 @@
   --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
   --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
   --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
-  --cad-viewport-grid-major: rgba(244, 237, 231, 0.16);
-  --cad-viewport-grid-minor: rgba(244, 237, 231, 0.06);
+  --cad-viewport-grid-major: rgba(244, 237, 231, 0.24);
+  --cad-viewport-grid-minor: rgba(244, 237, 231, 0.1);
   --cad-viewport-gizmo-background: #2a231e;
   --cad-viewport-gizmo-x: #ff8a70;
   --cad-viewport-gizmo-y: #5cd68a;
   --cad-viewport-gizmo-z: #6fc7f2;
   --cad-viewport-gizmo-label: #f4ede7;
   --cad-viewport-hover: #ffc57e;
-  --cad-viewport-selection: #ff8a70;
+  --cad-viewport-selection: #6fc7f2;
+  --cad-viewport-selection-fill: rgba(111, 199, 242, 0.16);
+  --cad-viewport-error: #ff8a70;
+  --cad-viewport-error-fill: rgba(255, 138, 112, 0.18);
+  --cad-viewport-board-face: #262019;
+  --cad-viewport-board-edge: #cbbfb4;
+  --cad-viewport-contact-shadow: rgba(0, 0, 0, 0.45);
   --cad-viewport-edge: #cbbfb4;
   --cad-viewport-annotation: #6fc7f2;
   --cad-viewport-annotation-label: #b8a99f;
