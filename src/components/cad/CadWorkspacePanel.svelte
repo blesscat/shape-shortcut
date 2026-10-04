@@ -10,9 +10,10 @@
   import type { ExportFormat } from '../../features/cad/download'
   import type { OpenGridSystemContext } from '../../features/cad/system-entry-context'
   import { getModelDefinition } from '../../features/cad/model-catalog'
+  import type { ModelPreset } from '../../features/cad/model-catalog'
   import type { RawParameters } from './workspace/types'
   import ComponentParameterPanel from './component-panels/index.svelte'
-  import RestoreDefaultsButton from './component-panels/RestoreDefaultsButton.svelte'
+  import PresetButtonRow from './component-panels/PresetButtonRow.svelte'
   import { translate, type Locale } from '../../i18n'
 
   const ACTION_BUTTON_CLASS =
@@ -39,6 +40,7 @@
     onDownloadSettings?: () => void
     resetVersion: number
     onRestoreDefaults: () => void
+    onApplyPreset: (presetId: string) => void
   }
 
   let {
@@ -60,6 +62,7 @@
     onDownloadSettings,
     resetVersion,
     onRestoreDefaults,
+    onApplyPreset,
   }: Props = $props()
 
   const t = (key: string, values?: Record<string, string | number | boolean>) =>
@@ -76,6 +79,9 @@
     }
     return (getModelDefinition(modelId)?.parameterSchema.length ?? 0) > 0
   }
+
+  const presetsFor = (id: ModelId): ReadonlyArray<ModelPreset> =>
+    getModelDefinition(id)?.presets ?? []
 </script>
 
 <div
@@ -83,7 +89,12 @@
   data-testid="cad-workspace-panel"
 >
   {#if hasParameterControlsFor(modelId)}
-    <RestoreDefaultsButton {locale} onRestore={onRestoreDefaults} />
+    <PresetButtonRow
+      {locale}
+      presets={presetsFor(modelId)}
+      onRestore={onRestoreDefaults}
+      {onApplyPreset}
+    />
     {#key resetVersion}
       <ComponentParameterPanel
         {locale}

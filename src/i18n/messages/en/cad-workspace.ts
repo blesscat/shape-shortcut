@@ -59,6 +59,7 @@ export const messages = {
   'cad.wallCover.threeMfNote': 'The two-color effect is available only in 3MF.',
   'cad.labelCard.threeMfNote': 'The two-color effect is available only in 3MF.',
   'cad.action.retry': 'Retry',
+  'cad.presets.opengrid-stackable-box.3x3-desk-style': '3×3 test style',
   'cad.system.current': 'Current system: {name}',
   'cad.error.title.initializing': 'CAD engine failed to load',
   'cad.error.title.exporting': 'CAD export failed',

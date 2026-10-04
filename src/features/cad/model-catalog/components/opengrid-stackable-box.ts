@@ -186,6 +186,19 @@ export const opengridStackableBoxDefinition: ModelDefinition = {
   defaultParameters: {
     ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   },
+  presets: [
+    {
+      id: '3x3-desk-style',
+      labelKey: 'cad.presets.opengrid-stackable-box.3x3-desk-style',
+      overrides: {
+        x: 3,
+        y: 3,
+        height: 30,
+        topRimMode: 'flat-top',
+        bottomMode: 'thin-shell',
+      },
+    },
+  ],
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-stackable-box.webp',

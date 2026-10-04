@@ -2,10 +2,12 @@ import type { ModelColors } from '../../../cad-contract/model-colors'
 import type {
   ModelId,
   ModelParameterKey,
+  ModelParameterValues,
   OpenGridParameters,
 } from '../../../cad-contract/units'
 import { initialCadState, type CadState } from '../../../features/cad/state'
 import { getModelDefinition } from '../../../features/cad/model-catalog'
+import { findModelPreset, resolvePresetParameters } from '../../../features/cad/model-catalog/presets'
 import {
   cloneModelParameters,
   getSystemPreset,
@@ -39,6 +41,7 @@ export type CadWorkspaceController = {
   onOpenGridParametersChange: (parameters: OpenGridParameters) => void
   onOpenGridDimensionCalculationInvalid: () => void
   onRestoreDefaults: () => void
+  onApplyPreset: (presetId: string) => void
   onExport: (format?: ExportFormat, colors?: ModelColors) => void
   onRetry: () => void
   dispose: () => void
@@ -126,23 +129,42 @@ export function createCadWorkspaceController(
     },
   })
 
-  const onRestoreDefaults = (): void => {
-    const systemPreset = systemContext
-      ? getSystemPreset(modelId, systemContext)
-      : undefined
-    const defaultParameters = cloneModelParameters(
-      systemPreset ?? definition.defaultParameters,
-    )
+  const applyParameters = (parameters: ModelParameterValues): void => {
     if (modelId === 'opengrid') {
       runtime.handleOpenGridParametersChange(
-        cloneOpenGridParameters(defaultParameters as OpenGridParameters),
+        cloneOpenGridParameters(parameters as OpenGridParameters),
       )
       return
     }
 
-    for (const [key, value] of Object.entries(defaultParameters)) {
+    for (const [key, value] of Object.entries(parameters)) {
       runtime.handleInputChange(key as ModelParameterKey, String(value))
     }
+  }
+
+  const onRestoreDefaults = (): void => {
+    const systemPreset = systemContext
+      ? getSystemPreset(modelId, systemContext)
+      : undefined
+    applyParameters(cloneModelParameters(systemPreset ?? definition.defaultParameters))
+  }
+
+  const onApplyPreset = (presetId: string): void => {
+    const preset = findModelPreset(definition, presetId)
+    if (!preset) {
+      if (import.meta.env.DEV) {
+        console.error(`UNKNOWN_MODEL_PRESET:${modelId}:${presetId}`)
+      }
+      return
+    }
+    const resolved = resolvePresetParameters(definition, preset)
+    if (!resolved.ok) {
+      if (import.meta.env.DEV) {
+        console.error(`MODEL_PRESET_INVALID:${modelId}:${presetId}`)
+      }
+      return
+    }
+    applyParameters(resolved.parameters)
   }
 
   const onSystemContextChange = (
@@ -167,6 +189,7 @@ export function createCadWorkspaceController(
     onOpenGridDimensionCalculationInvalid:
       runtime.handleOpenGridDimensionCalculationInvalid,
     onRestoreDefaults,
+    onApplyPreset,
     onExport: runtime.handleExport,
     onRetry: runtime.handleRetry,
     dispose: runtime.dispose,
