@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* Site tokens live here only. The design system is the Human 親和系 warm
-   system (design-spec-4.0.0 - 4.2.2-viewport): white and warm surfaces with a
+   system (design-spec-4.0.0 - 4.2.3-viewport): white and warm surfaces with a
    coral #CF4429 primary in light appearance; warm dark brown #201A16 grounds
    with bright coral #FF8A70 links and unchanged coral CTAs in dark
    appearance; Nunito + Noto Sans TC UI text with JetBrains Mono technical
@@ -80,11 +80,10 @@
 
 :root {
   color-scheme: light;
-  /* 4.2.2: no planning plate — the grid itself carries the light theme
-     (review: the plate hid the model underside), so the lines must read
-     on their own. */
-  --cad-viewport-grid-major: rgba(54, 42, 36, 0.55);
-  --cad-viewport-grid-minor: rgba(54, 42, 36, 0.3);
+  /* 4.2.3: review found the translucent warm grid too faint — light-mode
+     lines are now neutral dark gray, major solid, minor 60%. */
+  --cad-viewport-grid-major: #52525b;
+  --cad-viewport-grid-minor: rgba(82, 82, 91, 0.6);
   --cad-viewport-gizmo-background: #fff7f2;
   --cad-viewport-gizmo-x: #c8401f;
   --cad-viewport-gizmo-y: #1f7a3a;

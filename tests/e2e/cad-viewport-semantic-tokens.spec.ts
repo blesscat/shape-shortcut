@@ -118,9 +118,9 @@ test.describe('CAD viewport semantic tokens (Part D v2 / design-spec-4.2.1)', ()
     )
     expect(light.boardEdge.toLowerCase()).toBe('#3a2e27')
     expect(light.contactShadow).toBe('rgba(59, 43, 36, 0.2)')
-    // 4.2.2: no planning plate, so the lines must read on their own —
-    // light minor lifted 7% → 10% (4.2.1) → 30% with major at 55%.
-    expect(light.gridMinor).toBe('rgba(54, 42, 36, 0.3)')
+    // 4.2.3: no planning plate, so the lines must read on their own —
+    // light grid is neutral dark gray now (major solid #52525b).
+    expect(light.gridMinor).toBe('rgba(82, 82, 91, 0.6)')
 
     await page.evaluate(() => {
       document.documentElement.classList.add('dark')

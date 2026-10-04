@@ -30,13 +30,13 @@ export type CadViewportTheme = {
   contactShadow: string
 }
 
-/* Warm light viewport theme (design-tokens.css Part D-A, v2 / 4.2.2). Dark
+/* Warm light viewport theme (design-tokens.css Part D-A, v2 / 4.2.3). Dark
    values arrive via the CSS tokens; this constant only backstops token-less
    contexts such as light-mode thumbnails. */
 export const CAD_VIEWPORT_THEME_FALLBACK = {
   background: '#f7f3ef',
-  gridMajor: 'rgba(54, 42, 36, 0.55)',
-  gridMinor: 'rgba(54, 42, 36, 0.3)',
+  gridMajor: '#52525b',
+  gridMinor: 'rgba(82, 82, 91, 0.6)',
   gizmoBackground: '#fff7f2',
   gizmoX: '#c8401f',
   gizmoY: '#1f7a3a',
