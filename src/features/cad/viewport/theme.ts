@@ -36,7 +36,7 @@ export type CadViewportTheme = {
 export const CAD_VIEWPORT_THEME_FALLBACK = {
   background: '#f7f3ef',
   gridMajor: '#52525b',
-  gridMinor: 'rgba(82, 82, 91, 0.6)',
+  gridMinor: 'rgba(82, 82, 91, 0.85)',
   gizmoBackground: '#fff7f2',
   gizmoX: '#c8401f',
   gizmoY: '#1f7a3a',

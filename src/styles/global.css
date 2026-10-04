@@ -81,9 +81,10 @@
 :root {
   color-scheme: light;
   /* 4.2.3: review found the translucent warm grid too faint — light-mode
-     lines are now neutral dark gray, major solid, minor 60%. */
+     lines are now neutral dark gray: major solid, minor 85% so the whole
+     mesh reads dark, not just the every-5th majors. */
   --cad-viewport-grid-major: #52525b;
-  --cad-viewport-grid-minor: rgba(82, 82, 91, 0.6);
+  --cad-viewport-grid-minor: rgba(82, 82, 91, 0.85);
   --cad-viewport-gizmo-background: #fff7f2;
   --cad-viewport-gizmo-x: #c8401f;
   --cad-viewport-gizmo-y: #1f7a3a;
