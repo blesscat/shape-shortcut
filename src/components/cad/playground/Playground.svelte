@@ -48,7 +48,11 @@
     }
   })
 
-  function openDrawer(): void {
+  function toggleDrawer(): void {
+    if (drawerOpen) {
+      closeDrawer()
+      return
+    }
     drawerOpen = true
   }
 
@@ -328,7 +332,7 @@
           aria-expanded={drawerOpen}
           aria-controls="playground-sidebar-drawer"
           aria-label={t('playground.drawer.open')}
-          onclick={openDrawer}
+          onclick={toggleDrawer}
         >
           {t('playground.drawer.title')}
         </button>

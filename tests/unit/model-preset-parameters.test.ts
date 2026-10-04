@@ -30,9 +30,7 @@ function fakeDefinition(
       ) {
         return {
           valid: false as const,
-          issues: [
-            { field: 'x' as const, messageId: 'OUT_OF_RANGE' },
-          ],
+          issues: [{ field: 'x' as const, messageId: 'OUT_OF_RANGE' }],
         }
       }
       return {
@@ -74,7 +72,8 @@ describe('resolvePresetParameters', () => {
       parameters: expect.objectContaining({ x: 3, y: 3 }),
     })
     if (!resolved.ok) return
-    const parameters = resolved.parameters as typeof OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS
+    const parameters =
+      resolved.parameters as typeof OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS
     expect(parameters.height).toBe(
       OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.height,
     )
@@ -99,7 +98,8 @@ describe('resolvePresetParameters', () => {
     resolvePresetParameters(definition, preset)
     resolvePresetParameters(definition, preset)
 
-    const defaults = definition.defaultParameters as typeof OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS
+    const defaults =
+      definition.defaultParameters as typeof OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS
     expect(defaults.x).toBe(OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.x)
     expect(defaults.y).toBe(OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.y)
   })

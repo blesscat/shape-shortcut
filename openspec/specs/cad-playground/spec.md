@@ -371,9 +371,11 @@ The playground MUST export binary STL for individual instances with a committed 
 （新增元件、instance 清單、選中 instance 編輯器，含複製、刪除、重試與
 per-instance 匯出）放進與 workspace 同款的非強制互動 bottom drawer：預設
 收合、由常駐 pill 開啟、65dvh 高度、內容內部捲動、半透明面板底色（純 alpha、
-無 backdrop 或 blur）、底部安全區內距；開啟時場景 viewport 仍 MUST 可拖曳、
-旋轉與點選 instance。頁面 header 的 view mode、grid cells 與場景匯入/匯出
-MUST 留在原位。Breakpoint 以上（≥761px）MUST 維持既有 sidebar 版面。
+無 backdrop 或 blur）、底部安全區內距；drawer 開啟時頁面捲動 MUST 鎖定，
+未被 drawer 覆蓋的場景 viewport 區域 MUST 維持既有互動（拖曳、旋轉、點選
+instance），pill 在 drawer 開啟時 MUST 可再次點擊以收合。頁面 header 的
+view mode、grid cells 與場景匯入/匯出 MUST 留在原位。Breakpoint 以上
+（≥761px）MUST 維持既有 sidebar 版面。
 
 #### Scenario: 收合 pill 開啟 sidebar drawer
 

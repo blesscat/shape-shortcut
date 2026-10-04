@@ -57,21 +57,15 @@ test('narrow workspace uses a translucent bottom drawer with external actions', 
   })
   expect(backgroundAlpha).toBeLessThan(1)
 
-  // The sheet is non-modal: pointer targets above it must not be blocked.
-  const blockedByDrawer = await page.evaluate(() => {
-    const viewport = document.querySelector('[data-testid="cad-viewport"]')
-    if (!viewport) return false
-    const box = viewport.getBoundingClientRect()
-    const hit = document.elementFromPoint(
-      box.left + box.width / 2,
-      box.top + 24,
-    )
-    return Boolean(hit?.closest('[data-testid="cad-params-drawer"]'))
-  })
-  expect(blockedByDrawer).toBeFalsy()
-
+  // Opening the drawer locks the page scroll behind it; closing restores it.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.style.overflow))
+    .toBe('hidden')
   await page.keyboard.press('Escape')
   await expect(drawer).toBeHidden()
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.style.overflow))
+    .not.toBe('hidden')
   await expect(pill).toHaveAttribute('aria-expanded', 'false')
   await expect(pill).toBeFocused()
   const viewportBoxAfterClose = await readViewportBox(page)
@@ -86,6 +80,14 @@ test('narrow workspace uses a translucent bottom drawer with external actions', 
   await expect(drawer).toBeVisible()
   await drawer.getByRole('button', { name: '關閉參數面板' }).click()
   await expect(drawer).toBeHidden()
+  await expect(pill).toBeFocused()
+
+  // The pill toggles: a second tap on the open drawer's pill closes it.
+  await pill.click()
+  await expect(drawer).toBeVisible()
+  await pill.click()
+  await expect(drawer).toBeHidden()
+  await expect(pill).toHaveAttribute('aria-expanded', 'false')
   await expect(pill).toBeFocused()
 })
 

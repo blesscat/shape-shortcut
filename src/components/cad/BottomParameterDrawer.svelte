@@ -27,6 +27,17 @@
     if (open) closeButton?.focus()
   })
 
+  $effect(() => {
+    // While the sheet is open the page behind it must not scroll; the sheet
+    // itself keeps its own internal scroller.
+    if (!open) return
+    const previousOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = previousOverflow
+    }
+  })
+
   function handleWindowKeydown(event: KeyboardEvent): void {
     if (!open || event.key !== 'Escape') return
     onClose()

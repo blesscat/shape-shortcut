@@ -3,8 +3,7 @@ import { cloneModelParameters } from '../system-entry-context'
 import type { ModelDefinition, ModelPreset } from './types'
 
 export type ResolvedPresetParameters =
-  | { ok: true; parameters: ModelParameterValues }
-  | { ok: false }
+  { ok: true; parameters: ModelParameterValues } | { ok: false }
 
 /**
  * Merges a preset's overrides onto the definition's `defaultParameters` and
@@ -22,7 +21,10 @@ export function resolvePresetParameters(
   try {
     const validation = definition.validateParameters(merged)
     if (!validation.valid) return { ok: false }
-    return { ok: true, parameters: cloneModelParameters(validation.value.parameters) }
+    return {
+      ok: true,
+      parameters: cloneModelParameters(validation.value.parameters),
+    }
   } catch {
     return { ok: false }
   }

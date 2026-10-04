@@ -118,7 +118,11 @@
     }
   })
 
-  function openDrawer(): void {
+  function toggleDrawer(): void {
+    if (drawerOpen) {
+      closeDrawer()
+      return
+    }
     drawerOpen = true
   }
 
@@ -295,7 +299,7 @@
     {/if}
     {#if isNarrow}
       <div
-        class="absolute top-3 end-3 z-40 flex max-w-[calc(100%-1.5rem)] justify-end"
+        class="absolute top-3 end-3 z-20 flex max-w-[calc(100%-1.5rem)] justify-end"
         data-testid="cad-actions-cluster"
       >
         <CadPanelActions
@@ -319,7 +323,7 @@
           aria-expanded={drawerOpen}
           aria-controls="cad-params-drawer"
           aria-label={t('cad.drawer.open')}
-          onclick={openDrawer}
+          onclick={toggleDrawer}
         >
           {#if drawerStatus === 'stale'}
             <span class="size-2 rounded-full bg-stale" aria-hidden="true"

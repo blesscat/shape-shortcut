@@ -10,6 +10,7 @@
   import type { ExportFormat } from '../../features/cad/download'
   import type { OpenGridSystemContext } from '../../features/cad/system-entry-context'
   import { getModelDefinition } from '../../features/cad/model-catalog'
+  import type { ModelPreset } from '../../features/cad/model-catalog'
   import type { RawParameters } from './workspace/types'
   import CadPanelParameters from './component-panels/CadPanelParameters.svelte'
   import CadPanelActions from './component-panels/CadPanelActions.svelte'
@@ -87,4 +88,16 @@
     {onRestoreDefaults}
     {onApplyPreset}
   />
+  <CadPanelActions
+    {locale}
+    {state}
+    {modelId}
+    {parameters}
+    {canExport}
+    {canExportThreeMf}
+    {onExport}
+    {onRetry}
+    {onDownloadSettings}
+  />
+  <CadPanelNotes {locale} {modelId} />
 </div>
