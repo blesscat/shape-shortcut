@@ -74,7 +74,34 @@ function readThemeToken(
   name: string,
   fallback: string,
 ): string {
-  return readToken(name).trim() || fallback
+  return normalizeColorToken(readToken(name).trim() || fallback)
+}
+
+/**
+ * LightningCSS minifies alpha colors to 8-digit hex (#RRGGBBAA) in the
+ * production bundle; THREE.Color cannot parse that form and silently falls
+ * back to white, which erased the grid lines on the deployed site while
+ * every dev-server probe looked fine. Expand the alpha-hex forms back to
+ * rgba() strings at the single point where tokens enter the theme.
+ */
+export function normalizeColorToken(value: string): string {
+  const token = value.trim()
+  const four = /^#([0-9a-f]{4})$/i.exec(token)
+  if (four) {
+    const [r, g, b, a] = four[1]
+    return `rgba(${parseInt(r + r, 16)}, ${parseInt(g + g, 16)}, ${parseInt(
+      b + b,
+      16,
+    )}, ${(parseInt(a + a, 16) / 255).toFixed(3)})`
+  }
+  const eight = /^#([0-9a-f]{8})$/i.exec(token)
+  if (eight) {
+    const hex = parseInt(eight[1], 16)
+    return `rgba(${(hex >>> 24) & 255}, ${(hex >>> 16) & 255}, ${
+      (hex >>> 8) & 255
+    }, ${((hex & 255) / 255).toFixed(3)})`
+  }
+  return token
 }
 
 export function resolveCadViewportTheme(
