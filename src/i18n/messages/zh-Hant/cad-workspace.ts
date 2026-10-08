@@ -105,6 +105,10 @@ export const messages = {
   'playground.empty': '場景還沒有元件。選擇模型後按「加入」開始規劃。',
   'playground.scene.import': '匯入場景檔',
   'playground.scene.export': '下載場景檔',
+  'playground.import.hiddenInWallMode':
+    '有 {count} 個匯入元件屬於牆面場景，切換到牆面即可顯示。',
+  'playground.import.hiddenInDesktopMode':
+    '有 {count} 個匯入元件屬於桌面場景，切換到桌面即可顯示。',
   'playground.instance.label': '標籤（選填，用於匯出檔名）',
   'playground.instance.labelPlaceholder': '例如：底層左邊',
   'playground.instance.duplicate': '複製',

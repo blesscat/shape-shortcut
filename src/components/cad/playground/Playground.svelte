@@ -245,6 +245,16 @@
     </p>
   {/if}
 
+  {#if snapshot?.importNotice}
+    <p
+      class="m-0 text-muted-foreground"
+      aria-live="polite"
+      data-testid="playground-import-notice"
+    >
+      {t(snapshot.importNotice.messageId, snapshot.importNotice.params)}
+    </p>
+  {/if}
+
   {#if (snapshot?.overlappingInstanceIds.length ?? 0) > 0}
     <p
       class="m-0 text-error"
