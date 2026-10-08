@@ -8,7 +8,7 @@
     type PlaygroundSnapshot,
   } from '../../../features/cad/playground/store'
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
-  import { translate, type Locale } from '../../../i18n'
+  import { translate, type Locale, type MessageValues } from '../../../i18n'
   import { onMount } from 'svelte'
   import type { ModelParameterKey } from '../../../cad-contract/units'
 
@@ -29,7 +29,7 @@
   let drawerOpen = $state(false)
   let pillButton = $state<HTMLButtonElement | null>(null)
 
-  const t = (key: string, values?: Record<string, string | number>) =>
+  const t = (key: string, values?: MessageValues) =>
     translate(locale, key, values)
 
   $effect(() => {

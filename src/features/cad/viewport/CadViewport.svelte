@@ -146,6 +146,7 @@
   bind:clientWidth={containerWidth}
   bind:clientHeight={containerHeight}
   class={`viewport relative h-[calc(100dvh-16rem)] self-start overflow-hidden rounded-2xl border ${stale ? 'border-stale' : 'border-border-card'} bg-viewport`}
+  role="group"
   data-testid="cad-viewport"
   data-model-revision={modelRevision ?? ''}
   data-presentation={presentation}
