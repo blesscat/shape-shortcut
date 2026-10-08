@@ -7,7 +7,10 @@ import type {
 } from '../../../cad-contract/units'
 import { initialCadState, type CadState } from '../../../features/cad/state'
 import { getModelDefinition } from '../../../features/cad/model-catalog'
-import { findModelPreset, resolvePresetParameters } from '../../../features/cad/model-catalog/presets'
+import {
+  findModelPreset,
+  resolvePresetParameters,
+} from '../../../features/cad/model-catalog/presets'
 import {
   cloneModelParameters,
   getSystemPreset,
@@ -146,7 +149,9 @@ export function createCadWorkspaceController(
     const systemPreset = systemContext
       ? getSystemPreset(modelId, systemContext)
       : undefined
-    applyParameters(cloneModelParameters(systemPreset ?? definition.defaultParameters))
+    applyParameters(
+      cloneModelParameters(systemPreset ?? definition.defaultParameters),
+    )
   }
 
   const onApplyPreset = (presetId: string): void => {
