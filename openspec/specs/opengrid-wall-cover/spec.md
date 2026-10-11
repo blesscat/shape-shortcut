@@ -174,3 +174,26 @@ the logical `body` and `text` part roles for preview and export.
 - **THEN** the revision MUST expose an aggregate body part and an aggregate text part
 - **AND** downstream preview and export MUST be able to assign different colors or extruders to those two roles
 - **AND** the parts MUST NOT be flattened into a single display-only mesh
+
+### Requirement: Wall Cover character layout follows the OpenGrid pitch
+
+The `opengrid-wall-cover` model MUST place consecutive normalized characters on a 28 mm center-to-center pitch. Each cover MUST retain its nominal 25.6 mm square envelope, yielding a 2.4 mm gap between adjacent covers. The complete row MUST remain centered around the print-frame X origin, with its print base at Z=0. Analytic bounds, generated preview geometry, and exported geometry MUST use the same character layout and retain the separate `body` and `text` part roles.
+
+#### Scenario: Single character retains its nominal geometry
+
+- **WHEN** a valid one-character Wall Cover is generated
+- **THEN** its nominal X/Y bounds MUST remain centered from -12.8 mm to 12.8 mm
+- **AND** its body and coplanar text MUST retain their existing part roles
+
+#### Scenario: Multiple characters share the grid pitch
+
+- **WHEN** a valid Wall Cover contains two through eight Latin or Traditional Chinese characters after whitespace normalization
+- **THEN** consecutive cover centers MUST be separated by exactly 28 mm
+- **AND** the row width MUST equal `(character count - 1) * 28 mm + 25.6 mm`
+- **AND** the printable gap between consecutive covers MUST be 2.4 mm
+
+#### Scenario: Preview and export use the same cover layout
+
+- **WHEN** a multi-character Wall Cover is previewed or exported
+- **THEN** both outputs MUST use the same grid-pitch cover centers and nominal bounds
+- **AND** exporting from a playground wall placement MUST retain the centered flat print frame rather than the scene mounting transform

@@ -79,6 +79,36 @@ describe('playground wall display plans', () => {
     expect(wallDisplayPlanFor(getModelDefinition('opengrid-snap'))).toBeNull()
   })
 
+  it.each([0, 90, 180, 270] as const)(
+    'matches OpenConnect occupancy to the mounted body at rotation %i',
+    (rotation) => {
+      const plan = wallDisplayPlanFor(
+        getModelDefinition('opengrid-openconnect-organizer'),
+      )!
+      const parameters = ORGANIZER_PARAMETERS
+      const placement = { cellX: -2, cellY: 3, rotation }
+      const bounds = wallReadyBoundsFor(plan, parameters)
+      const mount = wallMountPlacementFor(
+        bounds,
+        placement,
+        wallSocketAnchorFor(plan, parameters),
+      )
+      const corners = [bounds.min[0], bounds.max[0]].flatMap((x) =>
+        [bounds.min[1], bounds.max[1]].map((y) =>
+          applyPlacement(mount.orientation, mount.translation, [x, y, 0]),
+        ),
+      )
+      const xs = corners.map((point) => point[0])
+      const zs = corners.map((point) => point[2])
+      expect(wallDisplayCellRangeFor(plan, parameters, placement)).toEqual({
+        minCellX: Math.floor(Math.min(...xs) / PLAYGROUND_GRID_PITCH),
+        maxCellX: Math.ceil(Math.max(...xs) / PLAYGROUND_GRID_PITCH) - 1,
+        minCellY: Math.floor(Math.min(...zs) / PLAYGROUND_GRID_PITCH),
+        maxCellY: Math.ceil(Math.max(...zs) / PLAYGROUND_GRID_PITCH) - 1,
+      })
+    },
+  )
+
   it('maps the organizer print slot face to the wall and openings upward', () => {
     const plan = wallDisplayPlanFor(
       getModelDefinition('opengrid-openconnect-organizer'),

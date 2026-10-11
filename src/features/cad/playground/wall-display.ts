@@ -308,16 +308,17 @@ export function wallDisplayCellRangeFor(
   const wallBounds = wallReadyBoundsFor(plan, parameters)
   const socketAnchor = wallSocketAnchorFor(plan, parameters)
   const mount = wallMountPlacementFor(wallBounds, placement, socketAnchor)
-  // The mount maps a ready-frame point (x, y, z) to world
-  // (x + tx, z + ty, -y + tz); the board plane is world Y=0 with +Z up.
+  // Carry each footprint corner through both placement rotation and wall
+  // mounting before projecting onto the board's world X/Z plane.
   let minX = Infinity
   let maxX = -Infinity
   let minZ = Infinity
   let maxZ = -Infinity
   for (const x of [wallBounds.min[0], wallBounds.max[0]]) {
     for (const y of [wallBounds.min[1], wallBounds.max[1]]) {
-      const worldX = x + mount.translation[0]
-      const worldZ = -y + mount.translation[2]
+      const rotated = applyMatrix(mount.orientation, [x, y, 0])
+      const worldX = rotated[0] + mount.translation[0]
+      const worldZ = rotated[2] + mount.translation[2]
       minX = Math.min(minX, worldX)
       maxX = Math.max(maxX, worldX)
       minZ = Math.min(minZ, worldZ)

@@ -462,3 +462,41 @@ The Playground add-component selector MUST offer only the approved models for th
 - **THEN** the scene MUST be accepted under the existing scene validation rules
 - **AND** the imported instance MUST retain parameter editing and per-instance export and render in its supported scene orientations
 - **AND** importing it MUST NOT add that model to the selector
+
+### Requirement: Wall Cover mounts at grid cell centers
+
+In wall orientation, each character of an `opengrid-wall-cover` instance MUST be centered horizontally and vertically in its own consecutive 28 mm logical grid cell. At rotation zero, the first character center MUST be at world X=`(cellX + 0.5) * 28 mm` and world Z=`(cellY + 0.5) * 28 mm`, with the cover base seated at world Y=0. Its nominal envelope MUST leave 1.2 mm clearance to all four edges of its cell. Placement MUST anchor the minimum corner of the rotated character-cell span, independently of whether the remover opening is enabled.
+
+Ready meshes, pending placeholders, typed placement, and drag placement MUST use the same cell-centered mounting transform. Occupancy MUST follow the rotated mounted body footprint, covering exactly one logical cell per character for all four right-angle rotations. Existing scene placement fields, integer coordinates, and parameter snapshots MUST remain compatible.
+
+#### Scenario: Single cover has equal margins
+
+- **WHEN** a one-character Wall Cover is placed at any integer cell coordinates in wall orientation
+- **THEN** its center MUST coincide with that logical grid cell's center
+- **AND** its nominal top, bottom, left, and right margins MUST each be 1.2 mm
+- **AND** this centering MUST also apply when its remover opening is disabled
+
+#### Scenario: Multiple covers each occupy a centered cell
+
+- **WHEN** a Wall Cover containing two through eight normalized characters is placed at rotation zero
+- **THEN** each cover MUST align with a distinct consecutive horizontal cell center
+- **AND** the occupied range MUST contain exactly the character count in columns and one row
+
+#### Scenario: Rotated covers keep centering and occupancy
+
+- **WHEN** a multi-character Wall Cover is rotated to 90, 180, or 270 degrees at positive or negative integer coordinates
+- **THEN** each cover MUST remain centered in a logical grid cell with the same four nominal margins
+- **AND** occupancy MUST cover the rendered character-cell span, swapping columns and rows for 90 and 270 degrees
+- **AND** an adjacent non-overlapping cover MUST NOT be marked as conflicting
+
+#### Scenario: Pending cover and drag placement share the mount
+
+- **WHEN** a pending Wall Cover is moved using typed coordinates or pointer dragging and its proxy later becomes ready
+- **THEN** the ready cover MUST use the same cell-centered placement as its placeholder
+- **AND** placement-only edits MUST NOT request regenerated CAD geometry
+
+#### Scenario: Saved scene keeps its logical placement
+
+- **WHEN** an existing scene containing Wall Cover instances is imported, exported, or revisited
+- **THEN** its integer coordinates and rotations MUST retain their meanings
+- **AND** the Wall Cover instances MUST render using the corrected cell-centered placement without a scene-format migration

@@ -17,6 +17,7 @@ import {
   groupModelDefinitions,
 } from '../../src/features/cad/model-catalog'
 import { systemContextForModel } from '../../src/features/cad/system-entry-context'
+import { PLAYGROUND_GRID_PITCH } from '../../src/cad-contract/scene'
 
 describe('OpenGrid Wall Cover contract', () => {
   it('accepts a canonical text value and migrates legacy empty parameters', () => {
@@ -90,10 +91,19 @@ describe('OpenGrid Wall Cover contract', () => {
         footprint: 'full',
       }),
     )
-    expect(boundsForOpenGridWallCover({ text: 'IAN' })).toEqual({
-      min: [-41.4, -12.8, 0],
-      max: [41.4, 12.8, 3.4],
-    })
+    for (const text of ['IAN', '收納', 'ABCDEFGH', ' I A N ']) {
+      const validation = validateOpenGridWallCoverParameters({ text })
+      if (!validation.valid) throw new Error('invalid-test-label')
+      const coverCount = Array.from(validation.value.text).length
+      const singleBounds = boundsForOpenGridWallCover({ text: 'A' })
+      const width =
+        (coverCount - 1) * PLAYGROUND_GRID_PITCH +
+        OPENGRID_WALL_COVER_CONFIGURATION.coverWidth
+      expect(boundsForOpenGridWallCover({ text })).toEqual({
+        min: [-width / 2, singleBounds.min[1], singleBounds.min[2]],
+        max: [width / 2, singleBounds.max[1], singleBounds.max[2]],
+      })
+    }
   })
 
   it('exposes stable names and a 3MF filename for the text model', () => {

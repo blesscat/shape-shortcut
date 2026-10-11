@@ -814,50 +814,59 @@ test('freezes residual camera damping before an instance drag starts', async ({
   await expect(viewport).toHaveAttribute('data-camera-pose', 'custom')
 })
 
-test('keeps a dragged pending placeholder at its committed placement when its proxy becomes ready', async ({
-  page,
-}) => {
-  let releaseWasm!: () => void
-  const wasmGate = new Promise<void>((resolve) => {
-    releaseWasm = resolve
+for (const modelId of [
+  'opengrid-stackable-box',
+  'opengrid-wall-cover',
+] as const) {
+  test(`keeps a dragged pending ${modelId} placeholder at its committed placement when its proxy becomes ready`, async ({
+    page,
+  }) => {
+    let releaseWasm!: () => void
+    const wasmGate = new Promise<void>((resolve) => {
+      releaseWasm = resolve
+    })
+    await page.route('**/replicad_single.wasm', async (route) => {
+      await wasmGate
+      await route.continue()
+    })
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'shape-shortcut:playground-grid:v1',
+        JSON.stringify({ x: 8, y: 8 }),
+      )
+    })
+
+    try {
+      await openPlayground(page)
+      if (modelId === 'opengrid-wall-cover') {
+        await page.getByTestId('playground-mode-wall').click()
+      }
+      await page.getByTestId('playground-add-model').selectOption(modelId)
+      await page.getByTestId('playground-add').click()
+      await expect(
+        page.getByTestId('playground-instance-inst-1'),
+      ).toHaveAttribute('data-state', 'pending')
+
+      const viewport = page.getByTestId('playground-viewport')
+      const start = await findInstancePoint(page, 'inst-1')
+      const before = await readSelectedPlacement(page)
+
+      await page.mouse.move(start.x, start.y)
+      await page.mouse.down()
+      await page.mouse.move(start.x + 96, start.y, { steps: 8 })
+      await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+      await page.mouse.up()
+
+      const committed = await readSelectedPlacement(page)
+      expect(committed).not.toEqual(before)
+      releaseWasm()
+      await waitForInstanceReady(page, 'inst-1')
+      expect(await readSelectedPlacement(page)).toEqual(committed)
+    } finally {
+      releaseWasm()
+    }
   })
-  await page.route('**/replicad_single.wasm', async (route) => {
-    await wasmGate
-    await route.continue()
-  })
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'shape-shortcut:playground-grid:v1',
-      JSON.stringify({ x: 8, y: 8 }),
-    )
-  })
-
-  try {
-    await openPlayground(page)
-    await addBoxInstance(page)
-    await expect(
-      page.getByTestId('playground-instance-inst-1'),
-    ).toHaveAttribute('data-state', 'pending')
-
-    const viewport = page.getByTestId('playground-viewport')
-    const start = await findInstancePoint(page, 'inst-1')
-    const before = await readSelectedPlacement(page)
-
-    await page.mouse.move(start.x, start.y)
-    await page.mouse.down()
-    await page.mouse.move(start.x + 96, start.y, { steps: 8 })
-    await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
-    await page.mouse.up()
-
-    const committed = await readSelectedPlacement(page)
-    expect(committed).not.toEqual(before)
-    releaseWasm()
-    await waitForInstanceReady(page, 'inst-1')
-    expect(await readSelectedPlacement(page)).toEqual(committed)
-  } finally {
-    releaseWasm()
-  }
-})
+}
 
 test('selects an instance on tap and cancels a preview when orientation changes', async ({
   page,
@@ -928,6 +937,62 @@ test('maps wall dragging to cell X and cell Y while preserving the mount', async
   expect(after.cellY).not.toBe(before.cellY)
   await expect(rotation).toHaveValue(rotationBeforeDrag)
   await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
+})
+
+test('keeps multi-character Wall Covers adjacent through rotation and dragging', async ({
+  page,
+}) => {
+  await useCompactPlaygroundGrid(page)
+  await page.getByTestId('playground-mode-wall').click()
+  await page.getByTestId('playground-import-input').setInputFiles({
+    name: 'wall-cover-scene.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        kind: 'shape-shortcut/scene',
+        instances: [
+          {
+            modelId: 'opengrid-wall-cover',
+            parameters: { text: 'IAN', openConnect: false },
+            placement: { cellX: -1, cellY: 0, rotation: 0, supportedBy: null },
+          },
+          {
+            modelId: 'opengrid-wall-cover',
+            parameters: { text: 'A' },
+            placement: { cellX: 2, cellY: 0, rotation: 0, supportedBy: null },
+          },
+        ],
+      }),
+    ),
+  })
+  await waitForInstanceReady(page, 'inst-1')
+  await waitForInstanceReady(page, 'inst-2')
+  const viewport = page.getByTestId('playground-viewport')
+  await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+  await page.getByTestId('playground-instance-inst-1').click()
+  const rotation = page.locator('#playground-rotation')
+  await rotation.selectOption('90')
+  await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+
+  const before = await readSelectedPlacement(page)
+  const cameraBefore = await viewport.getAttribute('data-camera-position')
+  const start = await findInstancePoint(page, 'inst-1')
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(start.x + 90, start.y - 70, { steps: 8 })
+  await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+  await page.mouse.up()
+  expect(await readSelectedPlacement(page)).not.toEqual(before)
+  await expect(rotation).toHaveValue('90')
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+  )
+  expectSerializedVectorCloseTo(
+    await viewport.getAttribute('data-camera-position'),
+    cameraBefore,
+  )
 })
 
 test('mounts OpenConnect wall pieces in installed orientation', async ({
