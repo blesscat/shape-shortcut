@@ -2,10 +2,19 @@ import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { localizedPathFor } from '../../src/i18n/routes'
 import type { Locale } from '../../src/i18n'
+import type { ModelId } from '../../src/cad-contract/units'
+import { getModelDefinition } from '../../src/features/cad/model-catalog'
 
 type ViewportPoint = { x: number; y: number }
 
 const LOCALE: Locale = 'zh-Hant'
+
+// Grid Box CAD generation takes longer in Firefox than the prototype box.
+test.beforeEach(({ browserName }) => {
+  if (browserName === 'firefox') {
+    test.setTimeout(Math.max(test.info().timeout, 120_000))
+  }
+})
 
 async function openPlayground(page: Page): Promise<void> {
   await page.goto(localizedPathFor(LOCALE, '/cad/playground'))
@@ -13,8 +22,33 @@ async function openPlayground(page: Page): Promise<void> {
 }
 
 async function addBoxInstance(page: Page): Promise<void> {
-  await page.getByTestId('playground-add-model').selectOption('box')
+  await page
+    .getByTestId('playground-add-model')
+    .selectOption('opengrid-stackable-box')
   await page.getByTestId('playground-add').click()
+}
+
+async function importModelScene(page: Page, modelId: ModelId): Promise<void> {
+  const definition = getModelDefinition(modelId)
+  if (!definition) throw new Error(`Unknown scene model: ${modelId}`)
+  await page.getByTestId('playground-import-input').setInputFiles({
+    name: 'scene.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        kind: 'shape-shortcut/scene',
+        grid: { system: 'opengrid' },
+        instances: [
+          {
+            modelId,
+            parameters: definition.defaultParameters,
+            placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+          },
+        ],
+      }),
+    ),
+  })
 }
 
 async function waitForInstanceReady(
@@ -143,12 +177,22 @@ test.describe('OpenGrid playground planner', () => {
     page,
   }) => {
     await openPlayground(page)
+    await expect(page.getByTestId('playground-add-model')).toHaveValue('')
+    await expect(page.getByTestId('playground-add')).toBeDisabled()
+    await expect(
+      page.getByTestId('playground-add-model').locator('option:enabled'),
+    ).toHaveText([
+      'Grid Box (方盒)',
+      'Round Box (圓盒)',
+      'OpenGrid Organizer Box (收納方盒)',
+      'OpenGrid Open Shelf (斜開格櫃)',
+    ])
     await addBoxInstance(page)
 
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-viewport')).toBeVisible()
     await expect(page.getByTestId('playground-instance-help')).not.toBeEmpty()
-    await expect(page.getByTestId('playground-param-width')).toContainText(/\S/)
+    await expect(page.getByTestId('playground-param-x')).toContainText(/\S/)
     await waitForInstanceReady(page, 'inst-1')
 
     const cellX = page.locator('#playground-cell-x')
@@ -164,12 +208,12 @@ test.describe('OpenGrid playground planner', () => {
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-1')
 
-    const widthInput = page
-      .getByTestId('playground-param-width')
+    const heightInput = page
+      .getByTestId('playground-param-height')
       .locator('input[type="text"]')
       .first()
-    await widthInput.fill('25')
-    await widthInput.blur()
+    await heightInput.fill('25')
+    await heightInput.blur()
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
     await waitForInstanceReady(page, 'inst-1')
   })
@@ -181,14 +225,16 @@ test.describe('OpenGrid playground planner', () => {
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-1')
 
-    await page.getByTestId('playground-add-model').selectOption('box')
-    await page.getByTestId('playground-add').click()
+    await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-2')
 
     await page.getByTestId('playground-instance-inst-2').click()
     const cellX = page.locator('#playground-cell-x')
     await cellX.fill('0')
     await cellX.blur()
+    const cellY = page.locator('#playground-cell-y')
+    await cellY.fill('0')
+    await cellY.blur()
 
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
     await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
@@ -223,19 +269,22 @@ test.describe('OpenGrid playground planner', () => {
 
     await page.getByTestId('playground-instance-inst-2').click()
     const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('1')
+    await cellX.fill('2')
     await cellX.blur()
+    const cellY = page.locator('#playground-cell-y')
+    await cellY.fill('0')
+    await cellY.blur()
     const viewport = page.getByTestId('playground-viewport')
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
 
     await page.getByTestId('playground-instance-inst-1').click()
-    const widthInput = page
-      .getByTestId('playground-param-width')
-      .locator('input[type="text"]')
-      .first()
-    await widthInput.fill('56')
-    await widthInput.blur()
+    const widthSlider = page
+      .getByTestId('playground-param-x')
+      .getByRole('slider')
+    await widthSlider.focus()
+    await widthSlider.press('ArrowRight')
+    await widthSlider.press('ArrowRight')
 
     await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
     await expect(viewport).toHaveAttribute(
@@ -305,7 +354,9 @@ test.describe('OpenGrid playground planner', () => {
       const stepDownload = page.waitForEvent('download')
       await stepButton.click()
       const stepFile = await stepDownload
-      expect(stepFile.suggestedFilename()).toContain('box-20x30x40-1.step')
+      expect(stepFile.suggestedFilename()).toMatch(
+        /^opengrid-stackable-box-.+-1\.step$/,
+      )
     } else {
       await expect(stepButton).toHaveCount(0)
     }
@@ -335,6 +386,20 @@ test.describe('OpenGrid playground planner', () => {
 
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await waitForInstanceReady(page, 'inst-1')
+
+    const widthInput = page
+      .getByTestId('playground-param-width')
+      .getByRole('textbox')
+    await widthInput.fill('25')
+    await widthInput.blur()
+    await waitForInstanceReady(page, 'inst-1')
+    await expect(widthInput).toHaveValue('25')
+    await expect(
+      page.getByTestId('playground-add-model').locator('option[value="box"]'),
+    ).toHaveCount(0)
+    const stlDownload = page.waitForEvent('download')
+    await page.getByTestId('playground-export-stl').click()
+    expect((await stlDownload).suggestedFilename()).toBe('box-25x30x40-1.stl')
   })
 
   test('notifies when imported components belong to the other orientation', async ({
@@ -490,8 +555,7 @@ test('switches the scene between desktop and wall orientations', async ({
 }) => {
   await openPlayground(page)
   // The board belongs to both systems, so it survives the mode switch.
-  await page.getByTestId('playground-add-model').selectOption('opengrid')
-  await page.getByTestId('playground-add').click()
+  await importModelScene(page, 'opengrid')
   await waitForInstanceReady(page, 'inst-1')
 
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
@@ -544,8 +608,7 @@ test('window focus/blur does not reset the scene or selection', async ({
   page,
 }) => {
   await openPlayground(page)
-  await page.getByTestId('playground-add-model').selectOption('opengrid')
-  await page.getByTestId('playground-add').click()
+  await importModelScene(page, 'opengrid')
   await waitForInstanceReady(page, 'inst-1')
   await page.getByTestId('playground-mode-wall').click()
   await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
@@ -844,8 +907,7 @@ test('maps wall dragging to cell X and cell Y while preserving the mount', async
 }) => {
   await useCompactPlaygroundGrid(page)
   await page.getByTestId('playground-mode-wall').click()
-  await page.getByTestId('playground-add-model').selectOption('opengrid')
-  await page.getByTestId('playground-add').click()
+  await importModelScene(page, 'opengrid')
   await waitForInstanceReady(page, 'inst-1')
 
   const viewport = page.getByTestId('playground-viewport')
@@ -1047,8 +1109,7 @@ test('remembers the scene grid size across reloads', async ({ page }) => {
 
 test('separates wall and desk systems by orientation', async ({ page }) => {
   await openPlayground(page)
-  await page.getByTestId('playground-add-model').selectOption('box')
-  await page.getByTestId('playground-add').click()
+  await addBoxInstance(page)
   await waitForInstanceReady(page, 'inst-1')
 
   // Desktop mode: desk-system components are offered and render.
@@ -1062,6 +1123,16 @@ test('separates wall and desk systems by orientation', async ({ page }) => {
     'wall',
   )
   await expect(page.getByTestId('playground-instance-inst-1')).toHaveCount(0)
+  await expect(page.getByTestId('playground-add-model')).toHaveValue('')
+  await expect(page.getByTestId('playground-add')).toBeDisabled()
+  await expect(
+    page.getByTestId('playground-add-model').locator('option:enabled'),
+  ).toHaveText([
+    'OpenGrid OpenConnect Shelf（壁掛層架）',
+    'OpenGrid OpenConnect Organizer（壁掛收納方格）',
+    'OpenGrid OpenConnect 面紙盒',
+    'OpenGrid Wall Cover',
+  ])
 
   await page
     .getByTestId('playground-add-model')
@@ -1077,4 +1148,6 @@ test('separates wall and desk systems by orientation', async ({ page }) => {
   await page.getByTestId('playground-mode-desktop').click()
   await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
   await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
+  await expect(page.getByTestId('playground-add-model')).toHaveValue('')
+  await expect(page.getByTestId('playground-add')).toBeDisabled()
 })

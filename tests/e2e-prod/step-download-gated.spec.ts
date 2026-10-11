@@ -64,7 +64,9 @@ test('production build hides the playground STEP download action', async ({
   page,
 }) => {
   await page.goto('/zh-Hant/cad/playground')
-  await page.getByTestId('playground-add-model').selectOption('box')
+  await page
+    .getByTestId('playground-add-model')
+    .selectOption('opengrid-stackable-box')
   await page.getByTestId('playground-add').click()
   await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
     'data-state',

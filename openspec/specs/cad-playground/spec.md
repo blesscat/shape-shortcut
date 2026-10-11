@@ -427,3 +427,38 @@ view mode、grid cells 與場景匯入/匯出 MUST 留在原位。Breakpoint 以
 - **THEN** Playground MUST 維持既有 sidebar 版面
 - **AND** MUST NOT 渲染 drawer 或 sidebar pill
 
+### Requirement: Playground add-component choices
+
+The Playground add-component selector MUST offer only the approved models for the active scene orientation, in the order defined below, using their existing localized catalog labels. The selector restriction MUST apply equally to the desktop sidebar and narrow-screen drawer. Switching orientations MUST clear any pending choice unavailable in the new orientation and disable the add action until a valid model is selected. Registered models outside these choices MUST remain compatible with scene import, parameter editing, rendering under the existing orientation rules, and per-instance export.
+
+#### Scenario: Desktop choices
+
+- **WHEN** the Playground is in desktop orientation
+- **THEN** the enabled model choices MUST be exactly `opengrid-stackable-box`, `opengrid-stackable-cylinder`, `opengrid-organizer-box`, and `opengrid-open-shelf`, in that order
+- **AND** the disabled choose-model placeholder MUST remain available as the initial selection
+
+#### Scenario: Wall choices
+
+- **WHEN** the Playground is in wall orientation
+- **THEN** the enabled model choices MUST be exactly `opengrid-openconnect-shelf`, `opengrid-openconnect-organizer`, `opengrid-openconnect-tissue-box`, and `opengrid-wall-cover`, in that order
+
+#### Scenario: Narrow-screen choices
+
+- **WHEN** the user opens the Playground sidebar drawer below the CAD breakpoint
+- **THEN** its selector MUST offer the same ordered choices as the desktop sidebar for the active orientation
+- **AND** switching between desktop and wall orientations MUST update those choices in the drawer
+
+#### Scenario: Orientation switch clears an unavailable choice
+
+- **GIVEN** the user has selected a model to add in one orientation
+- **WHEN** the user switches to the other orientation where that model is unavailable
+- **THEN** the pending model choice MUST reset to the disabled choose-model placeholder
+- **AND** the add action MUST be disabled until the user selects an offered model
+- **AND** clearing MUST take effect while the narrow-screen drawer is closed, including switching away and back before reopening it
+
+#### Scenario: Importing a registered model outside the selector
+
+- **WHEN** the user imports a valid scene containing a registered model absent from the add-component selector
+- **THEN** the scene MUST be accepted under the existing scene validation rules
+- **AND** the imported instance MUST retain parameter editing and per-instance export and render in its supported scene orientations
+- **AND** importing it MUST NOT add that model to the selector

@@ -33,14 +33,44 @@ async function addReadyBox(page: Page): Promise<void> {
   const drawer = page.getByTestId('playground-sidebar-drawer')
   await pill.click()
   await expect(drawer).toBeVisible()
-  await page.getByTestId('playground-add-model').selectOption('box')
+  const closeButton = drawer.getByRole('button', { name: '關閉場景面板' })
+  const modelSelector = page.getByTestId('playground-add-model')
+  await expect(modelSelector.locator('option:enabled')).toHaveText([
+    'Grid Box (方盒)',
+    'Round Box (圓盒)',
+    'OpenGrid Organizer Box (收納方盒)',
+    'OpenGrid Open Shelf (斜開格櫃)',
+  ])
+  await modelSelector.selectOption('opengrid-stackable-box')
+  await closeButton.click()
+  await expect(drawer).toBeHidden()
+  await page.getByTestId('playground-mode-wall').click()
+  await pill.click()
+  await expect(drawer).toBeVisible()
+  await expect(modelSelector).toHaveValue('')
+  await expect(page.getByTestId('playground-add')).toBeDisabled()
+  await expect(modelSelector.locator('option:enabled')).toHaveText([
+    'OpenGrid OpenConnect Shelf（壁掛層架）',
+    'OpenGrid OpenConnect Organizer（壁掛收納方格）',
+    'OpenGrid OpenConnect 面紙盒',
+    'OpenGrid Wall Cover',
+  ])
+  await modelSelector.selectOption('opengrid-openconnect-tissue-box')
+  await closeButton.click()
+  await expect(drawer).toBeHidden()
+  await page.getByTestId('playground-mode-desktop').click()
+  await pill.click()
+  await expect(drawer).toBeVisible()
+  await expect(modelSelector).toHaveValue('')
+  await expect(page.getByTestId('playground-add')).toBeDisabled()
+  await modelSelector.selectOption('opengrid-stackable-box')
   await page.getByTestId('playground-add').click()
   await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
     'data-state',
     'ready',
     { timeout: 120_000 },
   )
-  await drawer.getByRole('button', { name: '關閉場景面板' }).click()
+  await closeButton.click()
   await expect(drawer).toBeHidden()
 }
 
@@ -69,9 +99,8 @@ async function findInstancePoint(page: Page): Promise<ViewportPoint> {
       const green = pixels[index + 1]
       const blue = pixels[index + 2]
       const saturation = Math.max(red, green, blue) - Math.min(red, green, blue)
-      const isHighlightedModel =
-        saturation > 70 && red > blue + 40 && green > blue + 20
-      if (!isHighlightedModel) continue
+      const isColoredModel = saturation > 35 && Math.max(red, green, blue) > 80
+      if (!isColoredModel) continue
       const pixelIndex = index / 4
       sumX += pixelIndex % bitmap.width
       sumY += Math.floor(pixelIndex / bitmap.width)
@@ -111,6 +140,44 @@ async function selectedCellX(page: Page): Promise<number> {
     .click()
   await expect(page.getByTestId('playground-sidebar-drawer')).toBeHidden()
   return value
+}
+
+for (const { initialMode, otherMode, modelId } of [
+  {
+    initialMode: 'desktop',
+    otherMode: 'wall',
+    modelId: 'opengrid-stackable-box',
+  },
+  {
+    initialMode: 'wall',
+    otherMode: 'desktop',
+    modelId: 'opengrid-openconnect-tissue-box',
+  },
+] as const) {
+  test(`clears a pending ${initialMode} choice after switching away and back with a closed drawer`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Mobile coverage runs on Chromium')
+
+    await openCompactPlayground(page)
+    await page.getByTestId(`playground-mode-${initialMode}`).click()
+    const pill = page.getByTestId('playground-sidebar-pill')
+    const drawer = page.getByTestId('playground-sidebar-drawer')
+    const modelSelector = page.getByTestId('playground-add-model')
+    await pill.click()
+    await modelSelector.selectOption(modelId)
+    await drawer.getByRole('button', { name: '關閉場景面板' }).click()
+    await expect(drawer).toBeHidden()
+
+    await page.getByTestId(`playground-mode-${otherMode}`).click()
+    await page.getByTestId(`playground-mode-${initialMode}`).click()
+    await expect(drawer).toBeHidden()
+    await pill.click()
+
+    await expect(modelSelector).toHaveValue('')
+    await expect(page.getByTestId('playground-add')).toBeDisabled()
+  })
 }
 
 test('one touch drags an instance while empty-space touch remains a camera gesture', async ({
