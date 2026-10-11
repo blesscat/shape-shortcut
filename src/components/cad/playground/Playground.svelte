@@ -6,6 +6,7 @@
   import {
     createPlaygroundStore,
     type PlaygroundSnapshot,
+    type PlaygroundViewMode,
   } from '../../../features/cad/playground/store'
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
   import { translate, type Locale, type MessageValues } from '../../../i18n'
@@ -104,6 +105,14 @@
     return t(`models.model.${id}.name`)
   }
 
+  function handleViewModeChange(viewMode: PlaygroundViewMode): void {
+    if (!store) return
+    if (snapshot?.viewMode !== viewMode) {
+      addModelId = ''
+    }
+    store.setViewMode(viewMode)
+  }
+
   function handleAdd(): void {
     if (!store || !addModelId) return
     store.addInstance(addModelId as never)
@@ -152,7 +161,7 @@
             : 'text-muted-foreground hover:text-ink'}"
           data-testid="playground-mode-desktop"
           aria-pressed={snapshot?.viewMode === 'desktop'}
-          onclick={() => store?.setViewMode('desktop')}
+          onclick={() => handleViewModeChange('desktop')}
         >
           {t('playground.viewMode.desktop')}
         </button>
@@ -162,7 +171,7 @@
             : 'text-muted-foreground hover:text-ink'}"
           data-testid="playground-mode-wall"
           aria-pressed={snapshot?.viewMode === 'wall'}
-          onclick={() => store?.setViewMode('wall')}
+          onclick={() => handleViewModeChange('wall')}
         >
           {t('playground.viewMode.wall')}
         </button>

@@ -6,6 +6,7 @@
   } from '../../../features/cad/model-catalog'
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
   import { PLAYGROUND_SCENE_MAX_INSTANCES } from '../../../cad-contract/scene'
+  import type { ModelId } from '../../../cad-contract/units'
   import {
     type PlaygroundInstance,
     type PlaygroundSnapshot,
@@ -53,14 +54,27 @@
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(locale, key, values)
 
+  const PLAYGROUND_MODEL_IDS = new Set<ModelId>([
+    'opengrid-stackable-box',
+    'opengrid-stackable-cylinder',
+    'opengrid-organizer-box',
+    'opengrid-open-shelf',
+    'opengrid-openconnect-shelf',
+    'opengrid-openconnect-organizer',
+    'opengrid-openconnect-tissue-box',
+    'opengrid-wall-cover',
+  ])
+
   function modelName(id: string): string {
     return t(`models.model.${id}.name`)
   }
 
   let selectableModels = $derived(
     modelDefinitions
-      .filter((definition) =>
-        modelVisibleInViewMode(definition.id, snapshot.viewMode),
+      .filter(
+        (definition) =>
+          PLAYGROUND_MODEL_IDS.has(definition.id) &&
+          modelVisibleInViewMode(definition.id, snapshot.viewMode),
       )
       .map((definition) => definition.id),
   )
