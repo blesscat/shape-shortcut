@@ -164,4 +164,54 @@ describe('playground store soft overlap', () => {
       'inst-4',
     ])
   })
+
+  it.each([0, 90, 180, 270] as const)(
+    'keeps eight centered covers adjacent without conflict at rotation %i',
+    (rotation) => {
+      const next = setupStore()
+      next.setViewMode('wall')
+      const vertical = rotation === 90 || rotation === 270
+      const neighborX = -4 + (vertical ? 1 : 8)
+      expect(
+        next.importScene(
+          JSON.stringify({
+            schemaVersion: 1,
+            kind: 'shape-shortcut/scene',
+            instances: [
+              {
+                modelId: 'opengrid-wall-cover',
+                parameters: { text: 'ABCDEFGH' },
+                placement: {
+                  cellX: -4,
+                  cellY: -3,
+                  rotation,
+                  supportedBy: null,
+                },
+              },
+              {
+                modelId: 'opengrid-wall-cover',
+                parameters: { text: 'A' },
+                placement: {
+                  cellX: neighborX,
+                  cellY: -3,
+                  rotation: 0,
+                  supportedBy: null,
+                },
+              },
+            ],
+          }),
+        ),
+      ).toBe(true)
+      expect(next.getSnapshot().overlappingInstanceIds).toEqual([])
+      expect(next.validatePlacement('inst-4', neighborX, -3, 0)).toBe(true)
+
+      const lastX = -4 + (vertical ? 0 : 7)
+      const lastY = -3 + (vertical ? 7 : 0)
+      next.setPlacement('inst-4', lastX, lastY, 0)
+      expect(next.getSnapshot().overlappingInstanceIds).toEqual([
+        'inst-3',
+        'inst-4',
+      ])
+    },
+  )
 })

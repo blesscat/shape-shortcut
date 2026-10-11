@@ -29,6 +29,22 @@ function boundsForDefinition(parameters: ModelParameterValues) {
   return boundsForOpenGridWallCover(parameters)
 }
 
+function coverMountingOriginsFor(parameters: ModelParameterValues) {
+  const validation = validateOpenGridWallCoverParameters(parameters)
+  if (!validation.valid) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-wall-cover')
+  }
+  const count = Array.from(validation.value.text).length
+  const pitch =
+    OPENGRID_WALL_COVER_CONFIGURATION.coverWidth +
+    OPENGRID_WALL_COVER_CONFIGURATION.coverGap
+  const centerOffset = ((count - 1) * pitch) / 2
+  return Array.from(
+    { length: count },
+    (_, index) => [index * pitch - centerOffset, 0, 0] as const,
+  )
+}
+
 function exportFileName(parameters: ModelParameterValues): string {
   if (!isOpenGridWallCoverParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-wall-cover')
@@ -74,6 +90,14 @@ export const opengridWallCoverDefinition: ModelDefinition = {
     height: 400,
   },
   validateParameters: validateDefinitionParameters,
+  wallDisplay: {
+    // Covers are already authored with the wall face at Z=0. Their mounting
+    // centers anchor full grid cells even when the remover opening is off.
+    printToInstalledRotXDegrees: () => 0,
+    installedBoundsFor: boundsForDefinition,
+    wallReadyRotation: { axis: [1, 0, 0], degrees: 0 },
+    installedSocketOriginsFor: coverMountingOriginsFor,
+  },
   boundsForParameters: boundsForDefinition,
   exportFileName,
   stlFileName,

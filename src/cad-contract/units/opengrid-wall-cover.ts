@@ -3,6 +3,7 @@ import {
   OPENGRID_SNAP_CONFIGURATION,
 } from './opengrid-snap'
 import type { DiagnosticParams } from '../diagnostics'
+import { OPENGRID_GRID_CONFIGURATION } from './opengrid-grid'
 
 export type OpenGridWallCoverParameterKey = 'text' | 'openConnect'
 
@@ -14,7 +15,9 @@ export type OpenGridWallCoverParameters = {
 export const OPENGRID_WALL_COVER_CONFIGURATION = {
   coverWidth: OPENGRID_SNAP_CONFIGURATION.nominalWidth,
   coverDepth: OPENGRID_SNAP_CONFIGURATION.nominalDepth,
-  coverGap: 3,
+  coverGap:
+    OPENGRID_GRID_CONFIGURATION.fullPitch -
+    OPENGRID_SNAP_CONFIGURATION.nominalWidth,
   maxTextLength: 8,
   defaultText: 'A',
   defaultOpenConnect: true,

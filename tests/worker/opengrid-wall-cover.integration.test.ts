@@ -26,6 +26,7 @@ import {
   isThreeMfPackage,
 } from '../../src/cad-kernel/export'
 import { OPENGRID_WALL_COVER_CONFIGURATION } from '../../src/cad-contract/units'
+import { PLAYGROUND_GRID_PITCH } from '../../src/cad-contract/scene'
 import { openGridSnapOpenConnectNotchSegmentsFor } from '../../src/cad-kernel/components/opengrid-snap/openconnect'
 import {
   loadOpenGridWallCoverFont,
@@ -396,7 +397,9 @@ describe('OpenGrid Wall Cover supplied STEP', () => {
         if (!bodyPart || !textPart) throw new Error('wall-cover-parts-missing')
 
         const bounds = shapeBounds(generated.shape)
-        const expectedWidth = coverCount * 25.6 + (coverCount - 1) * 3
+        const expectedWidth =
+          (coverCount - 1) * PLAYGROUND_GRID_PITCH +
+          OPENGRID_WALL_COVER_CONFIGURATION.coverWidth
         expect(bounds[0]?.[0]).toBeCloseTo(-expectedWidth / 2, 2)
         expect(bounds[1]?.[0]).toBeCloseTo(expectedWidth / 2, 2)
         expect(bounds[0]?.[1]).toBeCloseTo(-12.8, 2)

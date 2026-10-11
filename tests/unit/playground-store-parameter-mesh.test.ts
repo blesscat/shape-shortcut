@@ -158,4 +158,48 @@ describe('playground store parameter edits', () => {
     expect(next.getSnapshot().instances[1]?.meshState).toBe('ready')
     vi.useRealTimers()
   })
+
+  it('moves and rotates an imported Wall Cover without regenerating its mesh', async () => {
+    vi.useFakeTimers()
+    const next = setupStore()
+    deliverEngineReady()
+    next.setViewMode('wall')
+    const parameters = { text: 'IAN', openConnect: false }
+    expect(
+      next.importScene(
+        JSON.stringify({
+          schemaVersion: 1,
+          kind: 'shape-shortcut/scene',
+          instances: [
+            {
+              modelId: 'opengrid-wall-cover',
+              parameters,
+              placement: {
+                cellX: -2,
+                cellY: 1,
+                rotation: 0,
+                supportedBy: null,
+              },
+            },
+          ],
+        }),
+      ),
+    ).toBe(true)
+    const mesh = deliverInstanceReady('opengrid-wall-cover', parameters)
+    await vi.runOnlyPendingTimersAsync()
+    harness.sentCommands.length = 0
+
+    expect(next.setPlacement('inst-1', -4, -3, 90)).toEqual({ ok: true })
+    await vi.runOnlyPendingTimersAsync()
+    expect(next.getSnapshot().instances[0]?.mesh).toBe(mesh)
+    expect(next.getSnapshot().instances[0]?.meshState).toBe('ready')
+    expect(harness.sentCommands).toEqual([])
+    const exported = JSON.parse(next.exportSceneJson())
+    expect(exported.instances[0]).toMatchObject({
+      modelId: 'opengrid-wall-cover',
+      parameters,
+      placement: { cellX: -4, cellY: -3, rotation: 90, supportedBy: null },
+    })
+    vi.useRealTimers()
+  })
 })
