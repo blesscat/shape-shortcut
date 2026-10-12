@@ -120,6 +120,23 @@
     store.addInstance(addModelId as never)
   }
 
+  function handleDeleteKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Delete' || event.repeat) return
+    if (!store || !snapshot?.selectedInstanceId) return
+    // Never hijack Delete while the user is editing text.
+    const target = event.target
+    if (
+      target instanceof HTMLElement &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable)
+    )
+      return
+    event.preventDefault()
+    store.removeInstance(snapshot.selectedInstanceId)
+  }
+
   function handleImportFile(event: Event): void {
     const input = event.currentTarget
     if (!(input instanceof HTMLInputElement)) return
@@ -144,6 +161,8 @@
     setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 </script>
+
+<svelte:window onkeydown={handleDeleteKeydown} />
 
 <div class="grid gap-4" data-testid="playground">
   <header class="flex flex-wrap items-center justify-between gap-3">

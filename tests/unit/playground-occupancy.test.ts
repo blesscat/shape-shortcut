@@ -11,14 +11,18 @@ import {
   absoluteCellsFor,
   cellsForInstance,
   findFreeAnchorCell,
-  overlappingInstanceIds,
   rotatedFootprintAABB,
   stackedBaseZFor,
-  stackedConflictInstanceIds,
+  stackConflictInstanceIds,
   type PlaygroundCellRange,
   type PlaygroundCellsEntry,
   type PlaygroundStackEntry,
 } from '../../src/features/cad/playground/occupancy'
+import {
+  stackingInterfaceFor,
+  stackingInterfacesCompatible,
+  type StackingInterface,
+} from '../../src/features/cad/playground/stacking-compatibility'
 
 function placement(
   cellX: number,
@@ -55,18 +59,41 @@ function boxBounds(width: number, depth: number, height: number): ModelBounds {
   }
 }
 
+/** Fully stackable box interface: rail top, stacking bottom. */
+const BOX_STACKING: StackingInterface = {
+  top: true,
+  bottom: true,
+  cylinderDiameter: null,
+}
+
+/** No stacking interface: neither receives nor seats pieces. */
+const NO_STACKING: StackingInterface = {
+  top: false,
+  bottom: false,
+  cylinderDiameter: null,
+}
+
+function cylinderStacking(
+  diameter: number,
+  { bottom = true }: { bottom?: boolean } = {},
+): StackingInterface {
+  return { top: true, bottom, cylinderDiameter: diameter }
+}
+
 /** Stack entry occupying `width` x `height` cells with an authored height. */
 function stackEntry(
   id: string,
   cellX: number,
   cellY: number,
   heightMm: number | null,
+  stacking: StackingInterface = BOX_STACKING,
   width = 1,
   height = 1,
 ): PlaygroundStackEntry {
   return {
     ...cellsEntry(id, cellX, cellY, width, height),
     heightMm,
+    stacking,
   }
 }
 
@@ -161,41 +188,58 @@ describe('playground occupancy', () => {
     expect(range.maxCellY).toBe(1)
   })
 
+  /** Wraps plain cells entries as heightless, non-stacking instances. */
+  function asStack(entry: PlaygroundCellsEntry): PlaygroundStackEntry {
+    return { ...entry, heightMm: null, stacking: NO_STACKING }
+  }
+
   it('detects overlapping placements and accepts adjacent ones', () => {
-    const flagged = overlappingInstanceIds([
-      cellsEntry('a', 0, 0),
-      cellsEntry('b', 0, 0),
-    ])
-    expect([...flagged].sort()).toEqual(['a', 'b'])
-    expect(overlappingInstanceIds([cellsEntry('a', 0, 0), cellsEntry('b', 1, 0)]).size).toBe(
-      0,
+    const flagged = stackConflictInstanceIds(
+      [cellsEntry('a', 0, 0), cellsEntry('b', 0, 0)].map(asStack),
+      { zAware: false },
     )
+    expect([...flagged].sort()).toEqual(['a', 'b'])
+    expect(
+      stackConflictInstanceIds(
+        [cellsEntry('a', 0, 0), cellsEntry('b', 1, 0)].map(asStack),
+        { zAware: false },
+      ).size,
+    ).toBe(0)
   })
 
   it('flags both sides of each overlap', () => {
-    const flagged = overlappingInstanceIds([
-      cellsEntry('a', 0, 0),
-      cellsEntry('b', 0, 0),
-      cellsEntry('c', 5, 5),
-    ])
+    const flagged = stackConflictInstanceIds(
+      [
+        cellsEntry('a', 0, 0),
+        cellsEntry('b', 0, 0),
+        cellsEntry('c', 5, 5),
+      ].map(asStack),
+      { zAware: false },
+    )
     expect([...flagged].sort()).toEqual(['a', 'b'])
   })
 
   it('flags every instance in an overlap chain', () => {
-    const flagged = overlappingInstanceIds([
-      cellsEntry('a', 0, 0, 2),
-      cellsEntry('b', 1, 0, 2),
-      cellsEntry('c', 2, 0, 2),
-    ])
+    const flagged = stackConflictInstanceIds(
+      [
+        cellsEntry('a', 0, 0, 2),
+        cellsEntry('b', 1, 0, 2),
+        cellsEntry('c', 2, 0, 2),
+      ].map(asStack),
+      { zAware: false },
+    )
     expect([...flagged].sort()).toEqual(['a', 'b', 'c'])
   })
 
   it('leaves adjacent and disjoint instances unflagged', () => {
-    const flagged = overlappingInstanceIds([
-      cellsEntry('a', 0, 0),
-      cellsEntry('b', 1, 0),
-      cellsEntry('c', -3, -3),
-    ])
+    const flagged = stackConflictInstanceIds(
+      [
+        cellsEntry('a', 0, 0),
+        cellsEntry('b', 1, 0),
+        cellsEntry('c', -3, -3),
+      ].map(asStack),
+      { zAware: false },
+    )
     expect(flagged.size).toBe(0)
   })
 
@@ -215,11 +259,14 @@ describe('playground occupancy', () => {
       maxCellY: 3,
     })
     expect(
-      overlappingInstanceIds([overhanging, cellsEntry('b', 3, 3)])
-        .has('b'),
+      stackConflictInstanceIds([overhanging, cellsEntry('b', 3, 3)].map(asStack), {
+        zAware: false,
+      }).has('b'),
     ).toBe(true)
     expect(
-      overlappingInstanceIds([overhanging, cellsEntry('b', 4, 1)]).has('b'),
+      stackConflictInstanceIds([overhanging, cellsEntry('b', 4, 1)].map(asStack), {
+        zAware: false,
+      }).has('b'),
     ).toBe(false)
   })
 
@@ -287,7 +334,7 @@ describe('playground occupancy', () => {
   it('stacks partially overlapping footprints only where they overlap', () => {
     // 'a' spans two cells; 'b' sits on cell x=1, 'c' rests on cell x=0.
     const baseZ = stackedBaseZFor([
-      stackEntry('a', 0, 0, 20, 2, 1),
+      stackEntry('a', 0, 0, 20, BOX_STACKING, 2, 1),
       stackEntry('b', 1, 0, 10),
       stackEntry('c', 0, 0, 5),
     ])
@@ -323,10 +370,10 @@ describe('playground occupancy', () => {
 
   it('lifts later overlapping instances above earlier tops instead of colliding', () => {
     const entries = [
-      stackEntry('a', 0, 0, 20, 2, 1),
+      stackEntry('a', 0, 0, 20, BOX_STACKING, 2, 1),
       stackEntry('b', 0, 0, 10),
       stackEntry('c', 1, 0, 10),
-      stackEntry('d', 0, 0, 5, 2, 1),
+      stackEntry('d', 0, 0, 5, BOX_STACKING, 2, 1),
     ]
     // 'd' overlaps every earlier instance, so its base derives above all of
     // their tops: heighted desktop pairs never intersect in Z. b and c are
@@ -334,23 +381,113 @@ describe('playground occupancy', () => {
     expect(stackedBaseZFor(entries).get('d')).toBe(
       20 + 10 + 2 * PLAYGROUND_STACK_CLEARANCE_MM,
     )
-    expect(stackedConflictInstanceIds(entries).size).toBe(0)
+    expect(
+      stackConflictInstanceIds(entries, { zAware: true }).size,
+    ).toBe(0)
   })
 
   it('flags a heightless instance against any footprint overlap', () => {
-    const conflicts = stackedConflictInstanceIds([
-      stackEntry('a', 0, 0, null),
-      stackEntry('b', 0, 0, 10),
-    ])
+    const conflicts = stackConflictInstanceIds(
+      [stackEntry('a', 0, 0, null), stackEntry('b', 0, 0, 10)],
+      { zAware: true },
+    )
     expect([...conflicts].sort()).toEqual(['a', 'b'])
   })
 
   it('leaves stacked and disjoint instances out of the conflict set', () => {
-    const conflicts = stackedConflictInstanceIds([
-      stackEntry('a', 0, 0, 20),
-      stackEntry('b', 0, 0, 10),
-      stackEntry('c', 5, 5, 10),
-    ])
+    const conflicts = stackConflictInstanceIds(
+      [
+        stackEntry('a', 0, 0, 20),
+        stackEntry('b', 0, 0, 10),
+        stackEntry('c', 5, 5, 10),
+      ],
+      { zAware: true },
+    )
     expect(conflicts.size).toBe(0)
+  })
+
+  it('stacks cylinders only on the same inner diameter', () => {
+    const entries = [
+      stackEntry('a', 0, 0, 20, cylinderStacking(60)),
+      stackEntry('b', 0, 0, 10, cylinderStacking(60)),
+      stackEntry('c', 0, 0, 10, cylinderStacking(40)),
+    ]
+    const baseZ = stackedBaseZFor(entries)
+    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(baseZ.get('c')).toBe(0)
+    const conflicts = stackConflictInstanceIds(entries, { zAware: true })
+    expect([...conflicts].sort()).toEqual(['a', 'c'])
+  })
+
+  it('never stacks a cylinder on a box or a box on a cylinder', () => {
+    const entries = [
+      stackEntry('box', 0, 0, 20, BOX_STACKING),
+      stackEntry('cyl', 0, 0, 10, cylinderStacking(60)),
+    ]
+    expect(stackedBaseZFor(entries).get('box')).toBe(0)
+    expect(stackedBaseZFor(entries).get('cyl')).toBe(0)
+    expect(
+      stackConflictInstanceIds(entries, { zAware: true }).size,
+    ).toBe(2)
+  })
+
+  it('flags incompatible overlapping pairs on the desktop', () => {
+    const conflicts = stackConflictInstanceIds(
+      [
+        stackEntry('a', 0, 0, 20, BOX_STACKING),
+        stackEntry('b', 0, 0, 10, NO_STACKING),
+      ],
+      { zAware: true },
+    )
+    expect([...conflicts].sort()).toEqual(['a', 'b'])
+  })
+
+  it('does not resurrect conflicts for stacked pairs in wall orientation', () => {
+    // Desktop-stacked pairs keep overlapping footprints; switching to the
+    // wall board must not flag them again.
+    const conflicts = stackConflictInstanceIds(
+      [stackEntry('a', 0, 0, 20), stackEntry('b', 0, 0, 10)],
+      { zAware: false },
+    )
+    expect(conflicts.size).toBe(0)
+  })
+
+  it('flags incompatible overlapping pairs in wall orientation', () => {
+    const conflicts = stackConflictInstanceIds(
+      [
+        stackEntry('a', 0, 0, 20, NO_STACKING),
+        stackEntry('b', 0, 0, 10, NO_STACKING),
+      ],
+      { zAware: false },
+    )
+    expect([...conflicts].sort()).toEqual(['a', 'b'])
+  })
+
+  it('derives stacking interfaces from component parameters', () => {
+    expect(stackingInterfaceFor('box', {} as never)).toEqual({
+      top: false,
+      bottom: false,
+      cylinderDiameter: null,
+    })
+    expect(
+      stackingInterfaceFor('opengrid-stackable-box', {
+        ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+      } as never),
+    ).toEqual({ top: true, bottom: true, cylinderDiameter: null })
+    // A bottom-plate cylinder has a flat bottom: it can support a same
+    // diameter cylinder but cannot seat on one.
+    const plate = cylinderStacking(60, { bottom: false })
+    expect(
+      stackingInterfacesCompatible(plate, cylinderStacking(60)),
+    ).toBe(false)
+    expect(
+      stackingInterfacesCompatible(cylinderStacking(60), plate),
+    ).toBe(true)
+    expect(
+      stackingInterfacesCompatible(
+        cylinderStacking(60),
+        cylinderStacking(40),
+      ),
+    ).toBe(false)
   })
 })

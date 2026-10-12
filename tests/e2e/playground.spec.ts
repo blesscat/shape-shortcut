@@ -293,6 +293,8 @@ test.describe('OpenGrid playground planner', () => {
   test('imports a scene file with in-file desktop overlaps as a stack', async ({
     page,
   }) => {
+    const boxParams = getModelDefinition('opengrid-stackable-box')
+      ?.defaultParameters
     const overlappingPlacement = {
       cellX: 0,
       cellY: 0,
@@ -305,13 +307,13 @@ test.describe('OpenGrid playground planner', () => {
       grid: { system: 'opengrid' },
       instances: [
         {
-          modelId: 'box',
-          parameters: { width: 20, depth: 30, height: 40 },
+          modelId: 'opengrid-stackable-box',
+          parameters: boxParams,
           placement: overlappingPlacement,
         },
         {
-          modelId: 'box',
-          parameters: { width: 20, depth: 30, height: 40 },
+          modelId: 'opengrid-stackable-box',
+          parameters: boxParams,
           placement: overlappingPlacement,
         },
       ],
@@ -374,6 +376,49 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
       'data-overlap-instances',
       'inst-1,inst-2',
+    )
+  })
+
+  test('keeps desktop stacks conflict-free after switching to wall', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+
+    await page.getByTestId('playground-instance-inst-2').click()
+    const cellX = page.locator('#playground-cell-x')
+    await cellX.fill('0')
+    await cellX.blur()
+    const cellY = page.locator('#playground-cell-y')
+    await cellY.fill('0')
+    await cellY.blur()
+
+    // Desktop stacking keeps the overlapping pair conflict-free...
+    const viewport = page.getByTestId('playground-viewport')
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+
+    // ...and switching to the wall board must not resurrect the conflict.
+    await page.getByTestId('playground-mode-wall').click()
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+  })
+
+  test('deletes the selected instance with the Delete key', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+
+    await page.getByTestId('playground-instance-inst-1').click()
+    await page.keyboard.press('Delete')
+    await expect(page.getByTestId('playground-instance-inst-1')).toHaveCount(0)
+    await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+      'data-selected-instance',
+      '',
     )
   })
 

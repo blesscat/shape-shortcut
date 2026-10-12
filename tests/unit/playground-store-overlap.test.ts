@@ -23,26 +23,35 @@ vi.mock('../../src/features/cad/worker-client', () => {
   }
 })
 
-import { createPlaygroundStore } from '../../src/features/cad/playground/store'
+import { createPlaygroundStore, type PlaygroundStore } from '../../src/features/cad/playground/store'
 import { PLAYGROUND_STACK_CLEARANCE_MM } from '../../src/features/cad/playground/occupancy'
+import {
+  boundsForOpenGridStackableBox,
+  OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+} from '../../src/cad-contract/units'
+
+/** Authored top Z (mm) of a default stackable box. */
+const BOX_TOP_MM = boundsForOpenGridStackableBox({
+  ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+}).max[2]
 
 function sceneInstance(
   cellX: number,
   cellY: number,
 ): {
   modelId: string
-  parameters: { width: number; depth: number; height: number }
+  parameters: Record<string, unknown>
   placement: ScenePlacement
 } {
   return {
-    modelId: 'box',
-    parameters: { width: 20, depth: 30, height: 40 },
+    modelId: 'opengrid-stackable-box',
+    parameters: { ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS },
     placement: { cellX, cellY, rotation: 0, supportedBy: null },
   }
 }
 
 describe('playground store soft overlap', () => {
-  let store: ReturnType<typeof createPlaygroundStore> | null = null
+  let store: PlaygroundStore | null = null
 
   afterEach(() => {
     store?.dispose()
@@ -55,10 +64,11 @@ describe('playground store soft overlap', () => {
     vi.stubGlobal('window', { location: { origin: 'http://test.local' } })
     const next = createPlaygroundStore()
     store = next
-    // Two default boxes at disjoint placements: inst-1 occupies cells
-    // (0,0)-(0,1); inst-2 starts far away and is moved explicitly per test.
-    next.addInstance('box')
-    next.addInstance('box')
+    // Two default stackable boxes (fully stackable interfaces) at disjoint
+    // placements: inst-1 occupies cells (0,0)-(1,1); inst-2 starts far away
+    // and is moved explicitly per test.
+    next.addInstance('opengrid-stackable-box')
+    next.addInstance('opengrid-stackable-box')
     next.setPlacement('inst-1', 0, 0, 0)
     next.setPlacement('inst-2', 9, 9, 0)
     return next
@@ -75,7 +85,7 @@ describe('playground store soft overlap', () => {
     // the earlier one's top (box height 40 mm) plus the fixed clearance.
     expect(snapshot.overlappingInstanceIds).toEqual([])
     expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(40 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
     expect(snapshot.diagnostic).toBeNull()
     const committed = snapshot.instances.find(
       (instance) => instance.id === 'inst-2',
@@ -92,7 +102,7 @@ describe('playground store soft overlap', () => {
     const next = setupStore()
 
     next.setPlacement('inst-2', 0, 0, 0)
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(40 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
 
     next.setPlacement('inst-2', 9, 9, 0)
     const snapshot = next.getSnapshot()
@@ -120,7 +130,7 @@ describe('playground store soft overlap', () => {
     const snapshot = next.getSnapshot()
     expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
     expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(
-      40 + PLAYGROUND_STACK_CLEARANCE_MM,
+      BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM,
     )
     expect(snapshot.overlappingInstanceIds).toEqual([])
   })
@@ -128,29 +138,30 @@ describe('playground store soft overlap', () => {
   it('lifts a neighbor when parameter growth reaches its column', () => {
     const next = setupStore()
 
-    // Adjacent: inst-2 occupies cells (1,0)-(1,1), touching inst-1's column.
-    next.setPlacement('inst-2', 1, 0, 0)
+    // Adjacent: the default 2x2 inst-1 spans (0,0)-(1,1); inst-2 starts at
+    // its next free column (2,0)-(3,1) without touching it.
+    next.setPlacement('inst-2', 2, 0, 0)
     expect(next.getSnapshot().instanceStackedZ['inst-2']).toBe(0)
 
-    // Growing inst-1's width to two cells (56 mm) reaches inst-2's column,
-    // so inst-2 re-derives onto inst-1's top instead of flagging.
-    next.setParameter('inst-1', 'width', '56')
+    // Growing inst-1 to three cells wide reaches inst-2's column, so inst-2
+    // re-derives onto inst-1's top instead of flagging.
+    next.setParameter('inst-1', 'x', '3')
     const snapshot = next.getSnapshot()
     expect(snapshot.overlappingInstanceIds).toEqual([])
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(40 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
     const grown = snapshot.instances.find(
       (instance) => instance.id === 'inst-1',
     )
-    expect(grown?.parameters).toMatchObject({ width: 56 })
+    expect(grown?.parameters).toMatchObject({ x: 3 })
     expect(grown?.fieldErrors).toEqual({})
 
     // Shrinking back settles inst-2 onto the floor again.
-    next.setParameter('inst-1', 'width', '20')
+    next.setParameter('inst-1', 'x', '2')
     expect(next.getSnapshot().instanceStackedZ['inst-2']).toBe(0)
 
     // Deleting the supporter also drops the stacked instance.
-    next.setParameter('inst-1', 'width', '56')
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(40 + PLAYGROUND_STACK_CLEARANCE_MM)
+    next.setParameter('inst-1', 'x', '3')
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
     next.removeInstance('inst-1')
     expect(next.getSnapshot().instanceStackedZ['inst-2']).toBe(0)
   })
@@ -170,24 +181,26 @@ describe('playground store soft overlap', () => {
     const snapshot = next.getSnapshot()
     expect(snapshot.instances).toHaveLength(2)
     expect(snapshot.overlappingInstanceIds).toEqual([])
-    expect(snapshot.instanceStackedZ['inst-4']).toBeCloseTo(40 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-4']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
   })
 
   it('flags only the instance whose stacked top exceeds the height limit', () => {
     const next = setupStore()
-    next.setSceneMaxHeightMm(50)
+    const limit = BOX_TOP_MM + 10
+    next.setSceneMaxHeightMm(limit)
     expect(next.getSnapshot().overHeightInstanceIds).toEqual([])
 
     next.setPlacement('inst-2', 0, 0, 0)
-    // inst-1 tops out at 40 mm (within 50); inst-2's stacked top is
-    // 40.5 + 40 = 80.5 mm (over 50) and is the only flagged instance.
+    // inst-1 tops out at BOX_TOP_MM (within the limit); inst-2's stacked
+    // top is 2 * BOX_TOP_MM + clearance (over the limit) and is the only
+    // flagged instance.
     expect(next.getSnapshot().overHeightInstanceIds).toEqual(['inst-2'])
 
     // Removing the limit clears the flag entirely.
     next.setSceneMaxHeightMm(null)
     expect(next.getSnapshot().overHeightInstanceIds).toEqual([])
 
-    next.setSceneMaxHeightMm(50)
+    next.setSceneMaxHeightMm(limit)
     expect(next.getSnapshot().overHeightInstanceIds).toEqual(['inst-2'])
     // Lowering the offending stack clears the flag too.
     next.setPlacement('inst-2', 9, 9, 0)
@@ -196,13 +209,71 @@ describe('playground store soft overlap', () => {
 
   it('skips height evaluation in wall orientation', () => {
     const next = setupStore()
-    next.setSceneMaxHeightMm(50)
+    next.setSceneMaxHeightMm(BOX_TOP_MM + 10)
     next.setPlacement('inst-2', 0, 0, 0)
     expect(next.getSnapshot().overHeightInstanceIds).toEqual(['inst-2'])
 
     next.setViewMode('wall')
     expect(next.getSnapshot().overHeightInstanceIds).toEqual([])
     expect(next.getSnapshot().instanceStackedZ).toEqual({})
+  })
+
+  it('flags incompatible overlapping desktop instances as conflicts', () => {
+    // The prototype `box` has no stacking interface: overlapping pairs stay
+    // grounded and flag on both sides instead of stacking.
+    vi.stubGlobal('window', { location: { origin: 'http://test.local' } })
+    const next = createPlaygroundStore()
+    store = next
+    next.addInstance('box')
+    next.addInstance('box')
+    next.setPlacement('inst-1', 0, 0, 0)
+    next.setPlacement('inst-2', 9, 9, 0)
+
+    const result = next.setPlacement('inst-2', 0, 0, 0)
+    expect(result.ok).toBe(true)
+    const snapshot = next.getSnapshot()
+    expect(snapshot.overlappingInstanceIds).toEqual(['inst-1', 'inst-2'])
+    expect(snapshot.instanceStackedZ['inst-2']).toBe(0)
+    expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
+
+    // A compatible stack next to them is unaffected; inst-3 dropped onto
+    // the interface-less box cannot stack either, so box and inst-3 flag
+    // while the earlier pair's flags clear.
+    next.setPlacement('inst-2', 9, 9, 0)
+    next.addInstance('opengrid-stackable-box')
+    next.setPlacement('inst-3', 0, 0, 0)
+    expect(next.getSnapshot().overlappingInstanceIds).toEqual([
+      'inst-1',
+      'inst-3',
+    ])
+    expect(next.getSnapshot().instanceStackedZ['inst-3']).toBe(0)
+  })
+
+  it('does not flag desktop-stacked pairs after switching to wall', () => {
+    const next = setupStore()
+    next.setPlacement('inst-2', 0, 0, 0)
+    expect(next.getSnapshot().overlappingInstanceIds).toEqual([])
+
+    next.setViewMode('wall')
+    expect(next.getSnapshot().overlappingInstanceIds).toEqual([])
+  })
+
+  it('ignores instances the active orientation does not display', () => {
+    const next = setupStore()
+    // A wall-system instance added while in desktop orientation stays
+    // hidden: it must not occupy cells, flag conflicts, or trip the height
+    // limit even though its stacked top would exceed it.
+    // A limit above the visible boxes' own height (BOX_TOP_MM) but below
+    // the hidden wall piece: only displayed instances are evaluated, so no
+    // flag appears even though the wall piece would exceed it.
+    next.setSceneMaxHeightMm(BOX_TOP_MM + 10)
+    expect(next.addInstance('opengrid-openconnect-organizer')).toBe(true)
+    next.setParameter('inst-3', 'holeDepth', '84')
+    const snapshot = next.getSnapshot()
+    expect(snapshot.instances).toHaveLength(3)
+    expect(snapshot.overlappingInstanceIds).toEqual([])
+    expect(snapshot.overHeightInstanceIds).toEqual([])
+    expect(snapshot.instanceStackedZ['inst-3']).toBeUndefined()
   })
 
   it('carries the height limit through scene import and export', () => {
