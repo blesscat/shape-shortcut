@@ -75,6 +75,18 @@ export type PlaygroundCellsEntry = {
   placement: Pick<ScenePlacement, 'cellX' | 'cellY'>
 }
 
+/**
+ * Occupancy entry extended with the authored height above the base plane
+ * (mm) for desktop stacking derivation. `null` height means the instance
+ * stays grounded and cannot support anything.
+ */
+export type PlaygroundStackEntry = PlaygroundCellsEntry & {
+  heightMm: number | null
+}
+
+/** Fixed vertical gap between stacked pieces, in mm. */
+export const PLAYGROUND_STACK_CLEARANCE_MM = 0.5
+
 export function absoluteCellsFor(
   entry: PlaygroundCellsEntry,
 ): PlaygroundCellRange {
@@ -99,23 +111,6 @@ function rangesOverlap(
 }
 
 /**
- * Returns the id of the first instance whose footprint overlaps a later
- * instance's footprint, or `null` when all placements are compatible.
- */
-export function firstPlacementConflict(
-  instances: ReadonlyArray<PlaygroundCellsEntry>,
-): string | null {
-  for (let a = 0; a < instances.length; a += 1) {
-    for (let b = a + 1; b < instances.length; b += 1) {
-      const rangeA = absoluteCellsFor(instances[a]!)
-      const rangeB = absoluteCellsFor(instances[b]!)
-      if (rangesOverlap(rangeA, rangeB)) return instances[b]!.id
-    }
-  }
-  return null
-}
-
-/**
  * Returns the ids of every instance participating in at least one pairwise
  * footprint overlap — both sides of each conflict, including chains.
  */
@@ -134,6 +129,75 @@ export function overlappingInstanceIds(
     }
   }
   return overlapping
+}
+
+/**
+ * Stacked base Z in mm per instance id, derived in array order (later
+ * entries stack on earlier ones): each heighted instance rests on the
+ * greatest already-placed top among footprint-overlapping instances plus
+ * the fixed clearance. Heightless instances stay grounded and contribute
+ * no top, so nothing can stack on them.
+ */
+export function stackedBaseZFor(
+  instances: ReadonlyArray<PlaygroundStackEntry>,
+): Map<string, number> {
+  const baseZ = new Map<string, number>()
+  const placedTops: { cells: PlaygroundCellRange; top: number }[] = []
+  for (const entry of instances) {
+    if (entry.heightMm === null) {
+      baseZ.set(entry.id, 0)
+      continue
+    }
+    const cells = absoluteCellsFor(entry)
+    let base = 0
+    for (const placed of placedTops) {
+      if (!rangesOverlap(cells, placed.cells)) continue
+      base = Math.max(base, placed.top + PLAYGROUND_STACK_CLEARANCE_MM)
+    }
+    baseZ.set(entry.id, base)
+    placedTops.push({ cells, top: base + entry.heightMm })
+  }
+  return baseZ
+}
+
+/**
+ * Desktop conflict set: instances whose footprints overlap and whose
+ * stacked Z spans also intersect — stacked pairs never conflict. A
+ * heightless instance is treated as an unbounded span so it keeps the
+ * pre-stacking rule of conflicting with any footprint overlap. Pass a
+ * `precomputedBaseZ` from `stackedBaseZFor` over the same instances to
+ * avoid deriving it twice.
+ */
+export function stackedConflictInstanceIds(
+  instances: ReadonlyArray<PlaygroundStackEntry>,
+  precomputedBaseZ?: ReadonlyMap<string, number>,
+): Set<string> {
+  const baseZ = precomputedBaseZ ?? stackedBaseZFor(instances)
+  const spans = instances.map((entry) => {
+    const base = baseZ.get(entry.id) ?? 0
+    return {
+      id: entry.id,
+      cells: absoluteCellsFor(entry),
+      base,
+      top:
+        entry.heightMm === null
+          ? Number.POSITIVE_INFINITY
+          : base + entry.heightMm,
+    }
+  })
+  const conflicts = new Set<string>()
+  for (let a = 0; a < spans.length; a += 1) {
+    for (let b = a + 1; b < spans.length; b += 1) {
+      const spanA = spans[a]!
+      const spanB = spans[b]!
+      if (!rangesOverlap(spanA.cells, spanB.cells)) continue
+      if (spanA.base < spanB.top && spanB.base < spanA.top) {
+        conflicts.add(spanA.id)
+        conflicts.add(spanB.id)
+      }
+    }
+  }
+  return conflicts
 }
 
 /**

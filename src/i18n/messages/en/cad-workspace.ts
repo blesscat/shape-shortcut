@@ -134,6 +134,9 @@ export const messages = {
   'playground.placement.stepUp': 'Increase {axis} by 1',
   'playground.overlapWarning':
     '{count} instance(s) overlap; adjust their placements.',
+  'playground.heightLimit.title': 'Height limit (mm)',
+  'playground.heightLimitWarning':
+    '{count} instance(s) exceed the {limit} mm scene height limit.',
   'playground.colors.title': 'Colors',
   'playground.export.step': 'Download STEP',
   'playground.export.stl': 'Download STL',

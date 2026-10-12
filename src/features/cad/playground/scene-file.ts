@@ -5,6 +5,7 @@ import {
 import {
   parseSceneFile,
   parseSceneInstanceCommon,
+  parseSceneMaxHeightMm,
   SCENE_FILE_KIND,
   SCENE_FILE_SCHEMA_VERSION,
   type SceneFile,
@@ -33,6 +34,7 @@ export type PlaygroundSceneInstanceData = {
 export type PlaygroundSceneData = {
   grid: SceneGridSystem
   colors: ModelColors
+  maxHeightMm: number | null
   instances: PlaygroundSceneInstanceData[]
 }
 
@@ -99,7 +101,8 @@ export function parsePlaygroundSceneFile(
 /**
  * Serializes playground instances into the shared scene JSON format. A
  * single-instance scene without placements is the settings-file shape
- * produced by component workspaces.
+ * produced by component workspaces. A positive `maxHeightMm` is written as
+ * the scene height limit; any other value omits the field entirely.
  */
 export function serializePlaygroundScene(
   colors: ModelColors,
@@ -110,7 +113,9 @@ export function serializePlaygroundScene(
     placement: ScenePlacement | null
     colors: ModelColors
   }>,
+  options: { maxHeightMm?: number | null } = {},
 ): SceneFile {
+  const maxHeightMm = parseSceneMaxHeightMm(options.maxHeightMm)
   return {
     schemaVersion: SCENE_FILE_SCHEMA_VERSION,
     kind: SCENE_FILE_KIND,
@@ -119,6 +124,7 @@ export function serializePlaygroundScene(
       primary: colors.primary.toLowerCase(),
       secondary: colors.secondary.toLowerCase(),
     },
+    ...(maxHeightMm !== null ? { maxHeightMm } : {}),
     instances: instances.map((instance) => ({
       ...(instance.label ? { label: instance.label } : {}),
       modelId: instance.modelId,

@@ -52,6 +52,8 @@ export type SceneFile = {
   kind: typeof SCENE_FILE_KIND
   grid?: { system: SceneGridSystem }
   colors?: ModelColors
+  /** Scene Z height limit in mm; present exactly when a limit is set. */
+  maxHeightMm?: number
   instances: SceneInstanceFile[]
 }
 
@@ -73,6 +75,8 @@ export type SceneParseSuccess<TInstance> = {
   scene: {
     grid: SceneGridSystem
     colors: ModelColors
+    /** Positive mm limit, or `null` when the file sets no usable limit. */
+    maxHeightMm: number | null
     instances: TInstance[]
   }
 }
@@ -100,6 +104,17 @@ function isRotation(value: unknown): value is PlaygroundRotation {
     isInteger(value) &&
     (PLAYGROUND_ROTATIONS as readonly number[]).includes(value)
   )
+}
+
+/**
+ * Scene Z height limit in mm. A positive finite number is kept; anything
+ * else — absent, zero, negative, or not a number — normalizes to no limit
+ * so a malformed value never rejects an otherwise valid scene.
+ */
+export function parseSceneMaxHeightMm(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null
 }
 
 function resolveSceneColors(
@@ -207,7 +222,15 @@ export function parseSceneFile<TInstance extends object>(
     instances.push(parsed)
   }
 
-  return { valid: true, scene: { grid, colors, instances } }
+  return {
+    valid: true,
+    scene: {
+      grid,
+      colors,
+      maxHeightMm: parseSceneMaxHeightMm(value.maxHeightMm),
+      instances,
+    },
+  }
 }
 
 export function parseSceneInstanceCommon(

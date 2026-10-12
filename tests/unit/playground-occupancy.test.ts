@@ -7,14 +7,17 @@ import {
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
 } from '../../src/cad-contract/units'
 import {
+  PLAYGROUND_STACK_CLEARANCE_MM,
   absoluteCellsFor,
   cellsForInstance,
   findFreeAnchorCell,
-  firstPlacementConflict,
   overlappingInstanceIds,
   rotatedFootprintAABB,
+  stackedBaseZFor,
+  stackedConflictInstanceIds,
   type PlaygroundCellRange,
   type PlaygroundCellsEntry,
+  type PlaygroundStackEntry,
 } from '../../src/features/cad/playground/occupancy'
 
 function placement(
@@ -49,6 +52,21 @@ function boxBounds(width: number, depth: number, height: number): ModelBounds {
   return {
     min: [-width / 2, -depth / 2, 0],
     max: [width / 2, depth / 2, height],
+  }
+}
+
+/** Stack entry occupying `width` x `height` cells with an authored height. */
+function stackEntry(
+  id: string,
+  cellX: number,
+  cellY: number,
+  heightMm: number | null,
+  width = 1,
+  height = 1,
+): PlaygroundStackEntry {
+  return {
+    ...cellsEntry(id, cellX, cellY, width, height),
+    heightMm,
   }
 }
 
@@ -144,13 +162,14 @@ describe('playground occupancy', () => {
   })
 
   it('detects overlapping placements and accepts adjacent ones', () => {
-    const existing = [cellsEntry('a', 0, 0)]
-    expect(firstPlacementConflict([...existing, cellsEntry('b', 0, 0)])).toBe(
-      'b',
+    const flagged = overlappingInstanceIds([
+      cellsEntry('a', 0, 0),
+      cellsEntry('b', 0, 0),
+    ])
+    expect([...flagged].sort()).toEqual(['a', 'b'])
+    expect(overlappingInstanceIds([cellsEntry('a', 0, 0), cellsEntry('b', 1, 0)]).size).toBe(
+      0,
     )
-    expect(
-      firstPlacementConflict([...existing, cellsEntry('b', 1, 0)]),
-    ).toBeNull()
   })
 
   it('flags both sides of each overlap', () => {
@@ -195,12 +214,13 @@ describe('playground occupancy', () => {
       minCellY: 1,
       maxCellY: 3,
     })
-    expect(firstPlacementConflict([overhanging, cellsEntry('b', 3, 3)])).toBe(
-      'b',
-    )
     expect(
-      firstPlacementConflict([overhanging, cellsEntry('b', 4, 1)]),
-    ).toBeNull()
+      overlappingInstanceIds([overhanging, cellsEntry('b', 3, 3)])
+        .has('b'),
+    ).toBe(true)
+    expect(
+      overlappingInstanceIds([overhanging, cellsEntry('b', 4, 1)]).has('b'),
+    ).toBe(false)
   })
 
   it('finds a free anchor cell next to existing instances', () => {
@@ -249,5 +269,88 @@ describe('playground occupancy', () => {
       range.minCellY <= taken.maxCellY &&
       taken.minCellY <= range.maxCellY
     expect(overlaps).toBe(false)
+  })
+
+  it('stacks a chain of fully overlapping instances with clearance', () => {
+    const baseZ = stackedBaseZFor([
+      stackEntry('a', 0, 0, 20),
+      stackEntry('b', 0, 0, 30),
+      stackEntry('c', 0, 0, 10),
+    ])
+    expect(baseZ.get('a')).toBe(0)
+    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(baseZ.get('c')).toBe(
+      20 + 30 + 2 * PLAYGROUND_STACK_CLEARANCE_MM,
+    )
+  })
+
+  it('stacks partially overlapping footprints only where they overlap', () => {
+    // 'a' spans two cells; 'b' sits on cell x=1, 'c' rests on cell x=0.
+    const baseZ = stackedBaseZFor([
+      stackEntry('a', 0, 0, 20, 2, 1),
+      stackEntry('b', 1, 0, 10),
+      stackEntry('c', 0, 0, 5),
+    ])
+    expect(baseZ.get('a')).toBe(0)
+    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(baseZ.get('c')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+  })
+
+  it('keeps heightless instances grounded and unsupported', () => {
+    const baseZ = stackedBaseZFor([
+      stackEntry('a', 0, 0, null),
+      stackEntry('b', 0, 0, 10),
+    ])
+    expect(baseZ.get('a')).toBe(0)
+    expect(baseZ.get('b')).toBe(0)
+  })
+
+  it('derives stacking from array order', () => {
+    const first = stackedBaseZFor([
+      stackEntry('a', 0, 0, 20),
+      stackEntry('b', 0, 0, 10),
+    ])
+    expect(first.get('a')).toBe(0)
+    expect(first.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+
+    const reversed = stackedBaseZFor([
+      stackEntry('b', 0, 0, 10),
+      stackEntry('a', 0, 0, 20),
+    ])
+    expect(reversed.get('b')).toBe(0)
+    expect(reversed.get('a')).toBe(10 + PLAYGROUND_STACK_CLEARANCE_MM)
+  })
+
+  it('lifts later overlapping instances above earlier tops instead of colliding', () => {
+    const entries = [
+      stackEntry('a', 0, 0, 20, 2, 1),
+      stackEntry('b', 0, 0, 10),
+      stackEntry('c', 1, 0, 10),
+      stackEntry('d', 0, 0, 5, 2, 1),
+    ]
+    // 'd' overlaps every earlier instance, so its base derives above all of
+    // their tops: heighted desktop pairs never intersect in Z. b and c are
+    // siblings on a (top 20.5 each), so d rests at 31.
+    expect(stackedBaseZFor(entries).get('d')).toBe(
+      20 + 10 + 2 * PLAYGROUND_STACK_CLEARANCE_MM,
+    )
+    expect(stackedConflictInstanceIds(entries).size).toBe(0)
+  })
+
+  it('flags a heightless instance against any footprint overlap', () => {
+    const conflicts = stackedConflictInstanceIds([
+      stackEntry('a', 0, 0, null),
+      stackEntry('b', 0, 0, 10),
+    ])
+    expect([...conflicts].sort()).toEqual(['a', 'b'])
+  })
+
+  it('leaves stacked and disjoint instances out of the conflict set', () => {
+    const conflicts = stackedConflictInstanceIds([
+      stackEntry('a', 0, 0, 20),
+      stackEntry('b', 0, 0, 10),
+      stackEntry('c', 5, 5, 10),
+    ])
+    expect(conflicts.size).toBe(0)
   })
 })

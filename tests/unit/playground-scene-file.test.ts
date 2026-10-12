@@ -247,4 +247,72 @@ describe('playground scene file serialization', () => {
     expect(sceneFile.instances[0].placement).toBeUndefined()
     expect(sceneFile.instances[0].label).toBeUndefined()
   })
+
+  it('keeps a positive height limit and normalizes invalid values to unset', () => {
+    const withLimit = sceneFileWith([
+      {
+        modelId: 'box',
+        parameters: { width: 20, depth: 30, height: 40 },
+        placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+      },
+    ])
+    withLimit.maxHeightMm = 120
+    const parsed = parsePlaygroundSceneFile(withLimit)
+    expect(parsed.valid).toBe(true)
+    if (!parsed.valid) return
+    expect(parsed.scene.maxHeightMm).toBe(120)
+
+    for (const invalid of [0, -5, '120', Number.NaN, null]) {
+      const file = sceneFileWith([
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        },
+      ])
+      file.maxHeightMm = invalid
+      const result = parsePlaygroundSceneFile(file)
+      expect(result.valid).toBe(true)
+      if (!result.valid) return
+      expect(result.scene.maxHeightMm).toBeNull()
+    }
+  })
+
+  it('round trips the height limit through serialize and parse', () => {
+    const sceneFile = serializePlaygroundScene(
+      DEFAULT_MODEL_COLORS,
+      [
+        {
+          label: null,
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: null,
+          colors: DEFAULT_MODEL_COLORS,
+        },
+      ],
+      { maxHeightMm: 250 },
+    )
+    expect(sceneFile.maxHeightMm).toBe(250)
+    const result = parsePlaygroundSceneFile(JSON.parse(JSON.stringify(sceneFile)))
+    expect(result.valid).toBe(true)
+    if (!result.valid) return
+    expect(result.scene.maxHeightMm).toBe(250)
+  })
+
+  it('omits the height limit field when unset', () => {
+    const sceneFile = serializePlaygroundScene(DEFAULT_MODEL_COLORS, [
+      {
+        label: null,
+        modelId: 'box',
+        parameters: { width: 20, depth: 30, height: 40 },
+        placement: null,
+        colors: DEFAULT_MODEL_COLORS,
+      },
+    ])
+    expect('maxHeightMm' in sceneFile).toBe(false)
+    const result = parsePlaygroundSceneFile(JSON.parse(JSON.stringify(sceneFile)))
+    expect(result.valid).toBe(true)
+    if (!result.valid) return
+    expect(result.scene.maxHeightMm).toBeNull()
+  })
 })

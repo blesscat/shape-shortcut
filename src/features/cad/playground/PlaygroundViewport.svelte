@@ -65,6 +65,13 @@
     meshState: 'pending' | 'ready' | 'failed'
     /** Derived footprint-overlap flag; renders with the conflict color. */
     overlapping: boolean
+    /**
+     * Derived height-limit flag; renders with the conflict color like an
+     * overlap, but without the overlap hatch overlay.
+     */
+    overHeight: boolean
+    /** Derived desktop stacked base Z in mm; 0 when grounded or in wall. */
+    stackedZ: number
   }
 
   type Props = {
@@ -79,6 +86,11 @@
       placement: ScenePlacement,
     ) => boolean
     onCommitPlacement: (instanceId: string, placement: ScenePlacement) => void
+    /** Candidate stacked base Z (mm) for a placement, desktop only. */
+    stackedZForPlacement: (
+      instanceId: string,
+      placement: ScenePlacement,
+    ) => number
   }
 
   let {
@@ -90,6 +102,7 @@
     onSelect,
     onValidatePlacement,
     onCommitPlacement,
+    stackedZForPlacement,
   }: Props = $props()
 
   let cameraState = loadPlaygroundCameraState()
@@ -359,7 +372,7 @@
       offsetY += (swap ? width : depth) / 2
     }
     matrix.makeRotationZ((rotation * Math.PI) / 180)
-    matrix.setPosition(offsetX, offsetY, 0)
+    matrix.setPosition(offsetX, offsetY, instance.stackedZ)
     return matrix
   }
 
@@ -372,7 +385,9 @@
       dragPreviewActive: dragPreview?.instanceId === instanceId,
       dragPreviewValid: dragPreview?.valid ?? false,
       overlapping: instances.some(
-        (instance) => instance.id === instanceId && instance.overlapping,
+        (instance) =>
+          instance.id === instanceId &&
+          (instance.overlapping || instance.overHeight),
       ),
       emphasized:
         instanceId === selectedInstanceId || instanceId === hoveredInstanceId,
@@ -741,7 +756,16 @@
   ): void {
     const instance = instances.find((candidate) => candidate.id === instanceId)
     if (!instance) return
-    const placedInstance = { ...instance, placement }
+    // The preview renders at the candidate placement's derived stack height,
+    // not the committed one, so dragging onto a stack shows the landing Z.
+    const placedInstance: PlaygroundViewportInstance = {
+      ...instance,
+      placement,
+      stackedZ:
+        viewMode === 'desktop'
+          ? stackedZForPlacement(instanceId, placement)
+          : instance.stackedZ,
+    }
     // Ready meshes are authored in the print frame and mount with the
     // display rotation composed in; pending placeholder boxes are authored
     // in the wall-ready frame and mount without it.
