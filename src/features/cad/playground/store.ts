@@ -26,6 +26,15 @@ import {
 } from '../worker-client'
 import { getModelDefinition } from '../model-catalog'
 import {
+  findModelPreset,
+  resolvePresetParameters,
+} from '../model-catalog/presets'
+import {
+  cloneModelParameters,
+  getSystemPreset,
+  type OpenGridSystemContext,
+} from '../system-entry-context'
+import {
   parsePlaygroundSceneFile,
   serializePlaygroundScene,
 } from './scene-file'
@@ -59,6 +68,12 @@ export type PlaygroundInstance = {
   modelId: ModelId
   parameters: ModelParameterValues
   rawParameters: Record<string, string>
+  /**
+   * Editing-time OpenGrid system context for the instance parameter panel.
+   * Defaults from the scene orientation, MAY be changed by a panel system
+   * switch, and is never persisted in the scene JSON.
+   */
+  systemContext: OpenGridSystemContext
   placement: ScenePlacement | null
   colors: ModelColors
   meshState: PlaygroundMeshState
@@ -96,6 +111,12 @@ export type PlaygroundSnapshot = {
    * overlap. Recomputed on every emission; never persisted.
    */
   overlappingInstanceIds: string[]
+  /**
+   * Monotonic counter bumped after a successful preset or restore-defaults
+   * application so the mounted parameter panel remounts and every control
+   * reflects the applied values. Editing-time only; never persisted.
+   */
+  panelResetVersion: number
 }
 
 export type PlaygroundPlacementResult =
@@ -227,6 +248,17 @@ export type PlaygroundStore = {
     key: ModelParameterKey,
     rawValue: string,
   ) => void
+  setInstanceParameters: (
+    instanceId: string,
+    parameters: ModelParameterValues,
+  ) => void
+  setInstanceSystemContext: (
+    instanceId: string,
+    context: OpenGridSystemContext,
+  ) => void
+  applyPreset: (instanceId: string, presetId: string) => void
+  restoreInstanceParameters: (instanceId: string) => void
+  markDimensionCalculationInvalid: (instanceId: string) => void
   setInstanceColors: (instanceId: string, colors: ModelColors) => void
   setSceneColors: (colors: ModelColors) => void
   importScene: (text: string) => boolean
@@ -247,6 +279,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let nextInstanceNumber = 1
   let viewMode: PlaygroundViewMode = 'desktop'
   let gridSize = loadPlaygroundGridSize()
+  let panelResetVersion = 0
 
   const listeners = new Set<(snapshot: PlaygroundSnapshot) => void>()
   const readyCache = new Map<
@@ -695,6 +728,47 @@ export function createPlaygroundStore(): PlaygroundStore {
     drainQueue()
   }
 
+  /**
+   * Commits a validated full parameter set: syncs raw inputs and analytic
+   * bounds, adopts a cached mesh when one exists for the new parameters,
+   * and otherwise schedules debounced regeneration. Single emission point
+   * shared by the raw-input, typed, preset, and restore-defaults paths.
+   */
+  const commitParameters = (
+    instance: PlaygroundInstance,
+    parameters: ModelParameterValues,
+  ): void => {
+    instance.fieldErrors = {}
+    instance.parameters = cloneParameters(parameters)
+    instance.rawParameters = rawFromParameters(
+      instance.parameters,
+      instance.modelId,
+    )
+    instance.bounds = analyticBounds(instance.modelId, instance.parameters)
+    // A ready mesh is authored for the previous parameters; mounting it
+    // under the new wall display plan would mis-seat it (a tilt change
+    // floats the plate off the board until regeneration catches up). Adopt
+    // an already-cached mesh for the new parameters immediately, otherwise
+    // drop to the parameter-consistent placeholder for the debounced
+    // generation instead of rendering the stale mesh.
+    const cached = readyCache.get(cacheKeyFor(instance))
+    const pendingTimer = generationTimers.get(instance.id)
+    if (pendingTimer) {
+      clearTimeout(pendingTimer)
+      generationTimers.delete(instance.id)
+    }
+    if (cached) {
+      instance.mesh = cached.mesh
+      instance.bounds = cached.bounds
+      instance.meshState = 'ready'
+    } else {
+      instance.meshState = 'pending'
+    }
+    diagnostic = null
+    emit()
+    if (!cached) scheduleGenerate(instance)
+  }
+
   const current = (): PlaygroundSnapshot => ({
     instances: instances.map((instance) => ({ ...instance })),
     selectedInstanceId,
@@ -705,6 +779,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     diagnostic: diagnostic ? { ...diagnostic } : null,
     importNotice: importNotice ? { ...importNotice } : null,
     overlappingInstanceIds: [...overlappingInstanceIds(placedCellEntries())],
+    panelResetVersion,
   })
 
   return {
@@ -764,6 +839,8 @@ export function createPlaygroundStore(): PlaygroundStore {
         modelId,
         parameters,
         rawParameters: rawFromParameters(parameters, modelId),
+        // Scene orientation maps 1:1 onto the OpenGrid system context.
+        systemContext: viewMode === 'wall' ? 'wall' : 'desk',
         placement: null,
         colors: { ...sceneColors },
         meshState: 'pending',
@@ -808,6 +885,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         modelId: source.modelId,
         parameters: cloneParameters(source.parameters),
         rawParameters: { ...source.rawParameters },
+        systemContext: source.systemContext,
         placement: null,
         colors: { ...source.colors },
         meshState: 'pending',
@@ -870,7 +948,6 @@ export function createPlaygroundStore(): PlaygroundStore {
       if (!instance) return
       const definition = getModelDefinition(instance.modelId)
       if (!definition) return
-      if (!definition.parameterSchema.some((field) => field.key === key)) return
       const candidateParameters = {
         ...instance.parameters,
         [key]: Number(rawValue),
@@ -888,35 +965,93 @@ export function createPlaygroundStore(): PlaygroundStore {
         emit()
         return
       }
-      instance.fieldErrors = {}
-      instance.parameters = cloneParameters(validation.value.parameters)
-      instance.rawParameters = rawFromParameters(
-        instance.parameters,
-        instance.modelId,
+      commitParameters(instance, validation.value.parameters)
+    },
+    setInstanceParameters(instanceId, parameters) {
+      const instance = getInstance(instanceId)
+      if (!instance) return
+      const definition = getModelDefinition(instance.modelId)
+      if (!definition) return
+      const validation = definition.validateParameters(
+        cloneParameters(parameters),
       )
-      instance.bounds = analyticBounds(instance.modelId, instance.parameters)
-      // A ready mesh is authored for the previous parameters; mounting it
-      // under the new wall display plan would mis-seat it (a tilt change
-      // floats the plate off the board until regeneration catches up). Adopt
-      // an already-cached mesh for the new parameters immediately, otherwise
-      // drop to the parameter-consistent placeholder for the debounced
-      // generation instead of rendering the stale mesh.
-      const cached = readyCache.get(cacheKeyFor(instance))
+      if (!validation.valid) {
+        instance.fieldErrors = {}
+        for (const issue of validation.issues) {
+          instance.fieldErrors[issue.field] = issue
+        }
+        emit()
+        return
+      }
+      commitParameters(instance, validation.value.parameters)
+    },
+    setInstanceSystemContext(instanceId, context) {
+      const instance = getInstance(instanceId)
+      if (!instance || instance.systemContext === context) return
+      instance.systemContext = context
+      emit()
+    },
+    applyPreset(instanceId, presetId) {
+      const instance = getInstance(instanceId)
+      if (!instance) return
+      const definition = getModelDefinition(instance.modelId)
+      if (!definition) return
+      const preset = findModelPreset(definition, presetId)
+      if (!preset) {
+        if (import.meta.env.DEV) {
+          console.error(`UNKNOWN_MODEL_PRESET:${instance.modelId}:${presetId}`)
+        }
+        return
+      }
+      const resolved = resolvePresetParameters(definition, preset)
+      if (!resolved.ok) {
+        if (import.meta.env.DEV) {
+          console.error(`MODEL_PRESET_INVALID:${instance.modelId}:${presetId}`)
+        }
+        return
+      }
+      // Bump before committing so the same emission remounts the panel and
+      // shows the applied values; a failed application never reaches here.
+      panelResetVersion += 1
+      commitParameters(instance, resolved.parameters)
+    },
+    restoreInstanceParameters(instanceId) {
+      const instance = getInstance(instanceId)
+      if (!instance) return
+      const definition = getModelDefinition(instance.modelId)
+      if (!definition) return
+      const systemPreset = instance.systemContext
+        ? getSystemPreset(instance.modelId, instance.systemContext)
+        : undefined
+      const next = cloneModelParameters(
+        systemPreset ?? definition.defaultParameters,
+      )
+      const validation = definition.validateParameters(cloneParameters(next))
+      if (!validation.valid) return
+      panelResetVersion += 1
+      commitParameters(instance, validation.value.parameters)
+    },
+    markDimensionCalculationInvalid(instanceId) {
+      const instance = getInstance(instanceId)
+      if (!instance) return
+      // Mirrors the workspace input-invalid path: surface a parameters-level
+      // diagnostic and stop the debounced generation scheduled for the
+      // current parameters. The next valid edit clears the diagnostic via
+      // commitParameters.
       const pendingTimer = generationTimers.get(instance.id)
       if (pendingTimer) {
         clearTimeout(pendingTimer)
         generationTimers.delete(instance.id)
       }
-      if (cached) {
-        instance.mesh = cached.mesh
-        instance.bounds = cached.bounds
-        instance.meshState = 'ready'
-      } else {
-        instance.meshState = 'pending'
+      instance.fieldErrors = {
+        ...instance.fieldErrors,
+        parameters: { field: 'parameters', messageId: 'validation.invalid' },
       }
-      diagnostic = null
+      // Cancelling the debounce must not strand an already-pending
+      // placeholder with no timer and no recovery path; the instance's
+      // parameters are still valid, so re-arm its generation.
+      if (instance.meshState === 'pending') scheduleGenerate(instance)
       emit()
-      if (!cached) scheduleGenerate(instance)
     },
     setInstanceColors(instanceId, colors) {
       const instance = getInstance(instanceId)
@@ -955,6 +1090,9 @@ export function createPlaygroundStore(): PlaygroundStore {
             modelId: data.modelId,
             parameters: data.parameters,
             rawParameters: rawFromParameters(data.parameters, data.modelId),
+            // Scene orientation maps 1:1 onto the OpenGrid system context;
+            // a file-carried context is intentionally not restored.
+            systemContext: viewMode === 'wall' ? 'wall' : 'desk',
             placement: data.placement,
             colors: { ...data.colors },
             meshState: 'pending',
