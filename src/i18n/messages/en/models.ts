@@ -21,8 +21,13 @@ export const messages = {
   'models.parameterRange': '{label}: {min}–{max} {unit}',
   'models.fixedParameters': 'Fixed geometry with no adjustable parameters.',
   'models.exportFormats': 'Export formats',
-  'models.exportFormatsValue': 'STL and the OpenGrid Wall Cover two-color 3MF',
   'models.exportFormatsLine': '{label}: {value}',
+  'models.exportFormatLine.stlOnly': 'STL',
+  'models.exportFormatLine.stlWithThreeMf': 'STL + dual-color 3MF',
+  'models.exportFormatLine.stlWithConditionalThreeMf':
+    'STL (adds dual-color 3MF when the dual-color rim is enabled)',
+  'models.exportFormatLine.threeMfOnly':
+    'dual-color 3MF (no STL for this model)',
   'models.previewUnavailable': 'Preview image is temporarily unavailable',
   'models.edit': 'Tweak it →',
   'models.editAria': 'Edit {name}',
@@ -45,7 +50,7 @@ export const messages = {
   'models.zone.containersHint': 'The ones that actually hold things',
   'models.zone.toolsHint': 'Little helpers — they hold nothing',
   'models.zone.toolsTeaser':
-    'Assembly tools, pillars, dividers, and other accessories live here — expand when you need them.',
+    'Assembly tools and accessories live here — expand when you need them.',
   'models.zone.expand': 'Expand',
   'models.zone.collapse': 'Collapse',
   'models.model.box.name': 'Box',
@@ -77,7 +82,7 @@ export const messages = {
   'models.model.opengrid-snap.name': 'OpenGrid Snap',
   'models.model.opengrid-snap.selection': 'Snap',
   'models.model.opengrid-snap.description':
-    'The little connector between box and Board. Lite/Full, Standard/Directional — take your pick.',
+    'The little connector between box and Board: Lite/Full, Standard/Directional — take your pick; footprint supports Full/Half/Quarter (Half/Quarter ship a fixed STEP), with optional magnet holes.',
   'models.model.opengrid-snap.alt': 'OpenGrid Snap preview',
   'models.model.opengrid-wall-cover.name': 'OpenGrid Wall Cover',
   'models.model.opengrid-wall-cover.selection': 'Wall Cover',
@@ -125,7 +130,7 @@ export const messages = {
   'models.model.opengrid-openconnect-shelf.name': 'OpenGrid OpenConnect Shelf',
   'models.model.opengrid-openconnect-shelf.selection': 'OpenConnect Shelf',
   'models.model.opengrid-openconnect-shelf.description':
-    'Horizontal shelf plus vertical locking holes, joined at a true 90°, mounted to the wall.',
+    'A wall shelf with adjustable tilt (14° by default) hanging from vertical locking holes.',
   'models.model.opengrid-openconnect-shelf.alt':
     'OpenGrid OpenConnect wall shelf preview',
   'models.model.opengrid-openconnect-organizer.name':

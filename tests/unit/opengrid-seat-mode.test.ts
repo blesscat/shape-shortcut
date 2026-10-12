@@ -179,19 +179,13 @@ describe('OpenGrid locating seat modes', () => {
         ...boxLegacyBase,
         cornerSeatMode: 'hole',
       }),
-    ).toMatchObject({
-      valid: true,
-      value: { cornerSeatMode: 'detachable-corner-seat' },
-    })
+    ).toMatchObject({ valid: false })
     expect(
       validateOpenGridStackableCylinderParameters({
         ...cylinderLegacyBase,
         bottomSeatMode: 'hole',
       }),
-    ).toMatchObject({
-      valid: true,
-      value: { bottomSeatMode: 'detachable-corner-seat' },
-    })
+    ).toMatchObject({ valid: false })
   })
 
   it('makes STL names distinguish all seat geometries', () => {

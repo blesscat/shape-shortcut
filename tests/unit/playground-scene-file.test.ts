@@ -146,7 +146,7 @@ describe('playground scene file parsing', () => {
     expect(result.error.messageId).toBe('diagnostic.sceneInvalidPlacement')
   })
 
-  it('normalizes legacy parameter values through the component validators', () => {
+  it('rejects unknown seat modes instead of normalizing them', () => {
     const result = parsePlaygroundSceneFile(
       sceneFileWith([
         {
@@ -155,12 +155,7 @@ describe('playground scene file parsing', () => {
         },
       ]),
     )
-    expect(result.valid).toBe(true)
-    if (!result.valid) return
-    expect(
-      (result.scene.instances[0].parameters as Record<string, unknown>)
-        .cornerSeatMode,
-    ).toBe('detachable-corner-seat')
+    expect(result.valid).toBe(false)
   })
 
   it('falls back invalid instance colors to the scene palette', () => {

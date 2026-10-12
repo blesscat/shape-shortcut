@@ -157,7 +157,7 @@ export const messages = {
   'panel.snap.variantAria': 'OpenGrid Snap variant',
   'panel.snap.system': 'System',
   'panel.snap.systemAria': 'OpenGrid Snap system',
-  'panel.snap.systemDesk': 'Desktop System',
+  'panel.snap.systemDesk': 'Desk System',
   'panel.snap.systemWall': 'Wall System',
   'panel.snap.openConnect': 'OpenConnect',
   'panel.snap.geometry': 'Geometry profile',
@@ -206,7 +206,7 @@ export const messages = {
   'panel.wallCover.openConnect': 'Remover hole',
   'panel.labelCard.summary': 'Customize the label card',
   'panel.labelCard.details':
-    'A replaceable card sized in 10 mm units for the organizer front slot. Choose flat or raised styling, an icon, and optional text. Text height is adjustable from 2–7 mm, with independently aligned rows (up to 4 mm each for two rows) and an optional icon on either side. Two-color printing uses 3MF.',
+    'A replaceable card sized in 10 mm units for the organizer front slot. Choose flat or raised styling, an icon, and optional text. Text height is adjustable from 2–7 mm, with independently aligned rows (up to 4 mm each for two rows) and an optional icon on either side. Card mode switches between standard and screw (with head style, size, and length). Two-color printing uses 3MF.',
   'panel.labelCard.inputAria': 'Label card text',
   'panel.labelCard.characterCount': '{count} / {max} characters',
   'panel.labelCard.font': 'Only Chinese and English are currently supported.',

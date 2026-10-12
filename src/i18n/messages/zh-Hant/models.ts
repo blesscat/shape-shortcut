@@ -21,8 +21,12 @@ export const messages = {
   'models.parameterRange': '{label}：{min}–{max} {unit}',
   'models.fixedParameters': '固定幾何，沒有可調參數。',
   'models.exportFormats': '匯出格式',
-  'models.exportFormatsValue': 'STL 與 OpenGrid Wall Cover 雙色 3MF',
   'models.exportFormatsLine': '{label}：{value}',
+  'models.exportFormatLine.stlOnly': 'STL',
+  'models.exportFormatLine.stlWithThreeMf': 'STL ＋ 雙色 3MF',
+  'models.exportFormatLine.stlWithConditionalThreeMf':
+    'STL（啟用雙色飾圈時另提供雙色 3MF）',
+  'models.exportFormatLine.threeMfOnly': '雙色 3MF（此模型不提供 STL）',
   'models.previewUnavailable': '預覽圖片暫時無法載入',
   'models.edit': '去調它 →',
   'models.editAria': '編輯 {name}',
@@ -44,8 +48,7 @@ export const messages = {
   'models.panel.hint': '工具在下面等你',
   'models.zone.containersHint': '真的拿來裝東西的',
   'models.zone.toolsHint': '小幫手，不裝東西',
-  'models.zone.toolsTeaser':
-    '組裝小工具和定位柱、分隔牆這些配件收在這區，需要再展開。',
+  'models.zone.toolsTeaser': '組裝小工具與配件收在這區，需要再展開。',
   'models.zone.expand': '展開',
   'models.zone.collapse': '收合',
   'models.model.box.name': '方塊',
@@ -76,7 +79,7 @@ export const messages = {
   'models.model.opengrid-snap.name': 'Snap (咔咔)',
   'models.model.opengrid-snap.selection': 'Snap (咔咔)',
   'models.model.opengrid-snap.description':
-    '連接盒子和底板的小配角，Lite／Full、標準／方向性都有得選。',
+    '連接盒子和底板的小配角：Lite／Full、標準／方向性都有得選；佔格支援 Full／Half／Quarter（Half／Quarter 另附固定 STEP），也能加磁鐵孔。',
   'models.model.opengrid-snap.alt': 'OpenGrid Snap 預覽',
   'models.model.opengrid-wall-cover.name': 'OpenGrid Wall Cover',
   'models.model.opengrid-wall-cover.selection': 'Wall Cover',
@@ -127,7 +130,7 @@ export const messages = {
   'models.model.opengrid-openconnect-shelf.selection':
     'OpenConnect Shelf（壁掛層架）',
   'models.model.opengrid-openconnect-shelf.description':
-    '水平層板配垂直鎖定孔，正正 90° 掛牆的層架。',
+    '層板傾斜可調（預設 14°），配垂直鎖定孔掛牆的層架。',
   'models.model.opengrid-openconnect-shelf.alt':
     'OpenGrid OpenConnect 壁掛層架預覽',
   'models.model.opengrid-openconnect-organizer.name':

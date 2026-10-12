@@ -10,12 +10,12 @@
 
 1. CAD 運算在使用者的瀏覽器完成（本機運算主張）。
 2. 模型下載永久免費。
-3. 可下載直接列印的 STL；`opengrid-wall-cover` 另提供雙色 3MF。公開首頁文案 MUST NOT 以 STEP 匯出作為產品主張。
+3. 可下載直接列印的 STL；部分模型另提供雙色 3MF。首頁文案 MUST 以不指名單一模型的中性方式描述雙色 3MF（與 `three-mf-export` 規範的支援模型集一致），MUST NOT 將雙色 3MF 描述為任何單一模型專屬。公開首頁文案 MUST NOT 以 STEP 匯出作為產品主張。
 
 #### Scenario: 繁中首頁呈現三項主張
 
 - **WHEN** 使用者開啟 `/zh-Hant/`
-- **THEN** 首頁可見文案 MUST 同時包含本機運算、模型下載永久免費與 STL（含 Wall Cover 雙色 3MF）下載三個主張
+- **THEN** 首頁可見文案 MUST 同時包含本機運算、模型下載永久免費與 STL（部分模型含雙色 3MF）下載三個主張
 - **AND** 首頁可見文案與搜尋 metadata MUST NOT 宣稱提供 STEP 匯出
 - **AND** 這些主張 MUST 存在於 server-rendered HTML，不需要執行 JavaScript 即可讀取
 
@@ -24,6 +24,12 @@
 - **WHEN** 使用者開啟 `/en/`
 - **THEN** 首頁可見文案 MUST 以英文呈現相同的三個主張
 - **AND** 首頁可見文案與搜尋 metadata MUST NOT 宣稱提供 STEP 匯出
+
+#### Scenario: 雙色 3MF 不再綁定單一模型
+
+- **WHEN** 使用者閱讀任一 locale 首頁關於下載格式的可見文案
+- **THEN** 文案 MUST NOT 出現「雙色 3MF 僅／只由 `opengrid-wall-cover` 提供」類的單一模型專屬描述
+- **AND** 文案 MAY 列舉部分適用模型（例如 Wall Cover、標籤卡），但 MUST 保持列舉與 `three-mf-export` 支援模型集一致
 
 ### Requirement: Prototype 聲明位置
 

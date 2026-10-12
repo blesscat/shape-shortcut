@@ -17,8 +17,8 @@ test('Desk and Wall Snap entries use isolated presets and context resets', async
     page.getByRole('heading', { name: '目前編輯：Snap (咔咔)' }),
   ).toBeVisible()
   const variant = page.getByRole('combobox', { name: 'OpenGrid Snap 型號' })
-  const deskSystem = page.getByRole('radio', { name: '桌面系統' })
-  const wallSystem = page.getByRole('radio', { name: '掛牆系統' })
+  const deskSystem = page.getByRole('radio', { name: 'Desk System' })
+  const wallSystem = page.getByRole('radio', { name: 'Wall System' })
   const cornerHoles = page.getByRole('checkbox', { name: '定位孔' })
   const centerRemover = page.getByRole('checkbox', { name: '移除孔' })
   const deskMagnetShape = page.getByRole('combobox', {

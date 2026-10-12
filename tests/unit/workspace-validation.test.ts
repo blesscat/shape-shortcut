@@ -493,8 +493,9 @@ describe('CAD workspace validation helpers', () => {
         'opengrid-stackable-box',
       ),
     ).toEqual({
-      valid: true,
-      value: parameters,
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'cornerSeatMode',
     })
     expect(
       parseRawParameters(
@@ -502,7 +503,7 @@ describe('CAD workspace validation helpers', () => {
           x: '0.25',
           y: '1',
           height: '25',
-          cornerSeatMode: 'hole',
+          cornerSeatMode: 'detachable-corner-seat',
           fullBottomHoleGrid: 'true',
           topRimMode: 'stacking-rail',
           bottomMode: 'stacking',
@@ -972,12 +973,9 @@ describe('CAD workspace validation helpers', () => {
         'opengrid-stackable-cylinder',
       ),
     ).toEqual({
-      valid: true,
-      value: {
-        ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
-        innerDiameter: 53,
-        height: 30,
-      },
+      valid: false,
+      messageId: 'validation.invalid',
+      field: 'bottomSeatMode',
     })
   })
 })

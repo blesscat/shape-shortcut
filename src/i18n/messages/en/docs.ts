@@ -27,7 +27,7 @@ export const messages = {
     'Locking corner seat (separate)',
   'docs.deskQuickStart.locating.separate.body':
     'Print and install separate locking corners; the box gets a corner-seat slot.',
-  'docs.deskQuickStart.locating.builtin.title': 'Built-in seat (`內建角座`)',
+  'docs.deskQuickStart.locating.builtin.title': 'Built-in seat',
   'docs.deskQuickStart.locating.builtin.body':
     'Choose the built-in seat in the box settings and it becomes part of the box.',
   'docs.deskQuickStart.locating.builtin.noPost':
@@ -53,7 +53,7 @@ export const messages = {
   'docs.deskQuickStart.visual.flow.caption':
     'Desk System four-step assembly flow.',
   'docs.deskQuickStart.visual.flow.alt':
-    'Flow diagram: Board, Snap, choose one locating method, then Grid Box, Organizer Box, or Round Box.',
+    'Flow diagram: Board, Snap, choose one locating method, then a Grid Box or Round Box.',
   'docs.deskQuickStart.visual.placement.caption':
     'Board and Snap placement relationship.',
   'docs.deskQuickStart.visual.placement.alt':
@@ -75,7 +75,7 @@ export const messages = {
   'docs.sectionNav.common': '04 · Terms & specs',
   'docs.wall.title': 'Wall System, quickly',
   'docs.wall.intro':
-    'Want it on the wall? The Wall series brings Board, Snap, Wall Cover, and shelves up there: sort the Board–Snap interface first, then add covers or shelves as needed.',
+    'Want it on the wall? The Wall series brings Board, Snap, Wall Cover, and shelves up there: sort the Board–Snap interface first, then add covers, shelves, organizers, or the tissue box as needed.',
   'docs.wall.workflowHeading': 'Wall System components',
   'docs.wall.board.title': 'OpenGrid Wall Board',
   'docs.wall.board.body':
@@ -89,12 +89,12 @@ export const messages = {
   'docs.wall.snap.alt': 'OpenGrid Wall Snap preview',
   'docs.wall.cover.title': 'OpenGrid Wall Cover',
   'docs.wall.cover.body':
-    'A dual-color faceplate that tidies the wall and hides the busy bits.',
+    'Type a few letters and each becomes a dual-color cover piece on its own cell (up to 8 letters, optional remover hole) — a tidier wall.',
   'docs.wall.cover.cta': 'Try Wall Cover →',
   'docs.wall.cover.alt': 'OpenGrid Wall Cover preview',
   'docs.wall.shelf.title': 'OpenConnect Shelf',
   'docs.wall.shelf.body':
-    'A horizontal shelf plus vertical locking holes, joined at a true 90°.',
+    'A shelf with an adjustable tilt (14° by default, so small items stay put) hanging from vertical locking holes.',
   'docs.wall.shelf.cta': 'Try the Shelf →',
   'docs.wall.shelf.alt': 'OpenGrid OpenConnect wall shelf preview',
   'docs.wall.organizer.title': 'OpenConnect Wall Organizer',
@@ -110,7 +110,7 @@ export const messages = {
     'Desk Boards, Snaps, locating methods, and containers.',
   'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
-    'Wall Boards, Snaps, Wall Covers, and OpenConnect Shelf.',
+    'Wall Boards, Snaps, Wall Covers, OpenConnect shelves, organizers, and the tissue box.',
   'docs.modelReference.other.title': 'Other components',
   'docs.modelReference.other.body':
     'CAD components that can be useful outside one system, such as the hexagonal honeycomb.',
@@ -120,13 +120,13 @@ export const messages = {
     'For what each model does and which parameters it exposes, see the models page; below is the shared cheat-sheet for parameters, units, export formats, and browser needs.',
   'docs.parametersHeading': 'Parameters and constraints',
   'docs.parametersBody':
-    'Every model has its own schema; the models page lists what is adjustable, and the CAD workspace validates your input live.',
+    'Every model has its own schema; the models page lists what is adjustable, and the CAD workspace validates your input live. Some models offer named presets (like the Grid Box 3×3 test style) you can apply in one click.',
   'docs.unitsHeading': 'Units',
   'docs.unitsBody':
     'Geometry dimensions use mm, angles use degrees, and grid/count values use cells or columns. Model IDs, parameter keys, and enum values remain locale-neutral.',
   'docs.exportsHeading': 'Export formats',
   'docs.exportsBody':
-    'STL downloads from the browser; Wall Cover adds a dual-color 3MF.',
+    'Every model downloads STL from the browser (Wall Cover ships dual-color 3MF only); some models add dual-color 3MF — see each model details and workspace.',
   'docs.browserHeading': 'Browser requirements',
   'docs.browserBody':
     'The live preview needs JavaScript, WebAssembly, and WebGL — the text on this page reads fine without.',

@@ -704,7 +704,7 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-in-browser')).toBeVisible()
   await expect(
-    page.getByTestId('home-file-card').getByText('STL · 雙色 3MF'),
+    page.getByTestId('home-file-card').getByText('STL · 部分模型雙色 3MF'),
   ).toBeVisible()
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
@@ -754,7 +754,9 @@ test('English homepage uses localized promotional content and routes', async ({
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-free-forever')).toBeVisible()
   await expect(
-    page.getByTestId('home-file-card').getByText('STL · dual-color 3MF'),
+    page
+      .getByTestId('home-file-card')
+      .getByText('STL · dual-color 3MF on select models'),
   ).toBeVisible()
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expectHomepageExploreCards(page)
