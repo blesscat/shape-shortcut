@@ -192,7 +192,10 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-viewport')).toBeVisible()
     await expect(page.getByTestId('playground-instance-help')).not.toBeEmpty()
-    await expect(page.getByTestId('playground-param-x')).toContainText(/\S/)
+    await expect(page.getByTestId('cad-panel-parameters')).toBeVisible()
+    await expect(
+      page.getByRole('slider', { name: 'X', exact: true }),
+    ).toBeVisible()
     await waitForInstanceReady(page, 'inst-1')
 
     const cellX = page.locator('#playground-cell-x')
@@ -208,10 +211,7 @@ test.describe('OpenGrid playground planner', () => {
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-1')
 
-    const heightInput = page
-      .getByTestId('playground-param-height')
-      .locator('input[type="text"]')
-      .first()
+    const heightInput = page.getByRole('textbox', { name: /盒內淨高/ })
     await heightInput.fill('25')
     await heightInput.blur()
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
@@ -279,9 +279,7 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
 
     await page.getByTestId('playground-instance-inst-1').click()
-    const widthSlider = page
-      .getByTestId('playground-param-x')
-      .getByRole('slider')
+    const widthSlider = page.getByRole('slider', { name: 'X', exact: true })
     await widthSlider.focus()
     await widthSlider.press('ArrowRight')
     await widthSlider.press('ArrowRight')
@@ -387,9 +385,7 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await waitForInstanceReady(page, 'inst-1')
 
-    const widthInput = page
-      .getByTestId('playground-param-width')
-      .getByRole('textbox')
+    const widthInput = page.getByRole('textbox', { name: /寬度/ })
     await widthInput.fill('25')
     await widthInput.blur()
     await waitForInstanceReady(page, 'inst-1')
@@ -1215,4 +1211,66 @@ test('separates wall and desk systems by orientation', async ({ page }) => {
   await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
   await expect(page.getByTestId('playground-add-model')).toHaveValue('')
   await expect(page.getByTestId('playground-add')).toBeDisabled()
+})
+
+test('edits an imported typed component through its workspace panel', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await importModelScene(page, 'opengrid')
+  await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
+  await waitForInstanceReady(page, 'inst-1')
+
+  // The component's own workspace panel drives editing: the generic schema
+  // form is gone and the model-specific panel with its calculators mounts.
+  await expect(page.getByTestId('cad-panel-parameters')).toBeVisible()
+  await expect(page.getByTestId('opengrid-panel')).toBeVisible()
+  await expect(page.getByTestId('playground-param-x')).toHaveCount(0)
+  await expect(page.getByTestId('grid-dimension-calculator')).toBeVisible()
+
+  // The workspace export row never mounts in the playground; per-instance
+  // actions remain the playground's own.
+  await expect(page.getByTestId('cad-panel-actions')).toHaveCount(0)
+  await expect(page.getByTestId('playground-export-stl')).toBeVisible()
+
+  // The fit-to-target conditional section swaps in the dimension calculator.
+  await page.getByRole('checkbox', { name: '啟用' }).first().check()
+  await expect(
+    page.getByTestId('opengrid-target-dimension-calculator'),
+  ).toBeVisible()
+  await expect(page.getByTestId('grid-dimension-calculator')).toHaveCount(0)
+
+  // A grid-count slider edit flows through the typed parameter path.
+  const rowsSlider = page.getByRole('slider', { name: 'Y' })
+  const rowsBefore = await rowsSlider.inputValue()
+  await rowsSlider.focus()
+  await rowsSlider.press('ArrowRight')
+  await expect(rowsSlider).not.toHaveValue(rowsBefore)
+  await waitForInstanceReady(page, 'inst-1')
+})
+
+test('applies an instance preset without touching sibling instances', async ({
+  page,
+}) => {
+  await openPlayground(page)
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-1')
+  await addBoxInstance(page)
+  await waitForInstanceReady(page, 'inst-2')
+
+  const presetButton = page.getByTestId('cad-preset-3x3-desk-style')
+  await expect(presetButton).toBeVisible()
+  // addInstance selects the newly added instance; retarget inst-1 first.
+  await page.getByTestId('playground-instance-inst-1').click()
+  await presetButton.click()
+
+  // Only the selected instance adopts the preset grid counts; the sibling
+  // keeps its defaults when selected afterwards.
+  await expect(
+    page.getByRole('slider', { name: 'X', exact: true }),
+  ).toHaveValue('3')
+  await page.getByTestId('playground-instance-inst-2').click()
+  await expect(
+    page.getByRole('slider', { name: 'X', exact: true }),
+  ).toHaveValue('2')
 })

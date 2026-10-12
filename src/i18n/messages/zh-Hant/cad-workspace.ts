@@ -124,7 +124,6 @@ export const messages = {
   'playground.placement.stepDown': '{axis} 減 1',
   'playground.placement.stepUp': '{axis} 加 1',
   'playground.overlapWarning': '有 {count} 個元件重疊，請調整擺放位置。',
-  'playground.parameters.title': '參數',
   'playground.colors.title': '顏色',
   'playground.export.step': '下載 STEP',
   'playground.export.stl': '下載 STL',

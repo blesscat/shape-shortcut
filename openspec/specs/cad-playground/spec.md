@@ -211,13 +211,20 @@ A single scene MUST hold at most 100 instances. Adding or importing beyond the l
 
 ### Requirement: Schema 驅動的 instance 參數編輯
 
-The playground MUST let the user edit the selected instance's parameters through a generic form generated from that component's parameter schema. The form MUST show the same component help text as the component's own workspace panel, falling back to the component's catalog description. Parameter input MUST reuse the component definition's validation; an invalid value MUST show the component's field diagnostic and MUST NOT be sent for generation. Editing parameters MUST NOT change other instances of the same component. A parameter change that grows the instance's footprint into an overlap with another instance MUST be applied and flagged with the conflict color and persistent warning; it MUST NOT be blocked or reverted.
+The playground MUST let the user edit the selected instance's parameters through the component's own workspace parameter panel — the same panel components the component's `/cad/<modelId>` workspace renders — instead of a generic form generated from the parameter schema. The panel MUST include every behavior authored for that component's workspace panel: declared parameter fields, conditional sections, model-specific calculators and estimate tools, advanced sub-settings, and the 3MF export notes where declared. Components whose editing surface is a typed parameter object (for example `opengrid`, `opengrid-label-card`, `opengrid-wall-cover`) MUST be fully editable in the playground through the same typed parameter flow the workspace uses. Parameter input MUST reuse the component definition's validation; an invalid value MUST show the component's field diagnostic and MUST NOT be sent for generation. Editing parameters MUST NOT change other instances of the same component. A parameter change that grows the instance's footprint into an overlap with another instance MUST be applied and flagged with the conflict color and persistent warning; it MUST NOT be blocked or reverted. The form MUST show the same component help text as the component's own workspace panel, falling back to the component's catalog description. The playground MUST NOT render the workspace export action row inside the instance panel; per-instance export, retry, duplicate, and delete remain the playground instance actions.
 
 #### Scenario: Edit instance parameters
 
 - **WHEN** the user changes a parameter of the selected instance to a valid value
 - **THEN** only that instance MUST regenerate with the new value
 - **AND** other instances with unchanged parameters MUST NOT regenerate
+
+#### Scenario: Typed-parameter component is fully editable
+
+- **GIVEN** a scene containing an `opengrid` instance (component whose catalog parameter schema is empty)
+- **WHEN** the user edits its parameters through the instance panel, including conditional sections and the grid dimension or print plan calculators
+- **THEN** the instance MUST adopt the edited typed parameters, pass validation, and regenerate
+- **AND** the rendered panel MUST be the same component panel the `/cad/opengrid` workspace renders
 
 #### Scenario: Parameter growth into overlap is flagged
 
@@ -237,6 +244,60 @@ The playground MUST let the user edit the selected instance's parameters through
 
 - **WHEN** an instance is selected
 - **THEN** the parameter form MUST show that component's help text (its workspace panel description, or its catalog description when the panel has none)
+
+#### Scenario: No workspace export row in the instance panel
+
+- **WHEN** the user opens the selected instance's parameter panel
+- **THEN** the panel MUST NOT render the workspace export/retry action row
+- **AND** per-instance export, retry, duplicate, and delete MUST remain available as playground instance actions
+
+### Requirement: Instance 面板 presets 與回復預設
+
+The playground instance panel MUST render the component's preset button row (restore-defaults button followed by each declared preset, in definition order) with the same behavior as the component workspace panel: applying a preset MUST resolve `defaultParameters` composed with the preset's `overrides` through the shared preset resolution and MUST apply the resolved full parameter set to the selected instance only, via the component's existing validation pipeline. Restore-defaults MUST apply the component's system preset for the instance's editing-time system context when one exists, and the definition defaults otherwise. Preset application and restore-defaults MUST be scoped to the selected instance and MUST NOT change other instances, workspace-saved parameters, or the browser-wide parameter persistence used by component workspaces. A preset that fails validation MUST NOT be applied and MUST leave the instance unchanged. After a preset or restore-defaults application the panel MUST remount its parameter controls so every control reflects the applied values.
+
+#### Scenario: Preset applies to the selected instance only
+
+- **GIVEN** a scene with two `opengrid-stackable-box` instances and the first selected
+- **WHEN** the user applies the `3x3-desk-style` preset on the selected instance
+- **THEN** the selected instance MUST adopt the preset's resolved parameter set and regenerate
+- **AND** the other instance MUST keep its current parameters and MUST NOT regenerate
+
+#### Scenario: Restore defaults honors the system context
+
+- **GIVEN** a wall-orientation scene containing an imported `opengrid-snap` instance whose editing-time system context is `wall`
+- **WHEN** the user clicks restore-defaults on that instance
+- **THEN** the instance MUST receive the component's `wall` system preset values
+- **AND** other instances MUST remain unchanged
+
+#### Scenario: Invalid preset is not applied
+
+- **WHEN** a preset's resolved parameter set fails the component's parameter validation
+- **THEN** the selected instance MUST keep its current parameters, raw inputs, and field errors
+- **AND** no generation request for that instance MUST be sent
+
+### Requirement: Instance 編輯期 system context
+
+Each playground instance MUST carry an editing-time OpenGrid system context used by the instance parameter panel for system-aware defaults, restore-defaults, and system selection controls. A new or imported instance MUST default its system context from the scene orientation (`desktop`→`desk`, `wall`→`wall`). A component panel's system context selection control (for example the desk/wall switch on the `opengrid-snap` panel) MUST change only the selected instance's system context. The instance system context MUST be editing-time state: it MUST NOT be written to the scene JSON, MUST NOT persist across export/import, and MUST NOT read from or write to the workspace browser persistence for component parameters. Scene import MUST accept existing scene files unchanged.
+
+#### Scenario: Context defaults from scene orientation
+
+- **WHEN** the user adds any component instance in a desktop-orientation scene
+- **THEN** the instance's editing-time system context MUST be `desk`
+- **AND** a wall-orientation scene MUST default the context to `wall`
+
+#### Scenario: Panel system switch affects only that instance
+
+- **GIVEN** an imported `opengrid-snap` instance in a desktop-orientation scene
+- **WHEN** the user switches its panel's system switch to `wall`
+- **THEN** only that instance's editing-time system context MUST become `wall`
+- **AND** its restore-defaults MUST apply the `wall` system preset while other instances keep their own context
+
+#### Scenario: Context is not persisted in the scene file
+
+- **GIVEN** an instance whose editing-time system context was changed away from the orientation default
+- **WHEN** the user exports the scene and imports it into a fresh playground
+- **THEN** the imported instance MUST have the orientation-default system context
+- **AND** its parameters, placement, and colors MUST be unchanged from the export
 
 ### Requirement: 規劃級 proxy 渲染
 

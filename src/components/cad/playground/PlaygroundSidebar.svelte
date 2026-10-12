@@ -1,15 +1,13 @@
 <script lang="ts">
   import { translate, type Locale } from '../../../i18n'
-  import {
-    getModelDefinition,
-    modelDefinitions,
-  } from '../../../features/cad/model-catalog'
+  import { modelDefinitions } from '../../../features/cad/model-catalog'
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
   import { PLAYGROUND_SCENE_MAX_INSTANCES } from '../../../cad-contract/scene'
   import type { ModelId } from '../../../cad-contract/units'
   import {
     type PlaygroundInstance,
     type PlaygroundSnapshot,
+    type PlaygroundStore,
   } from '../../../features/cad/playground/store'
   import PlaygroundInstancePanel from './PlaygroundInstancePanel.svelte'
 
@@ -20,16 +18,9 @@
     selectedInstance: PlaygroundInstance | null
     addModelId: string
     variant: 'panel' | 'drawer'
+    store: PlaygroundStore
     onAdd: () => void
     onSelect: (instanceId: string) => void
-    onParameterChange: (key: string, value: string) => void
-    onLabelChange: (label: string) => void
-    onPlacementChange: (cellX: number, cellY: number, rotation: number) => void
-    onColorsChange: (primary: string, secondary: string) => void
-    onExport: (format: 'step' | 'stl') => void
-    onDuplicate: () => void
-    onDelete: () => void
-    onRetry: () => void
   }
 
   let {
@@ -39,16 +30,9 @@
     selectedInstance,
     addModelId = $bindable(''),
     variant,
+    store,
     onAdd,
     onSelect,
-    onParameterChange,
-    onLabelChange,
-    onPlacementChange,
-    onColorsChange,
-    onExport,
-    onDuplicate,
-    onDelete,
-    onRetry,
   }: Props = $props()
 
   const t = (key: string, values?: Record<string, string | number>) =>
@@ -157,16 +141,8 @@
     <PlaygroundInstancePanel
       {locale}
       instance={selectedInstance}
-      fields={getModelDefinition(selectedInstance.modelId)?.parameterSchema ??
-        []}
-      {onParameterChange}
-      {onLabelChange}
-      {onPlacementChange}
-      {onColorsChange}
-      {onExport}
-      {onDuplicate}
-      {onDelete}
-      {onRetry}
+      {store}
+      panelResetVersion={snapshot.panelResetVersion}
     />
   {/if}
 

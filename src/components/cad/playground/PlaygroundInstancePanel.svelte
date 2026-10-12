@@ -1,45 +1,28 @@
 <script lang="ts">
   import { translate, type Locale } from '../../../i18n'
-  import type { ParameterField as ParameterFieldDefinition } from '../../../features/cad/model-catalog'
-  import {
-    displayParameterLabel,
-    unitLabelFor,
-  } from '../../../features/cad/model-catalog'
-  import ParameterControl from '../component-panels/ParameterControl.svelte'
-  import ParameterField from '../component-panels/ParameterField.svelte'
-  import type { PlaygroundInstance } from '../../../features/cad/playground/store'
+  import type { ScenePlacement } from '../../../cad-contract/scene'
+  import { getModelDefinition } from '../../../features/cad/model-catalog'
+  import type { OpenGridSystemContext } from '../../../features/cad/system-entry-context'
+  import type {
+    PlaygroundInstance,
+    PlaygroundStore,
+  } from '../../../features/cad/playground/store'
+  import CadPanelNotes from '../component-panels/CadPanelNotes.svelte'
+  import CadPanelParameters from '../component-panels/CadPanelParameters.svelte'
 
   type Props = {
     locale: Locale
     instance: PlaygroundInstance
-    fields: ReadonlyArray<ParameterFieldDefinition>
-    onParameterChange: (key: string, value: string) => void
-    onLabelChange: (label: string) => void
-    onPlacementChange: (cellX: number, cellY: number, rotation: number) => void
-    onColorsChange: (primary: string, secondary: string) => void
-    onExport: (format: 'step' | 'stl') => void
-    onDuplicate: () => void
-    onDelete: () => void
-    onRetry: () => void
+    store: PlaygroundStore
+    /** Snapshot `panelResetVersion`; bumps remount the parameter panel. */
+    panelResetVersion: number
   }
 
-  let {
-    locale,
-    instance,
-    fields,
-    onParameterChange,
-    onLabelChange,
-    onPlacementChange,
-    onColorsChange,
-    onExport,
-    onDuplicate,
-    onDelete,
-    onRetry,
-  }: Props = $props()
+  let { locale, instance, store, panelResetVersion }: Props = $props()
 
   let cellX = $state('')
   let cellY = $state('')
-  let rotation = $state(0)
+  let rotation = $state<ScenePlacement['rotation']>(0)
   let lastPlacementSignature = $state('')
 
   /**
@@ -63,6 +46,16 @@
       `models.model.${instance.modelId}.description`,
   )
 
+  let definition = $derived(getModelDefinition(instance.modelId))
+
+  // Data-derived equivalent of the workspace's `hasParameterControlsFor`:
+  // typed-parameter components advertise an adjustable presentation, every
+  // other component exposes controls through its parameter schema.
+  let showParameters = $derived(
+    (definition?.parameterSchema.length ?? 0) > 0 ||
+      definition?.parameterPresentation?.kind === 'adjustable',
+  )
+
   $effect(() => {
     // Resync the placement inputs only when the selected instance changes or
     // its committed placement actually changes; unrelated store emissions
@@ -81,7 +74,7 @@
     const parsedX = Number(cellX)
     const parsedY = Number(cellY)
     if (!Number.isInteger(parsedX) || !Number.isInteger(parsedY)) return
-    onPlacementChange(parsedX, parsedY, rotation)
+    store.setPlacement(instance.id, parsedX, parsedY, rotation)
   }
 
   function stepPlacement(axis: 'x' | 'y', delta: number): void {
@@ -93,7 +86,7 @@
     if (!Number.isInteger(nextX) || !Number.isInteger(nextY)) return
     if (axis === 'x') cellX = String(nextX)
     else cellY = String(nextY)
-    onPlacementChange(nextX, nextY, rotation)
+    store.setPlacement(instance.id, nextX, nextY, rotation)
   }
 
   const STEP_BUTTON_CLASS =
@@ -101,8 +94,21 @@
 
   function handleColorInput(which: 'primary' | 'secondary', value: string) {
     return which === 'primary'
-      ? onColorsChange(value, instance.colors.secondary)
-      : onColorsChange(instance.colors.primary, value)
+      ? store.setInstanceColors(instance.id, {
+          primary: value,
+          secondary: instance.colors.secondary,
+        })
+      : store.setInstanceColors(instance.id, {
+          primary: instance.colors.primary,
+          secondary: value,
+        })
+  }
+
+  function handleSystemContextChange(
+    context: OpenGridSystemContext | undefined,
+  ): void {
+    if (!context) return
+    store.setInstanceSystemContext(instance.id, context)
   }
 </script>
 
@@ -126,7 +132,7 @@
       placeholder={translate(locale, 'playground.instance.labelPlaceholder')}
       oninput={(event) => {
         if (!(event.currentTarget instanceof HTMLInputElement)) return
-        onLabelChange(event.currentTarget.value)
+        store.setLabel(instance.id, event.currentTarget.value)
       }}
     />
   </div>
@@ -222,32 +228,33 @@
     </div>
   </fieldset>
 
-  {#if fields.length > 0}
-    <fieldset class="grid gap-3 rounded-xl border border-border-card p-3">
-      <legend class="px-1 font-[650]">
-        {translate(locale, 'playground.parameters.title')}
-      </legend>
-      {#each fields as field (field.key)}
-        <div data-testid={`playground-param-${field.key}`}>
-          <ParameterField
-            {locale}
-            label={displayParameterLabel(field, locale)}
-            unit={unitLabelFor(locale, field.unit)}
-            error={instance.fieldErrors[field.key]}
-            errorId={`${field.key}-playground-error`}
-          >
-            <ParameterControl
-              {locale}
-              {field}
-              value={instance.rawParameters[field.key] ?? ''}
-              error={instance.fieldErrors[field.key]}
-              errorId={`${field.key}-playground-error`}
-              onChange={(value) => onParameterChange(field.key, value)}
-            />
-          </ParameterField>
-        </div>
-      {/each}
-    </fieldset>
+  {#if showParameters}
+    <!-- The workspace panel keeps mount-time UI state (calculator inputs,
+         disclosure groups); switching instances must remount it, exactly as
+         the workspace remounts it per model via page navigation. -->
+    {#key instance.id}
+      <CadPanelParameters
+        {locale}
+        modelId={instance.modelId}
+        {showParameters}
+        presets={definition?.presets ?? []}
+        systemContext={instance.systemContext}
+        parameters={instance.parameters}
+        rawParameters={instance.rawParameters}
+        fieldErrors={instance.fieldErrors}
+        onInputChange={(key, value) =>
+          store.setParameter(instance.id, key, value)}
+        onSystemContextChange={handleSystemContextChange}
+        onOpenGridParametersChange={(parameters) =>
+          store.setInstanceParameters(instance.id, parameters)}
+        onOpenGridDimensionCalculationInvalid={() =>
+          store.markDimensionCalculationInvalid(instance.id)}
+        resetVersion={panelResetVersion}
+        onRestoreDefaults={() => store.restoreInstanceParameters(instance.id)}
+        onApplyPreset={(presetId) => store.applyPreset(instance.id, presetId)}
+      />
+      <CadPanelNotes {locale} modelId={instance.modelId} />
+    {/key}
   {/if}
 
   <fieldset class="grid gap-2 rounded-xl border border-border-card p-3">
@@ -288,7 +295,7 @@
         class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
         data-testid="playground-export-step"
         disabled={instance.meshState !== 'ready' || instance.exportWorking}
-        onclick={() => onExport('step')}
+        onclick={() => store.exportInstance(instance.id, 'step')}
       >
         {translate(locale, 'playground.export.step')}
       </button>
@@ -297,7 +304,7 @@
       class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
       data-testid="playground-export-stl"
       disabled={instance.meshState !== 'ready' || instance.exportWorking}
-      onclick={() => onExport('stl')}
+      onclick={() => store.exportInstance(instance.id, 'stl')}
     >
       {translate(locale, 'playground.export.stl')}
     </button>
@@ -308,13 +315,13 @@
     {/if}
     <button
       class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page"
-      onclick={onDuplicate}
+      onclick={() => store.duplicateInstance(instance.id)}
     >
       {translate(locale, 'playground.instance.duplicate')}
     </button>
     <button
       class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page"
-      onclick={onDelete}
+      onclick={() => store.removeInstance(instance.id)}
     >
       {translate(locale, 'playground.instance.delete')}
     </button>
@@ -322,7 +329,7 @@
       <button
         class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink hover:bg-page"
         data-testid="playground-instance-retry"
-        onclick={onRetry}
+        onclick={() => store.retryInstance(instance.id)}
       >
         {translate(locale, 'playground.instance.retry')}
       </button>

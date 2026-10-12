@@ -11,7 +11,6 @@
   import { modelVisibleInViewMode } from '../../../features/cad/playground/wall-mount'
   import { translate, type Locale, type MessageValues } from '../../../i18n'
   import { onMount } from 'svelte'
-  import type { ModelParameterKey } from '../../../cad-contract/units'
 
   // Must stay identical to the `max-cad` custom variant in global.css.
   const NARROW_MEDIA_QUERY = '(max-width: 760px)'
@@ -276,7 +275,7 @@
     </p>
   {/if}
 
-  {#if snapshot}
+  {#if snapshot && store}
     <div
       class={isNarrow
         ? 'relative min-w-0'
@@ -290,33 +289,9 @@
           {selectedInstance}
           bind:addModelId
           variant="panel"
+          {store}
           onAdd={handleAdd}
           onSelect={(instanceId) => store?.select(instanceId)}
-          onParameterChange={(key, value) =>
-            store?.setParameter(
-              selectedInstance!.id,
-              key as ModelParameterKey,
-              value,
-            )}
-          onLabelChange={(label) =>
-            store?.setLabel(selectedInstance!.id, label)}
-          onPlacementChange={(cellX, cellY, rotation) =>
-            store?.setPlacement(
-              selectedInstance!.id,
-              cellX,
-              cellY,
-              rotation as 0 | 90 | 180 | 270,
-            )}
-          onColorsChange={(primary, secondary) =>
-            store?.setInstanceColors(selectedInstance!.id, {
-              primary,
-              secondary,
-            })}
-          onExport={(format) =>
-            store?.exportInstance(selectedInstance!.id, format)}
-          onDuplicate={() => store?.duplicateInstance(selectedInstance!.id)}
-          onDelete={() => store?.removeInstance(selectedInstance!.id)}
-          onRetry={() => store?.retryInstance(selectedInstance!.id)}
         />
       {/if}
       <PlaygroundViewport
@@ -369,33 +344,9 @@
             {selectedInstance}
             bind:addModelId
             variant="drawer"
+            {store}
             onAdd={handleAdd}
             onSelect={(instanceId) => store?.select(instanceId)}
-            onParameterChange={(key, value) =>
-              store?.setParameter(
-                selectedInstance!.id,
-                key as ModelParameterKey,
-                value,
-              )}
-            onLabelChange={(label) =>
-              store?.setLabel(selectedInstance!.id, label)}
-            onPlacementChange={(cellX, cellY, rotation) =>
-              store?.setPlacement(
-                selectedInstance!.id,
-                cellX,
-                cellY,
-                rotation as 0 | 90 | 180 | 270,
-              )}
-            onColorsChange={(primary, secondary) =>
-              store?.setInstanceColors(selectedInstance!.id, {
-                primary,
-                secondary,
-              })}
-            onExport={(format) =>
-              store?.exportInstance(selectedInstance!.id, format)}
-            onDuplicate={() => store?.duplicateInstance(selectedInstance!.id)}
-            onDelete={() => store?.removeInstance(selectedInstance!.id)}
-            onRetry={() => store?.retryInstance(selectedInstance!.id)}
           />
         </BottomParameterDrawer>
       {/if}

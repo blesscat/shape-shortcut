@@ -281,3 +281,47 @@ test('a second touch cancels an instance preview and hands the gesture to the ca
     originalCamera!,
   )
 })
+
+test('sidebar drawer scrolls the mounted workspace panel and edits parameters', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(
+    browserName !== 'chromium',
+    'Mobile touch coverage runs on Chromium',
+  )
+
+  await openCompactPlayground(page)
+  const pill = page.getByTestId('playground-sidebar-pill')
+  const drawer = page.getByTestId('playground-sidebar-drawer')
+  await pill.click()
+  await expect(drawer).toBeVisible()
+  await page
+    .getByTestId('playground-add-model')
+    .selectOption('opengrid-stackable-box')
+  await page.getByTestId('playground-add').click()
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+    { timeout: 120_000 },
+  )
+
+  // The component's workspace panel mounts inside the drawer with the
+  // preset row, and the drawer scrolls to the instance actions below it.
+  await expect(drawer.getByTestId('cad-panel-parameters')).toBeVisible()
+  await expect(drawer.getByTestId('cad-preset-3x3-desk-style')).toBeVisible()
+  const exportButton = drawer.getByTestId('playground-export-stl')
+  await exportButton.scrollIntoViewIfNeeded()
+  await expect(exportButton).toBeVisible()
+
+  // A parameter edit from inside the drawer regenerates the instance.
+  const heightInput = drawer.getByRole('textbox', { name: /盒內淨高/ })
+  await heightInput.scrollIntoViewIfNeeded()
+  await heightInput.fill('25')
+  await heightInput.blur()
+  await expect(page.getByTestId('playground-instance-inst-1')).toHaveAttribute(
+    'data-state',
+    'ready',
+    { timeout: 120_000 },
+  )
+})

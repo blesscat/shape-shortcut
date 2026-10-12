@@ -134,7 +134,6 @@ export const messages = {
   'playground.placement.stepUp': 'Increase {axis} by 1',
   'playground.overlapWarning':
     '{count} instance(s) overlap; adjust their placements.',
-  'playground.parameters.title': 'Parameters',
   'playground.colors.title': 'Colors',
   'playground.export.step': 'Download STEP',
   'playground.export.stl': 'Download STL',
