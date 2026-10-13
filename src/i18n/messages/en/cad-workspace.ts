@@ -10,7 +10,7 @@ export const messages = {
   'cad.parametersHeading': 'Adjustable parameters and constraints',
   'cad.fixedParameters':
     'This model uses fixed geometry and has no adjustable parameters.',
-  'cad.exportFormats': 'Available export format: STL.',
+  'cad.exportFormats': 'Available export formats: {formats}.',
   'cad.attribution.heading': 'Source and licensing',
   'cad.attribution.opengrid.summary':
     'This OpenGrid Board uses the following upstream attribution and licensing information.',
@@ -102,7 +102,7 @@ export const messages = {
   'playground.viewMode.wall': 'Wall',
   'playground.entry': 'Open the Playground planner',
   'playground.description':
-    'Place multiple components in one 3D scene, arrange them on the OpenGrid grid, tune parameters and colors, and export STEP/STL per piece. Scenes render as planning-grade proxies; inspect details in each component workspace.',
+    'Place multiple components in one 3D scene, arrange them on the OpenGrid grid, tune parameters and colors, and export STL per piece — or save the whole scene as a file. Scenes render as planning-grade proxies; inspect details in each component workspace.',
   'playground.loading': 'Loading the playground',
   'playground.addComponent': 'Add a component to the scene',
   'playground.chooseModel': 'Choose a model',

@@ -1,6 +1,6 @@
 # shape-shortcut
 
-瀏覽器端 CAD Prototype：使用者調整 CAD component 的參數，以即時 3D 預覽查看結果，並從精確的 B-Rep 下載 STEP、STL，或受限的 OpenGrid Wall Cover 雙色 3MF 檔案。
+瀏覽器端 CAD Prototype：使用者調整 CAD component 的參數，以即時 3D 預覽查看結果，並從精確的 B-Rep 下載 STEP、STL；部分模型另支援雙色 3MF 檔案。
 
 > 目前專案仍在 Prototype 的設計與實作階段。本 README 是人類與 AI 了解專案結構的入口；詳細設計以 OpenSpec 的 `design.md` 為準。
 
@@ -126,7 +126,7 @@ pages/
 - `modular-grid-base` 參數：`rows`、`columns` 格數 slider，範圍為 1–20 格；每格為 20 × 20 mm，高度固定 5 mm，最大寬/深為 400 mm。預切除 `cell-template.step` 會複製、平移、融合後，只對整體外側四角套用 R2.5 mm 圓角。
 - `hsw-cell` 參數：`rows`、`columns` 格數 slider，範圍為 1–20 格；它是獨立 component 之一，canonical 資產、交錯排列與路由細節以 `openspec/specs/hsw-cell/spec.md` 為準，輸出檔名為 `hsw-cell-{columns}x{rows}.step` 與 `hsw-cell-{columns}x{rows}.stl`。
 - `hexagonal-column` 參數：`height` 文字輸入=1–500 mm、slider=1–200 mm、`count`、`gap` 與 `orientation`，路由為 `/cad/hexagonal-column`；它保持獨立 component contract，列平面 footprint 安全上限維持 500 mm。
-- OpenGrid stackable-box 與 stackable-cylinder 都以 `detachable-corner-seat`（`鎖定角座`）為預設，並提供 `none`（`無角座`）、`detachable-corner-seat`（`鎖定角座`）、`integrated`（`內建角座`）三種互斥座模式；舊的 `hole` 值會正規化為 `detachable-corner-seat`。`integrated` 會在既有定位位置融合 Ø5 mm × 3.8 mm、由 Z=-3.8 mm 延伸至 Z=0 的實體圓座，底部採 0.2 mm 導角；兩者的 STEP/STL 檔名都包含唯一的 `-seats-none`、`-seats-detachable-corner-seat` 或 `-seats-integrated` 後綴。
+- OpenGrid stackable-box 與 stackable-cylinder 都以 `detachable-corner-seat`（`鎖定角座`）為預設，並提供 `none`（`無角座`）、`detachable-corner-seat`（`鎖定角座`）、`integrated`（`內建角座`）三種互斥座模式。`integrated` 會在既有定位位置融合 Ø5 mm × 3.8 mm、由 Z=-3.8 mm 延伸至 Z=0 的實體圓座，底部採 0.2 mm 導角；兩者的 STEP/STL 檔名都包含唯一的 `-seats-none`、`-seats-detachable-corner-seat` 或 `-seats-integrated` 後綴。
 - OpenGrid Open Shelf 固定使用四個 OpenGrid 角落定位柱，沿用同一個 Ø5 mm × 3.8 mm 內建座契約與 0.2 mm 底部導角，柱體仍直接融合到底板且不提供座模式選擇。
 - OpenGrid Divider 的底部定位柱也沿用同一個 Ø5 mm × 3.8 mm 內建座契約與 0.2 mm 底部導角；分隔牆本體的其他底部支撐圓角維持原設定。
 - `opengrid-organizer-box` 沿用 OpenGrid 方盒外觀，頂部為實體盲孔，可選圓形或固定方向的 3–6 邊正多邊形；多邊形直徑定義為內切圓直徑。X/Y 孔數、孔外圍對外圍間距、孔深與底部加厚（預設 1 mm）會共同決定盒體尺寸；孔距可連動或分開設定。面板最上方把介面拆成兩組獨立 radio：`角座模式` 可選 `無角座`、`鎖定角座`、`內建角座`，`盒體模式` 可選 `普通模式` 或 `堆疊模式`，共六種可組合狀態。普通模式維持既有平頂盒體；堆疊模式同時建立方盒標準的底部堆疊結構與頂部階梯滑軌，並顯示 `堆疊淨空（Z）`。Z 直接代表孔洞開口平面到上一層盒底基準面的距離，採 0.5 mm 級距、最小與預設 3.5 mm；標準滑軌的幾何下限為 2.75 mm，因此 3.5 mm 是不改動堆疊剖面的第一個合法輸入。`內建角座` 會融合四個 Ø5 mm × 3.8 mm 實體腳座（Z=-3.8 mm 至 Z=0 mm），底部採 0.2 mm 導角；`鎖定角座` 則把 Ø7 × 1.75 mm、有擋片的 female socket 直接形成為盒體的一部分，不會輸出另一個 holder。由盒底觀看，左上、右上、右下、左下 socket 固定採 0°、90°、180°、270° 的 B 方向。
@@ -134,13 +134,13 @@ pages/
 - 預覽：由 Worker 產生的 B-Rep mesh。
 - `opengrid-wall-cover` 是只隸屬於 Wall 的固定元件，使用 component-local 的 `opengrid-snap-cover.step` 產生 body 與同平面的 `SNAP` 文字 part；資產維持 Snap Lite／Standard／full 的名義外框。
 - OpenGrid Snap 維持單色模型，不再提供雙色文字控制或 3MF capability；舊快照中的 `topText=SNAP` 會正規化成 `none`。
-- **Playground 規劃器**（`/cad/playground`）：一個場景可容納最多 100 個 component instance，以 OpenGrid 28 mm 格子座標（含負座標）擺放並以 90° 步進旋轉；重疊擺放會被明確拒絕。場景以規劃級 proxy mesh（包絡 B-Rep、粗 tessellation、無邊線）呈現，相同 `(modelId, parameters)` 共用 instanced geometry；選中/hover 只做顏色強調，不升級細節。每個 instance 可調整參數（掛載該 component workspace 的同一組參數面板，含 presets、條件式區塊與模型專屬計算機）、標籤與主/副色（場景調色盤為 fallback，不影響全域顏色偏好）。場景可匯入/匯出為 `shape-shortcut/scene` JSON（schemaVersion 1）；各 component workspace 另提供「下載設定檔」輸出單件特例並快照當下全域調色盤。每片可個別下載 STEP/STL，檔名沿用 component 慣例並以 label（清理後）或序號後綴。堆疊（`supportedBy`）、拖放、minimap、localStorage 自動保存、任意模型匯入、fused 單體與 3MF plate 皆為非目標。
-- 匯出：由 Worker 目前 committed B-Rep 產生 STEP 或 binary STL；`opengrid-wall-cover` 另提供固定檔名 `opengrid-wall-cover.3mf`，body 與 text 預設分別使用耗材槽 1、2。
+- **Playground 規劃器**（`/cad/playground`）：一個場景可容納最多 100 個 component instance，以 OpenGrid 28 mm 格子座標（含負座標）擺放並以 90° 步進旋轉；重疊擺放不會被拒絕，而是以衝突色與持續警告標示每個重疊中的 instance。支援指標拖曳放置（desktop 沿 X/Y、wall 沿 X/Z 格線吸附）。場景以規劃級 proxy mesh（包絡 B-Rep、粗 tessellation、無邊線）呈現，相同 `(modelId, parameters)` 共用 instanced geometry；選中/hover 只做顏色強調，不升級細節。每個 instance 可調整參數（掛載該 component workspace 的同一組參數面板，含 presets、條件式區塊與模型專屬計算機）、標籤與主/副色（場景調色盤為 fallback，不影響全域顏色偏好）。場景可匯入/匯出為 `shape-shortcut/scene` JSON（schemaVersion 1）；每片可個別下載 STL（STEP 下載僅開發版提供），各 component workspace 另提供「下載設定檔」輸出單件特例並快照當下全域調色盤。堆疊（`supportedBy`）、minimap、localStorage 自動保存、任意模型匯入、fused 單體與 3MF plate 皆為非目標。
+- 匯出：由 Worker 目前 committed B-Rep 產生 STEP 或 binary STL；雙色 3MF 另支援 `opengrid-wall-cover`（固定檔名 `opengrid-wall-cover.3mf`）、`opengrid-label-card`，以及啟用雙色飾圈（`topRimEnabled`）的 `opengrid-stackable-box`、`opengrid-stackable-cylinder`、`opengrid-organizer-box`、`opengrid-divider` 與 `opengrid-openconnect-organizer`；body 與 accent 預設分別使用耗材槽 1、2。
 - 不包含任意模型匯入、任意文字／字型 3MF、slicer profile、G-code、儲存、帳號、後端、多人協作或自動啟動 Bambu Studio。
 
 ## 使用 Prototype
 
-先在首頁選擇模型，再進入對應的 CAD workspace。CAD workspace 只調整目前 route 的 component；要切換模型必須返回模型選擇頁。各目標高度／長度欄位的文字輸入上限為 500 mm、slider 上限為 200 mm；OpenGrid 堆疊盒的 X/Y footprint 與其他平面 workspace 安全上限維持 500 mm，外徑欄位維持 20–300 mm。OpenGrid 堆疊盒的 `x`、`y` 支援 `0.5` 格步進，外部 footprint 為 `x × 28 − 0.15 mm`、`y × 28 − 0.15 mm`；`height` 是盒內淨高，外部 Z 高度為 `height + 5 + 6.45 mm`。固定底部總高 5 mm（內層地板 1.2 mm）、主側壁 1.2 mm，盒頂階梯滑軌依序為 1.75／45°、垂直 1.2、0.8／45°、垂直 1.8、2／45°；底部依序為 0.8／45°、垂直 1.8、1.2／45° 導入支撐地板。每條內部 28 mm 格線交界採逐段收窄、斜面收進地板的可列印避讓，止於底板下表面並保留連續內部地板；0.20 mm 名義滑動間隙讓相同盒體可以堆疊並滑動。四角 Snap 固定孔為距名義邊 7 mm 的兩段階梯孔：外側 Ø5.05 mm 深 3 mm，內側 Ø7.05 mm 深 2 mm；座模式則由 `無角座`、`角座孔`、`內建角座` 三選一，Grid Box 的 full-bottom-hole-grid 仍獨立。輸入停止 500 ms 後才會送出建模；每個新 snapshot 會先使舊 generation 失效，連續 slider 變更只會對最後合法值送出建模；無效外部 snapshot 不會送出 `model.generate` 或匯出 request。
+先在首頁選擇模型，再進入對應的 CAD workspace。CAD workspace 只調整目前 route 的 component；要切換模型必須返回模型選擇頁。各目標高度／長度欄位的文字輸入上限為 500 mm、slider 上限為 200 mm；OpenGrid 堆疊盒的 X/Y footprint 與其他平面 workspace 安全上限維持 500 mm，外徑欄位維持 20–300 mm。OpenGrid 堆疊盒的 `x`、`y` 支援 `0.5` 格步進，外部 footprint 為 `x × 28 − 0.15 mm`、`y × 28 − 0.15 mm`；`height` 是盒內淨高，外部 Z 高度為 `height + 5 + 6.45 mm`。固定底部總高 5 mm（內層地板 1.2 mm）、主側壁 1.2 mm，盒頂階梯滑軌依序為 1.75／45°、垂直 1.2、0.8／45°、垂直 1.8、2／45°；底部依序為 0.8／45°、垂直 1.8、1.2／45° 導入支撐地板。每條內部 28 mm 格線交界採逐段收窄、斜面收進地板的可列印避讓，止於底板下表面並保留連續內部地板；0.20 mm 名義滑動間隙讓相同盒體可以堆疊並滑動。四角 Snap 固定孔為距名義邊 7 mm 的兩段階梯孔：外側 Ø5.05 mm 深 3 mm，內側 Ø7.05 mm 深 2 mm；座模式則由 `無角座`、`鎖定角座`、`內建角座` 三選一，Grid Box 的 full-bottom-hole-grid 仍獨立。輸入停止 500 ms 後才會送出建模；每個新 snapshot 會先使舊 generation 失效，連續 slider 變更只會對最後合法值送出建模；無效外部 snapshot 不會送出 `model.generate` 或匯出 request。
 
 堆疊方盒選擇「盒底：堆疊」時，底腳每格四角只避讓 OpenGrid 角點最底下的方形段，切除止於底板斜面起點，斜面以上保留底腳材料。CAD 配合回歸中，13 組 Lite／Full 尺寸與角座組合在原完全落座基準都仍與底板上緣斜面相交，因此不保證完全落座或自由垂直取放；此幾何不含卡扣。盒對盒的滑動與堆疊介面維持不變。裝上可拆角座或使用內建角座時，突出腳座所需的底板背面空間須另外確認；實際列印鬆緊度仍需試印確認。
 
@@ -163,8 +163,8 @@ box-{width}x{depth}x{height}.step
 modular-grid-base-{columns}x{rows}.step
 hsw-cell-{columns}x{rows}.step
 hexagonal-column-{height}x{count}-g{gap}-{standing|lying}.step
-opengrid-stackable-box-{x}x{y}-h{height}-seats-{none|hole|integrated}.step
-opengrid-stackable-cylinder-d{diameter}-h{height}-seats-{none|hole|integrated}.step
+opengrid-stackable-box-{x}x{y}-h{height}-seats-{none|detachable-corner-seat|integrated}.step
+opengrid-stackable-cylinder-d{diameter}-h{height}-seats-{none|detachable-corner-seat|integrated}.step
 pillar-{length}-positioning[-xy{offset}].step
 pillar-5.3-detachable-corner-seat.step
 opengrid-organizer-box-{countX}x{countY}-{shape}-sm-{linked|independent}-d{diameter}-sx{spacingX}-sy{spacingY}-h{depth}-b{bottomThickness}-seats-{none|detachable-corner-seat|integrated}-body-{normal|stackable}[-z{stackingClearanceHeight}].step
@@ -183,8 +183,8 @@ box-{width}x{depth}x{height}.stl
 modular-grid-base-{columns}x{rows}.stl
 hsw-cell-{columns}x{rows}.stl
 hexagonal-column-{height}x{count}-g{gap}-{standing|lying}.stl
-opengrid-stackable-box-{x}x{y}-h{height}-seats-{none|hole|integrated}.stl
-opengrid-stackable-cylinder-d{diameter}-h{height}-seats-{none|hole|integrated}.stl
+opengrid-stackable-box-{x}x{y}-h{height}-seats-{none|detachable-corner-seat|integrated}.stl
+opengrid-stackable-cylinder-d{diameter}-h{height}-seats-{none|detachable-corner-seat|integrated}.stl
 pillar-{length}-positioning[-xy{offset}].stl
 pillar-5.3-detachable-corner-seat.stl
 opengrid-organizer-box-{countX}x{countY}-{shape}-sm-{linked|independent}-d{diameter}-sx{spacingX}-sy{spacingY}-h{depth}-b{bottomThickness}-seats-{none|detachable-corner-seat|integrated}-body-{normal|stackable}[-z{stackingClearanceHeight}].stl

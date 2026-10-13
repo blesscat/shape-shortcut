@@ -108,7 +108,7 @@ const OPENGRID_DIVIDER_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
   },
   {
     key: 'pegDiameterIncrement',
-    label: 'parameter.xyDiameterIncrement',
+    label: 'parameter.pegDiameterIncrement',
     axis: 'XY',
     unit: 'mm',
     control: 'range-text',

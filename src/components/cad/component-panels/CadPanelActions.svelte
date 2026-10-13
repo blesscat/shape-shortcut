@@ -1,10 +1,8 @@
 <script lang="ts">
   import type { CadState } from '../../../features/cad/state'
   import type { ExportFormat } from '../../../features/cad/download'
-  import type {
-    ModelId,
-    ModelParameterValues,
-  } from '../../../cad-contract/units'
+  import type { ModelId } from '../../../cad-contract/units'
+  import { STL_UNSUPPORTED_MODEL_IDS } from '../../../features/cad/model-catalog/export-formats'
   import { translate, type Locale } from '../../../i18n'
 
   const ACTION_BUTTON_CLASS =
@@ -14,8 +12,8 @@
     locale: Locale
     state: CadState
     modelId: ModelId
-    parameters: ModelParameterValues
     canExport: boolean
+    supportsThreeMf: boolean
     canExportThreeMf: boolean
     onExport: (format: ExportFormat) => void
     onRetry: () => void
@@ -26,8 +24,8 @@
     locale,
     state,
     modelId,
-    parameters,
     canExport,
+    supportsThreeMf,
     canExportThreeMf,
     onExport,
     onRetry,
@@ -49,7 +47,7 @@
       {t('cad.action.step')}
     </button>
   {/if}
-  {#if modelId !== 'opengrid-wall-cover'}
+  {#if !STL_UNSUPPORTED_MODEL_IDS[modelId]}
     <button
       class={ACTION_BUTTON_CLASS}
       type="button"
@@ -59,7 +57,7 @@
       {t('cad.action.stl')}
     </button>
   {/if}
-  {#if modelId === 'opengrid-wall-cover' || modelId === 'opengrid-label-card' || (modelId === 'opengrid-stackable-cylinder' && Boolean((parameters as Record<string, unknown>)?.topRimEnabled))}
+  {#if supportsThreeMf}
     <button
       class={ACTION_BUTTON_CLASS}
       type="button"

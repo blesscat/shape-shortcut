@@ -9,7 +9,7 @@ export const messages = {
   'cad.staticSummary': '模型摘要',
   'cad.parametersHeading': '可調參數與限制',
   'cad.fixedParameters': '這個模型使用固定幾何，沒有可調參數。',
-  'cad.exportFormats': '可用匯出格式：STL。',
+  'cad.exportFormats': '可用匯出格式：{formats}。',
   'cad.attribution.heading': '來源與授權',
   'cad.attribution.opengrid.summary':
     '這個 OpenGrid Board 使用下列上游作者與授權資訊。',
@@ -94,7 +94,7 @@ export const messages = {
   'playground.viewMode.wall': '牆面',
   'playground.entry': '開啟 Playground 規劃器',
   'playground.description':
-    '將多個 component 放進同一個 3D 場景，依 OpenGrid 格子擺放、調整參數與顏色，並逐片匯出 STEP/STL。場景以 proxy 外觀呈現，細節檢視請回到各 component 工作區。',
+    '將多個 component 放進同一個 3D 場景，依 OpenGrid 格子擺放、調整參數與顏色，並逐片匯出 STL，也可下載整份場景檔。場景以 proxy 外觀呈現，細節檢視請回到各 component 工作區。',
   'playground.loading': 'Playground 載入中',
   'playground.addComponent': '新增元件到場景',
   'playground.chooseModel': '選擇模型',

@@ -28,7 +28,7 @@ export const messages = {
     'Move a slider and the 3D preview follows. Look first, print later.',
   'home.feature.export.title': 'Download and print',
   'home.feature.export.description':
-    'STL prints as-is; Wall Cover also comes as a dual-color 3MF.',
+    'STL prints as-is; Wall Cover, the label card, and more also come as dual-color 3MF.',
   'home.desk.eyebrow': 'Start with one Board',
   'home.desk.title': 'Four steps to your own desk system',
   'home.desk.description':
@@ -59,7 +59,7 @@ export const messages = {
     'Board and Snap are your base. Pick the containers you like first — tools are tucked away below.',
   'home.explore.wall.title': 'OpenGrid Wall',
   'home.explore.wall.description':
-    'For wall people: Board + Snap go up, and Wall Cover prints in two colors.',
+    'For wall people: Board + Snap go up, and Wall Cover, the label card, and more print in two colors.',
   'home.explore.wall.cta': 'Try Wall System →',
   'home.explore.wall.alt': 'OpenGrid Wall Board preview',
   'home.explore.wall.categorySummary':
@@ -86,5 +86,5 @@ export const messages = {
   'home.fileCard.whereLabel': 'Where it runs',
   'home.fileCard.whereValue': 'Your browser',
   'home.fileCard.downloadLabel': 'What you get',
-  'home.fileCard.downloadValue': 'STL · dual-color 3MF',
+  'home.fileCard.downloadValue': 'STL · dual-color 3MF on select models',
 }

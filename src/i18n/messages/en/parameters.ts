@@ -12,8 +12,6 @@ export const messages = {
   'parameter.tissueBox.slotLength': 'Dispensing slot length',
   'parameter.tissueBox.slotWidth': 'Dispensing slot width',
   'parameter.width': 'Width',
-  'parameter.widthTier': 'Width tier (mm)',
-  'parameter.gripThickness': 'Grip thickness (mm)',
   'parameter.icon': 'Icon',
   'parameter.style': 'Style',
   'parameter.text': 'Text',

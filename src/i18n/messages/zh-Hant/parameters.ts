@@ -12,8 +12,6 @@ export const messages = {
   'parameter.tissueBox.slotLength': '抽取槽長度',
   'parameter.tissueBox.slotWidth': '抽取槽寬度',
   'parameter.width': '寬度',
-  'parameter.widthTier': '寬度檔位 (mm)',
-  'parameter.gripThickness': '夾持厚度 (mm)',
   'parameter.icon': 'Icon',
   'parameter.style': '樣式',
   'parameter.text': '文字',

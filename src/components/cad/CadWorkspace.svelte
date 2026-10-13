@@ -262,6 +262,7 @@
         rawParameters={snapshot.rawParameters}
         fieldErrors={snapshot.fieldErrors}
         canExport={snapshot.canExport}
+        supportsThreeMf={snapshot.supportsThreeMf}
         canExportThreeMf={snapshot.canExportThreeMf}
         onInputChange={handleInputChange}
         onSystemContextChange={handleSystemContextChange}
@@ -306,8 +307,8 @@
           {locale}
           state={snapshot.state}
           modelId={snapshot.modelId}
-          parameters={snapshot.state.input}
           canExport={snapshot.canExport}
+          supportsThreeMf={snapshot.supportsThreeMf}
           canExportThreeMf={snapshot.canExportThreeMf}
           onExport={handleExport}
           onRetry={handleRetry}

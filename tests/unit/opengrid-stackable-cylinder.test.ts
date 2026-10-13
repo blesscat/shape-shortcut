@@ -53,8 +53,7 @@ describe('OpenGrid stackable-cylinder contract', () => {
         bottomSeatMode: 'hole',
       }),
     ).toMatchObject({
-      valid: true,
-      value: { bottomSeatMode: 'detachable-corner-seat' },
+      valid: false,
     })
   })
 

@@ -36,6 +36,12 @@ import type {
 export { displayParameterLabel } from './labels'
 export { unitLabelFor } from './labels'
 export {
+  exportFormatsLineKeyFor,
+  STL_UNSUPPORTED_MODEL_IDS,
+  threeMfAvailabilityFor,
+  type ThreeMfAvailability,
+} from './export-formats'
+export {
   parameterPresentationFor,
   parameterStaticSummaryKeysFor,
 } from './presentation'

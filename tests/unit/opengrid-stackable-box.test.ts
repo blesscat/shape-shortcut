@@ -85,8 +85,7 @@ describe('OpenGrid stackable-box contract', () => {
         basePlateMode: false,
       }),
     ).toMatchObject({
-      valid: true,
-      value: { cornerSeatMode: 'detachable-corner-seat' },
+      valid: false,
     })
   })
 

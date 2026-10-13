@@ -10,7 +10,7 @@ export const messages = {
     '四步驟：Board → Snap → 定位方式 → 盒子',
   'docs.deskQuickStart.step.board.title': '放好 Board',
   'docs.deskQuickStart.step.board.body':
-    '直接放桌面就行，不鎖螺絲也穩。想更牢再用品上的螺絲孔，這是選配。',
+    '直接放桌面就行，不鎖螺絲也穩。想更牢再用板上的螺絲孔，這是選配。',
   'docs.deskQuickStart.step.board.note': '直接放置即可；螺絲是選配。',
   'docs.deskQuickStart.step.snap.title': '準備 Snap',
   'docs.deskQuickStart.step.snap.body':
@@ -72,7 +72,7 @@ export const messages = {
   'docs.sectionNav.common': '04 · 名詞與規格小抄',
   'docs.wall.title': 'Wall System 快速看',
   'docs.wall.intro':
-    '想掛牆？Wall 系列把 Board、Snap、Wall Cover 和層架組到牆上：先搞定 Board 和 Snap 的介面，再按需求加 cover 或層架。',
+    '想掛牆？Wall 系列把 Board、Snap、Wall Cover 和層架組到牆上：先搞定 Board 和 Snap 的介面，再按需求加 cover、層架、收納格或面紙盒。',
   'docs.wall.workflowHeading': 'Wall 系統元件',
   'docs.wall.board.title': 'OpenGrid Wall Board',
   'docs.wall.board.body':
@@ -85,11 +85,12 @@ export const messages = {
   'docs.wall.snap.alt': 'OpenGrid Wall Snap 預覽',
   'docs.wall.cover.title': 'OpenGrid Wall Cover',
   'docs.wall.cover.body':
-    '雙色平面 cover，把牆面收拾得漂漂亮亮，還能局部遮蔽。',
+    '打幾個字，每個字生成一塊雙色 cover 蓋住對應格位（最多 8 字，可選移除孔），把牆面收拾得漂漂亮亮。',
   'docs.wall.cover.cta': '去玩 Wall Cover →',
   'docs.wall.cover.alt': 'OpenGrid Wall Cover 預覽',
   'docs.wall.shelf.title': 'OpenConnect Shelf',
-  'docs.wall.shelf.body': '水平層板配垂直鎖定孔，組成正確 90° 的壁掛層架。',
+  'docs.wall.shelf.body':
+    '層板傾斜角度可調（預設 14°，讓小物不滑落），配垂直鎖定孔掛牆的層架。',
   'docs.wall.shelf.cta': '去玩 Shelf →',
   'docs.wall.shelf.alt': 'OpenGrid OpenConnect 壁掛層架預覽',
   'docs.wall.organizer.title': 'OpenConnect 壁掛收納格',
@@ -104,7 +105,7 @@ export const messages = {
   'docs.modelReference.desk.body': '桌面 Board、Snap、定位方式與收納盒。',
   'docs.modelReference.wall.title': 'Wall System',
   'docs.modelReference.wall.body':
-    '牆面 Board、Snap、Wall Cover 與 OpenConnect Shelf。',
+    '牆面 Board、Snap、Wall Cover、OpenConnect 層架、收納格與面紙盒。',
   'docs.modelReference.other.title': '其他元件',
   'docs.modelReference.other.body':
     '不屬於單一系統、但適合獨立使用的 CAD component，例如六角蜂巢。',
@@ -114,13 +115,13 @@ export const messages = {
     '其他模型的用途與可調參數，請前往模型選擇頁查看；下面整理共通的參數、單位、匯出格式與瀏覽器需求。',
   'docs.parametersHeading': '參數與限制',
   'docs.parametersBody':
-    '每個模型都有自己的參數 schema；模型選擇頁會列出可調欄位與範圍，CAD 工作區會即時幫你檢查輸入。',
+    '每個模型都有自己的參數 schema；模型選擇頁會列出可調欄位與範圍，CAD 工作區會即時幫你檢查輸入。部分模型提供具名預設（如 Grid Box 的「3×3 測試樣式」），可在工作區一鍵套用。',
   'docs.unitsHeading': '單位',
   'docs.unitsBody':
     '幾何尺寸使用 mm，角度使用度數，網格數與數量使用格或支；模型 ID、參數鍵與列舉值維持語系中立。',
   'docs.exportsHeading': '匯出格式',
   'docs.exportsBody':
-    '互動模型可從瀏覽器下載 STL；OpenGrid Wall Cover 另提供雙色 3MF。',
+    '各模型可從瀏覽器下載 STL（Wall Cover 僅提供雙色 3MF）；部分模型另支援雙色 3MF，細節以各模型的詳情與工作區為準。',
   'docs.browserHeading': '瀏覽器需求',
   'docs.browserBody':
     '即時 CAD 預覽需要 JavaScript、WebAssembly 與 WebGL；這頁的文字沒有 JavaScript 也讀得動。',

@@ -26,7 +26,7 @@ export const messages = {
     '參數一動，3D 預覽就跟著變——先看順眼，再決定要不要印。',
   'home.feature.export.title': '下載就印',
   'home.feature.export.description':
-    'STL 拿去就能印；Wall Cover 還有雙色 3MF，多色直接開印。',
+    'STL 拿去就能印；Wall Cover、標籤卡等多個模型還有雙色 3MF，多色直接開印。',
   'home.desk.eyebrow': '從一塊 Board 開始',
   'home.desk.title': '四步驟，組出你的桌面系統',
   'home.desk.description':
@@ -36,7 +36,7 @@ export const messages = {
   'home.desk.flowCaption': 'BOARD → SNAP → 定位方式 → 盒子',
   'home.desk.step.board.title': '放好 Board',
   'home.desk.step.board.description':
-    '列印完直接放桌面就好，不鎖螺絲也穩；想更牢再用品上的螺絲孔，隨你。',
+    '列印完直接放桌面就好，不鎖螺絲也穩；想更牢再用板上的螺絲孔，隨你。',
   'home.desk.step.snap.title': '準備 Snap',
   'home.desk.step.snap.description':
     '每個要放盒子的格子，配一個對應的 Snap，讓盒子站得穩穩的。',
@@ -58,7 +58,7 @@ export const messages = {
     '底版跟 Snap 是基礎，先挑喜歡的容器，小工具都收在下面。',
   'home.explore.wall.title': 'OpenGrid Wall',
   'home.explore.wall.description':
-    '牆面派看這邊：Board 配 Snap 掛上牆，Wall Cover 還能雙色列印。',
+    '牆面派看這邊：Board 配 Snap 掛上牆，Wall Cover、標籤卡等還能雙色列印。',
   'home.explore.wall.cta': '玩 Wall System →',
   'home.explore.wall.alt': 'OpenGrid Wall Board 底板預覽',
   'home.explore.wall.categorySummary':
@@ -85,5 +85,5 @@ export const messages = {
   'home.fileCard.whereLabel': '在哪裡算',
   'home.fileCard.whereValue': '你的瀏覽器裡',
   'home.fileCard.downloadLabel': '能下載什麼',
-  'home.fileCard.downloadValue': 'STL · 雙色 3MF',
+  'home.fileCard.downloadValue': 'STL · 部分模型雙色 3MF',
 }

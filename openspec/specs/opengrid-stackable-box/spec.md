@@ -52,11 +52,13 @@ update.
 When a legacy snapshot contains `cornerBottomHoles`, hydration MUST map
 `false` to `cornerSeatMode='none'` and `true` to
 `cornerSeatMode='detachable-corner-seat'`; missing legacy values MUST map to
-`'detachable-corner-seat'`. A persisted `cornerSeatMode='hole'` MUST be
-accepted only as a legacy alias and normalized to
-`'detachable-corner-seat'`. A canonical current enum value MUST take
+`'detachable-corner-seat'`. The former `cornerSeatMode='hole'` value MUST NOT
+be accepted as an alias: raw workspace input and playground scene import MUST
+reject it with a field-specific error, and browser-persistence hydration MUST
+fall back to `'detachable-corner-seat'` through the existing unknown-value
+default. A canonical current enum value MUST take
 precedence over a stale legacy boolean, and canonical validation MUST reject
-unsupported values after legacy alias migration.
+unsupported values after legacy boolean migration.
 
 #### Scenario: Valid seat mode defaults
 
@@ -75,22 +77,38 @@ unsupported values after legacy alias migration.
 - **AND** no `cornerBottomHoles` field MUST be sent in the canonical Worker
   snapshot
 
-#### Scenario: Legacy corner-hole migration
+#### Scenario: Legacy corner-boolean migration
 
-- **WHEN** a persisted snapshot contains `cornerBottomHoles=false` or `true`,
-  or contains the old canonical value `cornerSeatMode='hole'`
+- **WHEN** a persisted snapshot contains `cornerBottomHoles=false` or `true`
 - **THEN** hydration MUST produce `cornerSeatMode='none'` for `false` and
-  `cornerSeatMode='detachable-corner-seat'` for `true` or the old enum value
+  `cornerSeatMode='detachable-corner-seat'` for `true`
 - **AND** the resulting geometry MUST use the new locking-seat interface for
   the migrated active mode
 - **AND** persistence MUST converge to the canonical enum field after a valid
   update
 
+#### Scenario: The former hole enum value is not an alias
+
+- **WHEN** raw workspace input or a playground scene import supplies
+  `cornerSeatMode='hole'`
+- **THEN** validation MUST reject it with a field-specific error on
+  `cornerSeatMode`
+- **AND** the invalid snapshot MUST NOT replace the last valid revision or be
+  imported
+
+#### Scenario: Persistence hydration of the removed hole value
+
+- **WHEN** browser persistence contains a legacy snapshot whose
+  `cornerSeatMode` is `'hole'`
+- **THEN** hydration MUST fall back to
+  `cornerSeatMode='detachable-corner-seat'` through the unknown-value default
+- **AND** the entry MUST keep its other saved fields
+
 #### Scenario: Invalid seat mode is rejected
 
 - **WHEN** `cornerSeatMode` is missing from a canonical current snapshot or has
   any value other than `none`, `detachable-corner-seat`, or `integrated` after
-  legacy migration
+  legacy boolean migration
 - **THEN** validation MUST return a field-specific error
 - **AND** the invalid snapshot MUST NOT replace the last valid revision
 
@@ -223,8 +241,9 @@ grid MAY use every nominal grid position.
 
 #### Scenario: Existing locating holes
 
-- **WHEN** a persisted snapshot uses the former `cornerSeatMode='hole'`
-- **THEN** validation MUST normalize it to
+- **WHEN** browser persistence contains a legacy snapshot with the former
+  `cornerSeatMode='hole'`
+- **THEN** hydration MUST fall back to
   `cornerSeatMode='detachable-corner-seat'`
 - **AND** every active special position MUST contain the shared female locking
   socket rather than the retired stepped-hole geometry
@@ -284,11 +303,11 @@ is `none`, all nominal positions remain ordinary holes.
 - **AND** special positions MUST retain their complete female locking sockets
 - **AND** adjacent ordinary grid centers MUST remain 14 mm apart
 
-#### Scenario: Full grid with locating holes
+#### Scenario: Full grid with a legacy persisted hole value
 
-- **WHEN** `fullBottomHoleGrid=true` and the former `cornerSeatMode='hole'`
-  alias is supplied
-- **THEN** the alias MUST normalize to
+- **WHEN** `fullBottomHoleGrid=true` and browser persistence contains a legacy
+  snapshot with the former `cornerSeatMode='hole'`
+- **THEN** hydration MUST fall back to
   `cornerSeatMode='detachable-corner-seat'`
 - **AND** ordinary holes MUST remain at all non-special grid positions while
   special positions retain their female locking sockets

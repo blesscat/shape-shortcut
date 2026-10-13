@@ -43,8 +43,6 @@ export const OPENGRID_LOCATING_SEAT_MODES = [
   'integrated',
 ] as const
 
-export const OPENGRID_LEGACY_LOCATING_SEAT_MODE = 'hole' as const
-
 export type OpenGridLocatingSeatMode =
   (typeof OPENGRID_LOCATING_SEAT_MODES)[number]
 
@@ -54,9 +52,6 @@ export type OpenGridDetachableCornerSeatPoint2D = [number, number]
 export function normalizeOpenGridLocatingSeatMode(
   value: unknown,
 ): OpenGridLocatingSeatMode | undefined {
-  if (value === OPENGRID_LEGACY_LOCATING_SEAT_MODE) {
-    return 'detachable-corner-seat'
-  }
   if (
     typeof value === 'string' &&
     (OPENGRID_LOCATING_SEAT_MODES as readonly string[]).includes(value)

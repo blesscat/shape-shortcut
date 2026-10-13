@@ -42,7 +42,11 @@ value without `innerDiameter` MUST migrate to `innerDiameter = round(diameter âˆ
 shifting the derived outer envelope by exactly +0.2 mm relative to the persisted
 outer value. A canonical `innerDiameter` MUST take precedence over a stale
 legacy `diameter`, and a canonical enum value MUST take precedence over a stale
-boolean. Unsupported enum values, `topRimHeight < 1`, or
+boolean. The former `bottomSeatMode='hole'` value MUST NOT be accepted as an
+alias: raw workspace input and playground scene import MUST reject it with a
+field-specific error, and browser-persistence hydration MUST fall back to
+`'detachable-corner-seat'` through the existing unknown-value default.
+Unsupported enum values, `topRimHeight < 1`, or
 `topRimHeight > floor(height / 2)` MUST be rejected. Existing model identity,
 route, opening, and height contracts MUST remain unchanged.
 
@@ -90,14 +94,24 @@ route, opening, and height contracts MUST remain unchanged.
   the corresponding compatibility mode
 - **AND** a successful update MUST rewrite only the canonical enum field
 
-#### Scenario: Legacy hole mode migration
+#### Scenario: The former hole enum value is not an alias
 
-- **WHEN** persistence contains the former canonical value
+- **WHEN** raw workspace input or a playground scene import supplies
   `bottomSeatMode='hole'`
-- **THEN** hydration MUST normalize it to
-  `bottomSeatMode='detachable-corner-seat'`
+- **THEN** validation MUST reject it with a field-specific error on
+  `bottomSeatMode`
+- **AND** the invalid snapshot MUST NOT be generated, exported, committed, or
+  imported
+
+#### Scenario: Persistence hydration of the removed hole value
+
+- **WHEN** browser persistence contains a legacy snapshot whose
+  `bottomSeatMode` is `'hole'`
+- **THEN** hydration MUST fall back to
+  `bottomSeatMode='detachable-corner-seat'` through the unknown-value default
 - **AND** a generated cylinder MUST use the locking socket geometry rather
   than the retired stepped-hole geometry
+- **AND** the entry MUST keep its other saved fields
 
 #### Scenario: Legacy profile flag is ignored
 
@@ -218,10 +232,11 @@ that position.
   protected shell or floor geometry
 - **AND** the socket MUST pass the shared male/female fit probe
 
-#### Scenario: Cylinder hole mode preserves the center socket
+#### Scenario: A legacy persisted hole value preserves the center socket
 
-- **WHEN** a persisted cylinder uses the former `bottomSeatMode='hole'` alias
-- **THEN** validation MUST normalize it to
+- **WHEN** browser persistence contains a legacy cylinder with the former
+  `bottomSeatMode='hole'` alias
+- **THEN** hydration MUST fall back to
   `bottomSeatMode='detachable-corner-seat'`
 - **AND** the center MUST contain the shared female locking socket rather than
   the retired stepped-hole sections
@@ -265,11 +280,12 @@ diagonal, intermediate, or additional positions are permitted in any mode.
 - **AND** every socket MUST have one corresponding lock indicator
 - **AND** no diagonal or intermediate socket may be present
 
-#### Scenario: Hole mode uses the safe cardinal group
+#### Scenario: A legacy persisted hole value uses the safe cardinal group
 
-- **WHEN** a persisted cylinder uses the former `bottomSeatMode='hole'` alias
-  and its diameter fits the first safe outer layer
-- **THEN** the alias MUST normalize to
+- **WHEN** browser persistence contains a legacy cylinder with the former
+  `bottomSeatMode='hole'` alias and its diameter fits the first safe outer
+  layer
+- **THEN** hydration MUST fall back to
   `bottomSeatMode='detachable-corner-seat'`
 - **AND** the center and four safe cardinal positions MUST receive the shared
   female sockets and corresponding indicators

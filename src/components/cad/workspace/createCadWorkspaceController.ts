@@ -34,6 +34,7 @@ export type CadWorkspaceControllerSnapshot = {
   fieldErrors: FieldErrors
   progress: CadProgress | null
   canExport: boolean
+  supportsThreeMf: boolean
   canExportThreeMf: boolean
 }
 
@@ -74,8 +75,7 @@ function createSnapshot(
 ): CadWorkspaceControllerSnapshot {
   const canExport =
     state.status === 'ready' && state.exportStatus === 'idle' && !state.stale
-  const canExportThreeMf =
-    canExport &&
+  const supportsThreeMf =
     getModelDefinition(state.modelId)?.threeMfFileName?.(state.input) != null
 
   return {
@@ -85,7 +85,8 @@ function createSnapshot(
     fieldErrors,
     progress,
     canExport,
-    canExportThreeMf,
+    supportsThreeMf,
+    canExportThreeMf: canExport && supportsThreeMf,
   }
 }
 

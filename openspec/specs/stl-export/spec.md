@@ -59,10 +59,11 @@ Existing `box`, modular-grid-base, HSW, hexagonal-column, OpenGrid board, Snap,
 divider, pillar, and other registered model filename contracts MUST remain
 available. The obsolete `box-normal` filename contract MUST be removed. The
 OpenGrid stackable-box and stackable-cylinder filenames MUST encode the typed
-locating-seat mode using exactly one of `-seats-none`, `-seats-hole`, or
-`-seats-integrated`, in addition to their existing dimensions, profile, and
-opening fingerprints. Equivalent typed values entered with different raw
-formatting MUST produce the same filename.
+locating-seat mode using exactly one of `-seats-none`,
+`-seats-detachable-corner-seat`, or `-seats-integrated`, in addition to their
+existing dimensions, profile, and opening fingerprints. The removed
+`-seats-hole` suffix MUST NOT be emitted. Equivalent typed values entered with
+different raw formatting MUST produce the same filename.
 
 #### Scenario: OpenGrid stackable-box STL filename distinguishes seats
 
@@ -77,6 +78,13 @@ formatting MUST produce the same filename.
 - **THEN** its STL filename MUST contain exactly one deterministic seat suffix
 - **AND** changing only `bottomSeatMode` MUST change the filename
 - **AND** an integrated export MUST contain `-seats-integrated`
+
+#### Scenario: The removed hole suffix is never emitted
+
+- **WHEN** any OpenGrid stackable model is exported in any seat mode
+- **THEN** its STL filename MUST NOT contain `-seats-hole`
+- **AND** the locking-seat export MUST contain
+  `-seats-detachable-corner-seat`
 
 #### Scenario: Existing supported model filenames remain deterministic
 

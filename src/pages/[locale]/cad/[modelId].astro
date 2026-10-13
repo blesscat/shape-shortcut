@@ -6,6 +6,7 @@ import CadWorkspace from '../../../components/cad/CadWorkspace.svelte'
 import { getOpenGridAttribution } from '../../../features/cad/attribution/opengrid'
 import {
   displayParameterLabel,
+  exportFormatsLineKeyFor,
   getModelDefinition,
   modelDefinitions,
   parameterStaticSummaryKeysFor,
@@ -108,7 +109,13 @@ function parameterSummary() {
         <ul class="m-0 grid gap-1 pl-5 leading-normal">
           {parameterSummary().map((summary) => <li>{summary}</li>)}
         </ul>
-        <p class="m-0 leading-normal">{t('cad.exportFormats')}</p>
+        <p class="m-0 leading-normal">
+          {
+            t('cad.exportFormats', {
+              formats: t(exportFormatsLineKeyFor(definition)),
+            })
+          }
+        </p>
       </section>
       <p class="mb-4 leading-normal">{t('cad.requirements')}</p>
       <p class="mb-0">

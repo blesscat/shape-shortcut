@@ -28,6 +28,7 @@
       Record<ModelParameterKey | 'parameters', ValidationIssue>
     >
     canExport: boolean
+    supportsThreeMf: boolean
     canExportThreeMf: boolean
     onInputChange: (key: ModelParameterKey, value: string) => void
     onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
@@ -51,6 +52,7 @@
     rawParameters,
     fieldErrors,
     canExport,
+    supportsThreeMf,
     canExportThreeMf,
     onInputChange,
     onSystemContextChange,
@@ -92,8 +94,8 @@
     {locale}
     {state}
     {modelId}
-    {parameters}
     {canExport}
+    {supportsThreeMf}
     {canExportThreeMf}
     {onExport}
     {onRetry}

@@ -795,7 +795,7 @@ describe('component parameter store', () => {
         x: 0.5,
         y: 1.5,
         height: 25,
-        cornerSeatMode: 'hole',
+        cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: true,
         topRimMode: 'stacking-rail',
         bottomMode: 'stacking',
@@ -809,7 +809,7 @@ describe('component parameter store', () => {
         x: 0.5,
         y: 1.5,
         height: 25,
-        cornerSeatMode: 'hole',
+        cornerSeatMode: 'detachable-corner-seat',
         fullBottomHoleGrid: 'true' as never,
         topRimMode: 'stacking-rail',
         bottomMode: 'stacking',
@@ -817,6 +817,49 @@ describe('component parameter store', () => {
     ).toBe(false)
     expect(store.get('opengrid-stackable-box')).toMatchObject({
       fullBottomHoleGrid: true,
+    })
+    store.dispose()
+  })
+
+  it('falls the removed hole seat value back to the locking default on hydration', () => {
+    const storage = createMemoryStorage(
+      createPayload(
+        {
+          legacy: {
+            'opengrid-stackable-box': {
+              x: 0.5,
+              y: 1.5,
+              height: 25,
+              cornerSeatMode: 'hole',
+              fullBottomHoleGrid: true,
+              topRimMode: 'flat-top',
+              bottomMode: 'stacking',
+            },
+            'opengrid-stackable-cylinder': {
+              innerDiameter: 60,
+              height: 20,
+              bottomSeatMode: 'hole',
+            },
+          },
+        },
+        2,
+      ),
+    )
+    const store = createComponentParameterStore({ storage })
+
+    expect(store.get('opengrid-stackable-box')).toMatchObject({
+      x: 0.5,
+      y: 1.5,
+      height: 25,
+      cornerSeatMode: 'detachable-corner-seat',
+      fullBottomHoleGrid: true,
+      topRimMode: 'flat-top',
+      bottomMode: 'stacking',
+    })
+    expect(store.get('opengrid-stackable-cylinder')).toMatchObject({
+      innerDiameter: 60,
+      height: 20,
+      bottomSeatMode: 'detachable-corner-seat',
     })
     store.dispose()
   })
