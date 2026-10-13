@@ -24,6 +24,7 @@ import {
   OPENGRID_WALL_COVER_TEXT_CONFIGURATION,
   openGridWallCoverTextTopZ,
 } from '../../src/cad-kernel/components/opengrid-wall-cover/flat-text'
+import { OPENGRID_WALL_COVER_CONFIGURATION } from '../../src/cad-contract/units'
 import { THREE_MF_BUILD_TRANSFORM } from '../../src/cad-contract/three-mf'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
@@ -97,7 +98,9 @@ describe('OpenGrid Wall Cover flat text POC', () => {
       const expectedTop = openGridWallCoverTextTopZ()
       const expectedBottom =
         expectedTop - OPENGRID_WALL_COVER_TEXT_CONFIGURATION.depth
-      const expectedWidth = 4 * 25.6 + 3 * 3
+      const expectedWidth =
+        'SNAP'.length * OPENGRID_WALL_COVER_CONFIGURATION.coverWidth +
+        ('SNAP'.length - 1) * OPENGRID_WALL_COVER_CONFIGURATION.coverGap
       expect(shapeBounds(generated.shape)[0]?.[0]).toBeCloseTo(
         -expectedWidth / 2,
         2,

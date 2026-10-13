@@ -435,13 +435,15 @@ pre-half-cell OpenGrid entry MAY normalize missing half-cell fields to none.
 
 The versioned browser persistence MUST store valid
 `opengrid-stackable-cylinder` parameters under that stable model ID. The entry
-MUST contain typed integer `diameter` and `height`, typed enum
+MUST contain typed integer `innerDiameter` and `height`, typed enum
 `bottomSeatMode`, the existing profile flags, and all opening values accepted by
 the current validator. It MUST remain independent from the board, box, and all
 other component entries. Legacy `bottomHolesEnabled=false/true` values MUST
-migrate to `bottomSeatMode='none'/'hole'`; missing legacy values MUST migrate to
-`'hole'`. Invalid or incomplete input MUST NOT overwrite the last accepted
-entry.
+migrate to `bottomSeatMode='none'/'detachable-corner-seat'`; missing legacy
+values and unrecognized stored seat-mode values — including the removed
+`'hole'` — MUST fall back to `'detachable-corner-seat'` with the entry's other
+saved fields preserved. Invalid or incomplete input MUST NOT overwrite the last
+accepted entry.
 
 #### Scenario: Restore valid cylinder seat mode
 
@@ -449,12 +451,16 @@ entry.
 - **THEN** the controls MUST display the saved typed seat selection
 - **AND** the first generation MUST use that selection
 
-#### Scenario: Restore legacy cylinder hole state
+#### Scenario: Restore legacy cylinder seat state
 
 - **WHEN** persistence contains a valid legacy cylinder entry with
-  `bottomHolesEnabled=false` or `true`
-- **THEN** hydration MUST use `bottomSeatMode='none'` or `'hole'`
-- **AND** a missing legacy flag MUST use `bottomSeatMode='hole'`
+  `bottomHolesEnabled=false` or `true`, or with the removed
+  `bottomSeatMode='hole'`
+- **THEN** hydration MUST use `bottomSeatMode='none'`, the
+  `'detachable-corner-seat'` migration target, or the
+  `'detachable-corner-seat'` fallback respectively
+- **AND** a missing legacy flag MUST use
+  `bottomSeatMode='detachable-corner-seat'`
 - **AND** opening defaults MUST continue to be restored as before
 
 #### Scenario: Persist a valid cylinder update
