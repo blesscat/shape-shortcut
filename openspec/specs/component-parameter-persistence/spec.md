@@ -441,7 +441,7 @@ pre-half-cell OpenGrid entry MAY normalize missing half-cell fields to none.
 
 The versioned browser persistence MUST store valid
 `opengrid-stackable-cylinder` parameters under that stable model ID. The entry
-MUST contain typed integer `diameter` and `height`, typed enum
+MUST contain typed integer `innerDiameter` and `height`, typed enum
 `bottomSeatMode`, the existing profile flags, and all opening values accepted by
 the current validator. It MUST remain independent from the board, box, and all
 other component entries. Legacy `bottomHolesEnabled=false/true` values MUST
