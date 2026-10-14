@@ -18,6 +18,11 @@ import {
   type ModelParameterValues,
   validateModelParameters,
 } from '../../../cad-contract/units'
+import {
+  parseRawParameters,
+  type RawParameterParseResult,
+} from '../../../components/cad/workspace/validation/model-raw-parsers'
+import { parameterKeysForModel } from '../../../components/cad/workspace/validation/model-parameter-keys'
 import type { MeshSnapshot, WorkerEvent } from '../../../cad-contract/messages'
 import {
   CadWorkerClient,
@@ -183,9 +188,23 @@ function rawFromParameters(
   const definition = getModelDefinition(modelId)
   const raw: Record<string, string> = {}
   if (!definition) return raw
-  for (const field of definition.parameterSchema) {
-    const value = (parameters as Record<string, unknown>)[field.key]
-    if (value !== undefined) raw[field.key] = String(value)
+  const typed = parameters as Record<string, unknown>
+  const consider = (key: string) => {
+    if (raw[key] !== undefined) return
+    const value = typed[key]
+    if (value !== undefined) raw[key] = String(value)
+  }
+  for (const field of definition.parameterSchema) consider(field.key)
+  // The schema enumerates the numeric ParameterField controls only; panels
+  // drive enum and boolean controls through raw strings. Complete the raw
+  // snapshot with the model's canonical key set so the per-model raw parser
+  // always receives every canonical key. Models without raw-parser support
+  // (the opengrid board, edited through its typed full-parameters setter)
+  // keep their schema-derived raw.
+  try {
+    for (const key of parameterKeysForModel(modelId)) consider(key)
+  } catch {
+    // UNKNOWN_MODEL_ID from the key registry: keep schema-derived raw.
   }
   return raw
 }
@@ -1091,24 +1110,65 @@ export function createPlaygroundStore(): PlaygroundStore {
       if (!instance) return
       const definition = getModelDefinition(instance.modelId)
       if (!definition) return
-      const candidateParameters = {
-        ...instance.parameters,
-        [key]: Number(rawValue),
-      } as ModelParameterValues
-      const validation = validateModelParameters(
-        instance.modelId,
-        candidateParameters,
-      )
-      instance.rawParameters = { ...instance.rawParameters, [key]: rawValue }
-      if (!validation.valid) {
-        instance.fieldErrors = {}
-        for (const issue of validation.issues) {
-          instance.fieldErrors[issue.field] = issue
+      // Raw-first like the workspace: the per-model raw parser owns type
+      // interpretation, so enum and boolean edits keep their literal values
+      // (no blanket Number() coercion) and multi-step panel edits accumulate
+      // before validation sees the combined snapshot.
+      const candidateRawParameters = {
+        ...instance.rawParameters,
+        [key]: rawValue,
+      }
+      let parsed: RawParameterParseResult
+      try {
+        parsed = parseRawParameters(candidateRawParameters, instance.modelId)
+      } catch (error) {
+        // Only the key registry's UNKNOWN_MODEL_ID (the opengrid board,
+        // edited through its typed full-parameters setter) may fall back to
+        // the previous typed merge; its schema is all-numeric, so numeric
+        // coercion is exact. Anything else is a parser bug — rethrow it so
+        // the enum-NaN class this change fixed cannot silently resurrect.
+        if (!(
+          error instanceof Error &&
+          error.message.startsWith('UNKNOWN_MODEL_ID:')
+        )) {
+          throw error
+        }
+        const candidateParameters = {
+          ...instance.parameters,
+          [key]: Number(rawValue),
+        } as ModelParameterValues
+        const validation = validateModelParameters(
+          instance.modelId,
+          candidateParameters,
+        )
+        if (!validation.valid) {
+          instance.fieldErrors = {}
+          for (const issue of validation.issues) {
+            instance.fieldErrors[issue.field] = issue
+          }
+          emit()
+          return
+        }
+        commitParameters(instance, validation.value.parameters)
+        return
+      }
+      if (!parsed.valid) {
+        instance.rawParameters = candidateRawParameters
+        // Every panel binds per-field errors, so a field-less rejection
+        // (e.g. derived footprint overflowing the workspace) surfaces on
+        // the edited control — the workspace input handler's convention.
+        const field = parsed.field ?? key
+        instance.fieldErrors = {
+          [field]: {
+            field,
+            messageId: parsed.messageId,
+            ...(parsed.params ? { params: parsed.params } : {}),
+          },
         }
         emit()
         return
       }
-      commitParameters(instance, validation.value.parameters)
+      commitParameters(instance, parsed.value)
     },
     setInstanceParameters(instanceId, parameters) {
       const instance = getInstance(instanceId)
