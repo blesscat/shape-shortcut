@@ -5,22 +5,30 @@
     unitLabelFor,
   } from '../../../../features/cad/model-catalog'
   import {
-    OPENGRID_ORGANIZER_BOX_CONFIGURATION,
     OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
-    openGridOrganizerBoxLayoutFor,
-    type ModelParameterKey,
-    type OpenGridLocatingSeatMode,
     type OpenGridOrganizerBoxBoxMode,
-    type OpenGridOrganizerBoxParameters,
-    type OpenGridOrganizerBoxShape,
     type OpenGridOrganizerBoxSpacingMode,
-    validateOpenGridOrganizerBoxParameters,
   } from '../../../../cad-contract/units'
-  import { formatValidationIssue } from '../../../../i18n/diagnostics'
   import { translate } from '../../../../i18n'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
+  import ParameterRadioGroup from '../ParameterRadioGroup.svelte'
   import type { ComponentPanelProps } from '../types'
+  import {
+    bodyModeForRawParameters,
+    bodyOptions,
+    layoutFor,
+    numericKeys,
+    seatModeForRawParameters,
+    seatOptions,
+    shapeForRawParameters,
+    shapeOptions,
+    sizeSectionFieldKeysForRawParameters,
+    spacingKeysForRawParameters,
+    spacingModeForRawParameters,
+    spacingOptions,
+    topRimHeightFieldFor,
+  } from './panel-model'
   import type { ParameterField as ParameterFieldDefinition } from '../../../../features/cad/model-catalog'
 
   let {
@@ -29,90 +37,6 @@
     fieldErrors,
     onInputChange,
   }: ComponentPanelProps = $props()
-
-  const numericKeys = [
-    'holeCountX',
-    'holeCountY',
-    'holeSpacingX',
-    'holeSpacingY',
-    'holeDiameter',
-    'holeWidth',
-    'holeHeight',
-    'holeCornerRadius',
-    'holeDepth',
-    'bottomThickness',
-    'wallThickness',
-    'stackingClearanceHeight',
-  ] as const
-
-  const spacingOptions: ReadonlyArray<{
-    value: OpenGridOrganizerBoxSpacingMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'linked',
-      labelKey: 'panel.organizerBox.spacingLinked',
-      descriptionKey: 'panel.organizerBox.spacingLinkedDescription',
-    },
-    {
-      value: 'independent',
-      labelKey: 'panel.organizerBox.spacingIndependent',
-      descriptionKey: 'panel.organizerBox.spacingIndependentDescription',
-    },
-  ]
-
-  const shapeOptions: ReadonlyArray<{
-    value: OpenGridOrganizerBoxShape
-    labelKey: string
-  }> = [
-    { value: 'circle', labelKey: 'panel.organizerBox.shape.circle' },
-    { value: 'triangle', labelKey: 'panel.organizerBox.shape.triangle' },
-    { value: 'square', labelKey: 'panel.organizerBox.shape.square' },
-    { value: 'pentagon', labelKey: 'panel.organizerBox.shape.pentagon' },
-    { value: 'hexagon', labelKey: 'panel.organizerBox.shape.hexagon' },
-    { value: 'rectangle', labelKey: 'panel.organizerBox.shape.rectangle' },
-    { value: 'ellipse', labelKey: 'panel.organizerBox.shape.ellipse' },
-  ]
-
-  const seatOptions: ReadonlyArray<{
-    value: OpenGridLocatingSeatMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'none',
-      labelKey: 'panel.seat.none',
-      descriptionKey: 'panel.seat.noneDescription',
-    },
-    {
-      value: 'detachable-corner-seat',
-      labelKey: 'panel.seat.detachableCornerSeat',
-      descriptionKey: 'panel.seat.detachableCornerSeatDescription',
-    },
-    {
-      value: 'integrated',
-      labelKey: 'panel.seat.integrated',
-      descriptionKey: 'panel.seat.integratedDescription',
-    },
-  ]
-
-  const bodyOptions: ReadonlyArray<{
-    value: OpenGridOrganizerBoxBoxMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'normal',
-      labelKey: 'panel.organizerBox.body.normal',
-      descriptionKey: 'panel.organizerBox.body.normalDescription',
-    },
-    {
-      value: 'stackable',
-      labelKey: 'panel.organizerBox.body.stackable',
-      descriptionKey: 'panel.organizerBox.body.stackableDescription',
-    },
-  ]
 
   function fieldFor(
     key: (typeof numericKeys)[number],
@@ -128,60 +52,9 @@
     return rawParameters[field.key] ?? String(field.defaultValue)
   }
 
-  function spacingModeForRawParameters(): OpenGridOrganizerBoxSpacingMode {
-    return rawParameters.holeSpacingMode === 'independent'
-      ? 'independent'
-      : 'linked'
-  }
-
-  function shapeForRawParameters(): OpenGridOrganizerBoxShape {
-    const value = rawParameters.holeShape
-    return shapeOptions.some((option) => option.value === value)
-      ? (value as OpenGridOrganizerBoxShape)
-      : OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeShape
-  }
-
-  function seatModeForRawParameters(): OpenGridLocatingSeatMode {
-    const value = rawParameters.cornerSeatMode
-    const supported = seatOptions.some((option) => option.value === value)
-    if (supported) return value as OpenGridLocatingSeatMode
-    return OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.cornerSeatMode
-  }
-
-  function bodyModeForRawParameters(): OpenGridOrganizerBoxBoxMode {
-    return rawParameters.boxMode === 'stackable' ? 'stackable' : 'normal'
-  }
-
-  function spacingKeysForRawParameters(): ReadonlyArray<
-    'holeSpacingX' | 'holeSpacingY'
-  > {
-    return spacingModeForRawParameters() === 'linked'
-      ? ['holeSpacingX']
-      : ['holeSpacingX', 'holeSpacingY']
-  }
-
-  function sizeFieldKeysForRawParameters(): ReadonlyArray<
-    (typeof numericKeys)[number]
-  > {
-    const shape = shapeForRawParameters()
-    if (shape === 'rectangle') {
-      return ['holeWidth', 'holeHeight', 'holeCornerRadius']
-    }
-    if (shape === 'ellipse') {
-      return ['holeWidth', 'holeHeight']
-    }
-    return ['holeDiameter']
-  }
-
-  function sizeSectionFieldKeysForRawParameters(): ReadonlyArray<
-    (typeof numericKeys)[number]
-  > {
-    return [...sizeFieldKeysForRawParameters(), 'holeDepth', 'bottomThickness']
-  }
-
   function wallFieldFor(): ParameterFieldDefinition {
     const field = fieldFor('wallThickness')
-    if (bodyModeForRawParameters() !== 'stackable') return field
+    if (bodyModeForRawParameters(rawParameters) !== 'stackable') return field
     const stackableUiFloor = 3
     if (field.min >= stackableUiFloor) return field
     return { ...field, min: stackableUiFloor, sliderMin: stackableUiFloor }
@@ -190,80 +63,7 @@
   const wallField = $derived(wallFieldFor())
   const wallValue = $derived(valueFor(wallField))
 
-  function layoutForRawParameters() {
-    const numberFor = (key: ModelParameterKey, fallback: number): number =>
-      Number(rawParameters[key] ?? String(fallback))
-    const candidate = {
-      holeCountX: numberFor(
-        'holeCountX',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeCountX,
-      ),
-      holeCountY: numberFor(
-        'holeCountY',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeCountY,
-      ),
-      holeSpacingMode: spacingModeForRawParameters(),
-      holeSpacingX: numberFor(
-        'holeSpacingX',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeSpacingX,
-      ),
-      holeSpacingY: numberFor(
-        'holeSpacingY',
-        spacingModeForRawParameters() === 'linked'
-          ? Number(
-              rawParameters.holeSpacingX ??
-                OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeSpacingX,
-            )
-          : OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeSpacingY,
-      ),
-      holeShape: shapeForRawParameters(),
-      holeDiameter: numberFor(
-        'holeDiameter',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeDiameter,
-      ),
-      holeWidth: numberFor(
-        'holeWidth',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeWidth,
-      ),
-      holeHeight: numberFor(
-        'holeHeight',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeHeight,
-      ),
-      holeCornerRadius: numberFor(
-        'holeCornerRadius',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeCornerRadius,
-      ),
-      holeDepth: numberFor(
-        'holeDepth',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeDepth,
-      ),
-      bottomThickness: numberFor(
-        'bottomThickness',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.bottomThickness,
-      ),
-      wallThickness: numberFor(
-        'wallThickness',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.wallThickness,
-      ),
-      cornerSeatMode: seatModeForRawParameters(),
-      boxMode: bodyModeForRawParameters(),
-      stackingClearanceHeight: numberFor(
-        'stackingClearanceHeight',
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.stackingClearanceHeight,
-      ),
-      topRimEnabled: rawParameters.topRimEnabled === 'true',
-      topRimHeight: numberFor(
-        'topRimHeight',
-        OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultTopRimHeight,
-      ),
-    } satisfies OpenGridOrganizerBoxParameters
-    const validation = validateOpenGridOrganizerBoxParameters(candidate)
-    return validation.valid
-      ? openGridOrganizerBoxLayoutFor(validation.value)
-      : null
-  }
-
-  let layout = $derived(layoutForRawParameters())
+  let layout = $derived(layoutFor(rawParameters))
 
   function handleSpacingModeChange(event: Event): void {
     if (!(event.currentTarget instanceof HTMLInputElement)) return
@@ -309,30 +109,7 @@
     }
   }
 
-  const topRimHeightField = $derived.by((): ParameterFieldDefinition => {
-    const externalTop = layout
-      ? (layout.stacking?.externalTopZ ?? layout.bodyHeight)
-      : OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.holeDepth +
-        OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS.bottomThickness +
-        OPENGRID_ORGANIZER_BOX_CONFIGURATION.interfaceFloorDatumNormal
-    const max = Math.max(
-      OPENGRID_ORGANIZER_BOX_CONFIGURATION.minTopRimHeight,
-      Math.floor(externalTop / 2),
-    )
-    return {
-      key: 'topRimHeight',
-      label: 'parameter.topRimHeight',
-      axis: 'Z',
-      unit: 'mm',
-      control: 'range-text',
-      defaultValue: OPENGRID_ORGANIZER_BOX_CONFIGURATION.defaultTopRimHeight,
-      min: OPENGRID_ORGANIZER_BOX_CONFIGURATION.minTopRimHeight,
-      max,
-      step: 1,
-      sliderMin: OPENGRID_ORGANIZER_BOX_CONFIGURATION.minTopRimHeight,
-      sliderMax: max,
-    }
-  })
+  const topRimHeightField = $derived(topRimHeightFieldFor(layout))
 </script>
 
 <fieldset class="m-0 grid gap-3 border-0 p-0">
@@ -340,89 +117,31 @@
     {translate(locale, 'panel.organizerBox.description')}
   </p>
 
-  <fieldset
-    class="grid gap-2 border-0 p-0"
-    aria-describedby={fieldErrors.cornerSeatMode
-      ? 'cornerSeatMode-error'
-      : undefined}
-    aria-invalid={Boolean(fieldErrors.cornerSeatMode)}
-    aria-label={translate(locale, 'panel.seat.mode')}
-    role="radiogroup"
-    data-testid="opengrid-organizer-box-seat-mode"
-  >
-    <legend class="font-[650]">{translate(locale, 'panel.seat.mode')}</legend>
-    <div class="flex flex-wrap gap-x-4 gap-y-2">
-      {#each seatOptions as option (option.value)}
-        <label class="flex min-w-0 items-start gap-2">
-          <input
-            aria-label={translate(locale, option.labelKey)}
-            class="mt-1 accent-primary"
-            name="opengrid-organizer-box-seat-mode"
-            type="radio"
-            value={option.value}
-            checked={seatModeForRawParameters() === option.value}
-            onchange={handleSeatModeChange}
-          />
-          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-        </label>
-      {/each}
-    </div>
-    <span class="text-sm text-muted-foreground">
-      {translate(
-        locale,
-        seatOptions.find(
-          (option) => option.value === seatModeForRawParameters(),
-        )!.descriptionKey,
-      )}
-    </span>
-    {#if fieldErrors.cornerSeatMode}
-      <span id="cornerSeatMode-error" class="text-sm text-error" role="alert">
-        {formatValidationIssue(locale, fieldErrors.cornerSeatMode)}
-      </span>
-    {/if}
-  </fieldset>
+  <ParameterRadioGroup
+    {locale}
+    name="opengrid-organizer-box-seat-mode"
+    testId="opengrid-organizer-box-seat-mode"
+    legendKey="panel.seat.mode"
+    options={seatOptions}
+    currentValue={seatModeForRawParameters(rawParameters)}
+    error={fieldErrors.cornerSeatMode}
+    errorId="cornerSeatMode-error"
+    onChange={handleSeatModeChange}
+  />
 
-  <fieldset
-    class="grid gap-2 border-0 p-0"
-    aria-describedby={fieldErrors.boxMode ? 'boxMode-error' : undefined}
-    aria-invalid={Boolean(fieldErrors.boxMode)}
-    aria-label={translate(locale, 'panel.boxMode')}
-    role="radiogroup"
-    data-testid="opengrid-organizer-box-body-mode"
-  >
-    <legend class="font-[650]">{translate(locale, 'panel.boxMode')}</legend>
-    <div class="flex flex-wrap gap-x-4 gap-y-2">
-      {#each bodyOptions as option (option.value)}
-        <label class="flex min-w-0 items-start gap-2">
-          <input
-            aria-label={translate(locale, option.labelKey)}
-            class="mt-1 accent-primary"
-            name="opengrid-organizer-box-body-mode"
-            type="radio"
-            value={option.value}
-            checked={bodyModeForRawParameters() === option.value}
-            onchange={handleBodyModeChange}
-          />
-          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-        </label>
-      {/each}
-    </div>
-    <span class="text-sm text-muted-foreground">
-      {translate(
-        locale,
-        bodyOptions.find(
-          (option) => option.value === bodyModeForRawParameters(),
-        )!.descriptionKey,
-      )}
-    </span>
-    {#if fieldErrors.boxMode}
-      <span id="boxMode-error" class="text-sm text-error" role="alert">
-        {formatValidationIssue(locale, fieldErrors.boxMode)}
-      </span>
-    {/if}
-  </fieldset>
+  <ParameterRadioGroup
+    {locale}
+    name="opengrid-organizer-box-body-mode"
+    testId="opengrid-organizer-box-body-mode"
+    legendKey="panel.boxMode"
+    options={bodyOptions}
+    currentValue={bodyModeForRawParameters(rawParameters)}
+    error={fieldErrors.boxMode}
+    errorId="boxMode-error"
+    onChange={handleBodyModeChange}
+  />
 
-  {#if bodyModeForRawParameters() === 'stackable'}
+  {#if bodyModeForRawParameters(rawParameters) === 'stackable'}
     {@const field = fieldFor('stackingClearanceHeight')}
     {@const value = valueFor(field)}
     <ParameterField
@@ -467,40 +186,15 @@
     {/each}
   </div>
 
-  <fieldset
-    class="grid gap-2 border-0 p-0"
-    aria-label={translate(locale, 'panel.organizerBox.spacingMode')}
-    role="radiogroup"
-    data-testid="opengrid-organizer-box-spacing-mode"
-  >
-    <legend class="font-[650]">
-      {translate(locale, 'panel.organizerBox.spacingMode')}
-    </legend>
-    <div class="flex flex-wrap gap-x-4 gap-y-2">
-      {#each spacingOptions as option (option.value)}
-        <label class="flex min-w-0 items-start gap-2">
-          <input
-            aria-label={translate(locale, option.labelKey)}
-            class="mt-1 accent-primary"
-            name="opengrid-organizer-box-spacing-mode"
-            type="radio"
-            value={option.value}
-            checked={spacingModeForRawParameters() === option.value}
-            onchange={handleSpacingModeChange}
-          />
-          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-        </label>
-      {/each}
-    </div>
-    <span class="text-sm text-muted-foreground">
-      {translate(
-        locale,
-        spacingOptions.find(
-          (option) => option.value === spacingModeForRawParameters(),
-        )!.descriptionKey,
-      )}
-    </span>
-  </fieldset>
+  <ParameterRadioGroup
+    {locale}
+    name="opengrid-organizer-box-spacing-mode"
+    testId="opengrid-organizer-box-spacing-mode"
+    legendKey="panel.organizerBox.spacingMode"
+    options={spacingOptions}
+    currentValue={spacingModeForRawParameters(rawParameters)}
+    onChange={handleSpacingModeChange}
+  />
 
   <div
     class="rounded-lg border border-border-field bg-panel-muted px-3 py-2 text-sm"
@@ -526,7 +220,7 @@
   </div>
 
   <div class="grid gap-3">
-    {#each spacingKeysForRawParameters() as key (key)}
+    {#each spacingKeysForRawParameters(rawParameters) as key (key)}
       {@const field = fieldFor(key)}
       {@const value = valueFor(field)}
       <ParameterField
@@ -537,7 +231,7 @@
         error={fieldErrors[field.key] ?? fieldErrors.holeSpacingY}
         errorId={`${field.key}-error`}
         onRestore={() =>
-          spacingModeForRawParameters() === 'linked'
+          spacingModeForRawParameters(rawParameters) === 'linked'
             ? handleLinkedSpacingChange(String(field.defaultValue))
             : onInputChange(field.key, String(field.defaultValue))}
       >
@@ -547,7 +241,7 @@
           {value}
           error={fieldErrors[field.key] ?? fieldErrors.holeSpacingY}
           onChange={(nextValue) =>
-            spacingModeForRawParameters() === 'linked'
+            spacingModeForRawParameters(rawParameters) === 'linked'
               ? handleLinkedSpacingChange(nextValue)
               : onInputChange(field.key, nextValue)}
         />
@@ -566,7 +260,7 @@
       aria-invalid={Boolean(fieldErrors.holeShape)}
       aria-label={translate(locale, 'parameter.organizerHoleShape')}
       class="w-full rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
-      value={shapeForRawParameters()}
+      value={shapeForRawParameters(rawParameters)}
       onchange={handleShapeChange}
     >
       {#each shapeOptions as option (option.value)}
@@ -577,7 +271,7 @@
     </select>
   </ParameterField>
 
-  {#each sizeSectionFieldKeysForRawParameters() as fieldKey (fieldKey)}
+  {#each sizeSectionFieldKeysForRawParameters(rawParameters) as fieldKey (fieldKey)}
     {@const field = fieldFor(fieldKey)}
     {@const value = valueFor(field)}
     <ParameterField
