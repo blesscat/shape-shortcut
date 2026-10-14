@@ -97,6 +97,9 @@
       meshState: instance.meshState,
       overlapping:
         snapshot?.overlappingInstanceIds.includes(instance.id) ?? false,
+      overHeight:
+        snapshot?.overHeightInstanceIds.includes(instance.id) ?? false,
+      stackedZ: snapshot?.instanceStackedZ[instance.id] ?? 0,
     })),
   )
 
@@ -115,6 +118,24 @@
   function handleAdd(): void {
     if (!store || !addModelId) return
     store.addInstance(addModelId as never)
+  }
+
+  function handleDeleteKeydown(event: KeyboardEvent): void {
+    if ((event.key !== 'Delete' && event.key !== 'Backspace') || event.repeat)
+      return
+    if (!store || !snapshot?.selectedInstanceId) return
+    // Never hijack Delete while the user is editing text.
+    const target = event.target
+    if (
+      target instanceof HTMLElement &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable)
+    )
+      return
+    event.preventDefault()
+    store.removeInstance(snapshot.selectedInstanceId)
   }
 
   function handleImportFile(event: Event): void {
@@ -141,6 +162,8 @@
     setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 </script>
+
+<svelte:window onkeydown={handleDeleteKeydown} />
 
 <div class="grid gap-4" data-testid="playground">
   <header class="flex flex-wrap items-center justify-between gap-3">
@@ -222,6 +245,34 @@
           }}
         />
       </div>
+      {#if snapshot?.viewMode === 'desktop'}
+        <label
+          class="flex items-center gap-2 text-base text-muted-foreground"
+          for="playground-height-limit"
+        >
+          {t('playground.heightLimit.title')}
+        </label>
+        <input
+          id="playground-height-limit"
+          class="w-20 rounded-lg border border-border-field bg-panel px-[0.5rem] py-[0.4rem] text-center text-base text-ink"
+          inputmode="decimal"
+          type="text"
+          placeholder="—"
+          data-testid="playground-height-limit"
+          aria-label={t('playground.heightLimit.title')}
+          value={snapshot?.maxHeightMm ?? ''}
+          onchange={(event) => {
+            if (!(event.currentTarget instanceof HTMLInputElement)) return
+            const raw = event.currentTarget.value.trim()
+            store?.setSceneMaxHeightMm(raw === '' ? null : Number(raw))
+            event.currentTarget.value =
+              store?.getSnapshot().maxHeightMm !== null &&
+              store?.getSnapshot().maxHeightMm !== undefined
+                ? String(store.getSnapshot().maxHeightMm)
+                : ''
+          }}
+        />
+      {/if}
       <input
         bind:this={fileInput}
         class="hidden"
@@ -275,6 +326,19 @@
     </p>
   {/if}
 
+  {#if (snapshot?.overHeightInstanceIds.length ?? 0) > 0}
+    <p
+      class="m-0 text-error"
+      aria-live="polite"
+      data-testid="playground-height-warning"
+    >
+      {t('playground.heightLimitWarning', {
+        count: snapshot!.overHeightInstanceIds.length,
+        limit: snapshot!.maxHeightMm ?? 0,
+      })}
+    </p>
+  {/if}
+
   {#if snapshot && store}
     <div
       class={isNarrow
@@ -308,6 +372,13 @@
             placement.cellY,
             placement.rotation,
           ) ?? false}
+        stackedZForPlacement={(instanceId, placement) =>
+          store?.stackedZForPlacement(
+            instanceId,
+            placement.cellX,
+            placement.cellY,
+            placement.rotation,
+          ) ?? 0}
         onCommitPlacement={(instanceId, placement) => {
           store?.setPlacement(
             instanceId,

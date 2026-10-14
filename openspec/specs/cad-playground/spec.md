@@ -6,9 +6,9 @@
 ## Requirements
 ### Requirement: Playground 場景與擺放
 
-The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and a placement of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. The playground MUST NOT offer Z-offset or stacking controls; every instance is placed ground-level, and the scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability.
+The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and a placement of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. In desktop orientation, an instance whose footprint overlaps other instances' footprints MUST automatically stack on top of them when the two instances' stacking interfaces are compatible — cylinders only on a cylinder of the same inner diameter, and stackable boxes and organizer boxes only when the upper instance's bottom interface and the lower instance's top interface are both in stacking mode; its rendered base Z in mm MUST equal the compatible supporting instance's stacking datum minus its seating drop — the interface engagement both mated pieces share, so seated pieces visually interlock and their interface height counts once — plus a small render gap; where several compatible instances overlap, the greatest resulting base Z wins, and an instance overlapping nothing MUST stay at Z=0. An overlapping pair whose stacking interfaces are incompatible MUST NOT stack: both instances stay at their current level and are flagged as a conflict per the grid occupancy requirement. All models without a stacking interface can neither receive nor seat pieces. Stacking Z MUST be derived state computed from instance order and model heights; it MUST NOT be authored per instance, and the scene MUST NOT offer a manual Z-offset input. The scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability. Instance array order MUST be the deterministic stacking order: re-importing a scene file MUST reproduce the same stacked Z for every instance.
 
-The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Placement, occupancy, and rotation semantics MUST be identical in both orientations — coordinate inputs, rotation steps, and conflict rules; footprint extents for wall display plans are specified in the next paragraph.
+The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Coordinate inputs and rotation steps MUST be identical in both orientations. Automatic Z stacking and height-limit evaluation are desktop-orientation behaviors: wall orientation keeps every instance flush on the wall board, performs no Z stacking, and its occupancy and conflict rules stay two-dimensional — except that an overlapping pair whose desktop stacking interfaces are compatible remains conflict-free on the wall board, and instances the active orientation does not display never participate in occupancy, conflicts, or height evaluation.
 
 A component whose authored geometry is in the flat print frame MUST declare a wall display plan so wall orientation renders it in its installed orientation: the OpenConnect interface face against the wall board, the body protruding toward +Y, and storage openings facing upward. The wall display plan MUST be presentation-level only: it MUST change the rendered transform and the wall footprint, and MUST NOT change the generated proxy mesh geometry or any exported STEP/STL/3MF file, which remain in the print frame. The plan MUST compose the component's full print-to-installed transform — rotation plus any installed-frame translation — so the mounted piece sits flush on the wall board plane. In wall orientation the occupied footprint of such a component MUST span its installed-frame horizontal width and installed vertical height (not the print-frame depth). When the plan declares the component's OpenConnect socket cell origins, the wall placement MUST anchor on the socket grid — the socket cell span's minimum corner at the placement cell — so every socket registers with a wall board cell, the body may overhang the socket span, and occupancy MUST follow the socket-anchored mounted body footprint.
 
@@ -28,6 +28,31 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 
 - **WHEN** the user enters any integer grid coordinate, including negative values
 - **THEN** the placement MUST be accepted and rendered without a boundary error
+
+#### Scenario: Overlapping desktop placement stacks on top
+
+- **GIVEN** the desktop scene contains an instance whose footprint occupies grid cells
+- **WHEN** the user places another instance whose footprint overlaps those cells
+- **THEN** the placement MUST be applied and the new instance MUST render resting on the lower instance's top with a small fixed clearance
+- **AND** no conflict color or overlap warning MUST appear for the stacked pair
+
+#### Scenario: Stack order is deterministic across re-import
+
+- **GIVEN** a saved scene file whose instances stack in overlapping footprints
+- **WHEN** the file is imported into a fresh playground
+- **THEN** every instance MUST render at the same stacked Z it had when exported
+
+#### Scenario: Removing a lower instance drops the upper stack
+
+- **GIVEN** three desktop instances stacked in the same overlapping footprint
+- **WHEN** the bottom instance is deleted
+- **THEN** the remaining instances MUST re-derive their stacked Z and the upper instances MUST settle onto the new lowest top
+
+#### Scenario: Stacking renders in desktop orientation only
+
+- **WHEN** the scene is switched to wall orientation
+- **THEN** every instance MUST render mounted on the wall board at Z derived from its cell row
+- **AND** no instance MUST be lifted by desktop stacking
 
 #### Scenario: Wall orientation mounts pieces vertically
 
@@ -94,7 +119,6 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 - **AND** desk-system instances MUST NOT render in the scene, appear in the instance list, or occupy placement cells
 - **WHEN** the scene is in desktop orientation
 - **THEN** only desk-system and unrestricted components MUST be offered and rendered
-
 ### Requirement: Pointer drag placement
 
 The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update the same placement state and coordinate inputs used by typed placement, and placement-only dragging MUST NOT request new CAD geometry.
@@ -162,25 +186,37 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 - **WHEN** a second touch contact begins
 - **THEN** the uncommitted instance preview MUST be cancelled and its original placement restored
 - **AND** the concurrent contacts MUST be available to the existing multi-touch camera gesture
-
 ### Requirement: 格子佔用驗證
 
-The system MUST derive occupancy from each instance's component footprint in grid cells at its current rotation. A placement or parameter change that makes two instances' footprints overlap MUST be applied; overlap MUST NOT cancel, revert, or block any change. While two instances overlap, every instance participating in an overlap MUST render with the conflict (error) color in place of its normal color, and a persistent visible text warning MUST be shown. The conflict color MUST take precedence over selection and hover color emphasis for the instances it marks. The warning state MUST clear automatically for each instance whose overlap is resolved. Overlap is derived state; it MUST NOT be persisted in the scene JSON.
+The system MUST derive occupancy from each instance's component footprint in grid cells at its current rotation. A placement or parameter change that makes two instances' footprints overlap MUST be applied; overlap MUST NOT cancel, revert, or block any change. In desktop orientation, an X/Y footprint overlap MUST be treated as a conflict only when the two instances' stacking interfaces are incompatible and their stacked Z spans also intersect; a stacked instance resting above another MUST NOT be flagged. Two instances with incompatible stacking interfaces never stack, so their identical ground-level spans always conflict. When a conflict exists, every instance participating in that collision MUST render with the conflict (error) color in place of its normal color, and a persistent visible text warning MUST be shown. The conflict color MUST take precedence over selection and hover color emphasis for the instances it marks. The warning state MUST clear automatically for each instance whose conflict is resolved. Conflict and height-limit flags are derived state; they MUST NOT be persisted in the scene JSON. In wall orientation occupancy and conflicts stay two-dimensional, except that an overlapping pair whose desktop stacking interfaces are compatible MUST NOT be flagged; instances the orientation does not display never participate.
 
-#### Scenario: Overlap applied and flagged
+#### Scenario: Stacked overlap is not a conflict
 
-- **GIVEN** the scene contains an instance occupying grid cells (0,0) through (1,0)
-- **WHEN** the user places another instance overlapping any of those cells
-- **THEN** the placement MUST be applied and remain at the overlapping cells
-- **AND** both overlapping instances MUST render with the conflict color
-- **AND** a persistent text warning MUST be visible while the overlap exists
+- **GIVEN** the desktop scene contains an instance occupying grid cells
+- **WHEN** another instance is placed overlapping those cells and stacks on top of it
+- **THEN** neither instance MUST render with the conflict color
+- **AND** no overlap warning MUST be shown
+
+#### Scenario: Unresolved height keeps the overlap conflict
+
+- **GIVEN** a desktop instance whose height is not resolvable (no bounds)
+- **WHEN** another instance's footprint overlaps it and cannot stack (no top to rest on)
+- **THEN** both instances MUST render with the conflict color
+- **AND** a persistent text warning MUST be visible while the unresolved overlap exists
+
+#### Scenario: Wall orientation keeps two-dimensional conflicts
+
+- **GIVEN** a wall-orientation scene with two overlapping wall placements
+- **WHEN** the conflict set is derived
+- **THEN** both instances MUST render with the conflict color
+- **AND** no Z stacking applies on the wall board
 
 #### Scenario: Warning clears when overlap resolves
 
 - **GIVEN** two instances render flagged with the conflict color
-- **WHEN** the user moves, shrinks, or deletes one so the footprints no longer overlap
+- **WHEN** the user moves, shrinks, or deletes one so the footprints no longer overlap at intersecting Z spans
 - **THEN** the affected instances MUST return to their normal colors
-- **AND** the persistent warning MUST disappear when no overlap remains
+- **AND** the persistent warning MUST disappear when no conflict remains
 
 #### Scenario: Conflict color takes precedence
 
@@ -197,7 +233,6 @@ The system MUST derive occupancy from each instance's component footprint in gri
 
 - **GIVEN** an overlapping instance with a ready model
 - **THEN** its STL and STEP export actions MUST remain available
-
 ### Requirement: Instance 數量上限
 
 A single scene MUST hold at most 100 instances. Adding or importing beyond the limit MUST be rejected with an explicit diagnostic; the system MUST NOT silently truncate.
@@ -208,7 +243,6 @@ A single scene MUST hold at most 100 instances. Adding or importing beyond the l
 - **WHEN** the user imports a scene file with more instances
 - **THEN** the import MUST be rejected with an explicit capacity diagnostic
 - **AND** the current scene MUST remain unchanged
-
 ### Requirement: Schema 驅動的 instance 參數編輯
 
 The playground MUST let the user edit the selected instance's parameters through the component's own workspace parameter panel — the same panel components the component's `/cad/<modelId>` workspace renders — instead of a generic form generated from the parameter schema. The panel MUST include every behavior authored for that component's workspace panel: declared parameter fields, conditional sections, model-specific calculators and estimate tools, advanced sub-settings, and the 3MF export notes where declared. Components whose editing surface is a typed parameter object (for example `opengrid`, `opengrid-label-card`, `opengrid-wall-cover`) MUST be fully editable in the playground through the same typed parameter flow the workspace uses. Parameter input MUST reuse the component definition's validation; an invalid value MUST show the component's field diagnostic and MUST NOT be sent for generation. Editing parameters MUST NOT change other instances of the same component. A parameter change that grows the instance's footprint into an overlap with another instance MUST be applied and flagged with the conflict color and persistent warning; it MUST NOT be blocked or reverted. The form MUST show the same component help text as the component's own workspace panel, falling back to the component's catalog description. The playground MUST NOT render the workspace export action row inside the instance panel; per-instance export, retry, duplicate, and delete remain the playground instance actions.
@@ -250,7 +284,6 @@ The playground MUST let the user edit the selected instance's parameters through
 - **WHEN** the user opens the selected instance's parameter panel
 - **THEN** the panel MUST NOT render the workspace export/retry action row
 - **AND** per-instance export, retry, duplicate, and delete MUST remain available as playground instance actions
-
 ### Requirement: Instance 面板 presets 與回復預設
 
 The playground instance panel MUST render the component's preset button row (restore-defaults button followed by each declared preset, in definition order) with the same behavior as the component workspace panel: applying a preset MUST resolve `defaultParameters` composed with the preset's `overrides` through the shared preset resolution and MUST apply the resolved full parameter set to the selected instance only, via the component's existing validation pipeline. Restore-defaults MUST apply the component's system preset for the instance's editing-time system context when one exists, and the definition defaults otherwise. Preset application and restore-defaults MUST be scoped to the selected instance and MUST NOT change other instances, workspace-saved parameters, or the browser-wide parameter persistence used by component workspaces. A preset that fails validation MUST NOT be applied and MUST leave the instance unchanged. After a preset or restore-defaults application the panel MUST remount its parameter controls so every control reflects the applied values.
@@ -274,7 +307,6 @@ The playground instance panel MUST render the component's preset button row (res
 - **WHEN** a preset's resolved parameter set fails the component's parameter validation
 - **THEN** the selected instance MUST keep its current parameters, raw inputs, and field errors
 - **AND** no generation request for that instance MUST be sent
-
 ### Requirement: Instance 編輯期 system context
 
 Each playground instance MUST carry an editing-time OpenGrid system context used by the instance parameter panel for system-aware defaults, restore-defaults, and system selection controls. A new or imported instance MUST default its system context from the scene orientation (`desktop`→`desk`, `wall`→`wall`). A component panel's system context selection control (for example the desk/wall switch on the `opengrid-snap` panel) MUST change only the selected instance's system context. The instance system context MUST be editing-time state: it MUST NOT be written to the scene JSON, MUST NOT persist across export/import, and MUST NOT read from or write to the workspace browser persistence for component parameters. Scene import MUST accept existing scene files unchanged.
@@ -298,7 +330,6 @@ Each playground instance MUST carry an editing-time OpenGrid system context used
 - **WHEN** the user exports the scene and imports it into a fresh playground
 - **THEN** the imported instance MUST have the orientation-default system context
 - **AND** its parameters, placement, and colors MUST be unchanged from the export
-
 ### Requirement: 規劃級 proxy 渲染
 
 The playground MUST render every instance with a planning-grade preview mesh generated by the CAD Worker from the component's production builders with only the material-saving (省料) honeycomb features turned off, so grid cutouts, openings, stacking rails, seats, and wall-mount interfaces remain visible. The hexagonal column MUST keep its dedicated silhouette, which is cheaper than a full build while matching its exact outline. The playground MUST NOT display edge-line overlays. Selection or hover MUST be indicated by material color emphasis only. Camera manipulation MUST NOT change the selection: orbiting or zooming keeps the selected instance, and only a direct click on empty space clears it. Instances with identical `modelId` and parameters MUST share one rendered geometry, and a change to one instance's parameters MUST NOT regenerate the shared geometry used by unchanged instances.
@@ -327,7 +358,6 @@ The playground MUST render every instance with a planning-grade preview mesh gen
 - **WHEN** one of them changes parameters
 - **THEN** only the changed instance's mesh MUST regenerate
 - **AND** the remaining identical instances MUST continue sharing one geometry
-
 ### Requirement: Pending instance 佔位與逐片生成
 
 Generation for scene instances MUST be scheduled so the UI stays responsive. An instance whose proxy mesh is not yet available MUST render as a placeholder occupying its planned footprint, and completed instances MUST render as they finish. A generation failure for one instance MUST be reported on that instance only and MUST NOT prevent or corrupt other instances' meshes or the scene state.
@@ -344,7 +374,6 @@ Generation for scene instances MUST be scheduled so the UI stays responsive. An 
 - **WHEN** one instance's generation fails
 - **THEN** the failure state MUST be shown only for that instance
 - **AND** other instances' completed meshes and placements MUST remain unchanged
-
 ### Requirement: Per-instance 顏色
 
 Each scene MUST have a primary/secondary palette used as the default for its instances, and each instance MAY override it with its own primary/secondary colors. Missing or invalid instance colors MUST fall back to the scene palette, and an invalid or missing scene palette MUST fall back to the shared default palette. Instance color edits MUST NOT change the browser-wide color preference used by component workspaces, and component workspace palette changes MUST NOT change instances whose colors were explicitly set.
@@ -366,23 +395,31 @@ Each scene MUST have a primary/secondary palette used as the default for its ins
 
 - **WHEN** the user changes the browser-wide palette in a component workspace
 - **THEN** instance colors in a saved or in-memory scene MUST remain unchanged
-
 ### Requirement: 場景 JSON 匯入
 
-The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, and a list of instances. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported overlapping instances MUST be flagged with the conflict color and persistent warning. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
+The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, an optional scene Z height limit `maxHeightMm`, and a list of instances. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported instances whose Z spans collide MUST be flagged with the conflict color and persistent warning. A well-formed `maxHeightMm` MUST be applied as the scene height limit; an absent or invalid `maxHeightMm` MUST import as no limit instead of rejecting. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
 
 #### Scenario: Valid scene import
 
 - **WHEN** the user imports a well-formed scene file whose instances all reference registered components with valid parameters
 - **THEN** the scene MUST contain those instances with their placements and colors
 
+#### Scenario: Height limit imports with the scene
+
+- **GIVEN** a well-formed scene file with `maxHeightMm` set to a positive number
+- **WHEN** the file is imported
+- **THEN** the playground MUST use that value as the scene height limit
+- **GIVEN** a scene file without `maxHeightMm`, or with a value that is not a positive number
+- **WHEN** the file is imported
+- **THEN** the scene MUST import with no height limit and no height-limit warning
+
 #### Scenario: In-file placement conflicts import with warnings
 
-- **GIVEN** a well-formed scene file whose instances include overlapping placements
+- **GIVEN** a well-formed scene file whose instances include footprint overlaps that collide in Z
 - **WHEN** the file is imported
 - **THEN** the scene MUST contain those instances at their file placements
-- **AND** the overlapping instances MUST render with the conflict color
-- **AND** the persistent overlap warning MUST be visible
+- **AND** the colliding instances MUST render with the conflict color
+- **AND** the persistent conflict warning MUST be visible
 
 #### Scenario: Unknown model rejected
 
@@ -395,7 +432,6 @@ The playground MUST import a scene JSON file describing `schemaVersion`, a kind 
 - **GIVEN** an imported instance contains a legacy parameter value that has a defined normalized replacement
 - **WHEN** the file is imported
 - **THEN** the instance MUST use the normalized value
-
 ### Requirement: 匯入方向可見性提示
 
 After a successful scene import, the playground MUST compare the imported instances against the set of components the current scene orientation displays. When at least one imported instance references a component that the current scene orientation does not display, the playground MUST show an informational notice stating how many imported instances belong to the other scene orientation and naming that orientation (desktop or wall). The notice MUST be informational: it MUST NOT reject the import, MUST NOT modify the imported scene, and MUST disappear once the user switches to a scene orientation that displays the remaining instances or starts another import. A rejected import MUST NOT show this notice; the existing import diagnostics keep precedence.
@@ -427,16 +463,20 @@ After a successful scene import, the playground MUST compare the imported instan
 - **WHEN** the user imports a malformed scene file
 - **THEN** the import MUST be rejected with the existing import diagnostic
 - **AND** the orientation notice MUST NOT appear
-
 ### Requirement: 場景 JSON 匯出
 
-The playground MUST export the current scene as a JSON file containing the schema version, kind marker, grid system, scene palette, and every instance with its optional `label`, `parameters`, placement, and effective colors. The exported file MUST be importable by the playground again and MUST be accepted as a single-instance settings file when it contains exactly one instance.
+The playground MUST export the current scene as a JSON file containing the schema version, kind marker, grid system, scene palette, an optional `maxHeightMm` scene height limit (present exactly when a limit is set), and every instance with its optional `label`, `parameters`, placement, and effective colors. The exported file MUST be importable by the playground again and MUST be accepted as a single-instance settings file when it contains exactly one instance.
 
 #### Scenario: Round trip
 
 - **WHEN** the user exports the current scene and imports the downloaded file into a fresh playground
-- **THEN** the scene MUST contain the same instances, placements, and colors
+- **THEN** the scene MUST contain the same instances, placements, colors, and height limit
 
+#### Scenario: Limit omitted when unset
+
+- **GIVEN** a scene with no height limit set
+- **WHEN** the user exports the scene
+- **THEN** the exported file MUST NOT contain a `maxHeightMm` field
 ### Requirement: 每片 STEP/STL 匯出清單
 
 The playground MUST export binary STL for individual instances with a committed proxy-independent model revision for that instance's parameters, reusing the component's existing export filename convention. STEP download MUST follow the workspace policy and be offered in development builds only. When an instance has a label, the file name MUST append the sanitized label; otherwise it MUST append the instance index. Instances whose parameters are invalid or whose mesh is not ready MUST NOT offer export.
@@ -457,7 +497,6 @@ The playground MUST export binary STL for individual instances with a committed 
 
 - **WHEN** an instance has no committed model revision
 - **THEN** its export actions MUST be unavailable
-
 ### Requirement: 窄版場景 sidebar bottom drawer
 
 在 cad breakpoint（`max-cad`，≤760px）以下，Playground MUST 將 sidebar 內容
@@ -487,7 +526,6 @@ view mode、grid cells 與場景匯入/匯出 MUST 留在原位。Breakpoint 以
 - **WHEN** viewport 寬度大於 760px
 - **THEN** Playground MUST 維持既有 sidebar 版面
 - **AND** MUST NOT 渲染 drawer 或 sidebar pill
-
 ### Requirement: Playground add-component choices
 
 The Playground add-component selector MUST offer only the approved models for the active scene orientation, in the order defined below, using their existing localized catalog labels. The selector restriction MUST apply equally to the desktop sidebar and narrow-screen drawer. Switching orientations MUST clear any pending choice unavailable in the new orientation and disable the add action until a valid model is selected. Registered models outside these choices MUST remain compatible with scene import, parameter editing, rendering under the existing orientation rules, and per-instance export.
@@ -523,7 +561,6 @@ The Playground add-component selector MUST offer only the approved models for th
 - **THEN** the scene MUST be accepted under the existing scene validation rules
 - **AND** the imported instance MUST retain parameter editing and per-instance export and render in its supported scene orientations
 - **AND** importing it MUST NOT add that model to the selector
-
 ### Requirement: Wall Cover mounts at grid cell centers
 
 In wall orientation, each character of an `opengrid-wall-cover` instance MUST be centered horizontally and vertically in its own consecutive 28 mm logical grid cell. At rotation zero, the first character center MUST be at world X=`(cellX + 0.5) * 28 mm` and world Z=`(cellY + 0.5) * 28 mm`, with the cover base seated at world Y=0. Its nominal envelope MUST leave 1.2 mm clearance to all four edges of its cell. Placement MUST anchor the minimum corner of the rotated character-cell span, independently of whether the remover opening is enabled.
@@ -561,3 +598,48 @@ Ready meshes, pending placeholders, typed placement, and drag placement MUST use
 - **WHEN** an existing scene containing Wall Cover instances is imported, exported, or revisited
 - **THEN** its integer coordinates and rotations MUST retain their meanings
 - **AND** the Wall Cover instances MUST render using the corrected cell-centered placement without a scene-format migration
+### Requirement: 場景 Z 高度上限
+
+The playground MUST let the user set an optional scene Z height limit in millimeters through the desktop-orientation toolbar beside the grid extent inputs. The limit MUST be a positive number; clearing the input MUST remove the limit. When no limit is set, the playground MUST NOT evaluate or flag instance heights. When a limit is set in desktop orientation, any displayed floor instance whose stacked top Z (stacked base Z plus instance height in mm) exceeds the limit MUST render with the conflict (error) color and be included in a persistent visible text warning that states how many instances exceed the limit; instances fully below the limit MUST stay unflagged, including the instances a flagged one rests on. The flag MUST clear automatically when the instance drops back within the limit or the limit is removed. The conflict color MUST take precedence over selection and hover color emphasis for instances it marks. Height-limit flags are derived state; they MUST NOT be persisted in the scene JSON. Wall orientation MUST NOT evaluate the height limit.
+
+#### Scenario: Crossing instance flagged
+
+- **GIVEN** the desktop scene has a height limit of 100 mm
+- **WHEN** stacked instances reach a top of 130 mm
+- **THEN** only the instance whose top exceeds 100 mm MUST render with the conflict color
+- **AND** the instances it rests on MUST stay unflagged
+- **AND** a persistent warning MUST state that one instance exceeds the limit
+
+#### Scenario: Flag clears when the stack shrinks
+
+- **GIVEN** an instance flagged for exceeding the height limit
+- **WHEN** the user removes or shrinks instances so its stacked top falls back within the limit
+- **THEN** the flag and the warning MUST clear
+
+#### Scenario: No limit never flags
+
+- **GIVEN** a scene with no height limit set
+- **WHEN** instances stack to any height
+- **THEN** no height-limit flag or warning MUST appear
+
+#### Scenario: Limit edit persists through export
+
+- **GIVEN** the user sets a height limit in the desktop-orientation toolbar
+- **WHEN** the scene is exported and re-imported
+- **THEN** the imported scene MUST carry the same limit
+
+#### Scenario: Wall orientation skips the height check
+
+- **GIVEN** a scene with a height limit set
+- **WHEN** the scene is switched to wall orientation
+- **THEN** no instance MUST be height-flagged in wall orientation
+
+### Requirement: 刪除鍵刪除選中實例
+
+The playground MUST delete the currently selected instance when the user presses the Delete or Backspace key, unless focus is inside a text input, textarea, select, or content-editable element. Deleting via either key MUST behave exactly like the instance panel's delete action, and held-down repeats MUST delete at most one instance per key press.
+
+#### Scenario: Delete removes the selected instance
+
+- **WHEN** an instance is selected and the user presses Delete or Backspace outside of any text field
+- **THEN** that instance MUST be removed from the scene exactly once
+- **AND** typing either key inside a text field MUST NOT delete any instance

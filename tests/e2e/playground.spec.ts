@@ -78,9 +78,11 @@ async function findInstancePoint(
 ): Promise<ViewportPoint> {
   const viewport = page.getByTestId('playground-viewport')
   const canvas = viewport.locator('canvas')
+  const screenshot = await canvas.screenshot()
+  // Element screenshots can scroll the canvas into view, so the box must be
+  // measured after the screenshot or every hover point is stale.
   const box = await canvas.boundingBox()
   if (!box) throw new Error('Playground viewport canvas is not available')
-  const screenshot = await canvas.screenshot()
   const candidates = await page.evaluate(async (encodedPng) => {
     const response = await fetch(`data:image/png;base64,${encodedPng}`)
     const bitmap = await createImageBitmap(await response.blob())
@@ -218,7 +220,7 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-1')
   })
 
-  test('commits overlapping placements with a persistent warning', async ({
+  test('stacks an overlapping desktop placement without a conflict warning', async ({
     page,
   }) => {
     await openPlayground(page)
@@ -237,28 +239,26 @@ test.describe('OpenGrid playground planner', () => {
     await cellY.blur()
 
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
-    await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
+    // Desktop stacking replaces the overlap conflict entirely.
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
     await expect(cellX).toHaveValue('0')
     const viewport = page.getByTestId('playground-viewport')
-    await expect(viewport).toHaveAttribute(
-      'data-overlap-instances',
-      'inst-1,inst-2',
-    )
-    // Overlap is a planning warning; it must not block exports.
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+    // Stacking is a planning aid; it must not block exports.
     await expect(page.getByTestId('playground-export-stl')).toBeEnabled()
     const exportStep = page.getByTestId('playground-export-step')
     if (await exportStep.isVisible()) {
       await expect(exportStep).toBeEnabled()
     }
 
-    // Moving the instance apart clears the flags and the warning.
+    // Moving the instance apart keeps the scene conflict-free.
     await cellX.fill('9')
     await cellX.blur()
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   })
 
-  test('flags parameter growth into a neighbor instead of blocking it', async ({
+  test('lifts a neighbor when parameter growth reaches its column', async ({
     page,
   }) => {
     await openPlayground(page)
@@ -284,16 +284,17 @@ test.describe('OpenGrid playground planner', () => {
     await widthSlider.press('ArrowRight')
     await widthSlider.press('ArrowRight')
 
-    await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
-    await expect(viewport).toHaveAttribute(
-      'data-overlap-instances',
-      'inst-1,inst-2',
-    )
+    // The grown footprint reaches inst-2's column, so inst-2 stacks on top
+    // instead of flagging a desktop conflict.
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   })
 
-  test('imports a scene file with in-file conflicts as flagged overlaps', async ({
+  test('imports a scene file with in-file desktop overlaps as a stack', async ({
     page,
   }) => {
+    const boxParams = getModelDefinition('opengrid-stackable-box')
+      ?.defaultParameters
     const overlappingPlacement = {
       cellX: 0,
       cellY: 0,
@@ -306,13 +307,13 @@ test.describe('OpenGrid playground planner', () => {
       grid: { system: 'opengrid' },
       instances: [
         {
-          modelId: 'box',
-          parameters: { width: 20, depth: 30, height: 40 },
+          modelId: 'opengrid-stackable-box',
+          parameters: boxParams,
           placement: overlappingPlacement,
         },
         {
-          modelId: 'box',
-          parameters: { width: 20, depth: 30, height: 40 },
+          modelId: 'opengrid-stackable-box',
+          parameters: boxParams,
           placement: overlappingPlacement,
         },
       ],
@@ -327,11 +328,144 @@ test.describe('OpenGrid playground planner', () => {
     await expect(page.getByTestId('playground-instance-inst-1')).toBeVisible()
     await expect(page.getByTestId('playground-instance-inst-2')).toBeVisible()
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+    await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+      'data-overlap-instances',
+      '',
+    )
+  })
+
+  test('keeps a visible conflict warning for overlapping wall placements', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await page.getByTestId('playground-mode-wall').click()
+    const wallPlacement = {
+      cellX: 0,
+      cellY: 0,
+      rotation: 0,
+      supportedBy: null,
+    }
+    const scene = {
+      schemaVersion: 1,
+      kind: 'shape-shortcut/scene',
+      grid: { system: 'opengrid' },
+      instances: [
+        {
+          modelId: 'opengrid-wall-cover',
+          parameters: { text: 'A' },
+          placement: wallPlacement,
+        },
+        {
+          modelId: 'opengrid-wall-cover',
+          parameters: { text: 'B' },
+          placement: wallPlacement,
+        },
+      ],
+    }
+    await page.getByTestId('playground-import-input').setInputFiles({
+      name: 'wall-scene.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(scene)),
+    })
+
+    await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
+    // Wall orientation keeps the two-dimensional conflict rule: the
+    // overlapping covers flag with the persistent warning.
     await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
     await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
       'data-overlap-instances',
       'inst-1,inst-2',
     )
+  })
+
+  test('keeps desktop stacks conflict-free after switching to wall', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+
+    await page.getByTestId('playground-instance-inst-2').click()
+    const cellX = page.locator('#playground-cell-x')
+    await cellX.fill('0')
+    await cellX.blur()
+    const cellY = page.locator('#playground-cell-y')
+    await cellY.fill('0')
+    await cellY.blur()
+
+    // Desktop stacking keeps the overlapping pair conflict-free...
+    const viewport = page.getByTestId('playground-viewport')
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+
+    // ...and switching to the wall board must not resurrect the conflict.
+    await page.getByTestId('playground-mode-wall').click()
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+  })
+
+  test('deletes the selected instance with the Delete key', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+
+    await page.getByTestId('playground-instance-inst-1').click()
+    await page.keyboard.press('Delete')
+    await expect(page.getByTestId('playground-instance-inst-1')).toHaveCount(0)
+    await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+      'data-selected-instance',
+      '',
+    )
+
+    // Backspace removes the selection exactly like Delete.
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+    await page.getByTestId('playground-instance-inst-2').click()
+    await page.keyboard.press('Backspace')
+    await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
+  })
+
+  test('flags stacked instances above the scene height limit', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+
+    // Stack inst-2 on inst-1: its top lands at 40.5 + 40 = 80.5 mm.
+    await page.getByTestId('playground-instance-inst-2').click()
+    const cellX = page.locator('#playground-cell-x')
+    await cellX.fill('0')
+    await cellX.blur()
+    const cellY = page.locator('#playground-cell-y')
+    await cellY.fill('0')
+    await cellY.blur()
+
+    const limit = page.getByTestId('playground-height-limit')
+    await limit.fill('50')
+    await limit.blur()
+
+    const warning = page.getByTestId('playground-height-warning')
+    await expect(warning).toBeVisible()
+    await expect(warning).toContainText('1')
+
+    // The limit persists into the exported scene file.
+    const sceneDownload = page.waitForEvent('download')
+    await page.getByTestId('playground-export-scene').click()
+    const sceneFile = await sceneDownload
+    const exported = JSON.parse(readFileSync(await sceneFile.path(), 'utf8'))
+    expect(exported.maxHeightMm).toBe(50)
+
+    // Clearing the limit removes the flag.
+    await limit.fill('')
+    await limit.blur()
+    await expect(warning).toHaveCount(0)
   })
 
   test('downloads the scene file and a per-instance STEP export', async ({
@@ -1022,7 +1156,7 @@ test('mounts OpenConnect wall pieces in installed orientation', async ({
   await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
 })
 
-test('commits an overlapping drag with a warning and keeps the camera', async ({
+test('commits an overlapping drag as a stack and keeps the camera', async ({
   page,
 }) => {
   await useCompactPlaygroundGrid(page)
@@ -1043,17 +1177,15 @@ test('commits an overlapping drag with a warning and keeps the camera', async ({
   await page.mouse.down()
   await page.mouse.move(firstPoint.x, firstPoint.y, { steps: 8 })
   await moveActiveDragToCell(page, firstPoint, 0, 0)
-  await expect(viewport).toHaveAttribute('data-drag-valid', 'false')
+  // Dragging onto an occupied cell stacks, so the preview stays valid.
+  await expect(viewport).toHaveAttribute('data-drag-valid', 'true')
   await expect(viewport).toHaveCSS('cursor', 'grabbing')
   await page.mouse.up()
 
   expect(await readSelectedPlacement(page)).toEqual({ cellX: 0, cellY: 0 })
   await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
-  await expect(page.getByTestId('playground-overlap-warning')).toBeVisible()
-  await expect(viewport).toHaveAttribute(
-    'data-overlap-instances',
-    'inst-1,inst-2',
-  )
+  await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+  await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   await expect(viewport).toHaveAttribute('data-camera-pose', cameraPose!)
   expectSerializedVectorCloseTo(
     await viewport.getAttribute('data-camera-position'),

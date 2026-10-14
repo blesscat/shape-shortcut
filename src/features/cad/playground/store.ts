@@ -38,14 +38,17 @@ import {
   parsePlaygroundSceneFile,
   serializePlaygroundScene,
 } from './scene-file'
+import { parseSceneMaxHeightMm } from '../../../cad-contract/scene'
 import {
   cellsForInstance,
   findFreeAnchorCell,
-  firstPlacementConflict,
-  overlappingInstanceIds,
+  stackConflictInstanceIds,
+  stackedBaseZFor,
   type PlaygroundCellRange,
   type PlaygroundCellsEntry,
+  type PlaygroundStackEntry,
 } from './occupancy'
+import { stackingInterfaceFor } from './stacking-compatibility'
 import { sceneInstanceFileName, sceneProxyCacheKey } from './filenames'
 import {
   clampPlaygroundGridCells,
@@ -106,11 +109,26 @@ export type PlaygroundSnapshot = {
   importNotice: DiagnosticDescriptor | null
   viewMode: PlaygroundViewMode
   gridSize: PlaygroundGridSize
+  /** Scene Z height limit in mm; `null` disables height evaluation. */
+  maxHeightMm: number | null
   /**
    * Derived ids of instances participating in at least one footprint
-   * overlap. Recomputed on every emission; never persisted.
+   * overlap. Desktop orientation flags only Z-span collisions (stacked
+   * pairs never conflict); wall keeps the two-dimensional rule. Recomputed
+   * on every emission; never persisted.
    */
   overlappingInstanceIds: string[]
+  /**
+   * Derived desktop stacked base Z (mm) per placed instance id; empty in
+   * wall orientation. Recomputed on every emission; never persisted.
+   */
+  instanceStackedZ: Record<string, number>
+  /**
+   * Derived ids of desktop instances whose stacked top exceeds the scene
+   * height limit. Empty when no limit is set or in wall orientation; never
+   * persisted.
+   */
+  overHeightInstanceIds: string[]
   /**
    * Monotonic counter bumped after a successful preset or restore-defaults
    * application so the mounted parameter panel remounts and every control
@@ -226,6 +244,7 @@ export type PlaygroundStore = {
   select: (instanceId: string | null) => void
   setViewMode: (viewMode: PlaygroundViewMode) => void
   setGridSize: (size: PlaygroundGridSize) => void
+  setSceneMaxHeightMm: (maxHeightMm: number | null) => void
   addInstance: (modelId: ModelId) => boolean
   removeInstance: (instanceId: string) => void
   duplicateInstance: (instanceId: string) => boolean
@@ -237,6 +256,16 @@ export type PlaygroundStore = {
     cellY: number,
     rotation: ScenePlacement['rotation'],
   ) => boolean
+  /**
+   * Derived desktop stacked base Z (mm) for a candidate placement; 0 in
+   * wall orientation or for structurally unevaluable candidates.
+   */
+  stackedZForPlacement: (
+    instanceId: string,
+    cellX: number,
+    cellY: number,
+    rotation: ScenePlacement['rotation'],
+  ) => number
   setPlacement: (
     instanceId: string,
     cellX: number,
@@ -279,6 +308,7 @@ export function createPlaygroundStore(): PlaygroundStore {
   let nextInstanceNumber = 1
   let viewMode: PlaygroundViewMode = 'desktop'
   let gridSize = loadPlaygroundGridSize()
+  let maxHeightMm: number | null = null
   let panelResetVersion = 0
 
   const listeners = new Set<(snapshot: PlaygroundSnapshot) => void>()
@@ -352,23 +382,88 @@ export function createPlaygroundStore(): PlaygroundStore {
 
   // Occupancy keeps every placed instance, including failed ones: a failed
   // generation still occupies its planned footprint and a retry must not
-  // start from an overlap.
-  const placedCellEntries = (excludeId?: string): PlaygroundCellsEntry[] =>
+  // start from an overlap. Instances the active orientation does not
+  // display neither render nor occupy cells, so they stay out of every
+  // derivation. A `candidate` replaces the excluded instance at its stored
+  // array slot so preview derivations see the same stacking order the
+  // committed derivation will use.
+  const placedStackEntries = (
+    excludeId?: string,
+    candidate?: PlaygroundStackEntry,
+  ): PlaygroundStackEntry[] =>
     instances.flatMap((instance) => {
+      if (candidate && instance.id === excludeId) return [candidate]
       if (instance.id === excludeId || instance.placement === null) return []
+      if (!modelVisibleInViewMode(instance.modelId, viewMode)) return []
       const relativeCells = relativeCellsFor(
         instance,
         instance.placement.rotation,
       )
       if (!relativeCells) return []
+      const bounds = boundsFor(instance)
       return [
         {
           id: instance.id,
           relativeCells,
           placement: instance.placement,
+          heightMm: bounds ? bounds.max[2] : null,
+          stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
         },
       ]
     })
+
+  /**
+   * Derived orientation-aware conflict state: in both orientations only
+   * displayed instances participate. Overlapping footprints conflict unless
+   * their stacking interfaces are compatible — desktop additionally
+   * requires the stacked Z spans to intersect (compatible pairs stack, so
+   * they never intersect); wall has no Z stacking, so incompatible overlaps
+   * flag directly. Also derives desktop stacked base Z and height-limit
+   * exceeders.
+   */
+  const deriveConflictState = (): {
+    conflictIds: string[]
+    stackedZ: Record<string, number>
+    overHeightIds: string[]
+  } => {
+    const entries = placedStackEntries()
+    if (typeof process !== 'undefined' && process.env.DEBUG_CONFLICTS)
+      console.log('DBG', viewMode, JSON.stringify(entries))
+    if (viewMode !== 'desktop') {
+      return {
+        conflictIds: [...stackConflictInstanceIds(entries, { zAware: false })],
+        stackedZ: {},
+        overHeightIds: [],
+      }
+    }
+    const { baseZ, matings } = stackedBaseZFor(entries)
+    const stackedZ: Record<string, number> = {}
+    for (const [id, z] of baseZ) stackedZ[id] = z
+    const limit = maxHeightMm
+    const overHeightIds =
+      limit === null
+        ? []
+        : instances.flatMap((instance) => {
+            if (instance.placement === null) return []
+            if (!modelVisibleInViewMode(instance.modelId, viewMode)) return []
+            const bounds = boundsFor(instance)
+            if (!bounds) return []
+            return (baseZ.get(instance.id) ?? 0) + bounds.max[2] > limit
+              ? [instance.id]
+              : []
+          })
+    return {
+      conflictIds: [
+        ...stackConflictInstanceIds(entries, {
+          zAware: true,
+          precomputedBaseZ: baseZ,
+          matings,
+        }),
+      ],
+      stackedZ,
+      overHeightIds,
+    }
+  }
 
   const assignPlacement = (instance: PlaygroundInstance): void => {
     const relativeCells = relativeCellsFor(instance, 0)
@@ -378,7 +473,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     }
     const free = findFreeAnchorCell(
       relativeCells,
-      placedCellEntries(instance.id),
+      placedStackEntries(instance.id),
     )
     instance.placement = {
       cellX: free.cellX,
@@ -424,24 +519,46 @@ export function createPlaygroundStore(): PlaygroundStore {
   }
 
   /**
-   * Whether this candidate placement would be flagged: its footprint
-   * overlaps another instance's footprint. Used for drag-preview coloring
-   * only — commits accept overlapping placements. Returns false for
-   * structurally unevaluable candidates (unknown instance, non-integer
-   * cells, missing bounds) as well; drag candidates never hit that branch.
+   * Builds the stack entries a candidate placement participates in: the
+   * candidate replaces the moved instance at its stored array slot, so the
+   * preview derivation matches the committed one exactly.
+   */
+  const candidateStackEntries = (
+    instance: PlaygroundInstance,
+    placement: ScenePlacement,
+  ): PlaygroundStackEntry[] | null => {
+    const relativeCells = relativeCellsFor(instance, placement.rotation)
+    if (!relativeCells) return null
+    const bounds = boundsFor(instance)
+    return placedStackEntries(instance.id, {
+      id: instance.id,
+      relativeCells,
+      placement,
+      heightMm: bounds ? bounds.max[2] : null,
+      stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
+    })
+  }
+
+  /**
+   * Whether this candidate placement would be flagged. On the desktop the
+   * candidate stacks onto overlapping instances, so only an overlap with an
+   * unresolved-height instance flags; wall placements keep the
+   * two-dimensional rule. Used for drag-preview coloring only — commits
+   * accept overlapping placements. Returns false for structurally
+   * unevaluable candidates (unknown instance, non-integer cells, missing
+   * bounds) as well; drag candidates never hit that branch.
    */
   const placementOverlaps = (
     instance: PlaygroundInstance,
     placement: ScenePlacement,
   ): boolean => {
-    const relativeCells = relativeCellsFor(instance, placement.rotation)
-    if (!relativeCells) return false
-    return (
-      firstPlacementConflict([
-        ...placedCellEntries(instance.id),
-        { id: instance.id, relativeCells, placement },
-      ]) !== null
-    )
+    const entries = candidateStackEntries(instance, placement)
+    if (!entries) return false
+    const { matings } = stackedBaseZFor(entries)
+    return stackConflictInstanceIds(entries, {
+      zAware: viewMode === 'desktop',
+      matings,
+    }).has(instance.id)
   }
 
   const cacheKeyFor = (instance: PlaygroundInstance): string =>
@@ -769,18 +886,24 @@ export function createPlaygroundStore(): PlaygroundStore {
     if (!cached) scheduleGenerate(instance)
   }
 
-  const current = (): PlaygroundSnapshot => ({
-    instances: instances.map((instance) => ({ ...instance })),
-    selectedInstanceId,
-    sceneColors: { ...sceneColors },
-    viewMode,
-    gridSize: { ...gridSize },
-    workerState,
-    diagnostic: diagnostic ? { ...diagnostic } : null,
-    importNotice: importNotice ? { ...importNotice } : null,
-    overlappingInstanceIds: [...overlappingInstanceIds(placedCellEntries())],
-    panelResetVersion,
-  })
+  const current = (): PlaygroundSnapshot => {
+    const derived = deriveConflictState()
+    return {
+      instances: instances.map((instance) => ({ ...instance })),
+      selectedInstanceId,
+      sceneColors: { ...sceneColors },
+      viewMode,
+      gridSize: { ...gridSize },
+      maxHeightMm,
+      workerState,
+      diagnostic: diagnostic ? { ...diagnostic } : null,
+      importNotice: importNotice ? { ...importNotice } : null,
+      overlappingInstanceIds: derived.conflictIds,
+      instanceStackedZ: derived.stackedZ,
+      overHeightInstanceIds: derived.overHeightIds,
+      panelResetVersion,
+    }
+  }
 
   return {
     subscribe(listener) {
@@ -819,6 +942,12 @@ export function createPlaygroundStore(): PlaygroundStore {
       if (next.x === gridSize.x && next.y === gridSize.y) return
       gridSize = next
       savePlaygroundGridSize(gridSize)
+      emit()
+    },
+    setSceneMaxHeightMm(value) {
+      const next = parseSceneMaxHeightMm(value)
+      if (next === maxHeightMm) return
+      maxHeightMm = next
       emit()
     },
     addInstance(modelId) {
@@ -923,6 +1052,20 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
       if (!result.ok) return false
       return !placementOverlaps(result.instance, result.placement)
+    },
+    stackedZForPlacement(instanceId, cellX, cellY, rotation) {
+      if (viewMode !== 'desktop') return 0
+      if (!Number.isInteger(cellX) || !Number.isInteger(cellY)) return 0
+      const instance = getInstance(instanceId)
+      if (!instance) return 0
+      const entries = candidateStackEntries(instance, {
+        cellX,
+        cellY,
+        rotation,
+        supportedBy: null,
+      })
+      if (!entries) return 0
+      return stackedBaseZFor(entries).baseZ.get(instanceId) ?? 0
     },
     setPlacement(instanceId, cellX, cellY, rotation) {
       const result = validatePlacementCandidate(
@@ -1150,6 +1293,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       generationTimers.clear()
       instances = withAutoPlacement
       sceneColors = { ...result.scene.colors }
+      maxHeightMm = result.scene.maxHeightMm
       selectedInstanceId = instances[0]?.id ?? null
       diagnostic = null
       importNotice = orientationNoticeFor(instances, viewMode)
@@ -1168,6 +1312,7 @@ export function createPlaygroundStore(): PlaygroundStore {
             placement: instance.placement,
             colors: instance.colors,
           })),
+          { maxHeightMm },
         ),
         null,
         2,

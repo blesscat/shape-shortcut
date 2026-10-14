@@ -3,6 +3,10 @@ import {
   type ScenePlacement,
 } from '../../../cad-contract/scene'
 import type { ModelBounds } from '../../../cad-contract/units'
+import {
+  stackingInterfacesCompatible,
+  type StackingInterface,
+} from './stacking-compatibility'
 
 /**
  * Inclusive integer grid-cell range covered by a footprint, on the OpenGrid
@@ -75,6 +79,20 @@ export type PlaygroundCellsEntry = {
   placement: Pick<ScenePlacement, 'cellX' | 'cellY'>
 }
 
+/**
+ * Occupancy entry extended with the authored height above the base plane
+ * (mm) for desktop stacking derivation. `null` height means the instance
+ * stays grounded and cannot support anything. `stacking` carries the
+ * physical stacking interface derived from the component parameters.
+ */
+export type PlaygroundStackEntry = PlaygroundCellsEntry & {
+  heightMm: number | null
+  stacking: StackingInterface
+}
+
+/** Fixed vertical render gap between seated mating faces, in mm. */
+export const PLAYGROUND_STACK_CLEARANCE_MM = 0.05
+
 export function absoluteCellsFor(
   entry: PlaygroundCellsEntry,
 ): PlaygroundCellRange {
@@ -99,41 +117,133 @@ function rangesOverlap(
 }
 
 /**
- * Returns the id of the first instance whose footprint overlaps a later
- * instance's footprint, or `null` when all placements are compatible.
+ * Stacked base Z in mm per instance id, derived in array order (later
+ * entries stack on earlier ones): each seatable, heighted instance rests on
+ * the greatest mating datum among footprint-overlapping, interface-
+ * compatible placed instances minus its seating drop (the interface
+ * engagement both pieces share), plus the small render gap. Overlapping
+ * instances with incompatible interfaces never lift — they share ground
+ * level and the conflict pass flags them. Heightless instances stay
+ * grounded and contribute no datum, so nothing can stack on them. The
+ * returned `matings` set records every `child\u0000support` pair whose base
+ * was derived from that support's datum: mated pairs interpenetrate their
+ * bounding boxes by design and are excluded from conflict flagging.
  */
-export function firstPlacementConflict(
-  instances: ReadonlyArray<PlaygroundCellsEntry>,
-): string | null {
-  for (let a = 0; a < instances.length; a += 1) {
-    for (let b = a + 1; b < instances.length; b += 1) {
-      const rangeA = absoluteCellsFor(instances[a]!)
-      const rangeB = absoluteCellsFor(instances[b]!)
-      if (rangesOverlap(rangeA, rangeB)) return instances[b]!.id
+export function stackedBaseZFor(
+  instances: ReadonlyArray<PlaygroundStackEntry>,
+): { baseZ: Map<string, number>; matings: Set<string> } {
+  const baseZ = new Map<string, number>()
+  const matings = new Set<string>()
+  const placed: {
+    id: string
+    cells: PlaygroundCellRange
+    baseZ: number
+    seatDatumMm: number | null
+    stacking: StackingInterface
+  }[] = []
+  for (const entry of instances) {
+    if (entry.heightMm === null || entry.stacking.seatingDropMm === null) {
+      baseZ.set(entry.id, 0)
+      continue
     }
+    const cells = absoluteCellsFor(entry)
+    let base = 0
+    let supportId: string | null = null
+    for (const candidate of placed) {
+      if (candidate.seatDatumMm === null) continue
+      if (!rangesOverlap(cells, candidate.cells)) continue
+      if (!stackingInterfacesCompatible(entry.stacking, candidate.stacking))
+        continue
+      const seatZ =
+        candidate.baseZ +
+        candidate.seatDatumMm -
+        entry.stacking.seatingDropMm +
+        PLAYGROUND_STACK_CLEARANCE_MM
+      if (seatZ > base) {
+        base = seatZ
+        supportId = candidate.id
+      }
+    }
+    baseZ.set(entry.id, base)
+    if (supportId !== null) matings.add(`${entry.id}\u0000${supportId}`)
+    placed.push({
+      id: entry.id,
+      cells,
+      baseZ: base,
+      seatDatumMm: entry.stacking.seatDatumMm,
+      stacking: entry.stacking,
+    })
   }
-  return null
+  return { baseZ, matings }
 }
 
 /**
- * Returns the ids of every instance participating in at least one pairwise
- * footprint overlap — both sides of each conflict, including chains.
+ * Conflict set for overlapping instances that cannot stack: both sides of
+ * every footprint overlap whose stacking interfaces are incompatible — the
+ * desktop pass additionally requires the stacked Z spans to intersect, so
+ * compatible pairs that actually mate (recorded in `matings`) and share
+ * their duplicated interface height never flag, while compatible pairs
+ * colliding at the same level do. A heightless instance is treated as an
+ * unbounded span so it keeps conflicting with any footprint overlap. Pass
+ * the `precomputedBaseZ`/`matings` results from `stackedBaseZFor` over the
+ * same instances to avoid deriving them twice on the desktop pass.
  */
-export function overlappingInstanceIds(
-  instances: ReadonlyArray<PlaygroundCellsEntry>,
+export function stackConflictInstanceIds(
+  instances: ReadonlyArray<PlaygroundStackEntry>,
+  options: {
+    zAware: boolean
+    precomputedBaseZ?: ReadonlyMap<string, number>
+    matings?: ReadonlySet<string>
+  },
 ): Set<string> {
-  const overlapping = new Set<string>()
-  for (let a = 0; a < instances.length; a += 1) {
-    for (let b = a + 1; b < instances.length; b += 1) {
-      const rangeA = absoluteCellsFor(instances[a]!)
-      const rangeB = absoluteCellsFor(instances[b]!)
-      if (rangesOverlap(rangeA, rangeB)) {
-        overlapping.add(instances[a]!.id)
-        overlapping.add(instances[b]!.id)
+  const baseZ =
+    options.precomputedBaseZ ?? stackedBaseZFor(instances).baseZ
+  const spans = instances.map((entry) => {
+    const base = baseZ.get(entry.id) ?? 0
+    return {
+      id: entry.id,
+      cells: absoluteCellsFor(entry),
+      base,
+      top:
+        entry.heightMm === null
+          ? Number.POSITIVE_INFINITY
+          : base + entry.heightMm,
+      stacking: entry.stacking,
+    }
+  })
+  const conflicts = new Set<string>()
+  for (let a = 0; a < spans.length; a += 1) {
+    for (let b = a + 1; b < spans.length; b += 1) {
+      const spanA = spans[a]!
+      const spanB = spans[b]!
+      if (!rangesOverlap(spanA.cells, spanB.cells)) continue
+      if (!options.zAware) {
+        // No Z stacking on the wall: compatible pairs stay mounted where
+        // they are (a desktop stack keeps its overlap) without flagging;
+        // incompatible overlaps flag directly.
+        if (stackingInterfacesCompatible(spanA.stacking, spanB.stacking))
+          continue
+        conflicts.add(spanA.id)
+        conflicts.add(spanB.id)
+        continue
+      }
+      // Desktop: a mated pair interpenetrates its bounding boxes by design,
+      // so its duplicated interface height is not a conflict.
+      if (
+        options.matings?.has(`${spanA.id}\u0000${spanB.id}`) ||
+        options.matings?.has(`${spanB.id}\u0000${spanA.id}`)
+      )
+        continue
+      // Everything else conflicts when its bounding spans intersect:
+      // incompatible pairs never lift, and compatible pairs that neither
+      // supports collide at shared cells.
+      if (spanA.base < spanB.top && spanB.base < spanA.top) {
+        conflicts.add(spanA.id)
+        conflicts.add(spanB.id)
       }
     }
   }
-  return overlapping
+  return conflicts
 }
 
 /**
