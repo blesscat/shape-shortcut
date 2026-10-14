@@ -1212,6 +1212,9 @@
   data-selected-instance={selectedInstanceId ?? ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   data-overlap-instances={overlapInstanceIds}
+  data-instance-stacked-z={instances
+    .map((instance) => `${instance.id}:${instance.stackedZ}`)
+    .join(',')}
   data-pointer-instance={pointerPress?.instanceId ?? ''}
   data-drag-instance={dragPreview?.instanceId ?? ''}
   data-drag-valid={dragPreview ? String(dragPreview.valid) : ''}

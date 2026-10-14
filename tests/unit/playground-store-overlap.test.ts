@@ -27,6 +27,7 @@ import { createPlaygroundStore, type PlaygroundStore } from '../../src/features/
 import { PLAYGROUND_STACK_CLEARANCE_MM } from '../../src/features/cad/playground/occupancy'
 import {
   boundsForOpenGridStackableBox,
+  OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
 } from '../../src/cad-contract/units'
 
@@ -34,6 +35,18 @@ import {
 const BOX_TOP_MM = boundsForOpenGridStackableBox({
   ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
 }).max[2]
+
+/**
+ * Base Z (mm) of a second default stackable box seated on the first: the
+ * box mating datum minus the guide clearance plus the render gap.
+ */
+const BOX_SEAT_Z =
+  OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.height +
+  OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight +
+  OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerChamfer +
+  OPENGRID_STACKABLE_BOX_CONFIGURATION.topRailInnerVerticalHeight -
+  OPENGRID_STACKABLE_BOX_CONFIGURATION.stackingGuideClearance +
+  PLAYGROUND_STACK_CLEARANCE_MM
 
 function sceneInstance(
   cellX: number,
@@ -85,7 +98,7 @@ describe('playground store soft overlap', () => {
     // the earlier one's top (box height 40 mm) plus the fixed clearance.
     expect(snapshot.overlappingInstanceIds).toEqual([])
     expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
     expect(snapshot.diagnostic).toBeNull()
     const committed = snapshot.instances.find(
       (instance) => instance.id === 'inst-2',
@@ -102,7 +115,7 @@ describe('playground store soft overlap', () => {
     const next = setupStore()
 
     next.setPlacement('inst-2', 0, 0, 0)
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
 
     next.setPlacement('inst-2', 9, 9, 0)
     const snapshot = next.getSnapshot()
@@ -129,9 +142,7 @@ describe('playground store soft overlap', () => {
     next.setPlacement('inst-1', 9, 9, 0)
     const snapshot = next.getSnapshot()
     expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(
-      BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM,
-    )
+    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
     expect(snapshot.overlappingInstanceIds).toEqual([])
   })
 
@@ -148,7 +159,7 @@ describe('playground store soft overlap', () => {
     next.setParameter('inst-1', 'x', '3')
     const snapshot = next.getSnapshot()
     expect(snapshot.overlappingInstanceIds).toEqual([])
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
     const grown = snapshot.instances.find(
       (instance) => instance.id === 'inst-1',
     )
@@ -161,7 +172,7 @@ describe('playground store soft overlap', () => {
 
     // Deleting the supporter also drops the stacked instance.
     next.setParameter('inst-1', 'x', '3')
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
     next.removeInstance('inst-1')
     expect(next.getSnapshot().instanceStackedZ['inst-2']).toBe(0)
   })
@@ -181,7 +192,7 @@ describe('playground store soft overlap', () => {
     const snapshot = next.getSnapshot()
     expect(snapshot.instances).toHaveLength(2)
     expect(snapshot.overlappingInstanceIds).toEqual([])
-    expect(snapshot.instanceStackedZ['inst-4']).toBeCloseTo(BOX_TOP_MM + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(snapshot.instanceStackedZ['inst-4']).toBeCloseTo(BOX_SEAT_Z)
   })
 
   it('flags only the instance whose stacked top exceeds the height limit', () => {

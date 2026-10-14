@@ -121,7 +121,8 @@
   }
 
   function handleDeleteKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'Delete' || event.repeat) return
+    if ((event.key !== 'Delete' && event.key !== 'Backspace') || event.repeat)
+      return
     if (!store || !snapshot?.selectedInstanceId) return
     // Never hijack Delete while the user is editing text.
     const target = event.target

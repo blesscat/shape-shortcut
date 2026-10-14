@@ -420,6 +420,13 @@ test.describe('OpenGrid playground planner', () => {
       'data-selected-instance',
       '',
     )
+
+    // Backspace removes the selection exactly like Delete.
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+    await page.getByTestId('playground-instance-inst-2').click()
+    await page.keyboard.press('Backspace')
+    await expect(page.getByTestId('playground-instance-inst-2')).toHaveCount(0)
   })
 
   test('flags stacked instances above the scene height limit', async ({

@@ -4,6 +4,7 @@ import type { ScenePlacement } from '../../src/cad-contract/scene'
 import type { ModelBounds } from '../../src/cad-contract/units'
 import {
   boundsForOpenGridStackableBox,
+  OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
 } from '../../src/cad-contract/units'
 import {
@@ -64,6 +65,8 @@ const BOX_STACKING: StackingInterface = {
   top: true,
   bottom: true,
   cylinderDiameter: null,
+  seatDatumMm: 25,
+  seatingDropMm: 0.15,
 }
 
 /** No stacking interface: neither receives nor seats pieces. */
@@ -71,14 +74,30 @@ const NO_STACKING: StackingInterface = {
   top: false,
   bottom: false,
   cylinderDiameter: null,
+  seatDatumMm: null,
+  seatingDropMm: null,
 }
 
 function cylinderStacking(
   diameter: number,
   { bottom = true }: { bottom?: boolean } = {},
 ): StackingInterface {
-  return { top: true, bottom, cylinderDiameter: diameter }
+  return {
+    top: true,
+    bottom,
+    cylinderDiameter: diameter,
+    seatDatumMm: 20,
+    seatingDropMm: bottom ? 0.65 : null,
+  }
 }
+
+/** Render gap between seated mating faces, from the occupancy module. */
+const SEAT_GAP = PLAYGROUND_STACK_CLEARANCE_MM
+
+/** Base Z for an entry seating directly on a support grounded at Z=0. */
+const SEAT_ON_FLOOR = 25 - 0.15 + SEAT_GAP
+
+const CYLINDER_SEAT_ON_FLOOR = 20 - 0.65 + SEAT_GAP
 
 /** Stack entry occupying `width` x `height` cells with an authored height. */
 function stackEntry(
@@ -318,33 +337,31 @@ describe('playground occupancy', () => {
     expect(overlaps).toBe(false)
   })
 
-  it('stacks a chain of fully overlapping instances with clearance', () => {
-    const baseZ = stackedBaseZFor([
+  it('stacks a chain of fully overlapping instances on the mating datum', () => {
+    const { baseZ } = stackedBaseZFor([
       stackEntry('a', 0, 0, 20),
       stackEntry('b', 0, 0, 30),
       stackEntry('c', 0, 0, 10),
     ])
     expect(baseZ.get('a')).toBe(0)
-    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
-    expect(baseZ.get('c')).toBe(
-      20 + 30 + 2 * PLAYGROUND_STACK_CLEARANCE_MM,
-    )
+    expect(baseZ.get('b')).toBeCloseTo(SEAT_ON_FLOOR)
+    expect(baseZ.get('c')).toBeCloseTo(SEAT_ON_FLOOR * 2)
   })
 
   it('stacks partially overlapping footprints only where they overlap', () => {
     // 'a' spans two cells; 'b' sits on cell x=1, 'c' rests on cell x=0.
-    const baseZ = stackedBaseZFor([
+    const { baseZ } = stackedBaseZFor([
       stackEntry('a', 0, 0, 20, BOX_STACKING, 2, 1),
       stackEntry('b', 1, 0, 10),
       stackEntry('c', 0, 0, 5),
     ])
     expect(baseZ.get('a')).toBe(0)
-    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
-    expect(baseZ.get('c')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(baseZ.get('b')).toBeCloseTo(SEAT_ON_FLOOR)
+    expect(baseZ.get('c')).toBeCloseTo(SEAT_ON_FLOOR)
   })
 
   it('keeps heightless instances grounded and unsupported', () => {
-    const baseZ = stackedBaseZFor([
+    const { baseZ } = stackedBaseZFor([
       stackEntry('a', 0, 0, null),
       stackEntry('b', 0, 0, 10),
     ])
@@ -357,18 +374,18 @@ describe('playground occupancy', () => {
       stackEntry('a', 0, 0, 20),
       stackEntry('b', 0, 0, 10),
     ])
-    expect(first.get('a')).toBe(0)
-    expect(first.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(first.baseZ.get('a')).toBe(0)
+    expect(first.baseZ.get('b')).toBeCloseTo(SEAT_ON_FLOOR)
 
     const reversed = stackedBaseZFor([
       stackEntry('b', 0, 0, 10),
       stackEntry('a', 0, 0, 20),
     ])
-    expect(reversed.get('b')).toBe(0)
-    expect(reversed.get('a')).toBe(10 + PLAYGROUND_STACK_CLEARANCE_MM)
+    expect(reversed.baseZ.get('b')).toBe(0)
+    expect(reversed.baseZ.get('a')).toBeCloseTo(SEAT_ON_FLOOR)
   })
 
-  it('lifts later overlapping instances above earlier tops instead of colliding', () => {
+  it('lifts later overlapping instances onto the highest datum instead of colliding', () => {
     const entries = [
       stackEntry('a', 0, 0, 20, BOX_STACKING, 2, 1),
       stackEntry('b', 0, 0, 10),
@@ -376,13 +393,19 @@ describe('playground occupancy', () => {
       stackEntry('d', 0, 0, 5, BOX_STACKING, 2, 1),
     ]
     // 'd' overlaps every earlier instance, so its base derives above all of
-    // their tops: heighted desktop pairs never intersect in Z. b and c are
-    // siblings on a (top 20.5 each), so d rests at 31.
-    expect(stackedBaseZFor(entries).get('d')).toBe(
-      20 + 10 + 2 * PLAYGROUND_STACK_CLEARANCE_MM,
-    )
+    // their datums: b and c are siblings seated on a, and d rests on the
+    // greater of the two sibling datums.
+    const { baseZ, matings } = stackedBaseZFor(entries)
+    expect(baseZ.get('d')).toBeCloseTo(SEAT_ON_FLOOR * 2)
+    expect(matings.has('b\u0000a')).toBe(true)
+    expect(matings.has('c\u0000a')).toBe(true)
+    expect(matings.has('d\u0000b')).toBe(true)
     expect(
-      stackConflictInstanceIds(entries, { zAware: true }).size,
+      stackConflictInstanceIds(entries, {
+        zAware: true,
+        precomputedBaseZ: baseZ,
+        matings,
+      }).size,
     ).toBe(0)
   })
 
@@ -412,11 +435,36 @@ describe('playground occupancy', () => {
       stackEntry('b', 0, 0, 10, cylinderStacking(60)),
       stackEntry('c', 0, 0, 10, cylinderStacking(40)),
     ]
-    const baseZ = stackedBaseZFor(entries)
-    expect(baseZ.get('b')).toBe(20 + PLAYGROUND_STACK_CLEARANCE_MM)
+    const { baseZ, matings } = stackedBaseZFor(entries)
+    expect(baseZ.get('b')).toBeCloseTo(CYLINDER_SEAT_ON_FLOOR)
     expect(baseZ.get('c')).toBe(0)
-    const conflicts = stackConflictInstanceIds(entries, { zAware: true })
+    const conflicts = stackConflictInstanceIds(entries, {
+      zAware: true,
+      precomputedBaseZ: baseZ,
+      matings,
+    })
     expect([...conflicts].sort()).toEqual(['a', 'c'])
+  })
+
+  it('lets mated pairs share their duplicated interface height', () => {
+    // A low datum with a tall piece: the seated bounding box interpenetrates
+    // the supporter's rail zone by design, and the mated pair must not flag.
+    const lowDatum: StackingInterface = {
+      ...BOX_STACKING,
+      seatDatumMm: 15,
+    }
+    const entries = [
+      stackEntry('a', 0, 0, 40, lowDatum),
+      stackEntry('b', 0, 0, 40),
+    ]
+    const { baseZ, matings } = stackedBaseZFor(entries)
+    expect(baseZ.get('b')).toBeCloseTo(15 - 0.15 + SEAT_GAP)
+    const conflicts = stackConflictInstanceIds(entries, {
+      zAware: true,
+      precomputedBaseZ: baseZ,
+      matings,
+    })
+    expect(conflicts.size).toBe(0)
   })
 
   it('never stacks a cylinder on a box or a box on a cylinder', () => {
@@ -424,8 +472,8 @@ describe('playground occupancy', () => {
       stackEntry('box', 0, 0, 20, BOX_STACKING),
       stackEntry('cyl', 0, 0, 10, cylinderStacking(60)),
     ]
-    expect(stackedBaseZFor(entries).get('box')).toBe(0)
-    expect(stackedBaseZFor(entries).get('cyl')).toBe(0)
+    expect(stackedBaseZFor(entries).baseZ.get('box')).toBe(0)
+    expect(stackedBaseZFor(entries).baseZ.get('cyl')).toBe(0)
     expect(
       stackConflictInstanceIds(entries, { zAware: true }).size,
     ).toBe(2)
@@ -468,12 +516,25 @@ describe('playground occupancy', () => {
       top: false,
       bottom: false,
       cylinderDiameter: null,
+      seatDatumMm: null,
+      seatingDropMm: null,
     })
-    expect(
-      stackingInterfaceFor('opengrid-stackable-box', {
-        ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
-      } as never),
-    ).toEqual({ top: true, bottom: true, cylinderDiameter: null })
+    const boxInterface = stackingInterfaceFor('opengrid-stackable-box', {
+      ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+    } as never)
+    const boxConfiguration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+    const boxDatum =
+      OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.height +
+      boxConfiguration.bottomAssemblyHeight +
+      boxConfiguration.topRailInnerChamfer +
+      boxConfiguration.topRailInnerVerticalHeight
+    expect(boxInterface).toEqual({
+      top: true,
+      bottom: true,
+      cylinderDiameter: null,
+      seatDatumMm: boxDatum,
+      seatingDropMm: boxConfiguration.stackingGuideClearance,
+    })
     // A bottom-plate cylinder has a flat bottom: it can support a same
     // diameter cylinder but cannot seat on one.
     const plate = cylinderStacking(60, { bottom: false })

@@ -436,7 +436,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         overHeightIds: [],
       }
     }
-    const baseZ = stackedBaseZFor(entries)
+    const { baseZ, matings } = stackedBaseZFor(entries)
     const stackedZ: Record<string, number> = {}
     for (const [id, z] of baseZ) stackedZ[id] = z
     const limit = maxHeightMm
@@ -457,6 +457,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         ...stackConflictInstanceIds(entries, {
           zAware: true,
           precomputedBaseZ: baseZ,
+          matings,
         }),
       ],
       stackedZ,
@@ -553,8 +554,10 @@ export function createPlaygroundStore(): PlaygroundStore {
   ): boolean => {
     const entries = candidateStackEntries(instance, placement)
     if (!entries) return false
+    const { matings } = stackedBaseZFor(entries)
     return stackConflictInstanceIds(entries, {
       zAware: viewMode === 'desktop',
+      matings,
     }).has(instance.id)
   }
 
@@ -1062,7 +1065,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         supportedBy: null,
       })
       if (!entries) return 0
-      return stackedBaseZFor(entries).get(instanceId) ?? 0
+      return stackedBaseZFor(entries).baseZ.get(instanceId) ?? 0
     },
     setPlacement(instanceId, cellX, cellY, rotation) {
       const result = validatePlacementCandidate(
