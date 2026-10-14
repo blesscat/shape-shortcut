@@ -30,8 +30,8 @@ const wallBoardPath = localizedCadPathFor(locale, 'opengrid', 'wall')
 const modelsPath = publicPathFor(locale, 'models')
 const docsPath = publicPathFor(locale, 'docs')
 const aboutPath = publicPathFor(locale, 'about')
-const deskFlowPath = `/docs/desk-system/desk-system-flow.${locale}.svg`
-const deskFlowDarkPath = `/docs/desk-system/desk-system-flow.${locale}-dark.svg`
+const deskFixingPath = `/docs/desk-system/desk-system-board-snap.${locale}.svg`
+const deskFixingDarkPath = `/docs/desk-system/desk-system-board-snap.${locale}-dark.svg`
 
 const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
@@ -287,10 +287,10 @@ const fileCardRows = [
         <figure class="m-0 grid gap-3">
           <ModelPreviewPicture
             class="w-full rounded-xl border border-border bg-muted"
-            src={deskFlowPath}
-            darkSrc={deskFlowDarkPath}
-            width={1400}
-            height={820}
+            src={deskFixingPath}
+            darkSrc={deskFixingDarkPath}
+            width={600}
+            height={430}
             loading="lazy"
             alt={t('home.desk.flowAlt')}
           />

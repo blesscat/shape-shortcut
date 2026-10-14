@@ -1,0 +1,52 @@
+---
+import { Button } from '../starwind/button'
+import { translate, type Locale } from '../../i18n'
+import type { DeskPrintPlanEntry } from '../../features/docs/desk-system-guide'
+
+interface Props {
+  locale: Locale
+  plan: ReadonlyArray<DeskPrintPlanEntry>
+  testId?: string
+}
+const { locale, plan, testId } = Astro.props
+const t = (key: string) => translate(locale, key)
+---
+
+<table
+  class="w-full table-fixed border-collapse text-left text-sm"
+  data-testid={testId}
+>
+  <colgroup><col class="w-[29%]" /><col class="w-[13%]" /><col /></colgroup>
+  <thead>
+    <tr class="border-b border-border">
+      <th scope="col" class="pb-3 pr-2">{t('docs.starter.part')}</th>
+      <th scope="col" class="pb-3 pr-2">{t('docs.starter.quantity')}</th>
+      <th scope="col" class="pb-3">{t('docs.starter.settings')}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      plan.map(({ entry, quantity, settingsKey }) => (
+        <tr class="border-b border-border last:border-0">
+          <th scope="row" class="py-4 pr-2 align-top font-semibold">
+            {t(entry.labelKey)}
+          </th>
+          <td class="py-4 pr-2 align-top font-mono tabular-nums">{quantity}</td>
+          <td class="py-4 align-top">
+            <p class="m-0 leading-relaxed">{t(settingsKey)}</p>
+            <Button
+              as="a"
+              href={entry.href}
+              variant="outline"
+              size="sm"
+              class="mt-2 min-h-11 no-underline"
+              aria-label={`${t('docs.starter.open')} — ${t(entry.labelKey)}`}
+            >
+              {t('docs.starter.open')}
+            </Button>
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

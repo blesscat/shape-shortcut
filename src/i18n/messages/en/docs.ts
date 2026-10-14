@@ -5,7 +5,7 @@ export const messages = {
   'docs.eyebrow': 'Docs · New here?',
   'docs.deskQuickStart.title': 'How Desk System works',
   'docs.deskQuickStart.intro':
-    'The main way to play: lay the Board, add Snaps, pick a locating style, drop in a box. Four steps.',
+    'Start with a useful two-piece desk setup, then choose whether to fix its position.',
   'docs.deskQuickStart.workflowHeading':
     'Four steps: Board → Snap → locating → box',
   'docs.deskQuickStart.step.board.title': 'Lay down the Board',
@@ -51,13 +51,13 @@ export const messages = {
   'docs.deskQuickStart.exampleRoundBox':
     'The Round Box uses the same flow — swap freely.',
   'docs.deskQuickStart.visual.flow.caption':
-    'Desk System four-step assembly flow.',
+    'Direct placement: a 2×2 Board and a seat-free stacking Grid Box.',
   'docs.deskQuickStart.visual.flow.alt':
-    'Flow diagram: Board, Snap, choose one locating method, then a Grid Box or Round Box.',
+    'Assembly schematic: a seat-free stacking Grid Box rests directly on a 2×2 Board without Snap.',
   'docs.deskQuickStart.visual.placement.caption':
-    'Board and Snap placement relationship.',
+    'Position fixing: four Snaps attach to the Board and the box uses compatible seats.',
   'docs.deskQuickStart.visual.placement.alt':
-    'Top view showing a matching Snap placed at each box position on the Board grid.',
+    'Assembly schematic: a 2×2 Board, four Snaps, and a Grid Box with seats.',
   'docs.deskQuickStart.visual.locating.caption':
     'Separate locking corner seat versus the box built-in seat.',
   'docs.deskQuickStart.visual.locating.alt':
@@ -65,9 +65,9 @@ export const messages = {
   'docs.deskQuickStart.previewHeading': 'Desk System component previews',
   'docs.deskQuickStart.scopeNote':
     'Version 1 explains system assembly and component relationships; slicer and detailed print settings belong in a later reference.',
-  'docs.title': 'First time with Desk System? This page is all you need',
+  'docs.title': 'Print your first Desk setup',
   'docs.description':
-    'From printing your first Board to dropping in your first box — follow along and you will not get lost. Wall System and a spec cheat-sheet below.',
+    'Try a 2×2 Board and one stacking Grid Box. Add Snap and compatible seats to fix its position. Wall System and reference information follow.',
   'docs.sectionNav': 'Documentation sections',
   'docs.sectionNav.desk': '01 · How Desk works',
   'docs.sectionNav.wall': '02 · Wall, quickly',
@@ -120,10 +120,10 @@ export const messages = {
     'For what each model does and which parameters it exposes, see the models page; below is the shared cheat-sheet for parameters, units, export formats, and browser needs.',
   'docs.parametersHeading': 'Parameters and constraints',
   'docs.parametersBody':
-    'Every model has its own schema; the models page lists what is adjustable, and the CAD workspace validates your input live. Some models offer named presets (like the Grid Box 3×3 test style) you can apply in one click.',
+    'Each model has adjustable ranges, and the CAD workspace checks your input. Some models also offer named presets; you can adjust dimensions yourself.',
   'docs.unitsHeading': 'Units',
   'docs.unitsBody':
-    'Geometry dimensions use mm, angles use degrees, and grid/count values use cells or columns. Model IDs, parameter keys, and enum values remain locale-neutral.',
+    'Dimensions use mm, angles use degrees, and grid and part counts use cells or pieces.',
   'docs.exportsHeading': 'Export formats',
   'docs.exportsBody':
     'Every model downloads STL from the browser (Wall Cover ships dual-color 3MF only); some models add dual-color 3MF — see each model details and workspace.',
@@ -134,4 +134,83 @@ export const messages = {
     'See the repository README and OpenSpec change documents for the complete architecture and acceptance rules.',
   'docs.tocHeading': 'On this page',
   'docs.metaTitle': 'Docs | Shape Shortcut — first time, done right',
+  'docs.starter.title': 'First print: a 2×2 Board and Grid Box',
+  'docs.starter.body':
+    'Just two prints: one 2×2 Board and one 2×2 stacking Grid Box with no seats. Learn how they fit before adding fixing parts.',
+  'docs.starter.checklist': 'Direct placement: print checklist',
+  'docs.starter.part': 'Part',
+  'docs.starter.quantity': 'Qty',
+  'docs.starter.settings': 'Generator settings',
+  'docs.starter.boardSettings':
+    '2×2 grids; Board profile: Lite (4 mm); Chamfer mode: None; Screw-hole mode: None.',
+  'docs.starter.boxSettings':
+    '2×2 grids; Top rim: Stacking rail; Box bottom: Stacking; Seat mode: No seats.',
+  'docs.starter.open': 'Open settings',
+  'docs.starter.confirm':
+    'Confirm these settings in each generator; your previously saved parameters are retained.',
+  'docs.starter.step.print':
+    'Set up and print the Board and Grid Box from this checklist.',
+  'docs.starter.step.place':
+    'Rest the Board on your desk and align the box with its grid. Screw fastening is optional.',
+  'docs.direct.title': 'Direct placement',
+  'docs.direct.body':
+    'Place the seat-free stacking Grid Box directly on the Board. No Snap or separately printed seats are needed.',
+  'docs.direct.modelsTitle': 'Which boxes can be placed directly?',
+  'docs.direct.gridSettings':
+    'Grid Box: Top rim: Stacking rail; Box bottom: Stacking; Seat mode: No seats.',
+  'docs.direct.organizerSettings':
+    'Organizer Box: Box mode: Stackable mode; Seat mode: No seats.',
+  'docs.fixing.title': 'Want to fix the position? Add Snap',
+  'docs.fixing.body':
+    'Snap is used to fix the box’s position: install Snap on the Board, then use the box’s built-in seats or separately printed locking corner seats.',
+  'docs.fixing.compareTitle': 'Two ways to place a box',
+  'docs.fixing.compareBody':
+    'Direct placement needs a Board and a box. Position fixing adds Snap and compatible seats. These are assembly schematics.',
+  'docs.fixing.compareLabel': 'Fix the position with Snap',
+  'docs.fixing.workflow': 'Four steps for position fixing',
+  'docs.fixing.boardStep': 'Prepare the Board',
+  'docs.fixing.boardBody':
+    'Use the same 2×2 Board and choose the box position.',
+  'docs.fixing.snapStep': 'Install Snap',
+  'docs.fixing.snapBody':
+    'This 2×2 example uses four full-footprint Desk Snaps, one per cell. Snap is a fixing part.',
+  'docs.fixing.seatStep': 'Choose one seat style',
+  'docs.fixing.seatBody':
+    'Use the box’s built-in seats or separate locking corner seats. Choose one style.',
+  'docs.fixing.boxStep': 'Install the matching box',
+  'docs.fixing.boxBody':
+    'Print the box with the selected seat mode and align its seats with the Snap locating holes.',
+  'docs.fixing.checklists': 'Position fixing: choose one print checklist',
+  'docs.fixing.integrated': 'Built-in seats: no separate seats to print',
+  'docs.fixing.separate': 'Separate locking seats: print four seats',
+  'docs.fixing.snapSettings':
+    'Desk System; Snap variant: Lite (3.4 mm); Footprint: Full; Locating holes: enabled.',
+  'docs.fixing.seatSettings':
+    'Post version: Locking corner seat; this example uses four locating points.',
+  'docs.fixing.integratedBoxSettings':
+    '2×2 grids; Top rim: Stacking rail; Box bottom: Stacking; Seat mode: Integrated seats.',
+  'docs.fixing.separateBoxSettings':
+    '2×2 grids; Top rim: Stacking rail; Box bottom: Stacking; Seat mode: Locking corner seats.',
+  'docs.fixing.reprint':
+    'Seat mode changes the box underside. If you already printed a seat-free box, print the compatible box variant before using this seat-based fixing method.',
+  'docs.extensions.title': 'Try another container next',
+  'docs.extensions.body':
+    'After the first setup, try an Organizer Box, Round Box, or another size. Choose placement using that model’s seat and body settings.',
+  'docs.faq.title': 'Questions before you start',
+  'docs.faq.snap.question': 'Can I use a box without printing Snap?',
+  'docs.faq.snap.answer':
+    'Yes. The documented seat-free stacking Grid Box and stacking Organizer Box can be placed directly. Add Snap and compatible seats when you want position fixing.',
+  'docs.faq.integrated.question': 'Do built-in seats still need Snap?',
+  'docs.faq.integrated.answer':
+    'Yes, for this fixing method. Built-in seats are printed with the box, so you do not print separate seats. No seats means this interface is absent.',
+  'docs.faq.none.question': 'Does No seats mean Box bottom: None?',
+  'docs.faq.none.answer':
+    'No. No seats omits the seat interface; Box bottom: None removes the floor. Select Box bottom: Stacking for your first print.',
+  'docs.faq.reprint.question':
+    'Can I fix an already printed seat-free box just by adding Snap?',
+  'docs.faq.reprint.answer':
+    'This fixing guide needs a compatible seat interface. Print a box with Integrated seats or Locking corner seats selected, then install it with Snap.',
+  'docs.wall.tissue.body':
+    'A wall-mounted tissue box sized for your tissue pack, refilled from the top and dispensed from below, with an OpenConnect interface.',
+  'docs.wall.tissue.cta': 'Open tissue box settings →',
 }

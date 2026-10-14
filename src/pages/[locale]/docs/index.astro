@@ -6,10 +6,7 @@ import { Button } from '../../../components/starwind/button'
 import { Card } from '../../../components/starwind/card'
 import { Separator } from '../../../components/starwind/separator'
 import ModelPreviewPicture from '../../../components/ModelPreviewPicture.astro'
-import {
-  deskQuickStartEntries,
-  type DeskQuickStartRole,
-} from '../../../features/docs/desk-system-guide'
+import DeskSystemGuide from '../../../components/docs/DeskSystemGuide.astro'
 import {
   SUPPORTED_LOCALES,
   isLocale,
@@ -28,22 +25,6 @@ export function getStaticPaths() {
 const locale = Astro.props.locale as Locale
 if (!isLocale(locale)) throw new Error(`UNSUPPORTED_LOCALE:${locale}`)
 const t = (key: string) => translate(locale, key)
-const quickStartEntries = deskQuickStartEntries(locale)
-const deskDiagramPathFor = (name: string) =>
-  `/docs/desk-system/${name}.${locale}.svg`
-const deskDiagramDarkPathFor = (name: string) =>
-  `/docs/desk-system/${name}.${locale}-dark.svg`
-function entryFor(role: DeskQuickStartRole) {
-  const entry = quickStartEntries.find((candidate) => candidate.role === role)
-  if (!entry) throw new Error(`DESK_QUICK_START_ROLE_MISSING:${role}`)
-  return entry
-}
-const boardEntry = entryFor('board')
-const snapEntry = entryFor('snap')
-const locatingPostEntry = entryFor('locating-post')
-const gridBoxEntry = entryFor('grid-box')
-const organizerBoxEntry = entryFor('organizer-box')
-const roundBoxEntry = entryFor('round-box')
 const wallBoardPath = localizedCadPathFor(locale, 'opengrid', 'wall')
 const wallSnapPath = localizedCadPathFor(locale, 'opengrid-snap', 'wall')
 const wallCoverPath = localizedCadPathFor(locale, 'opengrid-wall-cover', 'wall')
@@ -62,7 +43,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
   title={t('docs.metaTitle')}
   description={t('docs.description')}
 >
-  <Card as="article" class="grid gap-10 p-5 sm:p-8">
+  <article class="grid gap-6 sm:gap-8">
     <header class="grid gap-3">
       <Badge
         tone="primary"
@@ -73,7 +54,9 @@ const openConnectOrganizerPath = localizedCadPathFor(
       >
         {t('docs.eyebrow')}
       </Badge>
-      <h1 class="text-4xl font-semibold leading-tight">{t('docs.title')}</h1>
+      <h1 class="text-3xl font-semibold leading-tight sm:text-4xl">
+        {t('docs.title')}
+      </h1>
       <p class="m-0 max-w-2xl leading-relaxed text-muted-foreground">
         {t('docs.description')}
       </p>
@@ -108,259 +91,7 @@ const openConnectOrganizerPath = localizedCadPathFor(
     </Card>
     <Separator class="bg-border" />
 
-    <section
-      class="grid gap-8"
-      aria-labelledby="desk-quick-start-title"
-      data-testid="desk-quick-start"
-    >
-      <header class="grid gap-3">
-        <h2
-          class="text-3xl font-semibold leading-tight"
-          id="desk-quick-start-title"
-        >
-          {t('docs.deskQuickStart.title')}
-        </h2>
-        <p class="max-w-3xl leading-normal">
-          {t('docs.deskQuickStart.intro')}
-        </p>
-      </header>
-
-      <figure class="grid gap-3">
-        <ModelPreviewPicture
-          class="w-full rounded-xl border border-border bg-muted"
-          src={deskDiagramPathFor('desk-system-flow')}
-          darkSrc={deskDiagramDarkPathFor('desk-system-flow')}
-          width={1400}
-          height={820}
-          loading="eager"
-          alt={t('docs.deskQuickStart.visual.flow.alt')}
-        />
-        <figcaption class="text-sm text-muted-foreground">
-          {t('docs.deskQuickStart.visual.flow.caption')}
-        </figcaption>
-      </figure>
-
-      <section class="grid gap-4" aria-labelledby="desk-workflow-title">
-        <h3 class="text-2xl font-semibold" id="desk-workflow-title">
-          {t('docs.deskQuickStart.workflowHeading')}
-        </h3>
-        <ol class="grid gap-4">
-          <Card as="li" size="sm" class="p-4" data-step="board">
-            <h4 class="font-semibold">
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={boardEntry.href}
-                >{t('docs.deskQuickStart.step.board.title')}</a
-              >
-            </h4>
-            <p class="mt-2 leading-normal">
-              {t('docs.deskQuickStart.step.board.body')}
-            </p>
-            <p class="mt-2 text-sm text-muted-foreground">
-              {t('docs.deskQuickStart.step.board.note')}
-            </p>
-          </Card>
-          <Card as="li" size="sm" class="p-4" data-step="snap">
-            <h4 class="font-semibold">
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={snapEntry.href}
-                >{t('docs.deskQuickStart.step.snap.title')}</a
-              >
-            </h4>
-            <p class="mt-2 leading-normal">
-              {t('docs.deskQuickStart.step.snap.body')}
-            </p>
-          </Card>
-          <Card as="li" size="sm" class="p-4" data-step="locating">
-            <h4 class="font-semibold">
-              {t('docs.deskQuickStart.step.locating.title')}
-            </h4>
-            <p class="mt-2 leading-normal">
-              {t('docs.deskQuickStart.step.locating.body')}
-            </p>
-          </Card>
-          <Card as="li" size="sm" class="p-4" data-step="container">
-            <h4 class="font-semibold">
-              {t('docs.deskQuickStart.step.container.title')}
-            </h4>
-            <p class="mt-2 leading-normal">
-              {t('docs.deskQuickStart.step.container.body')}
-            </p>
-            <p class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={gridBoxEntry.href}>{t(gridBoxEntry.labelKey)}</a
-              >
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={organizerBoxEntry.href}>{t(organizerBoxEntry.labelKey)}</a
-              >
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={roundBoxEntry.href}>{t(roundBoxEntry.labelKey)}</a
-              >
-            </p>
-          </Card>
-        </ol>
-      </section>
-
-      <figure class="grid gap-3">
-        <ModelPreviewPicture
-          class="w-full rounded-xl border border-border bg-muted"
-          src={deskDiagramPathFor('desk-system-board-snap')}
-          darkSrc={deskDiagramDarkPathFor('desk-system-board-snap')}
-          width={1000}
-          height={560}
-          loading="lazy"
-          alt={t('docs.deskQuickStart.visual.placement.alt')}
-        />
-        <figcaption class="text-sm text-muted-foreground">
-          {t('docs.deskQuickStart.visual.placement.caption')}
-        </figcaption>
-      </figure>
-
-      <section class="grid gap-4" aria-labelledby="desk-locating-title">
-        <h3 class="text-2xl font-semibold" id="desk-locating-title">
-          {t('docs.deskQuickStart.locatingHeading')}
-        </h3>
-        <div class="grid gap-4 md:grid-cols-2">
-          <Card as="article" size="sm" class="grid gap-2 p-4">
-            <h4 class="font-semibold">
-              <a
-                class="text-foreground underline underline-offset-4"
-                href={locatingPostEntry.href}
-                >{t('docs.deskQuickStart.locating.separate.title')}</a
-              >
-            </h4>
-            <p class="leading-normal">
-              {t('docs.deskQuickStart.locating.separate.body')}
-            </p>
-          </Card>
-          <Card as="article" size="sm" class="grid gap-2 p-4">
-            <h4 class="font-semibold">
-              {t('docs.deskQuickStart.locating.builtin.title')}
-            </h4>
-            <p class="leading-normal">
-              {t('docs.deskQuickStart.locating.builtin.body')}
-            </p>
-            <p class="font-semibold text-muted-foreground">
-              {t('docs.deskQuickStart.locating.builtin.noPost')}
-            </p>
-          </Card>
-        </div>
-      </section>
-
-      <figure class="grid gap-3">
-        <ModelPreviewPicture
-          class="w-full rounded-xl border border-border bg-muted"
-          src={deskDiagramPathFor('desk-system-locating-options')}
-          darkSrc={deskDiagramDarkPathFor('desk-system-locating-options')}
-          width={1100}
-          height={560}
-          loading="lazy"
-          alt={t('docs.deskQuickStart.visual.locating.alt')}
-        />
-        <figcaption class="text-sm text-muted-foreground">
-          {t('docs.deskQuickStart.visual.locating.caption')}
-        </figcaption>
-      </figure>
-
-      <section class="grid gap-4" aria-labelledby="desk-checklist-title">
-        <h3 class="text-2xl font-semibold" id="desk-checklist-title">
-          {t('docs.deskQuickStart.checklistHeading')}
-        </h3>
-        <p class="leading-normal">
-          {t('docs.deskQuickStart.checklistIntro')}
-        </p>
-        <ul class="grid gap-3">
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={boardEntry.href}>{t(boardEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.board')}
-          </li>
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={snapEntry.href}>{t(snapEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.snap')}
-          </li>
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={locatingPostEntry.href}>{t(locatingPostEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.locating')}
-          </li>
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={gridBoxEntry.href}>{t(gridBoxEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.gridBox')}
-          </li>
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={organizerBoxEntry.href}>{t(organizerBoxEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.organizerBox')}
-          </li>
-          <li>
-            <a
-              class="text-foreground underline underline-offset-4"
-              href={roundBoxEntry.href}>{t(roundBoxEntry.labelKey)}</a
-            > — {t('docs.deskQuickStart.checklist.roundBox')}
-          </li>
-        </ul>
-      </section>
-
-      <section class="grid gap-4" aria-labelledby="desk-example-title">
-        <h3 class="text-2xl font-semibold" id="desk-example-title">
-          {t('docs.deskQuickStart.exampleHeading')}
-        </h3>
-        <p class="leading-normal">
-          {t('docs.deskQuickStart.exampleGridBox')}
-        </p>
-        <p class="leading-normal">
-          {t('docs.deskQuickStart.exampleRoundBox')}
-        </p>
-      </section>
-
-      <section class="grid gap-4" aria-labelledby="desk-preview-title">
-        <h3 class="text-2xl font-semibold" id="desk-preview-title">
-          {t('docs.deskQuickStart.previewHeading')}
-        </h3>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {
-            quickStartEntries.map((entry) => (
-              <Card
-                as="a"
-                size="sm"
-                class="grid gap-2 p-3 no-underline "
-                href={entry.href}
-              >
-                <ModelPreviewPicture
-                  class="aspect-[16/10] w-full rounded-img border border-border object-cover"
-                  src={entry.previewImage.src}
-                  darkSrc={entry.previewImage.darkSrc}
-                  width="640"
-                  height="400"
-                  loading="lazy"
-                  alt={t(entry.previewAltKey)}
-                />
-                <span class="font-semibold">{t(entry.labelKey)}</span>
-                <span class="text-sm text-muted-foreground">
-                  {t(entry.descriptionKey)}
-                </span>
-              </Card>
-            ))
-          }
-        </div>
-      </section>
-
-      <Card as="p" size="sm" class="bg-muted p-4 text-sm text-muted-foreground">
-        {t('docs.deskQuickStart.scopeNote')}
-      </Card>
-    </section>
+    <DeskSystemGuide {locale} />
 
     <section
       class="grid gap-6"
@@ -494,12 +225,12 @@ const openConnectOrganizerPath = localizedCadPathFor(
             {t('models.model.opengrid-openconnect-tissue-box.name')}
           </h3>
           <p class="m-0 leading-normal text-muted-foreground">
-            {t('panel.tissueBox.help')}
+            {t('docs.wall.tissue.body')}
           </p>
           <a
             class="text-foreground underline underline-offset-4"
             href={`/${locale}/cad/opengrid-openconnect-tissue-box?system=wall`}
-            >{t('models.model.opengrid-openconnect-tissue-box.selection')}</a
+            >{t('docs.wall.tissue.cta')}</a
           >
         </Card>
       </div>
@@ -605,6 +336,5 @@ const openConnectOrganizerPath = localizedCadPathFor(
       </h2>
       <p class="leading-normal">{t('docs.browserBody')}</p>
     </section>
-    <p class="leading-normal">{t('docs.architecture')}</p>
-  </Card>
+  </article>
 </SiteLayout>
