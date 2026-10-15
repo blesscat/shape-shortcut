@@ -48,17 +48,20 @@ export const messages = {
     '把 Grid Box 放進準備好 Snap 與定位方式的格位就完成了；盒子的定位座選項會決定要不要多印鎖定角座。Round Box 用同一套流程，隨時換著玩。',
   'docs.deskQuickStart.exampleRoundBox': 'Round Box 也是同一套流程，換著玩。',
   'docs.deskQuickStart.visual.flow.caption':
-    '直接放置示意：2×2 底板搭配無角座堆疊方盒。',
+    '實際模型動畫：無角座堆疊方盒放上 2×2 底板，再直接拿起；不用 Snap。',
   'docs.deskQuickStart.visual.flow.alt':
-    '組裝示意：無角座堆疊方盒直接放在 2×2 Board 上，不含 Snap。',
+    '3D 組裝短片：無角座堆疊方盒放上與拿離 2×2 Board，不含 Snap。',
   'docs.deskQuickStart.visual.placement.caption':
-    '固定安裝示意：四個 Snap 固定到底板，盒子透過角座固定位置。',
+    '實際模型動畫：四個 Snap 先裝到底板，再放上內建角座方盒。加上 Snap 是為了固定位置。',
   'docs.deskQuickStart.visual.placement.alt':
-    '組裝示意：2×2 Board、四個 Snap，以及具有角座的方盒。',
+    '3D 組裝短片：2×2 Board、四個 Snap，以及內建角座方盒的固定安裝。',
   'docs.deskQuickStart.visual.locating.caption':
-    '獨立鎖定角座與盒子內建角座的比較。',
+    '底面視角：左邊是有鎖定座孔的方盒，插入獨立角座後順時針轉 90° 鎖定；右邊的內建角座與盒子一起印好，不用另裝。',
   'docs.deskQuickStart.visual.locating.alt':
-    '比較圖：獨立鎖定角座需要額外零件；內建角座不需要額外鎖定角座。',
+    '3D 組裝短片：從底面比較獨立鎖定角座的插入與旋轉，以及盒子內建角座。',
+  'docs.assembly.controls': '點播放觀看，可暫停、拖曳進度與重播。',
+  'docs.assembly.staticFrame': '查看靜態組裝圖',
+  'docs.assembly.unavailable': '無法播放時，可查看下方靜態組裝圖與文字步驟。',
   'docs.deskQuickStart.previewHeading': 'Desk System 元件預覽',
   'docs.deskQuickStart.scopeNote':
     '這一版先說明系統組裝與元件關係；切片器與詳細列印設定會放在後續參考文件。',
@@ -158,7 +161,7 @@ export const messages = {
     'Snap 用來固定盒子的位置：先把 Snap 裝在底板上，再搭配盒子的內建角座，或另外列印的鎖定角座。',
   'docs.fixing.compareTitle': '兩種放法，差在是否固定位置',
   'docs.fixing.compareBody':
-    '直接放置先備齊底板與盒子；需要固定位置時，再準備 Snap 與對應角座。以下為組裝示意圖。',
+    '直接放置先備齊底板與盒子；需要固定位置時，再準備 Snap 與對應角座。用下面的實際模型短片看組裝過程。',
   'docs.fixing.compareLabel': '使用 Snap 固定位置',
   'docs.fixing.workflow': '固定安裝的四個步驟',
   'docs.fixing.boardStep': '準備底板',

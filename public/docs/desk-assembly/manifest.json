@@ -1,0 +1,523 @@
+{
+  "version": 1,
+  "width": 960,
+  "height": 640,
+  "fps": 24,
+  "scenes": [
+    {
+      "id": "direct-placement",
+      "duration": 8,
+      "posterTime": 1.6
+    },
+    {
+      "id": "snap-fixing",
+      "duration": 9,
+      "posterTime": 4.1
+    },
+    {
+      "id": "locating-seats",
+      "duration": 10,
+      "posterTime": 2
+    }
+  ],
+  "sources": {
+    "pnpm-lock.yaml": "cf57ac3e2ac50cf965744a165a334da598853ad13b89f3112048e551772ba3d7",
+    "scripts/desk-assembly/capture.mjs": "ed57bdd745cef3d075df2c53958f5c2ddaf7c9c5ff6d68d92e9122df491d19ca",
+    "scripts/desk-assembly/native.mjs": "f326a0814f780aee19dbd5697f70a4dc43cfda35adb19468debd880b13216a9e",
+    "scripts/desk-assembly/produce.ts": "d097c9c8c6cd63af6693627ef3ad55a9c532fc29be2d42d4b6bd31adb42ae9dc",
+    "scripts/desk-assembly/provenance.mjs": "00fde5de9c00b2ea1f61acfa903265106770a8b4c3a48f44afdf993f6417896f",
+    "scripts/desk-assembly/renderer.mjs": "8b38716183c8329252fe645028544ebae230294548f4d493ef3a9fef7d1838c5",
+    "scripts/desk-assembly/scenes.mjs": "dc8423cd59bfbfe5b675c159c1698d5168eb428befb1d3377bec34eb03eed02f",
+    "scripts/desk-assembly/verify.mjs": "e9f35a3feb83197d283bb9e8fe960146d9a564aa8a6319bf840af4bf00499cd3",
+    "src/cad-contract/diagnostics.ts": "509d49262270461a08f5425f1490dcff9c045477c339752347fb73a93f3c96f6",
+    "src/cad-contract/errors/index.ts": "57e3fe44fa9d547e57ecfcd5224292e7d226c2eaa592a64ebf2f543976d6a659",
+    "src/cad-contract/messages/index.ts": "ee35a3c91506ee2198167d457bf391b0362551e8815ba3eb94a5551a9e2124b8",
+    "src/cad-contract/model-colors.ts": "25ac960bcc1a362de55d028c66381e307585b26b9a30d4c3a7135ace03464049",
+    "src/cad-contract/preview-timing.ts": "847616337e54ef0ee602b650d8008ddbbaaf824895064ec2d69c87ee369ab6e3",
+    "src/cad-contract/scene.ts": "d92220b1d7bc902303183b312118161de6006e47f9b82f94dffb3a810973373a",
+    "src/cad-contract/three-mf.ts": "a9f7c9d70bd537788cd253cb94d9bd114014c04bd8fe170ea34da549e5566c47",
+    "src/cad-contract/units/box.ts": "3949f83d84473f48985182a7e98bf82b48af81277838e374e97f213839010c88",
+    "src/cad-contract/units/half-cell.ts": "5aa70708c1d9ad4552807d620b104007a483688f347e7397986d4eff5ecfbeb2",
+    "src/cad-contract/units/hexagonal-column.ts": "ec429a4a420813176994da8b14e8d2e61bd077722c617f235b515cc4e021298c",
+    "src/cad-contract/units/hsw-cell-configuration.ts": "16615931b1b345228d00f4c88911c3eba21456f4e9b23a2cfab829955f5a793e",
+    "src/cad-contract/units/hsw-cell.ts": "38c5bd2bdd1734d82baf6fed4c22f125d27cef4d6fa93ba49c994aa5728da796",
+    "src/cad-contract/units/index.ts": "a6815ca8a039c0a4438030017f748721ba991f29fdf38a3986d6d53ca4ed5048",
+    "src/cad-contract/units/model.ts": "2dc973f5e0623a098af5d60ccb698fb49b99bc4d4374d05bb04183cbd70f824b",
+    "src/cad-contract/units/modular-grid-base.ts": "eaed78fc893eea40462ae84d8497ba39521ae58a1a911d274aabf42c80ebef6b",
+    "src/cad-contract/units/openconnect-alignment.ts": "b4151621fce0151e4ccf9d57e0bbc67e2feb302a521f73b17da2e82b6a01d06e",
+    "src/cad-contract/units/opengrid-divider.ts": "b06a67f96b8be2038e1f26aa8ec058184f4665610243b1dd29b8fa87bd9b2e28",
+    "src/cad-contract/units/opengrid-grid.ts": "337ea5c87a418b08a551481dd739b372eecc412f0672f46ffeef06b4ef0a5f51",
+    "src/cad-contract/units/opengrid-honeycomb.ts": "1cf1989f63ccae17df94bd2f6a4e834a11c7013050f83a84de7851c9494c9016",
+    "src/cad-contract/units/opengrid-label-card.ts": "502970e92502ef60e98634eaafd61ba88334c73c59a25471d7b6f9efee444b85",
+    "src/cad-contract/units/opengrid-label-icons.ts": "18ade23d397b71186f6ee246332185d3a39007de8930914d82273f28f72ded4e",
+    "src/cad-contract/units/opengrid-label-shared.ts": "58914daa0c972ca5477d16351c72856ec152bacc5cc3c8ec7ff3528d2f4edd2f",
+    "src/cad-contract/units/opengrid-label-slot-test.ts": "f1d5de54a656a09c335e4fd4fb0015a86e87b408415e8083570738feff587c16",
+    "src/cad-contract/units/opengrid-locating-assembly.ts": "c100508510a8c38bd91e0935fa40c30930e5cee1d528cad0cbf810eb8655c7be",
+    "src/cad-contract/units/opengrid-open-shelf.ts": "421b91998f9d36ce154f9636231e7fdb022514ad4e8a52a950e596d4b57b842b",
+    "src/cad-contract/units/opengrid-openconnect-organizer.ts": "c8a3aadc30b6469e5a1c120cbfc117cc436bb6c8c68c7dc914ffdb07c064fac3",
+    "src/cad-contract/units/opengrid-openconnect-shelf.ts": "05706f3f982081031d48dde254e0e55384331c9b7f3690a864da6f61b5b674cd",
+    "src/cad-contract/units/opengrid-openconnect-tissue-box.ts": "f937cf2f86c426c9737954d786c682f641d523131494e3890dc5da0232f6bf07",
+    "src/cad-contract/units/opengrid-organizer-box.ts": "f8b24b935aea144876561b77437408c5e67265b1abaeccbbf3907e8acc55c082",
+    "src/cad-contract/units/opengrid-pillar.ts": "64265cefa49bac3a7dc5ff0c0a7bfdbb4dfd6890bd9c717462bdcb9b0302be1c",
+    "src/cad-contract/units/opengrid-snap-remover.ts": "1b23dfdfc8624b9559ff768a80d99660c1b67e68e9283860db6b7da68f29d67a",
+    "src/cad-contract/units/opengrid-snap.ts": "ccb28e422e7e175c138d0478fce7ca01b183ae620a8c0659289a75d45e98e979",
+    "src/cad-contract/units/opengrid-stackable-box.ts": "5113c9fe97d02eb296d1454a9ea1a0cad57da021b626c73b4271623f2a10cf24",
+    "src/cad-contract/units/opengrid-stackable-cylinder.ts": "400d162ffd31a8ac0c4d134ca7cda2da9dc57ce80fd6426309d28d09fcc8d224",
+    "src/cad-contract/units/opengrid-wall-cover.ts": "8eef418f9a4becd0501a20abef9ca760703ca161088837ad0edc8a458a0409ca",
+    "src/cad-contract/units/opengrid.ts": "982f7e4328336e529eb1e909d6a61c218c045d8ba9770bd4e0666ba21cdf673d",
+    "src/cad-contract/units/parse.ts": "d0a3d3504667e759718382e5045d34f0d62bbd9896770b194700a27585d41cb6",
+    "src/cad-contract/units/prototype-configuration.ts": "dddd06d3565b7f352188869c235173e50fd16b3fdb144181cfd4909a7760544d",
+    "src/cad-kernel/boolean-progress.ts": "e19baaf6467af59daeb0112e405e84746d43f2e2e5add0bab172d8af4fa38d72",
+    "src/cad-kernel/bottom-edge-fillet.ts": "88579ce45067656f0dcaa66136b0fcdb88d5b049359ea5059e9b0fe0976d1b0b",
+    "src/cad-kernel/components/box/builder.ts": "eeef9b7f2583f6b7273b613ba6e02f53e5b5224e16d73864e5745345d7a761f6",
+    "src/cad-kernel/components/hexagonal-column/builder.ts": "c5947b81a007127263d2f900e72af9222b853c4502fc05f90dc79338b2f080c9",
+    "src/cad-kernel/components/hexagonal-column/hexagonal.step": "05339ab44a4daad686f53133ab2fa6a27b5a856976e7cd0bd89a148eab9b4748",
+    "src/cad-kernel/components/hsw-cell/builder.ts": "ae045b6607838cf7914cde341587353119288e4cc692e73d4a8ab9a49368212b",
+    "src/cad-kernel/components/hsw-cell/hsw-cell.step": "472634cfc5aa83c8914f0edb02edd204051725efd04ecbcf8ddc982f84059b66",
+    "src/cad-kernel/components/modular-grid-base/board-cell-template.step": "a35efd6420bcc04d8ceb975e8733246f7564cae40e9aa9a41b832acd652f3f28",
+    "src/cad-kernel/components/modular-grid-base/builder.ts": "50263b9ad8fe29b69a4208aeb840c0fd163ff5c8ab282b19c8d066c3b2451a7c",
+    "src/cad-kernel/components/opengrid-benchmark/builder.ts": "276f20c896b1e2509e07ceb3ab3bdd53d76e55e70114e56b7de2d5dbdc5c88d9",
+    "src/cad-kernel/components/opengrid-divider/builder.ts": "d12a92cd7f75935490c34e594f7cf2766286146f52e44f5546d1fc2618bb11b2",
+    "src/cad-kernel/components/opengrid-divider/quality.ts": "17d59a8da4845f58b96825f30d604daf0ddb42f3d9d69cfaa2c14b74e0c43bf6",
+    "src/cad-kernel/components/opengrid-label-card/builder.ts": "c8369ca8e75d040bb62de5fc3e1c956146f571499021f1ec48e41695e3b63057",
+    "src/cad-kernel/components/opengrid-label-card/flat-text.ts": "6d829a676f2ddd3c29f7f41c93742139c8b5b5a74aa9db3284cb68b3a15852af",
+    "src/cad-kernel/components/opengrid-label-card/icon-paths.ts": "ef96b535f0e31847e0101153138377570b076354d6e9824110e7774189ce287f",
+    "src/cad-kernel/components/opengrid-label-card/icon-shape.ts": "71bf1621ef569e41451141cf5d208865d79375866587cb4cd625680c2aeec7f2",
+    "src/cad-kernel/components/opengrid-label-card/quality.ts": "441756fe6f63fa4abd2b4a97f983d3e12c6b7f82d131cd057182c468be672868",
+    "src/cad-kernel/components/opengrid-label-card/screw-outline.ts": "ccdf5c4a91b44411c02ec3adc91bee1a393afec042bc0a1c760fe25b505b8b88",
+    "src/cad-kernel/components/opengrid-label-card/screw-shape.ts": "5636ea08385c0d0067537382b9df15c7b7773c2bc97a26b113a855a78a902623",
+    "src/cad-kernel/components/opengrid-label-card/svg-path.ts": "63d111a09a1c433f965b4ecd7d646b2c294703551c8a14f31e1914050e6358c2",
+    "src/cad-kernel/components/opengrid-label-slot-test/builder.ts": "bb6af1c31d990d23fa500ad6e552c656a5fbb3efd552c60db33b06f234367ffc",
+    "src/cad-kernel/components/opengrid-locating-assembly/assets/detachable-corner-seat-holder-11.step": "0ae3412d67041e533fb054cd8af714e625407665c3cfb129fa99a26b8bfa5b36",
+    "src/cad-kernel/components/opengrid-locating-assembly/assets/detachable-corner-seat-v13.step": "11b2da95b2b6f4607f8f9d5423dcc69869b2ecd4dc25c6b4c76c91cc4d01e82f",
+    "src/cad-kernel/components/opengrid-locating-assembly/consumer.ts": "dec5e353ea63df338a72f074b44778feef26dddcfb9fb7200ad1bf522ad2e58c",
+    "src/cad-kernel/components/opengrid-locating-assembly/integrated.ts": "6c6ab1db1b1a8c8bc98105828b25b9758cdf4f56a8c2fce31865102baa03e612",
+    "src/cad-kernel/components/opengrid-locating-assembly/reference.ts": "99997ade5d06c842797ee97c06e988d4aa2d657191fd04c15dd93de171e6c49e",
+    "src/cad-kernel/components/opengrid-open-shelf/builder.ts": "41c377b4153c91303ebe287a3848668b339d88e2084a526c70770c540058dea3",
+    "src/cad-kernel/components/opengrid-open-shelf/quality.ts": "8f5a0f10e8ccfc8751a78b08b9323baf82529192fd9d8449e42a6710e31c66cf",
+    "src/cad-kernel/components/opengrid-openconnect-organizer/builder.ts": "4e77d6ea04a76af4e20b1a02ff22d34ba3d7e1c6d9003d4ef7804e1d4ccd7357",
+    "src/cad-kernel/components/opengrid-openconnect-organizer/label-slot.ts": "7e07e68397fa82595fbd91ccdd2820d385e2cff6cc191c15b4205a9b20df6bd4",
+    "src/cad-kernel/components/opengrid-openconnect-organizer/quality.ts": "77b6bd8b14d279f005486036609fa25e4fd1b05e792bdce5c06c8bb4d5cf0705",
+    "src/cad-kernel/components/opengrid-openconnect-shelf/assets/openconnect-slot-negative-lock.step": "6c982975a7d3ee8007cf108553b2d67bfdd10202ae52a6f9babf34d7be346dab",
+    "src/cad-kernel/components/opengrid-openconnect-shelf/builder.ts": "a4a115a3d87de74e5dcbb3288804018a6fad7431905c9cae1e0605504e790646",
+    "src/cad-kernel/components/opengrid-openconnect-shelf/quality.ts": "9e74a57084adcbd8288a28e9f2539e9e9f30054a0050a60b9c752c8e740fbe0e",
+    "src/cad-kernel/components/opengrid-openconnect-shelf/slot.ts": "f3cc3c96763e186c3203448a7bf9959b19a4db3f67cb7890d3db4d3c42a82442",
+    "src/cad-kernel/components/opengrid-openconnect-tissue-box/builder.ts": "36d01f910ff1834ebf993a39fc38fb8e12470e63e2c39974f47484f5d27414e2",
+    "src/cad-kernel/components/opengrid-organizer-box/builder.ts": "bce9047d864be4aafbbe6ec96314e9dfcfc9266ab2f719ce7863a7eab82b7a0b",
+    "src/cad-kernel/components/opengrid-organizer-box/quality.ts": "5db1fbbd16946bb4aaf13ef83cbf755438955a4936c6c3c0c4cf9a97cf8f50fb",
+    "src/cad-kernel/components/opengrid-pillar/builder.ts": "2ddd12045eaa1947a836d6498028e25e62e788c3ed1e7620371028ca8162bb0b",
+    "src/cad-kernel/components/opengrid-pillar/quality.ts": "8897ffdd1bc831101c6a2c584608e7fb49ce897d31a17338f2b8178bae3b0751",
+    "src/cad-kernel/components/opengrid-snap-remover/builder.ts": "a0029874f49b3571fb897f7728b3cb4042f29c017760a77737fc25a6f486af07",
+    "src/cad-kernel/components/opengrid-snap-remover/snap remover.step": "8f34c88dfea6b2c3352301d68dadc0b43665c0f8424f7da2b61c8dcda38ac41b",
+    "src/cad-kernel/components/opengrid-snap/assets/openconnect-head.step": "2ff0dd1808d07da044f13427475fc87e21269feb01ddc326f1e017f6777ff05d",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-bare-directional-full-snap.step": "537b40d03ea88ea8215fd2c7674ad84c1c02376803cd3ca6e825b76d86f7e716",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-bare-directional-lite-snap.step": "9d01ae59d9f44eb9582e41474ef1d908dbd91be01dd0fa2588f77cca3e7af4ce",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-bare-lite-snap.step": "e64dc9a1d6aae67b2fddd53421287fef781a44b1b986407d54e716ac90381e00",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-bare-standard-full-snap.step": "e416e458bed61a493c62a799ef29d4f3a8475ffc5ec7f8a80d63d8f46627bded",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-bare-standard-lite-snap.step": "c3815f3507676d969c96201b4373d07622c770a1fe7278066721553c8c785b7d",
+    "src/cad-kernel/components/opengrid-snap/assets/opengrid-hole-snap-full.step": "4b3baf2bc7d9c97b65b9e658a3b1046edb18aade1c81c4dec54640790f163be2",
+    "src/cad-kernel/components/opengrid-snap/boundary.ts": "1e79f63681a63b547ee4d06ca33f22b874651be8ffbfe549caeab5280a548eb3",
+    "src/cad-kernel/components/opengrid-snap/builder.ts": "794c96f00466aec59c6b1be782b46ae9f84b81376930b7c3c24e44fca2033fe8",
+    "src/cad-kernel/components/opengrid-snap/openconnect.ts": "8b6f8137294cf4991eb2c556ff46b8cbba2e8ec245e62ecce12b3fc83d9ea1b3",
+    "src/cad-kernel/components/opengrid-snap/profile.ts": "3127ae2f50659e65cb93f89d0fb8df740b06c1824b9d4d15ef3c2ae16ac99848",
+    "src/cad-kernel/components/opengrid-snap/quality.ts": "bb39004079850e0f066d8ade0fc01cd12c709863f80473d5c47ee9021f70efb8",
+    "src/cad-kernel/components/opengrid-stackable-box/builder.ts": "916a3ec3b7a48c3228119168247eaf61cd92e0576a0b9ee71d2ae6a47b4cbdbc",
+    "src/cad-kernel/components/opengrid-stackable-box/geometry.ts": "c593d7ecaeeeaa865762701d948554a7c514ac0381635fe45aa7ba4a79b22101",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-gate.ts": "d6541c4810dfcbe5fee96c9acb2d7d4b625f472e60da74fa5c0553ea15f48873",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-holes.ts": "5237a2c9e869788f841e7ad007c107fd9f36e60f4b1da494f552d6b2fe82e919",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-interface.ts": "ee3352583eb99837e9c0564632fdcbb5f1a8c44193253b418bca479908f3e3e9",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-metrics.ts": "00df52a612aac1abd612c4fcb2abe82aabd7e84184e214f504dd418b61c2afe7",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-openings.ts": "c86c152e4b7bcf4318c56b63f765a65fa100dc7fc2cf39b5a0474eb727fcc1c9",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-seams.ts": "b78be66f61c5b90125e97ab39110dd94ae1fcbc885b337bfe1ca7e25e1999444",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-thin.ts": "7450230caed93482d9a2666988285d93b4ec049518770f659b00441673f520a9",
+    "src/cad-kernel/components/opengrid-stackable-box/quality-types.ts": "fd88e05f18b60b5ca18932880b83dad4bf79e72a7902c596977c4453ed118fc7",
+    "src/cad-kernel/components/opengrid-stackable-box/quality.ts": "6cdc4578d4947c1b9f7d75919c5ec6d9c77c09e1ef4074ee8665e9491faa7c49",
+    "src/cad-kernel/components/opengrid-stackable-box/shared.ts": "82a27d0b07e89e22b5f08fdfa4cf0be091048631d02fff28c10573a651179de7",
+    "src/cad-kernel/components/opengrid-stackable-box/snap-hold.ts": "e125cc06ce5f849052acdfac1b62a5942ab13d785fc04fa05cdec5f127ac55a0",
+    "src/cad-kernel/components/opengrid-stackable-cylinder/builder.ts": "29bb4e32df84228edf2b615813930a5a7af1fd04ac7cd33a0e1a250507575ab3",
+    "src/cad-kernel/components/opengrid-wall-cover/assets/opengrid-snap-cover.step": "ca1af5a52fce3ace3e4b4984a5679ec4dc5a5c2dbe0b8afbf192c691fba5523e",
+    "src/cad-kernel/components/opengrid-wall-cover/builder.ts": "9e2afee79a85503548076a97197752e790061307a42b02d563e7c15f0b0728d6",
+    "src/cad-kernel/components/opengrid-wall-cover/flat-text.ts": "2b0a5f9536a9028d29120f3332d5c68c529000cb22ff8fd5fb0a4c4ccaa419d5",
+    "src/cad-kernel/components/opengrid-wall-cover/quality.ts": "f6366441098d65844ac1b0b751f160c58daa802be53a19abb63aba586e23735b",
+    "src/cad-kernel/components/opengrid/assembly.ts": "7e03b0f65cc9e18b1af0088ece4dc24a7545a000c90d355b19eb670a9b601c07",
+    "src/cad-kernel/components/opengrid/bridges.ts": "0f8c149f30c9160d3daaabca4979bd0548297d1b0da27d8e871a6b12511f97a1",
+    "src/cad-kernel/components/opengrid/builder.ts": "e4d30e1067868b831c4af3ba61d45a840a701db76e500aa6e1cf676c93e8c119",
+    "src/cad-kernel/components/opengrid/connector-cutters.ts": "f6a9f2bfc3071d6ea0ee1a547587f1472f241e9a5c5f9adf920c8b8fed03b037",
+    "src/cad-kernel/components/opengrid/cutters.ts": "ee04c0ff85b9d2f7084898eeec7854e3f5fa046400a1603ec8abecc76b511bd7",
+    "src/cad-kernel/components/opengrid/grid-surface.ts": "30ee5bb20a566854fd166e301d21cf367ecce7e9214b5dbd0614c5576d0df174",
+    "src/cad-kernel/components/opengrid/hybrid-transition.ts": "700f8407a4b9f1cbab251dc9ec4ab88fc9e99f0cad5a03dc9d606a13cd506ba6",
+    "src/cad-kernel/components/opengrid/hybrid.ts": "c5caff5c321547a25a681deebb4b036391d02cda6d5d9002b37f64a871b7fa6b",
+    "src/cad-kernel/components/opengrid/opengrid-full-cell.step": "d3365ddeef7827bf91f1b6154d0932ede111a439cfa2834c7b357d76d0534101",
+    "src/cad-kernel/components/opengrid/opengrid-heavy-cell.step": "98147b1b1c55c9367bad48a4415a3b1d45593bb0c082a8df05de4850cf55d0e3",
+    "src/cad-kernel/components/opengrid/opengrid-lite-cell.step": "d5988881ddecfa818ea9da3c4fac09958c6877a692c39d3631c288ff048b11ed",
+    "src/cad-kernel/components/opengrid/profile.ts": "4cbc71ae3ad883d60b4f11ec9167be8e962c5f832da46d4434fc431866ac214c",
+    "src/cad-kernel/components/opengrid/prototype-template.ts": "86c459f92eff584702f9cb2bdab945a1f406405b0d042475043afa62816673f6",
+    "src/cad-kernel/components/opengrid/quality.ts": "ebc021a94c99f2bed7fbcac4a0bf64aa15398bc4f47ce0ff01b38c2512a07c22",
+    "src/cad-kernel/components/opengrid/target-frame.ts": "c712d47b92010408a9af53a6f5f4ac12cc4442cfd5fd0af4edd306ab01096686",
+    "src/cad-kernel/components/opengrid/tiles.ts": "6d6945a3d27b0efc560136357c40b827bbc41b1c1a99816519e4dbc811d21a72",
+    "src/cad-kernel/components/shared/top-rim-partition.ts": "6be3534601912344c18ae2b47ec76830a3bd6c039d715360b180ceafb092e523",
+    "src/cad-kernel/export/index.ts": "8307afbce4f2dddfbe91e678b09bc2ffdd7b588e64396f83d5208d670e4b8334",
+    "src/cad-kernel/export/three-mf.ts": "aec1a953a2dae45cbd2114d38ea4a0f5cd48011bd2a51a4cfa344d0bedd6813e",
+    "src/cad-kernel/geometry-errors.ts": "44fdea4b1d9249e3063ff142785ebd170b81a0b58c2e5813199c615526d4b3d7",
+    "src/cad-kernel/initialise/index.ts": "46ea8e9c556174483cf52fbdc66a9226e40ec64e96705ca39d42f1c8a068fae6",
+    "src/cad-kernel/lattice/opengrid-honeycomb-cells.ts": "fd89b57dc3d83badc764396128b572520d16e57e9d71876c3e4268c43a7737d9",
+    "src/cad-kernel/lattice/opengrid-honeycomb.ts": "cc2c93cfbde5f91a8f70a4d3d82957e908a1e7e5c1ec689be1ef7a2f37402072",
+    "src/cad-kernel/lifetime/dispose.ts": "519eae660fbb8c48c14c27f04c210a1bf19a557cb326e9e6ce6d45863a173613",
+    "src/cad-kernel/lifetime/index.ts": "d9188aa4974216bad592db8cf306a3d4d1f31654cb33c7a9dc97cc19c98fce3d",
+    "src/cad-kernel/mesh/index.ts": "b7cff20e69d6a74c44e252c1729c187a0e37bf35ab2c6dfac8d1134f1427f7ad",
+    "src/cad-kernel/model/index.ts": "ffd9f90ec46d7b2bd08fd109a3bbafab8427dcf45d26120053841830147a705e",
+    "src/cad-kernel/scene/proxy.ts": "7ee0c9ac646a8299bcc7f123e1ee6de5595aa4daa0099e6fd4326b9da67957ad",
+    "src/cad-kernel/shape-query/compare.ts": "3274acdd093e5ffa82005357eca5cc6f220b0582e6f1d41d9564e16117bb9784",
+    "src/cad-kernel/shape-query/solids.ts": "ddd00c52c35b6547479bf8f2092191db3690a1727910fb788047a34297758421",
+    "src/cad-kernel/transform/index.ts": "fc8b639a54e8cdcf891ec17d09e23987962ec6f72ff5fbbf891c2e65286ccac3",
+    "vendor/replicad-opencascadejs/src/replicad_single.d.ts": "62ceca4ccc15446575d89f8e26f1397eea3073c5b2beefddd19ef162fed9e277",
+    "vendor/replicad-opencascadejs/src/replicad_single.wasm": "14a0ce8cf22ed97e749fb436ee72bfd47099556e9e8af012b6dd9f51a201b80e"
+  },
+  "sourceHash": "fce2f196c161894211d5932280934e83a39766ca37c259edb4541f079564cd07",
+  "settings": {
+    "board": {
+      "variant": "Lite",
+      "rows": 2,
+      "columns": 2,
+      "halfCellX": "none",
+      "halfCellY": "none",
+      "targetWidth": 0,
+      "targetDepth": 0,
+      "fitToTarget": false,
+      "targetFrameShape": "none",
+      "targetFrameSides": {
+        "top": true,
+        "right": true,
+        "bottom": true,
+        "left": true
+      },
+      "chamfers": "none",
+      "chamferCorners": {
+        "topLeft": true,
+        "topRight": true,
+        "bottomLeft": true,
+        "bottomRight": true
+      },
+      "connectorHoles": "none",
+      "connectorSides": {
+        "top": true,
+        "right": true,
+        "bottom": true,
+        "left": true
+      },
+      "screwKind": "official-default",
+      "screwMode": "none",
+      "screwCenter": false,
+      "screwEveryRows": 1,
+      "screwEveryColumns": 2,
+      "screwDiameter": 4.1,
+      "screwHeadDiameter": 7.2,
+      "screwHeadInset": 1,
+      "screwHeadIsCountersunk": true,
+      "screwHeadCountersunkDegree": 90
+    },
+    "box-none": {
+      "x": 2,
+      "y": 2,
+      "height": 20,
+      "cornerSeatMode": "none",
+      "fullBottomHoleGrid": false,
+      "topRimMode": "stacking-rail",
+      "bottomMode": "stacking",
+      "honeycombMode": false,
+      "topRimEnabled": false,
+      "topRimHeight": 2,
+      "openingPlusXDepth": 0,
+      "openingPlusXBottomLength": 1,
+      "openingPlusXAngle": 90,
+      "openingMinusXDepth": 0,
+      "openingMinusXBottomLength": 1,
+      "openingMinusXAngle": 90,
+      "openingPlusYDepth": 0,
+      "openingPlusYBottomLength": 1,
+      "openingPlusYAngle": 90,
+      "openingMinusYDepth": 0,
+      "openingMinusYBottomLength": 1,
+      "openingMinusYAngle": 90
+    },
+    "box-integrated": {
+      "x": 2,
+      "y": 2,
+      "height": 20,
+      "cornerSeatMode": "integrated",
+      "fullBottomHoleGrid": false,
+      "topRimMode": "stacking-rail",
+      "bottomMode": "stacking",
+      "honeycombMode": false,
+      "topRimEnabled": false,
+      "topRimHeight": 2,
+      "openingPlusXDepth": 0,
+      "openingPlusXBottomLength": 1,
+      "openingPlusXAngle": 90,
+      "openingMinusXDepth": 0,
+      "openingMinusXBottomLength": 1,
+      "openingMinusXAngle": 90,
+      "openingPlusYDepth": 0,
+      "openingPlusYBottomLength": 1,
+      "openingPlusYAngle": 90,
+      "openingMinusYDepth": 0,
+      "openingMinusYBottomLength": 1,
+      "openingMinusYAngle": 90
+    },
+    "box-detachable": {
+      "x": 2,
+      "y": 2,
+      "height": 20,
+      "cornerSeatMode": "detachable-corner-seat",
+      "fullBottomHoleGrid": false,
+      "topRimMode": "stacking-rail",
+      "bottomMode": "stacking",
+      "honeycombMode": false,
+      "topRimEnabled": false,
+      "topRimHeight": 2,
+      "openingPlusXDepth": 0,
+      "openingPlusXBottomLength": 1,
+      "openingPlusXAngle": 90,
+      "openingMinusXDepth": 0,
+      "openingMinusXBottomLength": 1,
+      "openingMinusXAngle": 90,
+      "openingPlusYDepth": 0,
+      "openingPlusYBottomLength": 1,
+      "openingPlusYAngle": 90,
+      "openingMinusYDepth": 0,
+      "openingMinusYBottomLength": 1,
+      "openingMinusYAngle": 90
+    },
+    "snap": {
+      "variant": "Lite",
+      "profile": "Standard",
+      "offset": 0,
+      "footprint": "full",
+      "fourCornerLocatingHoles": true,
+      "centerRemoverHole": false,
+      "openConnect": false,
+      "topText": "none",
+      "magnetHoleShape": "none",
+      "magnetHoleLength": 0,
+      "magnetHoleWidth": 0,
+      "magnetHoleDiameter": 0,
+      "magnetHoleThickness": 0
+    },
+    "seat": {
+      "mode": "detachable-corner-seat",
+      "length": 3.8,
+      "offset": 0
+    }
+  },
+  "datums": {
+    "directBoxZ": 1.6750564575195315,
+    "snapZ": 0.6,
+    "fixedBoxZ": 4
+  },
+  "verification": {
+    "direct-lift-0": 0,
+    "direct-lift-0.2": 0,
+    "direct-lift-2": 0,
+    "direct-lift-28": 0,
+    "direct-below-rest": 0.3161957140425855,
+    "direct-lateral-support": 30.15397773909258,
+    "snap-0-board": 0,
+    "snap-0-box": 0,
+    "snap-1-board": 0,
+    "snap-1-box": 0,
+    "snap-2-board": 0,
+    "snap-2-box": 0,
+    "snap-3-board": 0,
+    "snap-3-box": 0,
+    "snap-below-seat": 1.1228426901764053,
+    "fixed-box-below-rest": 19.29713999484178,
+    "fixed-box-board": 0,
+    "seat-0-time-0": 0,
+    "seat-1-time-0": 0,
+    "seat-2-time-0": 0,
+    "seat-3-time-0": 0,
+    "seat-0-time-2": 0,
+    "seat-1-time-2": 0,
+    "seat-2-time-2": 0,
+    "seat-3-time-2": 0,
+    "seat-0-time-4": 0,
+    "seat-1-time-4": 0,
+    "seat-2-time-4": 0,
+    "seat-3-time-4": 0,
+    "seat-0-time-5.75": 0,
+    "seat-1-time-5.75": 0,
+    "seat-2-time-5.75": 0,
+    "seat-3-time-5.75": 0,
+    "seat-0-time-8": 0,
+    "seat-1-time-8": 0,
+    "seat-2-time-8": 0,
+    "seat-3-time-8": 0,
+    "locked-seat-resists-pull": 0.8230801484353103
+  },
+  "meshes": {
+    "board": {
+      "bounds": {
+        "min": [
+          -28,
+          -28,
+          0
+        ],
+        "max": [
+          28,
+          28,
+          4
+        ]
+      },
+      "triangleCount": 348
+    },
+    "box-none": {
+      "bounds": {
+        "min": [
+          -27.924999237060547,
+          -27.924999237060547,
+          0
+        ],
+        "max": [
+          27.924999237060547,
+          27.924999237060547,
+          31.450000762939453
+        ]
+      },
+      "triangleCount": 3884
+    },
+    "box-integrated": {
+      "bounds": {
+        "min": [
+          -27.924999237060547,
+          -27.924999237060547,
+          -3.799999952316284
+        ],
+        "max": [
+          27.924999237060547,
+          27.924999237060547,
+          31.450000762939453
+        ]
+      },
+      "triangleCount": 5900
+    },
+    "box-detachable": {
+      "bounds": {
+        "min": [
+          -27.924999237060547,
+          -27.924999237060547,
+          0
+        ],
+        "max": [
+          27.924999237060547,
+          27.924999237060547,
+          31.450000762939453
+        ]
+      },
+      "triangleCount": 5852
+    },
+    "snap": {
+      "bounds": {
+        "min": [
+          -12.800000190734863,
+          -12.800000190734863,
+          0
+        ],
+        "max": [
+          12.800000190734863,
+          12.800000190734863,
+          3.4000000953674316
+        ]
+      },
+      "triangleCount": 3376
+    },
+    "seat": {
+      "bounds": {
+        "min": [
+          -3.321715831756592,
+          -2.450000047683716,
+          0
+        ],
+        "max": [
+          3.321715831756592,
+          2.450000047683716,
+          5.199999809265137
+        ]
+      },
+      "triangleCount": 716
+    }
+  },
+  "assets": {
+    "direct-placement.light.mp4": {
+      "bytes": 95405,
+      "sha256": "6b470b85ab806ab943c0d4a9343db23e6e181c505ee1a25f208089812c389825"
+    },
+    "direct-placement.light.webm": {
+      "bytes": 70367,
+      "sha256": "1607a11921a1e2cc07aa7f86e8af9a409132130c0db4cb2868dec5bb6f20301a"
+    },
+    "direct-placement.light.webp": {
+      "bytes": 11762,
+      "sha256": "bc6c03db9304d4610bca6593261219b22ec3be4192a8cc332a86cebd60b08087"
+    },
+    "direct-placement.dark.mp4": {
+      "bytes": 101700,
+      "sha256": "17fce37fbbc61ad414802edc75b7d31dca4965e036bac7fe0f623f27f024caf6"
+    },
+    "direct-placement.dark.webm": {
+      "bytes": 70532,
+      "sha256": "399d58af0e9df65fd4c1125c52adfd554ea7dd9e7fdbdb34e162738da3cf60f6"
+    },
+    "direct-placement.dark.webp": {
+      "bytes": 12310,
+      "sha256": "498b6595e3d0d49d79ac1ce717bab0dd972ff187c17ad06680a3529b61f5795a"
+    },
+    "snap-fixing.light.mp4": {
+      "bytes": 102493,
+      "sha256": "ccfc0311b689c63755e1e478035a3ce484fbbf9e59044c7697a16ffab4cf819f"
+    },
+    "snap-fixing.light.webm": {
+      "bytes": 78993,
+      "sha256": "34139d1657aef1185a72c300ba1aa1be6b53b2c94f749762bcdaf6d98394a5d3"
+    },
+    "snap-fixing.light.webp": {
+      "bytes": 14222,
+      "sha256": "bd6a665635e687001c949ed14a637f493e20983e0d7a758d3e311c284eeae8ee"
+    },
+    "snap-fixing.dark.mp4": {
+      "bytes": 110022,
+      "sha256": "c4667766c04f7acb148e5a2dcbcc65b801aa2a68e9569f30a4b0f5040a1b537c"
+    },
+    "snap-fixing.dark.webm": {
+      "bytes": 88130,
+      "sha256": "9b3680c06648686e453a62c45a3ef54364d0c8188c07d6d9709b6672d698324e"
+    },
+    "snap-fixing.dark.webp": {
+      "bytes": 14712,
+      "sha256": "014694a1716bb552adbb8480b01d10ffe6b8ebd19f2075b0f6dd93a978696174"
+    },
+    "locating-seats.light.mp4": {
+      "bytes": 149570,
+      "sha256": "e7994bd6c8b5fcd938c35e014b74cd108e07c15d963c05f2f9cca18cdea604f3"
+    },
+    "locating-seats.light.webm": {
+      "bytes": 103187,
+      "sha256": "a0b29d05def69443be668958bfa28e9d86e2135304f5b3765fe593c35f12624b"
+    },
+    "locating-seats.light.webp": {
+      "bytes": 9848,
+      "sha256": "8dd83a276583e0e7c78fff89fc26411678a3a27cff675bff1fdc51525978197b"
+    },
+    "locating-seats.dark.mp4": {
+      "bytes": 151993,
+      "sha256": "8963ba9c76d5f96d1b4dfeac91d53f362201d3103c989bac9f263ed48dbbd087"
+    },
+    "locating-seats.dark.webm": {
+      "bytes": 107723,
+      "sha256": "c4f03894a5945c09a44fe76f5155e17eba65aae955ac2fc54d4f79b508149110"
+    },
+    "locating-seats.dark.webp": {
+      "bytes": 9440,
+      "sha256": "c0a299663f8dc10f8fd142750dfee0b2813d1c1324bd0a47e7913bc24d5fcbe5"
+    }
+  }
+}

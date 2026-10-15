@@ -1,6 +1,7 @@
 ---
 import { Card } from '../starwind/card'
 import { Button } from '../starwind/button'
+import AssemblyVideo from './AssemblyVideo.astro'
 import ModelPreviewPicture from '../ModelPreviewPicture.astro'
 import DeskPrintChecklist from './DeskPrintChecklist.astro'
 import {
@@ -21,9 +22,6 @@ const separatePlan = deskFixingPrintPlan(locale, 'detachable-corner-seat')
 const gridBox = deskQuickStartEntryFor(locale, 'grid-box')
 const organizerBox = deskQuickStartEntryFor(locale, 'organizer-box')
 const extensions = [organizerBox, deskQuickStartEntryFor(locale, 'round-box')]
-const diagramPath = (name: string) => `/docs/desk-system/${name}.${locale}.svg`
-const darkDiagramPath = (name: string) =>
-  `/docs/desk-system/${name}.${locale}-dark.svg`
 const steps = [
   {
     number: 1,
@@ -126,14 +124,10 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
         class="m-0 grid content-start gap-3 rounded-card border border-border p-4"
       >
         <h4 class="m-0 text-lg font-semibold">{t('docs.direct.title')}</h4>
-        <ModelPreviewPicture
-          class="w-full rounded-img"
-          src={diagramPath('desk-system-flow')}
-          darkSrc={darkDiagramPath('desk-system-flow')}
-          width={600}
-          height={430}
-          loading="eager"
-          alt={t('docs.deskQuickStart.visual.flow.alt')}
+        <AssemblyVideo
+          {locale}
+          scene="direct-placement"
+          label={t('docs.deskQuickStart.visual.flow.alt')}
         />
         <figcaption class="grid gap-2">
           <p class="m-0 leading-relaxed">{t('docs.direct.body')}</p>
@@ -148,14 +142,10 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
         <h4 class="m-0 text-lg font-semibold">
           {t('docs.fixing.compareLabel')}
         </h4>
-        <ModelPreviewPicture
-          class="w-full rounded-img"
-          src={diagramPath('desk-system-board-snap')}
-          darkSrc={darkDiagramPath('desk-system-board-snap')}
-          width={600}
-          height={430}
-          loading="lazy"
-          alt={t('docs.deskQuickStart.visual.placement.alt')}
+        <AssemblyVideo
+          {locale}
+          scene="snap-fixing"
+          label={t('docs.deskQuickStart.visual.placement.alt')}
         />
         <figcaption class="grid gap-2">
           <p class="m-0 leading-relaxed">{t('docs.fixing.body')}</p>
@@ -263,15 +253,13 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
       </Card>
     </div>
     <figure class="m-0 grid gap-3">
-      <ModelPreviewPicture
-        class="mx-auto w-full max-w-xl rounded-img border border-border"
-        src={diagramPath('desk-system-locating-options')}
-        darkSrc={darkDiagramPath('desk-system-locating-options')}
-        width={600}
-        height={430}
-        loading="lazy"
-        alt={t('docs.deskQuickStart.visual.locating.alt')}
-      />
+      <div class="mx-auto w-full max-w-3xl">
+        <AssemblyVideo
+          {locale}
+          scene="locating-seats"
+          label={t('docs.deskQuickStart.visual.locating.alt')}
+        />
+      </div>
       <figcaption class="text-sm text-muted-foreground">
         {t('docs.deskQuickStart.visual.locating.caption')}
       </figcaption>

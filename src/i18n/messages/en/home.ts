@@ -34,8 +34,9 @@ export const messages = {
   'home.desk.description':
     'To fix a box’s position, lay the Board, add Snap, pick one locating style, then install the matching box.',
   'home.desk.flowAlt':
-    'Desk position fixing assembly: a Board, four Snaps, and a Grid Box with compatible seats.',
-  'home.desk.flowCaption': 'For position fixing: BOARD → SNAP → LOCATING → BOX',
+    '3D Desk position fixing clip: a Board, four Snaps and an integrated-seat Grid Box.',
+  'home.desk.flowCaption':
+    'For position fixing: BOARD → SNAP → LOCATING → BOX. The clip shows the integrated-seat option.',
   'home.desk.step.board.title': 'Lay down the Board',
   'home.desk.step.board.description':
     'It just sits on your desk; screws are optional.',

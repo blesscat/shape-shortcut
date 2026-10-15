@@ -683,33 +683,35 @@ test('primary navigation switches states without animation under reduced motion'
 })
 
 for (const code of ['zh-Hant', 'en']) {
-  test(`${code} homepage fixing illustration matches its caption and intrinsic ratio`, async ({
+  test(`${code} homepage reuses the fixing movie and its static frame`, async ({
     page,
   }) => {
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme })
       await page.goto(`/${code}/`)
       const section = page.getByTestId('home-desk-system')
-      const suffix = colorScheme === 'dark' ? '-dark' : ''
-      const diagram = section.locator(
-        `img[src="/docs/desk-system/desk-system-board-snap.${code}${suffix}.svg"]`,
+      const video = section.locator(
+        `[data-assembly-video="snap-fixing"] video[data-appearance="${colorScheme}"]`,
       )
-      await expect(diagram).toBeVisible()
-      await diagram.scrollIntoViewIfNeeded()
-      await expect(diagram).toHaveJSProperty('complete', true)
+      await expect(video).toBeVisible()
+      await expect(video).toHaveAttribute(
+        'poster',
+        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
+      )
+      await expect(video).toHaveAttribute('preload', 'none')
       await expect(section.locator('figcaption')).toContainText(
         /position fixing|固定位置/,
       )
+      await expect(video).toHaveAttribute(
+        'aria-label',
+        /position fixing|固定位置/,
+      )
       await expect(
-        section.locator('img:not([aria-hidden="true"])'),
-      ).toHaveAttribute('alt', /position fixing|固定位置/)
-      const ratio = await diagram.evaluate((image: HTMLImageElement) => ({
-        declared:
-          Number(image.getAttribute('width')) /
-          Number(image.getAttribute('height')),
-        intrinsic: image.naturalWidth / image.naturalHeight,
-      }))
-      expect(Math.abs(ratio.declared - ratio.intrinsic)).toBeLessThan(0.01)
+        section.locator('[data-assembly-video] a:visible'),
+      ).toHaveAttribute(
+        'href',
+        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
+      )
     }
   })
 }

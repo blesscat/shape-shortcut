@@ -5,6 +5,7 @@ import { Badge } from '../../components/starwind/badge'
 import { Button } from '../../components/starwind/button'
 import { Card } from '../../components/starwind/card'
 import ModelPreviewPicture from '../../components/ModelPreviewPicture.astro'
+import AssemblyVideo from '../../components/docs/AssemblyVideo.astro'
 import BrowserIcon from '@tabler/icons/outline/browser.svg'
 import AdjustmentsIcon from '@tabler/icons/outline/adjustments-horizontal.svg'
 import Rotate3dIcon from '@tabler/icons/outline/rotate-3d.svg'
@@ -30,8 +31,6 @@ const wallBoardPath = localizedCadPathFor(locale, 'opengrid', 'wall')
 const modelsPath = publicPathFor(locale, 'models')
 const docsPath = publicPathFor(locale, 'docs')
 const aboutPath = publicPathFor(locale, 'about')
-const deskFixingPath = `/docs/desk-system/desk-system-board-snap.${locale}.svg`
-const deskFixingDarkPath = `/docs/desk-system/desk-system-board-snap.${locale}-dark.svg`
 
 const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
@@ -285,14 +284,10 @@ const fileCardRows = [
 
       <div class="grid gap-8">
         <figure class="m-0 grid gap-3">
-          <ModelPreviewPicture
-            class="w-full rounded-xl border border-border bg-muted"
-            src={deskFixingPath}
-            darkSrc={deskFixingDarkPath}
-            width={600}
-            height={430}
-            loading="lazy"
-            alt={t('home.desk.flowAlt')}
+          <AssemblyVideo
+            {locale}
+            scene="snap-fixing"
+            label={t('home.desk.flowAlt')}
           />
           <figcaption class="text-sm leading-normal text-ink-faint">
             {t('home.desk.flowCaption')}

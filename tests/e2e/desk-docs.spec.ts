@@ -116,23 +116,17 @@ for (const locale of locales) {
       expect(await links.count()).toBeGreaterThan(0)
     }
 
-    const quickStartDiagrams = page.locator(
-      '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]',
-    )
-    await expect(quickStartDiagrams).toHaveCount(6)
+    const videos = page.locator('[data-testid="desk-quick-start"] video')
+    await expect(videos).toHaveCount(6)
     await expect(
-      page.locator(
-        '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]:not([src$="-dark.svg"])',
-      ),
+      page.locator('[data-testid="desk-quick-start"] video:visible'),
     ).toHaveCount(3)
-    const darkDiagrams = page.locator(
-      '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"][src$="-dark.svg"]',
-    )
-    await expect(darkDiagrams).toHaveCount(3)
-    for (const diagram of await darkDiagrams.all()) {
-      await expect(diagram).toHaveAttribute('alt', '')
-      await expect(diagram).toHaveAttribute('aria-hidden', 'true')
-    }
+    // CSS-hidden controls must stay out of the accessible page snapshot.
+    const accessible = await page.getByTestId('desk-quick-start').ariaSnapshot()
+    expect(
+      (accessible.match(/View static assembly frame|查看靜態組裝圖/g) ?? [])
+        .length,
+    ).toBe(3)
     await expect(
       page.locator(
         '[data-testid="docs-wall-system"] img[src$=".webp"]:not([src$="-dark.webp"])',
@@ -141,23 +135,23 @@ for (const locale of locales) {
     await expect(
       page.locator('[data-testid="docs-wall-system"] img[src$="-dark.webp"]'),
     ).toHaveCount(6)
-    const diagramAltPatterns = [
-      ['desk-system-flow', /Board|流程圖/],
-      ['desk-system-board-snap', /Board|俯視/],
-      ['desk-system-locating-options', /locking corner seat|鎖定角座|比較圖/],
+    const videoLabelPatterns = [
+      ['direct-placement', /Board/],
+      ['snap-fixing', /Board/],
+      ['locating-seats', /locking corner seat|鎖定角座/],
     ] as const
-    for (const [asset, altPattern] of diagramAltPatterns) {
+    for (const [scene, labelPattern] of videoLabelPatterns) {
       await expect(
-        page.locator(`img[src$="${asset}.${locale.code}.svg"]`),
-      ).toHaveAttribute('alt', altPattern)
+        page.locator(`[data-assembly-video="${scene}"] video:visible`),
+      ).toHaveAttribute('aria-label', labelPattern)
     }
   })
 }
 
-test('Desk quick start remains understandable when SVG assets are unavailable', async ({
+test('Desk quick start remains understandable when assembly media is unavailable', async ({
   page,
 }) => {
-  await page.route('**/docs/desk-system/*.svg', (route) => route.abort())
+  await page.route('**/docs/desk-assembly/**', (route) => route.abort())
   await page.goto('/en/docs/')
 
   await expect(
@@ -181,10 +175,10 @@ test('Desk illustrations respect manual theme changes over system preference', a
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/en/docs/')
   const lightDiagrams = page.locator(
-    '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]:not([src$="-dark.svg"]):visible',
+    '[data-testid="desk-quick-start"] video[data-appearance="light"]:visible',
   )
   const darkDiagrams = page.locator(
-    '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"][src$="-dark.svg"]:visible',
+    '[data-testid="desk-quick-start"] video[data-appearance="dark"]:visible',
   )
   await expect(darkDiagrams).toHaveCount(3)
   await expect(lightDiagrams).toHaveCount(0)
@@ -227,13 +221,17 @@ for (const { code, colorScheme } of [
       expect(titleY).toBeGreaterThanOrEqual(0)
       expect(titleY).toBeLessThan(844)
       const diagrams = page.locator(
-        '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]:visible',
+        '[data-testid="desk-quick-start"] video:visible',
       )
       await expect(diagrams).toHaveCount(3)
       for (const diagram of await diagrams.all()) {
-        const source = await diagram.getAttribute('src')
-        expect(source?.endsWith('-dark.svg')).toBe(colorScheme === 'dark')
+        await expect(diagram).toHaveAttribute('data-appearance', colorScheme)
+        await expect(diagram).toHaveAttribute('controls', '')
+        await expect(diagram).toHaveAttribute('preload', 'none')
       }
+      await expect(page.locator('[data-assembly-video] a:visible')).toHaveCount(
+        3,
+      )
       const questions = page.getByTestId('docs-desk-faq')
       await questions.locator('summary').nth(0).click()
       await expect(questions.locator('details').nth(0)).toHaveAttribute(
@@ -245,6 +243,21 @@ for (const { code, colorScheme } of [
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true)
+      const movie = diagrams.first()
+      await movie.scrollIntoViewIfNeeded()
+      await movie.focus()
+      await page.keyboard.press('Space')
+      await expect
+        .poll(() =>
+          movie.evaluate((element: HTMLVideoElement) => element.currentTime),
+        )
+        .toBeGreaterThan(0.1)
+      await page.keyboard.press('Space')
+      await expect
+        .poll(() =>
+          movie.evaluate((element: HTMLVideoElement) => element.paused),
+        )
+        .toBe(true)
     } finally {
       await context.close()
     }

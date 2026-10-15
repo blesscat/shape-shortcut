@@ -51,17 +51,22 @@ export const messages = {
   'docs.deskQuickStart.exampleRoundBox':
     'The Round Box uses the same flow — swap freely.',
   'docs.deskQuickStart.visual.flow.caption':
-    'Direct placement: a 2×2 Board and a seat-free stacking Grid Box.',
+    'Actual-model animation: place a seat-free stacking Grid Box on a 2×2 Board, then lift it off. No Snap is needed.',
   'docs.deskQuickStart.visual.flow.alt':
-    'Assembly schematic: a seat-free stacking Grid Box rests directly on a 2×2 Board without Snap.',
+    '3D assembly clip: place and lift a seat-free stacking Grid Box on a 2×2 Board without Snap.',
   'docs.deskQuickStart.visual.placement.caption':
-    'Position fixing: four Snaps attach to the Board and the box uses compatible seats.',
+    'Actual-model animation: install four Snaps, then the integrated-seat box. Snap is for fixing position.',
   'docs.deskQuickStart.visual.placement.alt':
-    'Assembly schematic: a 2×2 Board, four Snaps, and a Grid Box with seats.',
+    '3D assembly clip: position fixing with a 2×2 Board, four Snaps and an integrated-seat Grid Box.',
   'docs.deskQuickStart.visual.locating.caption':
-    'Separate locking corner seat versus the box built-in seat.',
+    'Underside view: on the left, insert separate seats into the matching locking sockets and turn clockwise 90° to lock. On the right, integrated seats print with the box and need no installation.',
   'docs.deskQuickStart.visual.locating.alt':
-    'Comparison: a separate locking corner seat is an additional part; the built-in seat needs no extra locking corner seat.',
+    '3D assembly clip: underside comparison of separate locking corner seat insertion and rotation with integrated box seats.',
+  'docs.assembly.controls':
+    'Press play to watch; pause, seek or replay at any time.',
+  'docs.assembly.staticFrame': 'View static assembly frame',
+  'docs.assembly.unavailable':
+    'If playback is unavailable, use the static frame and written steps below.',
   'docs.deskQuickStart.previewHeading': 'Desk System component previews',
   'docs.deskQuickStart.scopeNote':
     'Version 1 explains system assembly and component relationships; slicer and detailed print settings belong in a later reference.',
@@ -165,7 +170,7 @@ export const messages = {
     'Snap is used to fix the box’s position: install Snap on the Board, then use the box’s built-in seats or separately printed locking corner seats.',
   'docs.fixing.compareTitle': 'Two ways to place a box',
   'docs.fixing.compareBody':
-    'Direct placement needs a Board and a box. Position fixing adds Snap and compatible seats. These are assembly schematics.',
+    'Direct placement needs a Board and a box. Position fixing adds Snap and compatible seats. Watch the actual-model clips below to see the assembly.',
   'docs.fixing.compareLabel': 'Fix the position with Snap',
   'docs.fixing.workflow': 'Four steps for position fixing',
   'docs.fixing.boardStep': 'Prepare the Board',

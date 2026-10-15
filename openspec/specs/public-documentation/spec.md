@@ -96,44 +96,30 @@ The page MUST provide separate print checklists for direct placement and Snap fi
 
 ### Requirement: Visual quick-start assets have equivalent accessible text
 
-The quick start MUST include static visual documentation for the numbered
-assembly flow, Board/Snap placement, and the two locating strategies. Each
-visual MUST have localized alternative text or a caption, and the surrounding
-page MUST provide equivalent text so the instructions remain understandable
-when an image cannot be displayed. Each visual MUST exist as a light and a dark
-static variant, and the displayed variant MUST follow the site's effective
-appearance — including the manual theme toggle, not only the system
-preference — while the hidden variant MUST NOT degrade accessibility of the
-page.
+The quick start MUST include static actual-model assembly videos and poster frames for direct placement, Board/Snap fixing and the two locating strategies. Each visual MUST have a localized accessible name or caption, and the surrounding page MUST provide equivalent text so the instructions remain understandable when media cannot be displayed. Each visual MUST exist as a light and a dark static variant, and the displayed variant MUST follow the site's effective appearance, including the manual theme toggle. The hidden variant MUST NOT degrade accessibility. Movies MUST use native controls, start paused, avoid autoplay and looping, and provide a static-frame link.
 
 #### Scenario: Visuals load as static documentation assets
 
 - **WHEN** a user loads the localized Docs page
-- **THEN** the flow, placement, and locating-comparison visuals MUST be
-  addressable static assets in both light and dark variants
-- **AND** the page MUST not require a CAD Worker or client-only geometry render
-  to explain the relationships
+- **THEN** the flow, placement and locating-comparison movies and posters MUST be addressable static assets in both light and dark variants
+- **AND** the page MUST not require a CAD Worker or client-only geometry render to explain the relationships
 
 #### Scenario: Dark appearance renders dark diagram variants
 
-- **WHEN** the site's effective appearance is dark — via system preference or
-  the header theme toggle
+- **WHEN** the site's effective appearance is dark via system preference or the header theme toggle
 - **THEN** every quick-start visual MUST display its dark variant
-- **AND** switching the effective appearance MUST switch the displayed diagram
-  variant accordingly
+- **AND** switching the effective appearance MUST switch the displayed media variant accordingly
 
 #### Scenario: The hidden variant stays accessibility-neutral
 
-- **WHEN** a diagram renders one appearance variant
+- **WHEN** a visual renders one appearance variant
 - **THEN** the other variant MUST NOT be exposed to the accessibility tree
-- **AND** the displayed diagram MUST have a localized accessible name via the
-  visible variant's alt text or its figure caption
+- **AND** the displayed visual MUST have a localized accessible name via its video label or figure caption
 
 #### Scenario: Images are unavailable
 
-- **WHEN** an image request fails or images are disabled
-- **THEN** the localized captions, alt text, numbered workflow, and checklist
-  MUST still communicate the same assembly order and locating choice
+- **WHEN** a media request fails or images are disabled
+- **THEN** the localized captions, accessible names, numbered workflow and checklist MUST still communicate the same assembly order and locating choice
 
 ### Requirement: Quick-start scope separates first-use guidance from advanced references
 

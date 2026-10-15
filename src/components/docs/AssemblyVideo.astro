@@ -1,0 +1,91 @@
+---
+import { translate, type Locale } from '../../i18n'
+
+interface Props {
+  scene: 'direct-placement' | 'snap-fixing' | 'locating-seats'
+  label: string
+  locale: Locale
+}
+
+const { scene, label, locale } = Astro.props
+const t = (key: string) => translate(locale, key)
+const asset = (appearance: string, extension: string) =>
+  `/docs/desk-assembly/${scene}.${appearance}.${extension}`
+---
+
+<div class="grid min-w-0 gap-2" data-assembly-video={scene}>
+  {
+    ['light', 'dark'].map((appearance) => (
+      <div class={`assembly-${appearance}`}>
+        <video
+          class="block h-auto w-full rounded-img"
+          width="960"
+          height="640"
+          controls
+          muted
+          playsinline
+          preload="none"
+          poster={asset(appearance, 'webp')}
+          aria-label={label}
+          data-appearance={appearance}
+        >
+          <source src={asset(appearance, 'webm')} type="video/webm" />
+          <source src={asset(appearance, 'mp4')} type="video/mp4" />
+          {t('docs.assembly.unavailable')}
+        </video>
+        <a
+          class="mt-2 inline-block text-sm underline underline-offset-4"
+          href={asset(appearance, 'webp')}
+        >
+          {t('docs.assembly.staticFrame')}
+        </a>
+      </div>
+    ))
+  }
+  <p class="m-0 text-sm leading-relaxed text-muted-foreground">
+    {t('docs.assembly.controls')}
+  </p>
+</div>
+
+<style>
+  .assembly-dark {
+    display: none;
+  }
+
+  :global(:root.dark) .assembly-light {
+    display: none;
+  }
+
+  :global(:root.dark) .assembly-dark {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not(.light):not(.dark)) .assembly-light {
+      display: none;
+    }
+
+    :global(:root:not(.light):not(.dark)) .assembly-dark {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  function pauseHiddenAssemblyVideos() {
+    for (const video of document.querySelectorAll<HTMLVideoElement>(
+      '[data-assembly-video] video',
+    )) {
+      if (video.getClientRects().length === 0) video.pause()
+    }
+  }
+
+  const appearanceObserver = new MutationObserver(pauseHiddenAssemblyVideos)
+  appearanceObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', pauseHiddenAssemblyVideos)
+</script>
