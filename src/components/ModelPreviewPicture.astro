@@ -22,14 +22,12 @@ const {
 } = Astro.props
 
 /**
- * The header theme toggle applies `.dark` to <html> (system preference when
- * no manual choice is stored), so the variant must switch on the class,
- * not on prefers-color-scheme. Both elements share the alt text; the hidden
- * one is excluded from the accessibility tree and only the visible variant
- * is downloaded (lazy images without a layout box are not fetched).
+ * Explicit root classes follow the header theme toggle. With JavaScript
+ * disabled, the system preference applies when neither class is present.
+ * The dark image is decorative; surrounding HTML provides the explanation.
  */
-const lightClass = [className, 'dark:hidden'].filter(Boolean).join(' ')
-const darkClass = [className, 'hidden dark:block'].filter(Boolean).join(' ')
+const lightClass = [className, 'preview-light'].filter(Boolean).join(' ')
+const darkClass = [className, 'preview-dark'].filter(Boolean).join(' ')
 ---
 
 <img
@@ -41,6 +39,30 @@ const darkClass = [className, 'hidden dark:block'].filter(Boolean).join(' ')
   class={lightClass}
   onerror={onerror}
 />
+
+<style>
+  .preview-dark {
+    display: none;
+  }
+
+  :global(:root.dark) .preview-light {
+    display: none;
+  }
+
+  :global(:root.dark) .preview-dark {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not(.light):not(.dark)) .preview-light {
+      display: none;
+    }
+
+    :global(:root:not(.light):not(.dark)) .preview-dark {
+      display: block;
+    }
+  }
+</style>
 <img
   src={darkSrc}
   alt=""

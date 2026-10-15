@@ -21,9 +21,8 @@ export type DeskQuickStartComponent = {
 }
 
 /**
- * The physical Desk workflow is intentionally kept separate from CAD
- * parameter schemas: a Snap and a locator describe how a container is used,
- * not just how an individual model is generated.
+ * Catalog references for both Desk placement routes stay separate from CAD
+ * parameter schemas. The print plans below describe which parts each route uses.
  */
 export const deskQuickStartComponents = [
   { role: 'board', modelId: 'opengrid' },
@@ -80,4 +79,64 @@ export function deskQuickStartEntryFor(
   )
   if (!entry) throw new Error(`DESK_QUICK_START_ROLE_MISSING:${role}`)
   return entry
+}
+
+export type DeskPrintPlanEntry = {
+  readonly entry: DeskQuickStartEntry
+  readonly quantity: number
+  readonly settingsKey: string
+}
+
+export function deskStarterPrintPlan(
+  locale: Locale,
+): ReadonlyArray<DeskPrintPlanEntry> {
+  return [
+    {
+      entry: deskQuickStartEntryFor(locale, 'board'),
+      quantity: 1,
+      settingsKey: 'docs.starter.boardSettings',
+    },
+    {
+      entry: deskQuickStartEntryFor(locale, 'grid-box'),
+      quantity: 1,
+      settingsKey: 'docs.starter.boxSettings',
+    },
+  ]
+}
+
+export function deskFixingPrintPlan(
+  locale: Locale,
+  seatMode: 'integrated' | 'detachable-corner-seat',
+): ReadonlyArray<DeskPrintPlanEntry> {
+  const plan: DeskPrintPlanEntry[] = [
+    {
+      entry: deskQuickStartEntryFor(locale, 'board'),
+      quantity: 1,
+      settingsKey: 'docs.starter.boardSettings',
+    },
+    {
+      entry: deskQuickStartEntryFor(locale, 'snap'),
+      quantity: 4,
+      settingsKey: 'docs.fixing.snapSettings',
+    },
+  ]
+  if (seatMode === 'detachable-corner-seat') {
+    plan.push({
+      entry: deskQuickStartEntryFor(locale, 'locating-post'),
+      quantity: 4,
+      settingsKey: 'docs.fixing.seatSettings',
+    })
+    plan.push({
+      entry: deskQuickStartEntryFor(locale, 'grid-box'),
+      quantity: 1,
+      settingsKey: 'docs.fixing.separateBoxSettings',
+    })
+    return plan
+  }
+  plan.push({
+    entry: deskQuickStartEntryFor(locale, 'grid-box'),
+    quantity: 1,
+    settingsKey: 'docs.fixing.integratedBoxSettings',
+  })
+  return plan
 }

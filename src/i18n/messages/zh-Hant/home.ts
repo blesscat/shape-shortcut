@@ -30,10 +30,11 @@ export const messages = {
   'home.desk.eyebrow': '從一塊 Board 開始',
   'home.desk.title': '四步驟，組出你的桌面系統',
   'home.desk.description':
-    '先放好 Board，再在每個盒位準備 Snap，選一種定位方式，最後把盒子放上去——就這麼簡單。',
+    '需要固定盒子的位置時，先放好 Board，再加裝 Snap，選一種定位方式，最後安裝對應的盒子。',
   'home.desk.flowAlt':
-    'Desk System 流程：Board、Snap、選擇一種定位方式，最後放入 Grid Box 或 Round Box。',
-  'home.desk.flowCaption': 'BOARD → SNAP → 定位方式 → 盒子',
+    '桌面固定位置 3D 組裝短片：Board、四個 Snap，以及內建角座的 Grid Box。',
+  'home.desk.flowCaption':
+    '固定位置：BOARD → SNAP → 定位方式 → 盒子。短片示範內建角座版本。',
   'home.desk.step.board.title': '放好 Board',
   'home.desk.step.board.description':
     '列印完直接放桌面就好，不鎖螺絲也穩；想更牢再用板上的螺絲孔，隨你。',

@@ -1,70 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
-  <title id="title">Desk System 快速入門</title>
-  <desc id="desc">Desk System 組裝流程：從 Board 與 Snap 開始，選擇一種定位方式，再放入 Grid Box 或 Round Box。內建角座與獨立 Locating Post 二選一。</desc>
-  <defs>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.12"/>
-    </filter>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8a99f"/>
-    </marker>
-  </defs>
-  <rect width="1400" height="820" fill="#201a16"/>
-  <text x="70" y="68" fill="#f4ede7" font-family="Noto Sans TC, Inter, sans-serif" font-size="38" font-weight="750">Desk System 快速入門</text>
-  <text x="70" y="108" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="20">Board → Snap → 選擇一種定位方式 → Grid Box／Round Box</text>
-
-  <g filter="url(#shadow)">
-    <rect x="70" y="178" width="250" height="190" rx="22" fill="#172554" stroke="#3b82f6" stroke-width="3"/>
-    <rect x="390" y="178" width="250" height="190" rx="22" fill="#042f2e" stroke="#2dd4bf" stroke-width="3"/>
-    <rect x="665" y="300" width="270" height="175" rx="22" fill="#451a03" stroke="#fbbf24" stroke-width="3"/>
-    <rect x="965" y="300" width="270" height="175" rx="22" fill="#451a03" stroke="#fbbf24" stroke-width="3"/>
-    <rect x="1000" y="540" width="350" height="190" rx="22" fill="#2e1065" stroke="#8b5cf6" stroke-width="3"/>
-  </g>
-
-  <circle cx="108" cy="216" r="22" fill="#3b82f6"/>
-  <text x="108" y="224" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">1</text>
-  <text x="145" y="224" fill="#93c5fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="27" font-weight="700">Board（底版）</text>
-  <text x="105" y="275" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">列印並放在桌面上</text>
-  <text x="105" y="308" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">直接放置即可</text>
-  <text x="105" y="337" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">螺絲孔固定：非必要</text>
-
-  <circle cx="428" cy="216" r="22" fill="#2dd4bf"/>
-  <text x="428" y="224" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">2</text>
-  <text x="465" y="224" fill="#5eead4" font-family="Noto Sans TC, Inter, sans-serif" font-size="27" font-weight="700">Snap（咔咔）</text>
-  <text x="425" y="275" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="19">每個盒子位置一個</text>
-  <text x="425" y="308" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">準備對應的 Snap</text>
-  <text x="425" y="337" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">再放入容器</text>
-
-  <path d="M 320 273 H 380" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
-  <rect x="710" y="155" width="300" height="60" rx="30" fill="#451a03" stroke="#fbbf24" stroke-width="3"/>
-  <circle cx="746" cy="185" r="22" fill="#fbbf24"/>
-  <text x="746" y="193" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">3</text>
-  <text x="780" y="193" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">選擇一種定位方式</text>
-  <path d="M 640 273 H 700" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
-  <path d="M 860 215 V 275 M 860 275 H 750 M 860 275 H 970" fill="none" stroke="#fbbf24" stroke-width="4"/>
-  <circle cx="860" cy="275" r="7" fill="#fbbf24"/>
-
-  <text x="700" y="340" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">獨立 Locating Post</text>
-  <text x="700" y="367" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="17" font-weight="650">（獨立零件）</text>
-  <text x="700" y="402" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">使用一般角座孔</text>
-  <text x="700" y="430" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">列印並安裝定位柱</text>
-  <text x="700" y="458" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="15" font-weight="650">定位柱：額外 1 個零件</text>
-
-  <text x="1000" y="342" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">內建角座</text>
-  <text x="1000" y="382" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">選擇盒子的內建角座</text>
-  <text x="1000" y="413" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">不需要額外 Locating Post</text>
-  <text x="1000" y="447" fill="#fcd34d" font-family="Noto Sans TC, Inter, sans-serif" font-size="16" font-weight="650">定位座：盒子的一部分</text>
-
-  <path d="M 800 475 V 505 H 1180 V 530" fill="none" stroke="#b8a99f" stroke-width="4" marker-end="url(#arrow)"/>
-  <path d="M 1100 475 V 505" fill="none" stroke="#b8a99f" stroke-width="4"/>
-  <circle cx="1040" cy="578" r="22" fill="#8b5cf6"/>
-  <text x="1040" y="586" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="21" font-weight="700">4</text>
-  <text x="1080" y="586" fill="#c4b5fd" font-family="Noto Sans TC, Inter, sans-serif" font-size="20" font-weight="700">Grid Box／Round Box</text>
-  <text x="1035" y="635" fill="#d9cec5" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">列印後放入已定位的格位</text>
-  <text x="1035" y="670" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">第一個範例使用 Grid Box</text>
-  <text x="1035" y="700" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="16">Round Box 使用相同流程</text>
-
-  <rect x="70" y="650" width="865" height="80" rx="18" fill="#1e1b4b" stroke="#4338ca" stroke-width="2"/>
-  <text x="103" y="688" fill="#a5b4fc" font-family="Noto Sans TC, Inter, sans-serif" font-size="18" font-weight="700">第一版 Quick Start 範圍</text>
-  <text x="103" y="716" fill="#b8a99f" font-family="Noto Sans TC, Inter, sans-serif" font-size="17">先說明系統流程；切片與列印設定留待後續。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="430" viewBox="0 0 600 430" role="img" aria-labelledby="title desc">
+  <title id="title">直接放置</title>
+  <desc id="desc">2×2 無角座堆疊方盒直接放在 2×2 底板上，不使用 Snap 或獨立角座。</desc>
+  <rect width="600" height="430" rx="12" fill="#201a16"/>
+  <polygon points="93.00000000000003,246.5 300,323 300,317.8 93.00000000000003,241.3" fill="#172554" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="507,246.5 300,323 300,317.8 507,241.3" fill="#172554" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,164.8 507,241.3 300,317.8 93.00000000000003,241.3" fill="#172554" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,173.3 380.5,203.05 300,232.8 219.5,203.05" fill="#201a16" stroke="#1e40af" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="403.5,211.55 484,241.3 403.5,271.05 323,241.3" fill="#201a16" stroke="#1e40af" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="196.5,211.55 277,241.3 196.5,271.05 116,241.3" fill="#201a16" stroke="#1e40af" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,249.8 380.5,279.55 300,309.3 219.5,279.55" fill="#201a16" stroke="#1e40af" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,169.8225 484,237.8225 484,185.8225 300,117.8225" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,169.8225 116,237.8225 116,185.8225 300,117.8225" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,169.8225 484,237.8225 300,305.8225 116,237.8225" fill="#201a16" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="94.38,244.3225 300,320.3125 300,261.8125 94.38,185.8225" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="505.62,244.3225 300,320.3125 300,261.8125 505.62,185.8225" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<path d="M 300 109.8325 L 505.62 185.8225 L 300 261.8125 L 94.38 185.8225 Z M 116 185.8225 L 300 253.8225 L 484 185.8225 L 300 117.8225 Z" fill="#2e1065" fill-rule="evenodd" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/>
+<text x="30" y="45" font-family="Noto Sans TC, Inter, sans-serif" font-size="24" font-weight="700" fill="#c4b5fd">方盒 · 2×2</text>
+<text x="350" y="385" font-family="Noto Sans TC, Inter, sans-serif" font-size="24" font-weight="700" fill="#93c5fd">底板 · 2×2</text>
+<path d="M 210 50 L 235 111 M 420 357 L 410 319" fill="none" stroke="#b8a99f" stroke-width="2"/>
 </svg>

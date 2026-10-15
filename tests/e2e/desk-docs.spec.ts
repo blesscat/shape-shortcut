@@ -30,6 +30,35 @@ const locales = [
 ] as const
 
 for (const locale of locales) {
+  test(`${locale.code} two-piece trial explains placement and Snap fixing`, async ({
+    page,
+  }) => {
+    await page.goto(`/${locale.code}/docs/`)
+    const trial = page.getByTestId('docs-first-print')
+    await expect(trial).toBeVisible()
+    await expect(trial).toContainText('2×2')
+    const rows = page.getByTestId('docs-starter-checklist').locator('tbody tr')
+    await expect(rows).toHaveCount(2)
+    await expect(rows.nth(0)).toContainText(locale.board)
+    await expect(rows.nth(1)).toContainText(locale.gridBox)
+    await expect(rows.nth(1)).toContainText(
+      locale.code === 'en' ? 'No seats' : '無角座',
+    )
+    const fixing = page.getByTestId('docs-snap-fixing')
+    await expect(fixing).toContainText(
+      locale.code === 'en' ? 'fix the box’s position' : '固定盒子的位置',
+    )
+    await expect(page.getByTestId('docs-fixing-integrated')).toContainText('4')
+    await expect(page.getByTestId('docs-fixing-separate')).toContainText('4')
+    const faq = page.getByTestId('docs-desk-faq')
+    await expect(faq.locator('details')).toHaveCount(4)
+    await faq.locator('summary').nth(2).click()
+    await expect(faq).toContainText(
+      locale.code === 'en' ? 'removes the floor' : '移除盒底',
+    )
+    await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
+  })
+
   test(`${locale.code} Desk quick start exposes the static workflow`, async ({
     page,
   }) => {
@@ -65,7 +94,7 @@ for (const locale of locales) {
     ).toHaveCount(0)
 
     const steps = page
-      .getByTestId('desk-quick-start')
+      .locator('[data-assembly-guide="snap-fixing"]')
       .locator('ol > li[data-step]')
     await expect(steps).toHaveCount(4)
     await expect(steps.nth(0)).toHaveAttribute('data-step', 'board')
@@ -73,56 +102,27 @@ for (const locale of locales) {
     await expect(steps.nth(2)).toHaveAttribute('data-step', 'locating')
     await expect(steps.nth(3)).toHaveAttribute('data-step', 'container')
 
-    await expect(
-      page.locator(`a[href="/${locale.code}/cad/opengrid?system=desk"]`),
-    ).toHaveCount(3)
-    await expect(
-      page.locator(`a[href="/${locale.code}/cad/opengrid-snap?system=desk"]`),
-    ).toHaveCount(3)
-    await expect(
-      page.locator(`a[href="/${locale.code}/cad/opengrid-pillar?system=desk"]`),
-    ).toHaveCount(3)
-    await expect(
-      page.locator(
-        `a[href="/${locale.code}/cad/opengrid-stackable-box?system=desk"]`,
-      ),
-    ).toHaveCount(3)
-    await expect(
-      page.locator(
-        `a[href="/${locale.code}/cad/opengrid-stackable-cylinder?system=desk"]`,
-      ),
-    ).toHaveCount(3)
-
-    await expect(
-      page.getByRole('link', { name: locale.board }).first(),
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: locale.snap }).first(),
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: locale.gridBox }).first(),
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: locale.roundBox }).first(),
-    ).toBeVisible()
-
-    const quickStartDiagrams = page.locator(
-      '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]',
-    )
-    await expect(quickStartDiagrams).toHaveCount(6)
-    await expect(
-      page.locator(
-        '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"]:not([src$="-dark.svg"])',
-      ),
-    ).toHaveCount(3)
-    const darkDiagrams = page.locator(
-      '[data-testid="desk-quick-start"] img[src^="/docs/desk-system/"][src$="-dark.svg"]',
-    )
-    await expect(darkDiagrams).toHaveCount(3)
-    for (const diagram of await darkDiagrams.all()) {
-      await expect(diagram).toHaveAttribute('alt', '')
-      await expect(diagram).toHaveAttribute('aria-hidden', 'true')
+    for (const model of [
+      'opengrid',
+      'opengrid-snap',
+      'opengrid-pillar',
+      'opengrid-stackable-box',
+      'opengrid-organizer-box',
+      'opengrid-stackable-cylinder',
+    ]) {
+      const links = page.locator(
+        `a[href="/${locale.code}/cad/${model}?system=desk"]`,
+      )
+      expect(await links.count()).toBeGreaterThan(0)
     }
+
+    await expect(
+      page.locator('[data-testid="desk-quick-start"] video'),
+    ).toHaveCount(0)
+    await expect(page.locator('[data-assembly-guide]')).toHaveCount(3)
+    await expect(
+      page.locator('[data-assembly-guide] [role="img"]'),
+    ).toHaveCount(3)
     await expect(
       page.locator(
         '[data-testid="docs-wall-system"] img[src$=".webp"]:not([src$="-dark.webp"])',
@@ -131,36 +131,121 @@ for (const locale of locales) {
     await expect(
       page.locator('[data-testid="docs-wall-system"] img[src$="-dark.webp"]'),
     ).toHaveCount(6)
-    const diagramAltPatterns = [
-      ['desk-system-flow', /Board|流程圖/],
-      ['desk-system-board-snap', /Board|俯視/],
-      ['desk-system-locating-options', /locking corner seat|鎖定角座|比較圖/],
+    const diagramLabelPatterns = [
+      ['direct-placement', /Board/],
+      ['snap-fixing', /Board/],
+      ['locating-seats', /locking corner seat|鎖定角座/],
     ] as const
-    for (const [asset, altPattern] of diagramAltPatterns) {
+    for (const [scene, labelPattern] of diagramLabelPatterns) {
       await expect(
-        page.locator(`img[src$="${asset}.${locale.code}.svg"]`),
-      ).toHaveAttribute('alt', altPattern)
+        page.locator(`[data-assembly-guide="${scene}"] [role="img"]`),
+      ).toHaveAttribute('aria-label', labelPattern)
     }
   })
 }
 
-test('Desk quick start remains understandable when SVG assets are unavailable', async ({
+test('Desk quick start remains understandable when assembly media is unavailable', async ({
   page,
 }) => {
-  await page.route('**/docs/desk-system/*.svg', (route) => route.abort())
+  await page.route('**/docs/desk-assembly/**', (route) => route.abort())
   await page.goto('/en/docs/')
 
   await expect(
     page.getByRole('heading', { name: 'How Desk System works', exact: true }),
   ).toBeVisible()
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'Placement is enough; screws are optional.',
+    'Screw fastening is optional.',
   )
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'you print nothing extra',
+    'No Snap or separately printed seats are needed.',
   )
   await expect(page.getByTestId('desk-quick-start')).toContainText(
-    'Start with a Grid Box',
+    'First print: a 2×2 Board and Grid Box',
   )
   await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
 })
+
+test('Desk illustrations respect manual theme changes over system preference', async ({
+  page,
+}) => {
+  await page.route('**/docs/desk-scroll-assembly/**', (route) => route.abort())
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/en/docs/')
+  const light = page.locator(
+    '[data-testid="desk-quick-start"] img[src*="/docs/desk-assembly/"][src$="light.webp"]:visible',
+  )
+  const dark = page.locator(
+    '[data-testid="desk-quick-start"] img[src*="/docs/desk-assembly/"][src$="dark.webp"]:visible',
+  )
+  await expect(dark).toHaveCount(4)
+  await expect(light).toHaveCount(0)
+  await page.locator('[data-theme-toggle]').click()
+  await expect(light).toHaveCount(4)
+  await expect(dark).toHaveCount(0)
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.locator('[data-theme-toggle]').click()
+  await expect(dark).toHaveCount(4)
+  await expect(light).toHaveCount(0)
+  await page.reload()
+  await expect(dark).toHaveCount(4)
+})
+
+for (const { code, colorScheme } of [
+  { code: 'zh-Hant', colorScheme: 'light' },
+  { code: 'zh-Hant', colorScheme: 'dark' },
+  { code: 'en', colorScheme: 'light' },
+  { code: 'en', colorScheme: 'dark' },
+] as const) {
+  test(`${code} ${colorScheme} mobile trial and native questions work without JavaScript`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      colorScheme,
+      viewport: { width: 390, height: 844 },
+    })
+    const page = await context.newPage()
+    try {
+      await page.goto(`/${code}/docs/`)
+      const trial = page.getByTestId('docs-first-print')
+      await expect(trial).toBeVisible()
+      await expect(
+        page.getByTestId('docs-starter-checklist').locator('tbody tr'),
+      ).toHaveCount(2)
+      const titleY = await page
+        .locator('#docs-first-print-title')
+        .evaluate((title) => title.getBoundingClientRect().top)
+      expect(titleY).toBeGreaterThanOrEqual(0)
+      expect(titleY).toBeLessThan(844)
+      const posters = page.locator(
+        '[data-testid="desk-quick-start"] img[src*="/docs/desk-assembly/"]:visible',
+      )
+      await expect(posters).toHaveCount(4)
+      for (const poster of await posters.all()) {
+        await expect(poster).toHaveAttribute(
+          'src',
+          new RegExp(`${colorScheme}\\.webp$`),
+        )
+      }
+      await expect(page.locator('[data-assembly-guide] canvas')).toHaveCount(0)
+      const questions = page.getByTestId('docs-desk-faq')
+      await questions.locator('summary').nth(0).click()
+      await expect(questions.locator('details').nth(0)).toHaveAttribute(
+        'open',
+        '',
+      )
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true)
+      const guide = page.locator('[data-assembly-guide="snap-fixing"]')
+      await guide.locator('[data-assembly-step="2"]').click()
+      await expect(
+        guide.locator('[data-assembly-instruction="2"]'),
+      ).toBeInViewport()
+    } finally {
+      await context.close()
+    }
+  })
+}

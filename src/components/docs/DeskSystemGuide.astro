@@ -1,0 +1,346 @@
+---
+import { Card } from '../starwind/card'
+import { Button } from '../starwind/button'
+import AssemblyGuide from './AssemblyGuide.astro'
+import ModelPreviewPicture from '../ModelPreviewPicture.astro'
+import DeskPrintChecklist from './DeskPrintChecklist.astro'
+import {
+  deskStarterPrintPlan,
+  deskFixingPrintPlan,
+  deskQuickStartEntryFor,
+} from '../../features/docs/desk-system-guide'
+import { translate, type Locale } from '../../i18n'
+
+interface Props {
+  locale: Locale
+}
+const { locale } = Astro.props
+const t = (key: string) => translate(locale, key)
+const starterPlan = deskStarterPrintPlan(locale)
+const integratedPlan = deskFixingPrintPlan(locale, 'integrated')
+const separatePlan = deskFixingPrintPlan(locale, 'detachable-corner-seat')
+const gridBox = deskQuickStartEntryFor(locale, 'grid-box')
+const organizerBox = deskQuickStartEntryFor(locale, 'organizer-box')
+const extensions = [organizerBox, deskQuickStartEntryFor(locale, 'round-box')]
+const steps = [
+  {
+    number: 1,
+    id: 'board',
+    title: 'docs.fixing.boardStep',
+    body: 'docs.fixing.boardBody',
+  },
+  {
+    number: 2,
+    id: 'snap',
+    title: 'docs.fixing.snapStep',
+    body: 'docs.fixing.snapBody',
+  },
+  {
+    number: 3,
+    id: 'locating',
+    title: 'docs.fixing.seatStep',
+    body: 'docs.fixing.seatBody',
+  },
+  {
+    number: 4,
+    id: 'container',
+    title: 'docs.fixing.boxStep',
+    body: 'docs.fixing.boxBody',
+  },
+]
+const questions = ['snap', 'integrated', 'none', 'reprint']
+const fixingSteps = steps.map((step) => {
+  let body = t(step.body)
+  if (step.id === 'locating') body += ` ${t('docs.assembly.integratedExample')}`
+  return { id: step.id, title: t(step.title), body }
+})
+const directSteps = ['align', 'place', 'lift'].map((id) => ({
+  id,
+  title: t(`docs.assembly.direct.${id}.title`),
+  body: t(`docs.assembly.direct.${id}.body`),
+}))
+const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
+  id,
+  title: t(`docs.assembly.locating.${id}.title`),
+  body: t(`docs.assembly.locating.${id}.body`),
+}))
+---
+
+<section
+  class="grid gap-8"
+  aria-labelledby="desk-quick-start-title"
+  data-testid="desk-quick-start"
+>
+  <header class="grid gap-3">
+    <h2
+      class="text-3xl font-semibold leading-tight"
+      id="desk-quick-start-title"
+    >
+      {t('docs.deskQuickStart.title')}
+    </h2>
+    <p class="m-0 max-w-3xl leading-relaxed">
+      {t('docs.deskQuickStart.intro')}
+    </p>
+  </header>
+
+  <Card
+    as="section"
+    class="grid gap-5 p-4 sm:p-6"
+    aria-labelledby="docs-first-print-title"
+    data-testid="docs-first-print"
+  >
+    <header class="grid gap-2">
+      <h3
+        id="docs-first-print-title"
+        class="text-2xl font-semibold leading-tight"
+      >
+        {t('docs.starter.title')}
+      </h3>
+      <p class="m-0 max-w-3xl leading-relaxed">{t('docs.starter.body')}</p>
+    </header>
+    <h4 class="m-0 text-lg font-semibold">{t('docs.starter.checklist')}</h4>
+    <DeskPrintChecklist
+      {locale}
+      plan={starterPlan}
+      testId="docs-starter-checklist"
+    />
+    <p class="m-0 text-sm leading-relaxed text-muted-foreground">
+      {t('docs.starter.confirm')}
+    </p>
+    <ol class="grid gap-3 sm:grid-cols-2">
+      <li class="flex items-start gap-3">
+        <span class="font-mono font-semibold text-primary">1</span><p
+          class="m-0 leading-relaxed"
+        >
+          {t('docs.starter.step.print')}
+        </p>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="font-mono font-semibold text-primary">2</span><p
+          class="m-0 leading-relaxed"
+        >
+          {t('docs.starter.step.place')}
+        </p>
+      </li>
+    </ol>
+  </Card>
+
+  <section
+    class="grid gap-4"
+    aria-labelledby="docs-assembly-comparison-title"
+    data-testid="docs-placement-comparison"
+  >
+    <h3 id="docs-assembly-comparison-title" class="text-2xl font-semibold">
+      {t('docs.fixing.compareTitle')}
+    </h3>
+    <p class="m-0 max-w-3xl leading-relaxed">{t('docs.fixing.compareBody')}</p>
+    <div class="grid gap-5">
+      <figure
+        class="m-0 grid content-start gap-3 rounded-card border border-border p-4"
+      >
+        <h4 class="m-0 text-lg font-semibold">{t('docs.direct.title')}</h4>
+        <AssemblyGuide
+          {locale}
+          scene="direct-placement"
+          steps={directSteps}
+          scroll
+          label={t('docs.deskQuickStart.visual.flow.alt')}
+        />
+        <figcaption class="grid gap-2">
+          <p class="m-0 leading-relaxed">{t('docs.direct.body')}</p>
+          <p class="m-0 text-sm text-muted-foreground">
+            {t('docs.deskQuickStart.visual.flow.caption')}
+          </p>
+        </figcaption>
+      </figure>
+      <figure
+        class="m-0 grid items-start gap-4 rounded-card border border-border p-4 sm:grid-cols-[10rem_minmax(0,1fr)]"
+      >
+        <ModelPreviewPicture
+          src="/docs/desk-assembly/snap-fixing.light.webp"
+          darkSrc="/docs/desk-assembly/snap-fixing.dark.webp"
+          width={960}
+          height={640}
+          class="mx-auto w-full max-w-48 rounded-img"
+          alt={t('docs.deskQuickStart.visual.placement.alt')}
+        />
+        <figcaption class="grid gap-2">
+          <h4 class="m-0 text-lg font-semibold">
+            {t('docs.fixing.compareLabel')}
+          </h4>
+          <p class="m-0 leading-relaxed">{t('docs.fixing.body')}</p>
+          <p class="m-0 text-sm text-muted-foreground">
+            {t('docs.deskQuickStart.visual.placement.caption')}
+          </p>
+          <a
+            class="text-sm font-semibold underline underline-offset-4"
+            href="#docs-snap-fixing-title">{t('docs.assembly.openGuide')}</a
+          >
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section
+    class="grid gap-3"
+    aria-labelledby="docs-direct-models-title"
+    data-testid="docs-direct-models"
+  >
+    <h3 id="docs-direct-models-title" class="text-xl font-semibold">
+      {t('docs.direct.modelsTitle')}
+    </h3>
+    <div class="grid gap-4 md:grid-cols-2">
+      <Card as="article" size="sm" class="grid gap-2 p-4">
+        <p class="m-0 leading-relaxed">{t('docs.direct.gridSettings')}</p>
+        <Button
+          as="a"
+          href={gridBox.href}
+          variant="outline"
+          size="sm"
+          class="min-h-11 justify-self-start no-underline"
+          >{t(gridBox.labelKey)}</Button
+        >
+      </Card>
+      <Card as="article" size="sm" class="grid gap-2 p-4">
+        <p class="m-0 leading-relaxed">{t('docs.direct.organizerSettings')}</p>
+        <Button
+          as="a"
+          href={organizerBox.href}
+          variant="outline"
+          size="sm"
+          class="min-h-11 justify-self-start no-underline"
+          >{t(organizerBox.labelKey)}</Button
+        >
+      </Card>
+    </div>
+  </section>
+
+  <section
+    class="grid gap-5"
+    aria-labelledby="docs-snap-fixing-title"
+    data-testid="docs-snap-fixing"
+  >
+    <header class="grid gap-3">
+      <h3 id="docs-snap-fixing-title" class="text-2xl font-semibold">
+        {t('docs.fixing.title')}
+      </h3>
+      <p class="m-0 max-w-3xl font-semibold leading-relaxed">
+        {t('docs.fixing.body')}
+      </p>
+    </header>
+    <h4 class="m-0 text-lg font-semibold">{t('docs.fixing.workflow')}</h4>
+    <p class="m-0 text-sm leading-relaxed text-muted-foreground">
+      {t('docs.assembly.intro')}
+    </p>
+    <AssemblyGuide
+      {locale}
+      scene="snap-fixing"
+      steps={fixingSteps}
+      scroll
+      label={t('docs.deskQuickStart.visual.placement.alt')}
+    />
+    <h4 class="m-0 text-lg font-semibold">{t('docs.fixing.checklists')}</h4>
+    <div class="grid items-start gap-4 lg:grid-cols-2">
+      <Card
+        as="details"
+        size="sm"
+        class="p-4"
+        data-testid="docs-fixing-integrated"
+      >
+        <summary class="min-h-11 cursor-pointer font-semibold leading-relaxed"
+          >{t('docs.fixing.integrated')}</summary
+        >
+        <div class="mt-4">
+          <DeskPrintChecklist {locale} plan={integratedPlan} />
+        </div>
+      </Card>
+      <Card
+        as="details"
+        size="sm"
+        class="p-4"
+        data-testid="docs-fixing-separate"
+      >
+        <summary class="min-h-11 cursor-pointer font-semibold leading-relaxed"
+          >{t('docs.fixing.separate')}</summary
+        >
+        <div class="mt-4">
+          <DeskPrintChecklist {locale} plan={separatePlan} />
+        </div>
+      </Card>
+    </div>
+    <figure class="m-0 grid gap-3">
+      <div class="w-full">
+        <AssemblyGuide
+          {locale}
+          scene="locating-seats"
+          steps={locatingSteps}
+          scroll
+          label={t('docs.deskQuickStart.visual.locating.alt')}
+        />
+      </div>
+      <figcaption class="text-sm text-muted-foreground">
+        {t('docs.deskQuickStart.visual.locating.caption')}
+      </figcaption>
+    </figure>
+    <p
+      class="m-0 rounded-card border border-border bg-muted p-4 text-sm leading-relaxed"
+    >
+      {t('docs.fixing.reprint')}
+    </p>
+  </section>
+
+  <section
+    class="grid gap-3"
+    aria-labelledby="docs-desk-faq-title"
+    data-testid="docs-desk-faq"
+  >
+    <h3 id="docs-desk-faq-title" class="text-2xl font-semibold">
+      {t('docs.faq.title')}
+    </h3>
+    {
+      questions.map((question) => (
+        <details class="rounded-card border border-border p-4">
+          <summary class="min-h-11 cursor-pointer font-semibold leading-relaxed">
+            {t(`docs.faq.${question}.question`)}
+          </summary>
+          <p class="mb-0 mt-3 max-w-3xl leading-relaxed">
+            {t(`docs.faq.${question}.answer`)}
+          </p>
+        </details>
+      ))
+    }
+  </section>
+
+  <section class="grid gap-4" aria-labelledby="docs-desk-extensions-title">
+    <h3 id="docs-desk-extensions-title" class="text-2xl font-semibold">
+      {t('docs.extensions.title')}
+    </h3>
+    <p class="m-0 max-w-3xl leading-relaxed">{t('docs.extensions.body')}</p>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {
+        extensions.map((entry) => (
+          <Card
+            as="a"
+            size="sm"
+            class="grid gap-2 p-4 no-underline"
+            href={entry.href}
+          >
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border object-cover"
+              src={entry.previewImage.src}
+              darkSrc={entry.previewImage.darkSrc}
+              width={640}
+              height={400}
+              loading="lazy"
+              alt={t(entry.previewAltKey)}
+            />
+            <span class="font-semibold">{t(entry.labelKey)}</span>
+            <span class="text-sm leading-relaxed text-muted-foreground">
+              {t(entry.descriptionKey)}
+            </span>
+          </Card>
+        ))
+      }
+    </div>
+  </section>
+</section>

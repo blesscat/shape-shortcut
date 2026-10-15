@@ -144,8 +144,9 @@ Additional diagonal relief at every bottom cell corner MUST clear only the
 board corner's lowest square section and MUST stop where the upper board
 chamfer begins. The relief MUST NOT continue through that chamfer. This
 intentionally leaves possible interference at the former fully seated board
-datum; it MUST NOT be described as free drop-in compatibility with Lite or
-Full boards. The continuous floor and box-to-box guide and bearing surfaces
+datum; it MUST NOT be described as free drop-in compatibility at that former
+fully seated datum on Lite or Full boards. Verified direct resting at a
+shallower contact position is a separate placement condition. The continuous floor and box-to-box guide and bearing surfaces
 MUST remain intact, preserving the existing box-to-box seated height and
 sliding clearance.
 
@@ -781,7 +782,9 @@ cell corner only through the lower square section of an OpenGrid board corner.
 The relief MUST terminate at the beginning of the board corner's upper
 chamfer, leaving the upper chamfer uncleared. At the previous fully seated
 board datum, the box MAY intersect the Lite or Full board and MUST NOT be
-claimed to drop in, sit flush, or lift vertically without interference. The
+claimed to drop in, sit flush, or lift vertically without interference at
+that former datum. This limitation MUST NOT be represented as evidence that
+all shallower direct-resting positions are impossible. The
 box-to-box stacking guide, continuous floor, model identity, and parameter
 defaults MUST remain valid. Because the relief is cut at every grid junction
 including the outer perimeter, it MAY fully supersede the R0.5 bottom-edge
@@ -819,6 +822,13 @@ instead of the superseded fillet.
   termination surfaces near the chamfer-start datum instead of fillet faces
 - **AND** the integrated seats MUST keep their 0.2 mm bottom chamfer
 - **AND** the box MUST NOT gain protruding positioning pegs
+
+#### Scenario: Current seat-free direct resting
+- **WHEN** a 2×2 stacking-bottom box without corner seats is aligned on a matching Lite or Full board without optional grid-point chamfers and placed at its current shallower contact position
+- **THEN** it MUST have a supported resting position without positive-volume interference beyond geometric measurement tolerance
+- **AND** its bottom MUST remain below the board's top plane
+- **AND** small downward motion MUST encounter the board and upward lifting MUST clear it
+- **AND** documentation MUST distinguish this position from the old deeply seated datum and from Snap-based fixing
 
 ### Requirement: Two-color top accent rim shell partitioning
 
@@ -893,4 +903,3 @@ assigned to `body` and `rim`.
 - **AND** when `topRimEnabled` is `false`, the model definition MUST report no
   3MF filename and the STL filename MUST remain unchanged from its current
   fingerprint
-

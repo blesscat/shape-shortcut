@@ -32,10 +32,11 @@ export const messages = {
   'home.desk.eyebrow': 'Start with one Board',
   'home.desk.title': 'Four steps to your own desk system',
   'home.desk.description':
-    'Lay the Board, add a Snap at each box spot, pick one locating style, then drop the box in — that is all there is to it.',
+    'To fix a box’s position, lay the Board, add Snap, pick one locating style, then install the matching box.',
   'home.desk.flowAlt':
-    'Desk System flow: Board, Snap, choose one locating method, then add a Grid Box or Round Box.',
-  'home.desk.flowCaption': 'BOARD → SNAP → LOCATING → BOX',
+    '3D Desk position fixing clip: a Board, four Snaps and an integrated-seat Grid Box.',
+  'home.desk.flowCaption':
+    'For position fixing: BOARD → SNAP → LOCATING → BOX. The clip shows the integrated-seat option.',
   'home.desk.step.board.title': 'Lay down the Board',
   'home.desk.step.board.description':
     'It just sits on your desk; screws are optional.',

@@ -6,7 +6,16 @@ import { card } from './variants'
 
 type Props = HTMLAttributes<'div'> &
   VariantProps<typeof card> & {
-    as?: 'div' | 'article' | 'section' | 'nav' | 'header' | 'li' | 'a' | 'p'
+    as?:
+      | 'div'
+      | 'article'
+      | 'section'
+      | 'nav'
+      | 'header'
+      | 'li'
+      | 'a'
+      | 'p'
+      | 'details'
     href?: string
   }
 

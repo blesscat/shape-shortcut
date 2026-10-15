@@ -358,9 +358,7 @@ test('home, model selection, and docs are static Astro pages', async ({
       .getByTestId('model-category-badge'),
   ).toHaveText('容器')
   await expect(deskZoneTools.locator('summary')).toContainText('工具與配件')
-  await expect(deskZoneTools.locator('summary')).toContainText(
-    '組裝小工具和定位柱、分隔牆這些配件收在這區，需要再展開。',
-  )
+  await expect(deskZoneTools.locator('summary')).toContainText('組裝小工具')
   await deskZoneTools.locator('summary').click()
   // Park the pointer away from the cards so hover lifts cannot leak into the
   // geometry assertions below.
@@ -519,7 +517,7 @@ test('home, model selection, and docs are static Astro pages', async ({
 
   await page.goto('/docs/')
   await expect(
-    page.getByRole('heading', { name: '第一次玩 Desk System？看這頁就夠' }),
+    page.getByRole('heading', { name: '第一次列印桌面收納', exact: true }),
   ).toBeVisible()
   await expect(page.getByTestId('docs-wall-system')).toContainText(
     'Wall System 快速看',
@@ -683,6 +681,40 @@ test('primary navigation switches states without animation under reduced motion'
   await page.evaluate(() => window.scrollTo(0, 400))
   await expect(navigation).toHaveAttribute('data-compact', '')
 })
+
+for (const code of ['zh-Hant', 'en']) {
+  test(`${code} homepage reuses the fixing movie and its static frame`, async ({
+    page,
+  }) => {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      await page.goto(`/${code}/`)
+      const section = page.getByTestId('home-desk-system')
+      const video = section.locator(
+        `[data-assembly-video="snap-fixing"] video[data-appearance="${colorScheme}"]`,
+      )
+      await expect(video).toBeVisible()
+      await expect(video).toHaveAttribute(
+        'poster',
+        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
+      )
+      await expect(video).toHaveAttribute('preload', 'none')
+      await expect(section.locator('figcaption')).toContainText(
+        /position fixing|固定位置/,
+      )
+      await expect(video).toHaveAttribute(
+        'aria-label',
+        /position fixing|固定位置/,
+      )
+      await expect(
+        section.locator('[data-assembly-video] a:visible'),
+      ).toHaveAttribute(
+        'href',
+        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
+      )
+    }
+  })
+}
 
 test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   page,
