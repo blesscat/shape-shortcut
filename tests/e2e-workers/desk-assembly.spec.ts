@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 for (const locale of ['en', 'zh-Hant']) {
-  test(`${locale} hosted Docs loads prebuilt geometry and follows step navigation`, async ({
+  test(`${locale} hosted Docs scrolls every actual-model demonstration`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
@@ -10,22 +10,42 @@ for (const locale of ['en', 'zh-Hant']) {
       if (/\.wasm|cad\.worker|\.(mp4|webm)(?:\?|$)/.test(request.url()))
         cadRequests.push(request.url())
     })
-    await page.goto(`/${locale}/docs/`)
-    const guide = page.locator('[data-assembly-guide="snap-fixing"]')
-    await guide.scrollIntoViewIfNeeded()
-    await expect(guide).toHaveAttribute('data-assembly-state', 'ready')
-    await guide.locator('[data-assembly-step="3"]').click()
-    await expect
-      .poll(() =>
-        guide
-          .locator('progress')
-          .evaluate((element: HTMLProgressElement) => element.value),
+    for (const { scene, first } of [
+      { scene: 'direct-placement', first: 'align' },
+      { scene: 'snap-fixing', first: 'board' },
+      { scene: 'locating-seats', first: 'align' },
+    ]) {
+      await page.goto(`/${locale}/docs/#assembly-${scene}-${first}`)
+      const guide = page.locator(`[data-assembly-guide="${scene}"]`)
+      await expect(guide).toHaveAttribute('data-assembly-state', 'ready')
+      const progress = guide.locator('progress')
+      await expect
+        .poll(() =>
+          progress.evaluate((element: HTMLProgressElement) => element.value),
+        )
+        .toBeCloseTo(0, 2)
+      const canvas = (await guide.locator('canvas').boundingBox())!
+      await page.mouse.move(
+        canvas.x + canvas.width / 2,
+        canvas.y + canvas.height / 2,
       )
-      .toBeCloseTo(1, 2)
-    await expect(
-      guide.locator('[data-assembly-instruction="3"]'),
-    ).toBeInViewport()
-    await expect(guide.locator('canvas')).toBeVisible()
+      await page.mouse.wheel(0, 240)
+      await expect
+        .poll(() =>
+          progress.evaluate((element: HTMLProgressElement) => element.value),
+        )
+        .toBeGreaterThan(0.1)
+      await guide.locator('[data-assembly-step]').last().click()
+      await expect
+        .poll(() =>
+          progress.evaluate((element: HTMLProgressElement) => element.value),
+        )
+        .toBeCloseTo(1, 2)
+      await expect(
+        guide.locator('[data-assembly-instruction]').last(),
+      ).toBeInViewport()
+      await expect(guide.locator('canvas')).toBeVisible()
+    }
     expect(cadRequests).toEqual([])
   })
 }

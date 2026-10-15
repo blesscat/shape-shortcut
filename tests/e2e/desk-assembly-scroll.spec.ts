@@ -27,6 +27,92 @@ async function expectSelectedStep(guide: Locator, index: number) {
 }
 
 for (const locale of ['en', 'zh-Hant']) {
+  test(`${locale} the first native scroll after enhancement is preserved`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        const guide = document.querySelector(
+          '[data-assembly-guide="direct-placement"]',
+        )
+        if (guide?.getAttribute('data-assembly-state') !== 'ready') return
+        observer.disconnect()
+        window.scrollBy({ top: 240, behavior: 'instant' })
+      })
+      observer.observe(document, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-assembly-state'],
+      })
+    })
+    await page.goto(`/${locale}/docs/#assembly-direct-placement-align`)
+    const guide = page.locator('[data-assembly-guide="direct-placement"]')
+    await expect(guide).toHaveAttribute('data-assembly-state', 'ready')
+    await expect
+      .poll(() =>
+        guide
+          .locator('progress')
+          .evaluate((el: HTMLProgressElement) => el.value),
+      )
+      .toBeGreaterThan(0.1)
+  })
+
+  for (const scene of ['direct-placement', 'locating-seats']) {
+    for (const viewport of [
+      { width: 1280, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      test(`${locale} ${scene} at ${viewport.width}px follows native scrolling without step clicks`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport)
+        await page.goto(`/${locale}/docs/#assembly-${scene}-align`)
+        const guide = page.locator(`[data-assembly-guide="${scene}"]`)
+        await expect(guide).toHaveAttribute('data-assembly-state', 'ready')
+        await page.evaluate(() => document.fonts.ready)
+        const progress = guide.locator('progress')
+        await expect
+          .poll(() => progress.evaluate((el: HTMLProgressElement) => el.value))
+          .toBeCloseTo(0, 2)
+        const canvas = guide.locator('canvas')
+        const original = await canvas.screenshot()
+        const distance = Math.round(viewport.height * 0.55)
+        await canvas.hover()
+        await page.mouse.wheel(0, distance)
+        await expect
+          .poll(() => progress.evaluate((el: HTMLProgressElement) => el.value))
+          .toBeGreaterThan(0.2)
+        await expect
+          .poll(async () => (await canvas.screenshot()).equals(original))
+          .toBe(false)
+        const advanced = await canvas.screenshot()
+        const paused = await progress.evaluate(
+          (el: HTMLProgressElement) => el.value,
+        )
+        await page.waitForTimeout(150)
+        expect(
+          await progress.evaluate((el: HTMLProgressElement) => el.value),
+        ).toBe(paused)
+        const stage = (await guide.locator('.assembly-stage').boundingBox())!
+        expect(stage.y).toBeGreaterThan(0)
+        expect(stage.y + stage.height).toBeLessThan(viewport.height)
+        await page.mouse.wheel(0, -distance)
+        await expect
+          .poll(() => progress.evaluate((el: HTMLProgressElement) => el.value))
+          .toBeCloseTo(0, 2)
+        await expect
+          .poll(async () => (await canvas.screenshot()).equals(advanced))
+          .toBe(false)
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true)
+      })
+    }
+  }
+
   test(`${locale} a step selected before geometry loads remains selected after enhancement`, async ({
     page,
   }) => {
@@ -240,7 +326,7 @@ test('view controls and manual appearance changes preserve assembly progress', a
     .toBeCloseTo(1 / 3, 2)
 })
 
-test('reduced motion and compact diagrams use explicit stable steps', async ({
+test('reduced motion keeps every scroll guide readable with stable step poses', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -251,7 +337,14 @@ test('reduced motion and compact diagrams use explicit stable steps', async ({
   await expect(direct).toHaveAttribute('data-assembly-state', 'ready')
   await direct.locator('[data-assembly-step="1"]').click()
   await expect(direct).toContainText('Place the box directly on the Board.')
-  await expect(direct.locator('[data-assembly-instruction="0"]')).toBeHidden()
+  await expect(direct.locator('[data-assembly-instruction="0"]')).toBeVisible()
+  await expect
+    .poll(() =>
+      direct
+        .locator('progress')
+        .evaluate((el: HTMLProgressElement) => el.value),
+    )
+    .toBeCloseTo(0.5, 2)
   await direct.locator('[data-assembly-step="2"]').click()
   await expect(direct.locator('[data-assembly-instruction="2"]')).toBeVisible()
   const locating = page.locator('[data-assembly-guide="locating-seats"]')

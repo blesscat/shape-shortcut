@@ -134,7 +134,7 @@ const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
       {t('docs.fixing.compareTitle')}
     </h3>
     <p class="m-0 max-w-3xl leading-relaxed">{t('docs.fixing.compareBody')}</p>
-    <div class="grid gap-5 lg:grid-cols-2">
+    <div class="grid gap-5">
       <figure
         class="m-0 grid content-start gap-3 rounded-card border border-border p-4"
       >
@@ -143,6 +143,7 @@ const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
           {locale}
           scene="direct-placement"
           steps={directSteps}
+          scroll
           label={t('docs.deskQuickStart.visual.flow.alt')}
         />
         <figcaption class="grid gap-2">
@@ -153,29 +154,29 @@ const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
         </figcaption>
       </figure>
       <figure
-        class="m-0 grid content-start gap-3 rounded-card border border-border p-4"
+        class="m-0 grid items-start gap-4 rounded-card border border-border p-4 sm:grid-cols-[10rem_minmax(0,1fr)]"
       >
-        <h4 class="m-0 text-lg font-semibold">
-          {t('docs.fixing.compareLabel')}
-        </h4>
         <ModelPreviewPicture
           src="/docs/desk-assembly/snap-fixing.light.webp"
           darkSrc="/docs/desk-assembly/snap-fixing.dark.webp"
           width={960}
           height={640}
-          class="w-full rounded-img"
+          class="mx-auto w-full max-w-48 rounded-img"
           alt={t('docs.deskQuickStart.visual.placement.alt')}
         />
         <figcaption class="grid gap-2">
+          <h4 class="m-0 text-lg font-semibold">
+            {t('docs.fixing.compareLabel')}
+          </h4>
           <p class="m-0 leading-relaxed">{t('docs.fixing.body')}</p>
           <p class="m-0 text-sm text-muted-foreground">
             {t('docs.deskQuickStart.visual.placement.caption')}
           </p>
+          <a
+            class="text-sm font-semibold underline underline-offset-4"
+            href="#docs-snap-fixing-title">{t('docs.assembly.openGuide')}</a
+          >
         </figcaption>
-        <a
-          class="text-sm font-semibold underline underline-offset-4"
-          href="#docs-snap-fixing-title">{t('docs.assembly.openGuide')}</a
-        >
       </figure>
     </div>
   </section>
@@ -268,11 +269,12 @@ const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
       </Card>
     </div>
     <figure class="m-0 grid gap-3">
-      <div class="mx-auto w-full max-w-3xl">
+      <div class="w-full">
         <AssemblyGuide
           {locale}
           scene="locating-seats"
           steps={locatingSteps}
+          scroll
           label={t('docs.deskQuickStart.visual.locating.alt')}
         />
       </div>

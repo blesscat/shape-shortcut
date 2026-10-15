@@ -21,17 +21,27 @@ The localized Docs fixing tutorial MUST connect its four ordered Board, Snap, lo
 
 ### Requirement: Manual inspection and step navigation remain predictable
 
-The tutorial MUST offer named step links that move to the corresponding explanation and synchronize the assembly. Model rotation, bounded zoom and a reset-view control MUST be available after successful enhancement. Rotation MUST NOT change assembly progress. The direct-placement and locating-seat detail MUST provide compact named step controls rather than requiring movie playback.
+The documentation MUST offer named step links that move to the corresponding explanation and synchronize the assembly. Model rotation, bounded zoom and a reset-view control MUST be available after successful enhancement. Rotation MUST NOT change assembly progress. Direct placement and the locating-seat comparison MUST follow reading position using the same interaction as the fixing tutorial, with stable poses when scrolling stops and reversible progress when reading backward. Each demonstration MUST keep its model visible with the current explanation inside its own section, without requiring a step click. The existing four-step fixing tutorial MUST retain its assembly order and interaction.
 
 #### Scenario: A reader jumps to a step
-- **WHEN** a reader activates a fixing step link using pointer or keyboard
-- **THEN** its explanation MUST remain visible below the header and model, and the assembly MUST match that step
+- **WHEN** a reader activates an assembly step link using pointer or keyboard
+- **THEN** its explanation MUST remain visible below the site header, beside the model on wide screens or below it on narrow screens, and the assembly MUST match that step
 - **AND** subsequent scrolling MUST continue controlling progress from that position
 
 #### Scenario: A reader inspects a model
 - **WHEN** a reader rotates, zooms or resets the view
 - **THEN** the assembly MUST retain its reading progress
 - **AND** the canvas MUST preserve vertical page scrolling on touch devices and mouse-wheel scrolling
+
+#### Scenario: A reader scrolls through direct placement
+- **WHEN** a reader scrolls through alignment, placement and lifting of the seat-free stacking box
+- **THEN** the actual model MUST follow that reading progress without clicking a step
+- **AND** stopping or scrolling backward MUST hold or reverse the same assembly
+
+#### Scenario: A reader scrolls through the locating-seat comparison
+- **WHEN** a reader scrolls through alignment, insertion and clockwise locking
+- **THEN** the actual detachable seats MUST follow that reading progress while integrated seats remain visible for comparison
+- **AND** the model and current explanation MUST remain usable together on desktop and phone layouts
 
 ### Requirement: Enhanced assembly remains accessible and resilient
 

@@ -108,6 +108,13 @@ export async function enhanceAssembly(root: HTMLElement): Promise<() => void> {
     readPosition()
   }
 
+  function restoreFragment() {
+    if (!fragmentPending) return
+    fragmentPending = false
+    const index = links.findIndex((link) => link.hash === location.hash)
+    if (index >= 0) scrollToStep(index)
+  }
+
   function refresh() {
     if (disposed || refreshFrame !== undefined) return
     refreshFrame = requestAnimationFrame(() => {
@@ -115,11 +122,7 @@ export async function enhanceAssembly(root: HTMLElement): Promise<() => void> {
       if (disposed) return
       measure()
       trigger?.refresh()
-      if (fragmentPending) {
-        fragmentPending = false
-        const index = links.findIndex((link) => link.hash === location.hash)
-        if (index >= 0) scrollToStep(index)
-      }
+      restoreFragment()
       readPosition()
     })
   }
@@ -219,6 +222,7 @@ export async function enhanceAssembly(root: HTMLElement): Promise<() => void> {
         onRefreshInit: measure,
         onRefresh: readPosition,
       })
+      restoreFragment()
       layout = new ResizeObserver(refresh)
       layout.observe(document.body)
       layout.observe(stage)
