@@ -26,7 +26,9 @@
     "verify:desk-diagrams": "node scripts/desk-diagrams/generate.mjs --check",
     "generate:desk-assembly": "node scripts/desk-assembly/capture.mjs",
     "verify:desk-assembly": "node scripts/desk-assembly/verify.mjs",
-    "test:e2e:firefox": "xvfb-run -a env PW_HEADFUL=1 playwright test --project=firefox --headed"
+    "test:e2e:firefox": "xvfb-run -a env PW_HEADFUL=1 playwright test --project=firefox --headed",
+    "generate:desk-scroll-assembly": "node scripts/desk-scroll-assembly/generate.mjs",
+    "verify:desk-scroll-assembly": "node scripts/desk-scroll-assembly/verify.mjs"
   },
   "engines": {
     "node": ">=22.22.2"
@@ -42,6 +44,7 @@
     "@threlte/core": "8.5.16",
     "@threlte/extras": "9.21.0",
     "astro": "^7.1.6",
+    "gsap": "^3.15.0",
     "replicad": "^0.23.1",
     "replicad-opencascadejs": "file:vendor/replicad-opencascadejs",
     "svelte": "5.56.8",

@@ -1,0 +1,387 @@
+---
+import ModelPreviewPicture from '../ModelPreviewPicture.astro'
+import { translate, type Locale } from '../../i18n'
+import type { AssemblyScene } from '../../features/docs/assembly/types'
+
+export interface AssemblyStep {
+  id: string
+  title: string
+  body: string
+}
+
+interface Props {
+  scene: AssemblyScene
+  locale: Locale
+  label: string
+  steps: AssemblyStep[]
+  scroll?: boolean
+}
+
+const { scene, locale, label, steps, scroll = false } = Astro.props
+const t = (key: string) => translate(locale, key)
+const prefix = `assembly-${scene}`
+const poster = `/docs/desk-assembly/${scene}`
+---
+
+<div
+  class:list={['assembly-guide', { 'assembly-story': scroll }]}
+  data-assembly-guide={scene}
+  data-assembly-mode={scroll ? 'scroll' : 'steps'}
+  data-assembly-state="poster"
+>
+  <div class="assembly-layout">
+    <div class="assembly-stage">
+      <div class="assembly-viewport" role="img" aria-label={label}>
+        <div class="assembly-poster" data-assembly-poster>
+          <ModelPreviewPicture
+            src={`${poster}.light.webp`}
+            darkSrc={`${poster}.dark.webp`}
+            width={960}
+            height={640}
+            alt={label}
+            class="assembly-poster-image"
+          />
+        </div>
+        <div class="assembly-canvas" data-assembly-canvas></div>
+      </div>
+      <div class="assembly-tools" data-assembly-tools hidden>
+        <span class="assembly-drag-hint">{t('docs.assembly.drag')}</span>
+        <button
+          type="button"
+          data-view-action="left"
+          aria-label={t('docs.assembly.rotateLeft')}
+          title={t('docs.assembly.rotateLeft')}>↶</button
+        >
+        <button
+          type="button"
+          data-view-action="right"
+          aria-label={t('docs.assembly.rotateRight')}
+          title={t('docs.assembly.rotateRight')}>↷</button
+        >
+        <button
+          type="button"
+          data-view-action="in"
+          aria-label={t('docs.assembly.zoomIn')}
+          title={t('docs.assembly.zoomIn')}>＋</button
+        >
+        <button
+          type="button"
+          data-view-action="out"
+          aria-label={t('docs.assembly.zoomOut')}
+          title={t('docs.assembly.zoomOut')}>−</button
+        >
+        <button type="button" data-view-action="reset"
+          >{t('docs.assembly.reset')}</button
+        >
+      </div>
+      <nav
+        class="assembly-navigation"
+        aria-label={t('docs.assembly.navigation')}
+      >
+        {
+          steps.map((step, index) => (
+            <a
+              href={`#${prefix}-${step.id}`}
+              data-assembly-step={index}
+              aria-current={index === 0 ? 'step' : undefined}
+            >
+              <span class="assembly-step-number">{index + 1}</span>
+              <span>{step.title}</span>
+            </a>
+          ))
+        }
+      </nav>
+      <div class="assembly-status">
+        <span
+          >{
+            scroll ? t('docs.assembly.scrollHint') : t('docs.assembly.stepHint')
+          }</span
+        >
+        <span data-assembly-current aria-live="polite" aria-atomic="true"
+          >1 / {steps.length}</span
+        >
+      </div>
+      <progress
+        data-assembly-progress
+        value="0"
+        max="1"
+        aria-label={t('docs.assembly.progress')}></progress>
+      <p class="assembly-failure" data-assembly-failure hidden>
+        {t('docs.assembly.fallback')}
+      </p>
+    </div>
+    <ol class="assembly-instructions" data-assembly-instructions>
+      {
+        steps.map((step, index) => (
+          <li
+            id={`${prefix}-${step.id}`}
+            data-step={step.id}
+            data-assembly-instruction={index}
+            tabindex="-1"
+          >
+            <h5>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              {step.title}
+            </h5>
+            <p>{step.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</div>
+
+<script>
+  import { observeAssemblyGuides } from '../../features/docs/assembly/init'
+  observeAssemblyGuides()
+</script>
+
+<style>
+  .assembly-guide {
+    min-width: 0;
+  }
+  .assembly-layout {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .assembly-stage {
+    min-width: 0;
+    align-self: start;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-card);
+  }
+  .assembly-viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 0.65rem;
+    background: #f3f2eb;
+  }
+  .assembly-poster,
+  .assembly-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .assembly-poster :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .assembly-canvas {
+    visibility: hidden;
+  }
+  .assembly-canvas :global(canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  [data-assembly-state='ready'] .assembly-canvas {
+    visibility: visible;
+  }
+  [data-assembly-state='ready'] .assembly-poster {
+    visibility: hidden;
+  }
+  .assembly-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    padding-top: 0.35rem;
+  }
+  .assembly-tools button {
+    display: grid;
+    place-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .assembly-tools button:hover {
+    background: var(--color-muted);
+  }
+  .assembly-drag-hint {
+    margin-right: auto;
+    color: var(--color-muted-foreground);
+    font-size: 0.75rem;
+  }
+  .assembly-navigation {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+  }
+  .assembly-navigation a {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.3rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  .assembly-navigation a[aria-current='step'] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+  .assembly-step-number {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+  .assembly-status {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.65rem;
+    color: var(--color-muted-foreground);
+    font-size: 0.75rem;
+  }
+  progress {
+    display: block;
+    width: 100%;
+    height: 0.25rem;
+    margin-top: 0.5rem;
+    accent-color: var(--color-primary);
+    border: 0;
+    appearance: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: var(--color-muted);
+  }
+  progress::-webkit-progress-bar {
+    background: var(--color-muted);
+  }
+  progress::-webkit-progress-value {
+    background: var(--color-primary);
+  }
+  progress::-moz-progress-bar {
+    background: var(--color-primary);
+  }
+  .assembly-instructions {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .assembly-instructions li {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+  }
+  .assembly-instructions h5 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin: 0 0 0.65rem;
+    font-weight: 600;
+  }
+  .assembly-instructions h5 span {
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+  }
+  .assembly-instructions p {
+    margin: 0;
+    line-height: 1.8;
+  }
+  .assembly-failure {
+    margin: 0.65rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  [data-assembly-mode='steps'][data-assembly-state='ready']
+    .assembly-instructions
+    li:not([data-current]) {
+    display: none;
+  }
+  [data-assembly-mode='steps'][data-assembly-state='ready']
+    .assembly-instructions
+    li {
+    border: 0;
+    padding: 0;
+  }
+  .assembly-story[data-enhanced] .assembly-stage {
+    position: sticky;
+    top: 5.75rem;
+    z-index: 2;
+  }
+  .assembly-story[data-enhanced] .assembly-viewport {
+    height: clamp(8rem, 20svh, 12rem);
+    aspect-ratio: auto;
+  }
+  .assembly-story[data-enhanced] .assembly-instructions li {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: max(14rem, 38svh);
+  }
+  .assembly-story[data-enhanced] .assembly-instructions li[data-current] {
+    border-color: var(--color-primary);
+    background: var(--color-card);
+  }
+  .assembly-story[data-enhanced] .assembly-drag-hint {
+    display: none;
+  }
+  .assembly-story[data-enhanced] .assembly-tools {
+    justify-content: center;
+  }
+  @media (min-width: 960px) {
+    .assembly-story .assembly-layout {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 2rem;
+    }
+    .assembly-story[data-enhanced] .assembly-viewport {
+      height: clamp(18rem, 42svh, 30rem);
+    }
+    .assembly-story[data-enhanced] .assembly-instructions li {
+      min-height: clamp(15rem, 42svh, 23rem);
+      padding: 1.75rem;
+    }
+    .assembly-story[data-enhanced] .assembly-drag-hint {
+      display: inline;
+    }
+    .assembly-story[data-enhanced] .assembly-tools {
+      justify-content: flex-end;
+    }
+  }
+  @media (max-height: 600px) and (max-width: 959px) {
+    .assembly-story[data-enhanced] .assembly-stage {
+      top: 4.5rem;
+      padding: 0.5rem;
+    }
+    .assembly-story[data-enhanced] .assembly-viewport {
+      height: 5.5rem;
+    }
+    .assembly-story[data-enhanced] .assembly-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  @media (max-height: 600px) and (min-width: 560px) and (max-width: 959px) {
+    .assembly-story[data-enhanced] .assembly-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 1rem;
+    }
+    .assembly-story[data-enhanced] .assembly-viewport {
+      height: clamp(5rem, calc(100svh - 17rem), 10rem);
+    }
+  }
+</style>

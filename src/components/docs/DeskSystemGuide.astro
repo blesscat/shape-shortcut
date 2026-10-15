@@ -1,7 +1,7 @@
 ---
 import { Card } from '../starwind/card'
 import { Button } from '../starwind/button'
-import AssemblyVideo from './AssemblyVideo.astro'
+import AssemblyGuide from './AssemblyGuide.astro'
 import ModelPreviewPicture from '../ModelPreviewPicture.astro'
 import DeskPrintChecklist from './DeskPrintChecklist.astro'
 import {
@@ -49,6 +49,21 @@ const steps = [
   },
 ]
 const questions = ['snap', 'integrated', 'none', 'reprint']
+const fixingSteps = steps.map((step) => {
+  let body = t(step.body)
+  if (step.id === 'locating') body += ` ${t('docs.assembly.integratedExample')}`
+  return { id: step.id, title: t(step.title), body }
+})
+const directSteps = ['align', 'place', 'lift'].map((id) => ({
+  id,
+  title: t(`docs.assembly.direct.${id}.title`),
+  body: t(`docs.assembly.direct.${id}.body`),
+}))
+const locatingSteps = ['align', 'insert', 'lock'].map((id) => ({
+  id,
+  title: t(`docs.assembly.locating.${id}.title`),
+  body: t(`docs.assembly.locating.${id}.body`),
+}))
 ---
 
 <section
@@ -124,9 +139,10 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
         class="m-0 grid content-start gap-3 rounded-card border border-border p-4"
       >
         <h4 class="m-0 text-lg font-semibold">{t('docs.direct.title')}</h4>
-        <AssemblyVideo
+        <AssemblyGuide
           {locale}
           scene="direct-placement"
+          steps={directSteps}
           label={t('docs.deskQuickStart.visual.flow.alt')}
         />
         <figcaption class="grid gap-2">
@@ -142,10 +158,13 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
         <h4 class="m-0 text-lg font-semibold">
           {t('docs.fixing.compareLabel')}
         </h4>
-        <AssemblyVideo
-          {locale}
-          scene="snap-fixing"
-          label={t('docs.deskQuickStart.visual.placement.alt')}
+        <ModelPreviewPicture
+          src="/docs/desk-assembly/snap-fixing.light.webp"
+          darkSrc="/docs/desk-assembly/snap-fixing.dark.webp"
+          width={960}
+          height={640}
+          class="w-full rounded-img"
+          alt={t('docs.deskQuickStart.visual.placement.alt')}
         />
         <figcaption class="grid gap-2">
           <p class="m-0 leading-relaxed">{t('docs.fixing.body')}</p>
@@ -153,6 +172,10 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
             {t('docs.deskQuickStart.visual.placement.caption')}
           </p>
         </figcaption>
+        <a
+          class="text-sm font-semibold underline underline-offset-4"
+          href="#docs-snap-fixing-title">{t('docs.assembly.openGuide')}</a
+        >
       </figure>
     </div>
   </section>
@@ -205,24 +228,16 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
       </p>
     </header>
     <h4 class="m-0 text-lg font-semibold">{t('docs.fixing.workflow')}</h4>
-    <ol class="grid gap-4 md:grid-cols-2">
-      {
-        steps.map((step) => (
-          <Card
-            as="li"
-            size="sm"
-            class="grid content-start gap-2 p-4"
-            data-step={step.id}
-          >
-            <h5 class="m-0 flex items-center gap-3 font-semibold">
-              <span class="font-mono text-primary">{step.number}</span>
-              {t(step.title)}
-            </h5>
-            <p class="m-0 leading-relaxed">{t(step.body)}</p>
-          </Card>
-        ))
-      }
-    </ol>
+    <p class="m-0 text-sm leading-relaxed text-muted-foreground">
+      {t('docs.assembly.intro')}
+    </p>
+    <AssemblyGuide
+      {locale}
+      scene="snap-fixing"
+      steps={fixingSteps}
+      scroll
+      label={t('docs.deskQuickStart.visual.placement.alt')}
+    />
     <h4 class="m-0 text-lg font-semibold">{t('docs.fixing.checklists')}</h4>
     <div class="grid items-start gap-4 lg:grid-cols-2">
       <Card
@@ -254,9 +269,10 @@ const questions = ['snap', 'integrated', 'none', 'reprint']
     </div>
     <figure class="m-0 grid gap-3">
       <div class="mx-auto w-full max-w-3xl">
-        <AssemblyVideo
+        <AssemblyGuide
           {locale}
           scene="locating-seats"
+          steps={locatingSteps}
           label={t('docs.deskQuickStart.visual.locating.alt')}
         />
       </div>

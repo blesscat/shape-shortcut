@@ -1,5 +1,35 @@
 import { expect, test } from '@playwright/test'
 
+for (const locale of ['en', 'zh-Hant']) {
+  test(`${locale} hosted Docs loads prebuilt geometry and follows step navigation`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const cadRequests: string[] = []
+    page.on('request', (request) => {
+      if (/\.wasm|cad\.worker|\.(mp4|webm)(?:\?|$)/.test(request.url()))
+        cadRequests.push(request.url())
+    })
+    await page.goto(`/${locale}/docs/`)
+    const guide = page.locator('[data-assembly-guide="snap-fixing"]')
+    await guide.scrollIntoViewIfNeeded()
+    await expect(guide).toHaveAttribute('data-assembly-state', 'ready')
+    await guide.locator('[data-assembly-step="3"]').click()
+    await expect
+      .poll(() =>
+        guide
+          .locator('progress')
+          .evaluate((element: HTMLProgressElement) => element.value),
+      )
+      .toBeCloseTo(1, 2)
+    await expect(
+      guide.locator('[data-assembly-instruction="3"]'),
+    ).toBeInViewport()
+    await expect(guide.locator('canvas')).toBeVisible()
+    expect(cadRequests).toEqual([])
+  })
+}
+
 test('assembly movies advertise byte seeking through the deployed asset service', async ({
   request,
 }) => {
@@ -29,9 +59,9 @@ for (const appearance of ['light', 'dark'] as const) {
     })
     try {
       const page = await context.newPage()
-      await page.goto(`${baseURL}/zh-Hant/docs/`)
+      await page.goto(`${baseURL}/zh-Hant/`)
       const movies = page.locator('[data-assembly-video] video:visible')
-      await expect(movies).toHaveCount(3)
+      await expect(movies).toHaveCount(1)
       for (const movie of await movies.all()) {
         await movie.scrollIntoViewIfNeeded()
         await movie.focus()

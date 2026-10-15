@@ -53,15 +53,15 @@ export const messages = {
   'docs.deskQuickStart.visual.flow.caption':
     'Actual-model animation: place a seat-free stacking Grid Box on a 2×2 Board, then lift it off. No Snap is needed.',
   'docs.deskQuickStart.visual.flow.alt':
-    '3D assembly clip: place and lift a seat-free stacking Grid Box on a 2×2 Board without Snap.',
+    '3D assembly view: place and lift a seat-free stacking Grid Box on a 2×2 Board without Snap.',
   'docs.deskQuickStart.visual.placement.caption':
     'Actual-model animation: install four Snaps, then the integrated-seat box. Snap is for fixing position.',
   'docs.deskQuickStart.visual.placement.alt':
-    '3D assembly clip: position fixing with a 2×2 Board, four Snaps and an integrated-seat Grid Box.',
+    '3D assembly view: position fixing with a 2×2 Board, four Snaps and an integrated-seat Grid Box.',
   'docs.deskQuickStart.visual.locating.caption':
     'Underside view: on the left, insert separate seats into the matching locking sockets and turn clockwise 90° to lock. On the right, integrated seats print with the box and need no installation.',
   'docs.deskQuickStart.visual.locating.alt':
-    '3D assembly clip: underside comparison of separate locking corner seat insertion and rotation with integrated box seats.',
+    '3D assembly view: underside comparison of separate locking corner seat insertion and rotation with integrated box seats.',
   'docs.assembly.controls':
     'Press play to watch; pause, seek or replay at any time.',
   'docs.assembly.staticFrame': 'View static assembly frame',
@@ -170,7 +170,7 @@ export const messages = {
     'Snap is used to fix the box’s position: install Snap on the Board, then use the box’s built-in seats or separately printed locking corner seats.',
   'docs.fixing.compareTitle': 'Two ways to place a box',
   'docs.fixing.compareBody':
-    'Direct placement needs a Board and a box. Position fixing adds Snap and compatible seats. Watch the actual-model clips below to see the assembly.',
+    'Direct placement needs a Board and a box. Position fixing adds Snap and compatible seats. Compare the actual models below, then follow the fixing guide further down.',
   'docs.fixing.compareLabel': 'Fix the position with Snap',
   'docs.fixing.workflow': 'Four steps for position fixing',
   'docs.fixing.boardStep': 'Prepare the Board',
@@ -218,4 +218,39 @@ export const messages = {
   'docs.wall.tissue.body':
     'A wall-mounted tissue box sized for your tissue pack, refilled from the top and dispensed from below, with an OpenConnect interface.',
   'docs.wall.tissue.cta': 'Open tissue box settings →',
+  'docs.assembly.drag': 'Drag to rotate',
+  'docs.assembly.rotateLeft': 'Rotate model left',
+  'docs.assembly.rotateRight': 'Rotate model right',
+  'docs.assembly.zoomIn': 'Zoom model in',
+  'docs.assembly.zoomOut': 'Zoom model out',
+  'docs.assembly.reset': 'Reset view',
+  'docs.assembly.navigation': 'Assembly steps',
+  'docs.assembly.progress': 'Assembly progress',
+  'docs.assembly.scrollHint': 'Scroll down to assemble; scroll back to revisit',
+  'docs.assembly.stepHint': 'Choose a step to inspect the connection',
+  'docs.assembly.fallback':
+    'A static assembly image is shown. Follow the written steps below.',
+  'docs.assembly.openGuide': 'See the four-step assembly guide below ↓',
+  'docs.assembly.intro':
+    'Read down the page to assemble the model. Stop to inspect a connection, scroll back to revisit it, or choose a step directly.',
+  'docs.assembly.integratedExample':
+    'This demonstration uses an integrated-seat Grid Box: its seats print with the box. Separate locking-seat installation is shown below.',
+  'docs.assembly.direct.align.title': 'Align',
+  'docs.assembly.direct.align.body':
+    'Use one 2×2 Board and one seat-free stacking Grid Box. Align the box with the grid.',
+  'docs.assembly.direct.place.title': 'Place',
+  'docs.assembly.direct.place.body':
+    'Place the box directly on the Board. No Snap or separately printed seats are needed.',
+  'docs.assembly.direct.lift.title': 'Lift away',
+  'docs.assembly.direct.lift.body':
+    'Lift the box to move it. Add Snap only when you want to fix its position.',
+  'docs.assembly.locating.align.title': 'Align seats',
+  'docs.assembly.locating.align.body':
+    'Viewed from below: the left box uses four separate locking seats; the right box has seats printed as part of the box.',
+  'docs.assembly.locating.insert.title': 'Insert',
+  'docs.assembly.locating.insert.body':
+    'Insert the four separate seats into the matching sockets. An already printed seat-free box has no such sockets and needs reprinting in the matching mode.',
+  'docs.assembly.locating.lock.title': 'Turn to lock',
+  'docs.assembly.locating.lock.body':
+    'Viewed from below, turn the separate seats clockwise by 90° to lock. Integrated seats are already part of the box and skip this step.',
 }

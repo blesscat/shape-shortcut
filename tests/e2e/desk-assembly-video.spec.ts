@@ -14,9 +14,9 @@ for (const locale of ['zh-Hant', 'en']) {
         runtimeRequests.push(url)
     })
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto(`/${locale}/docs/`)
+    await page.goto(`/${locale}/`)
     const videos = page.locator('[data-assembly-video] video:visible')
-    await expect(videos).toHaveCount(3)
+    await expect(videos).toHaveCount(1)
     const video = videos.first()
     await expect(video).toHaveAttribute('preload', 'none')
     await expect(video).toHaveAttribute('controls', '')
@@ -71,12 +71,12 @@ test('switching theme pauses the hidden movie and exposes matching media', async
   page,
 }) => {
   await page.emulateMedia({ colorScheme: 'light' })
-  await page.goto('/en/docs/')
+  await page.goto('/en/')
   const light = page.locator(
-    '[data-assembly-video="direct-placement"] video[data-appearance="light"]',
+    '[data-assembly-video="snap-fixing"] video[data-appearance="light"]',
   )
   const dark = page.locator(
-    '[data-assembly-video="direct-placement"] video[data-appearance="dark"]',
+    '[data-assembly-video="snap-fixing"] video[data-appearance="dark"]',
   )
   await light.evaluate((element: HTMLVideoElement) => element.play())
   await page.locator('[data-theme-toggle]').click()
@@ -87,7 +87,7 @@ test('switching theme pauses the hidden movie and exposes matching media', async
     .toBe(true)
   await expect(dark).toHaveAttribute('poster', /dark\.webp$/)
   await expect(
-    page.locator('[data-assembly-video="direct-placement"] a:visible'),
+    page.locator('[data-assembly-video="snap-fixing"] a:visible'),
   ).toHaveAttribute('href', /dark\.webp$/)
 })
 
@@ -102,9 +102,9 @@ test('failed movie delivery leaves a static frame and assembly instructions', as
   })
   await page.route('**/docs/desk-assembly/*.mp4', (route) => route.abort())
   await page.route('**/docs/desk-assembly/*.webm', (route) => route.abort())
-  await page.goto('/zh-Hant/docs/')
+  await page.goto('/zh-Hant/')
   const video = page.locator(
-    '[data-assembly-video="direct-placement"] video:visible',
+    '[data-assembly-video="snap-fixing"] video:visible',
   )
   await video.evaluate((element: HTMLVideoElement) => {
     // Engines differ in when a failed <source> settles play(). The written
@@ -112,15 +112,12 @@ test('failed movie delivery leaves a static frame and assembly instructions', as
     void element.play().catch(() => {})
   })
   await expect.poll(() => failedMovies.length).toBeGreaterThan(0)
-  const still = page.locator(
-    '[data-assembly-video="direct-placement"] a:visible',
-  )
+  const still = page.locator('[data-assembly-video="snap-fixing"] a:visible')
   await expect(still).toHaveText('查看靜態組裝圖')
   const response = await page.request.get((await still.getAttribute('href'))!)
   expect(response.ok()).toBe(true)
   expect(response.headers()['content-type']).toContain('image/webp')
-  await expect(page.getByTestId('docs-first-print')).toContainText('無角座')
-  await expect(page.getByTestId('docs-snap-fixing')).toContainText(
-    '固定盒子的位置',
-  )
+  await expect(
+    page.locator('[data-assembly-video="snap-fixing"]'),
+  ).toContainText('查看靜態組裝圖')
 })

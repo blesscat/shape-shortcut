@@ -96,25 +96,25 @@ The page MUST provide separate print checklists for direct placement and Snap fi
 
 ### Requirement: Visual quick-start assets have equivalent accessible text
 
-The quick start MUST include static actual-model assembly videos and poster frames for direct placement, Board/Snap fixing and the two locating strategies. Each visual MUST have a localized accessible name or caption, and the surrounding page MUST provide equivalent text so the instructions remain understandable when media cannot be displayed. Each visual MUST exist as a light and a dark static variant, and the displayed variant MUST follow the site's effective appearance, including the manual theme toggle. The hidden variant MUST NOT degrade accessibility. Movies MUST use native controls, start paused, avoid autoplay and looping, and provide a static-frame link.
+The quick start MUST include actual-model assembly demonstrations and static poster frames for direct placement, Board/Snap fixing and the two locating strategies. Docs MUST use optional scroll-controlled or step-controlled live views of offline-generated meshes. Each visual MUST have a localized accessible name or caption, and the surrounding page MUST provide equivalent text so the instructions remain understandable when media cannot be displayed. Each visual MUST have light and dark static poster variants, and both the displayed poster and enhanced model MUST follow the site's effective appearance, including the manual theme toggle. The hidden variant MUST NOT degrade accessibility. Docs demonstrations MUST preserve ordinary scrolling and offer step navigation. Any retained landing movies MUST use native controls, start paused, avoid autoplay and looping, and provide a static-frame link.
 
 #### Scenario: Visuals load as static documentation assets
 
 - **WHEN** a user loads the localized Docs page
-- **THEN** the flow, placement and locating-comparison movies and posters MUST be addressable static assets in both light and dark variants
+- **THEN** the flow, placement and locating-comparison posters MUST be addressable static assets in both light and dark variants, with prebuilt mesh assets for optional live views
 - **AND** the page MUST not require a CAD Worker or client-only geometry render to explain the relationships
 
 #### Scenario: Dark appearance renders dark diagram variants
 
 - **WHEN** the site's effective appearance is dark via system preference or the header theme toggle
 - **THEN** every quick-start visual MUST display its dark variant
-- **AND** switching the effective appearance MUST switch the displayed media variant accordingly
+- **AND** switching the effective appearance MUST switch the displayed poster variant and enhanced model colors accordingly
 
 #### Scenario: The hidden variant stays accessibility-neutral
 
 - **WHEN** a visual renders one appearance variant
 - **THEN** the other variant MUST NOT be exposed to the accessibility tree
-- **AND** the displayed visual MUST have a localized accessible name via its video label or figure caption
+- **AND** the displayed visual MUST have a localized accessible name via its image label or figure caption
 
 #### Scenario: Images are unavailable
 

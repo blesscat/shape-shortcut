@@ -50,15 +50,15 @@ export const messages = {
   'docs.deskQuickStart.visual.flow.caption':
     '實際模型動畫：無角座堆疊方盒放上 2×2 底板，再直接拿起；不用 Snap。',
   'docs.deskQuickStart.visual.flow.alt':
-    '3D 組裝短片：無角座堆疊方盒放上與拿離 2×2 Board，不含 Snap。',
+    '3D 組裝示意：無角座堆疊方盒放上與拿離 2×2 Board，不含 Snap。',
   'docs.deskQuickStart.visual.placement.caption':
     '實際模型動畫：四個 Snap 先裝到底板，再放上內建角座方盒。加上 Snap 是為了固定位置。',
   'docs.deskQuickStart.visual.placement.alt':
-    '3D 組裝短片：2×2 Board、四個 Snap，以及內建角座方盒的固定安裝。',
+    '3D 組裝示意：2×2 Board、四個 Snap，以及內建角座方盒的固定安裝。',
   'docs.deskQuickStart.visual.locating.caption':
     '底面視角：左邊是有鎖定座孔的方盒，插入獨立角座後順時針轉 90° 鎖定；右邊的內建角座與盒子一起印好，不用另裝。',
   'docs.deskQuickStart.visual.locating.alt':
-    '3D 組裝短片：從底面比較獨立鎖定角座的插入與旋轉，以及盒子內建角座。',
+    '3D 組裝示意：從底面比較獨立鎖定角座的插入與旋轉，以及盒子內建角座。',
   'docs.assembly.controls': '點播放觀看，可暫停、拖曳進度與重播。',
   'docs.assembly.staticFrame': '查看靜態組裝圖',
   'docs.assembly.unavailable': '無法播放時，可查看下方靜態組裝圖與文字步驟。',
@@ -161,7 +161,7 @@ export const messages = {
     'Snap 用來固定盒子的位置：先把 Snap 裝在底板上，再搭配盒子的內建角座，或另外列印的鎖定角座。',
   'docs.fixing.compareTitle': '兩種放法，差在是否固定位置',
   'docs.fixing.compareBody':
-    '直接放置先備齊底板與盒子；需要固定位置時，再準備 Snap 與對應角座。用下面的實際模型短片看組裝過程。',
+    '直接放置先備齊底板與盒子；需要固定位置時，再準備 Snap 與對應角座。用實際模型對照兩種放法，再往下看固定組裝教學。',
   'docs.fixing.compareLabel': '使用 Snap 固定位置',
   'docs.fixing.workflow': '固定安裝的四個步驟',
   'docs.fixing.boardStep': '準備底板',
@@ -205,4 +205,38 @@ export const messages = {
   'docs.wall.tissue.body':
     '依面紙包尺寸調整的壁掛面紙盒，從頂部補充、底部抽取，可搭配 OpenConnect 安裝。',
   'docs.wall.tissue.cta': '開啟面紙盒設定 →',
+  'docs.assembly.drag': '拖曳旋轉',
+  'docs.assembly.rotateLeft': '向左旋轉模型',
+  'docs.assembly.rotateRight': '向右旋轉模型',
+  'docs.assembly.zoomIn': '放大模型',
+  'docs.assembly.zoomOut': '縮小模型',
+  'docs.assembly.reset': '重設視角',
+  'docs.assembly.navigation': '組裝步驟',
+  'docs.assembly.progress': '組裝進度',
+  'docs.assembly.scrollHint': '往下捲動組裝，往回捲動重看',
+  'docs.assembly.stepHint': '點選步驟，查看零件如何配合',
+  'docs.assembly.fallback': '目前顯示靜態組裝圖，請搭配下方文字步驟閱讀。',
+  'docs.assembly.openGuide': '往下看四步組裝教學 ↓',
+  'docs.assembly.intro':
+    '往下閱讀，模型會跟著完成組裝；停下來就能看細節，往回捲動可以重看。也可以直接點選步驟。',
+  'docs.assembly.integratedExample':
+    '這個示範使用內建角座方盒，角座與盒子一起列印；獨立鎖定角座的裝法見下方。',
+  'docs.assembly.direct.align.title': '對準',
+  'docs.assembly.direct.align.body':
+    '只準備一片 2×2 底板與一個無角座堆疊方盒，把方盒對齊網格。',
+  'docs.assembly.direct.place.title': '放上',
+  'docs.assembly.direct.place.body':
+    '方盒可直接放在底板上，不需要 Snap 或另外列印角座。',
+  'docs.assembly.direct.lift.title': '拿起',
+  'docs.assembly.direct.lift.body':
+    '需要換位置時，直接拿起方盒即可。Snap 是需要固定位置時才加的零件。',
+  'docs.assembly.locating.align.title': '對準角座',
+  'docs.assembly.locating.align.body':
+    '從盒底看：左側是鎖定角座模式方盒與四個獨立角座，右側是與盒子一起列印的內建角座。',
+  'docs.assembly.locating.insert.title': '插入',
+  'docs.assembly.locating.insert.body':
+    '將四個獨立鎖定角座插入對應盒底的角座孔。已印好的無角座方盒沒有這些孔，需要重新列印對應模式。',
+  'docs.assembly.locating.lock.title': '轉動鎖定',
+  'docs.assembly.locating.lock.body':
+    '從盒底看，將獨立角座順時針旋轉 90° 鎖定。內建角座已是盒子的一部分，不需要這個步驟。',
 }
