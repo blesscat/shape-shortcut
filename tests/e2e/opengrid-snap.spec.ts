@@ -322,7 +322,8 @@ test('OpenGrid Snap route exposes profiles, features, and one shared outer offse
       parameters: {
         footprint: 'quarter',
         profile: 'Standard',
-        variant: 'Full',
+        /* #107 made Lite the canonical default variant. */
+        variant: 'Lite',
         offset: 0,
         fourCornerLocatingHoles: false,
         centerRemoverHole: false,
@@ -383,9 +384,11 @@ test('OpenGrid Snap generates the complete assembly and exports the committed re
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled({
     timeout: 90_000,
   })
+  /* #107 made Lite the canonical default variant, so the default build is
+     25.6 × 25.6 × 3.4 mm and exports carry the lite variant segment. */
   await expect(page.getByLabel('寬度 X 25.6 mm')).toBeVisible()
   await expect(page.getByLabel('深度 Y 25.6 mm')).toBeVisible()
-  await expect(page.getByLabel('高度 Z 6.8 mm')).toBeVisible()
+  await expect(page.getByLabel('高度 Z 3.4 mm')).toBeVisible()
 
   const offset = page.getByRole('slider', { name: '外框總增量（X/Y）' })
   await offset.press('ArrowRight')
@@ -397,20 +400,20 @@ test('OpenGrid Snap generates the complete assembly and exports the committed re
   })
   await expect(page.getByLabel('寬度 X 25.8 mm')).toBeVisible()
   await expect(page.getByLabel('深度 Y 25.8 mm')).toBeVisible()
-  await expect(page.getByLabel('高度 Z 6.8 mm')).toBeVisible()
+  await expect(page.getByLabel('高度 Z 3.4 mm')).toBeVisible()
 
   const stepDownloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const stepDownload = await stepDownloadPromise
   expect(stepDownload.suggestedFilename()).toBe(
-    'opengrid-snap-standard-full-offset0.2-full-corners0-center0.step',
+    'opengrid-snap-standard-lite-offset0.2-full-corners0-center0.step',
   )
 
   const stlDownloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '下載 STL' }).click()
   const stlDownload = await stlDownloadPromise
   expect(stlDownload.suggestedFilename()).toBe(
-    'opengrid-snap-standard-full-offset0.2-full-corners0-center0.stl',
+    'opengrid-snap-standard-lite-offset0.2-full-corners0-center0.stl',
   )
   await expect
     .poll(() => readBinaryStlByteLength(stlDownload))
@@ -428,7 +431,7 @@ test('OpenGrid Snap generates the complete assembly and exports the committed re
   await page.getByRole('button', { name: '下載 STEP' }).click()
   const directionalStepDownload = await directionalStepDownloadPromise
   expect(directionalStepDownload.suggestedFilename()).toBe(
-    'opengrid-snap-directional-full-offset0.2-full-corners1-center1.step',
+    'opengrid-snap-directional-lite-offset0.2-full-corners1-center1.step',
   )
 })
 
