@@ -229,6 +229,7 @@
         modelId: current.state.modelId,
         parameters: current.state.input,
         placement: null,
+        wallPlacement: null,
         colors,
       },
     ])

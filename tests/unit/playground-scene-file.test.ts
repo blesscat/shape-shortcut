@@ -39,12 +39,19 @@ describe('playground scene file parsing', () => {
           modelId: 'opengrid-stackable-box',
           parameters: stackableBoxParameters(),
           placement: { cellX: 0, cellY: 1, rotation: 90, supportedBy: null },
+          wallPlacement: {
+            cellX: 5,
+            cellY: 6,
+            rotation: 180,
+            supportedBy: null,
+          },
           colors: { primary: '#22c55e' },
         },
         {
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
           placement: { cellX: -3, cellY: -2, rotation: 0, supportedBy: null },
+          wallPlacement: { cellX: 2, cellY: 3, rotation: 0, supportedBy: null },
         },
       ]),
     )
@@ -66,9 +73,16 @@ describe('playground scene file parsing', () => {
       rotation: 90,
       supportedBy: null,
     })
+    expect(first.wallPlacement).toEqual({
+      cellX: 5,
+      cellY: 6,
+      rotation: 180,
+      supportedBy: null,
+    })
     expect(first.colors.primary).toBe('#22c55e')
     expect(first.colors.secondary).toBe('#445566')
     expect(second.placement?.cellX).toBe(-3)
+    expect(second.wallPlacement?.cellX).toBe(2)
     expect(second.colors).toEqual({
       primary: '#112233',
       secondary: '#445566',
@@ -88,10 +102,28 @@ describe('playground scene file parsing', () => {
       {
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
       },
     ])
     file.schemaVersion = 99
     const result = parsePlaygroundSceneFile(file)
+    expect(result.valid).toBe(false)
+    if (result.valid) return
+    expect(result.error.messageId).toBe(
+      'diagnostic.sceneFileUnsupportedVersion',
+    )
+  })
+
+  it('rejects the previous schema version without migrating it', () => {
+    const legacy = sceneFileWith([
+      {
+        modelId: 'box',
+        parameters: { width: 20, depth: 30, height: 40 },
+        placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+      },
+    ])
+    legacy.schemaVersion = SCENE_FILE_SCHEMA_VERSION - 1
+    const result = parsePlaygroundSceneFile(legacy)
     expect(result.valid).toBe(false)
     if (result.valid) return
     expect(result.error.messageId).toBe(
@@ -105,6 +137,7 @@ describe('playground scene file parsing', () => {
         {
           modelId: 'not-a-model',
           parameters: {},
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         },
       ]),
     )
@@ -120,6 +153,7 @@ describe('playground scene file parsing', () => {
         {
           modelId: 'box',
           parameters: { width: -5, depth: 30, height: 40 },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         },
       ]),
     )
@@ -138,6 +172,68 @@ describe('playground scene file parsing', () => {
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
           placement: { cellX: 0.5, cellY: 0, rotation: 0 },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        },
+      ]),
+    )
+    expect(result.valid).toBe(false)
+    if (result.valid) return
+    expect(result.error.messageId).toBe('diagnostic.sceneInvalidPlacement')
+  })
+
+  it('rejects scene instances without wallPlacement as malformed', () => {
+    const result = parsePlaygroundSceneFile(
+      sceneFileWith([
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        },
+      ]),
+    )
+    expect(result.valid).toBe(false)
+    if (result.valid) return
+    expect(result.error.messageId).toBe('diagnostic.sceneFileMalformed')
+  })
+
+  it('accepts a v2 settings export omitting both placement blocks', () => {
+    const result = parsePlaygroundSceneFile(
+      sceneFileWith([
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+        },
+      ]),
+    )
+    expect(result.valid).toBe(true)
+    if (!result.valid) return
+    expect(result.scene.instances).toHaveLength(1)
+    expect(result.scene.instances[0]?.placement).toBeNull()
+    expect(result.scene.instances[0]?.wallPlacement).toBeNull()
+  })
+
+  it('rejects a legacy settings file at the previous schema version', () => {
+    const legacy = sceneFileWith([
+      {
+        modelId: 'box',
+        parameters: { width: 20, depth: 30, height: 40 },
+      },
+    ])
+    legacy.schemaVersion = SCENE_FILE_SCHEMA_VERSION - 1
+    const result = parsePlaygroundSceneFile(legacy)
+    expect(result.valid).toBe(false)
+    if (result.valid) return
+    expect(result.error.messageId).toBe('diagnostic.sceneFileUnsupportedVersion')
+  })
+
+  it('rejects invalid wall placements', () => {
+    const result = parsePlaygroundSceneFile(
+      sceneFileWith([
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+          placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 45 },
         },
       ]),
     )
@@ -152,6 +248,7 @@ describe('playground scene file parsing', () => {
         {
           modelId: 'opengrid-stackable-box',
           parameters: { ...stackableBoxParameters(), cornerSeatMode: 'hole' },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         },
       ]),
     )
@@ -164,6 +261,7 @@ describe('playground scene file parsing', () => {
         {
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
           colors: { primary: 'not-a-color' },
         },
       ]),
@@ -178,6 +276,7 @@ describe('playground scene file parsing', () => {
       {
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
       },
     ])
     file.colors = { primary: 'zzz' }
@@ -193,6 +292,7 @@ describe('playground scene file parsing', () => {
       () => ({
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
       }),
     )
     const result = parsePlaygroundSceneFile(sceneFileWith(instances))
@@ -220,6 +320,12 @@ describe('playground scene file serialization', () => {
             rotation: 180,
             supportedBy: null,
           },
+          wallPlacement: {
+            cellX: 4,
+            cellY: -2,
+            rotation: 90,
+            supportedBy: null,
+          },
           colors: { primary: '#22c55e', secondary: '#445566' },
         },
       ],
@@ -230,21 +336,29 @@ describe('playground scene file serialization', () => {
     if (!result.valid) return
     expect(result.scene.instances[0].label).toBe('左邊')
     expect(result.scene.instances[0].placement?.rotation).toBe(180)
+    expect(result.scene.instances[0].wallPlacement).toEqual({
+      cellX: 4,
+      cellY: -2,
+      rotation: 90,
+      supportedBy: null,
+    })
     expect(result.scene.instances[0].colors.primary).toBe('#22c55e')
   })
 
-  it('omits placement for settings-file instances', () => {
+  it('omits both placements for settings-file instances', () => {
     const sceneFile = serializePlaygroundScene(DEFAULT_MODEL_COLORS, [
       {
         label: null,
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
         placement: null,
+        wallPlacement: null,
         colors: DEFAULT_MODEL_COLORS,
       },
     ])
     expect(sceneFile.instances).toHaveLength(1)
     expect(sceneFile.instances[0].placement).toBeUndefined()
+    expect(sceneFile.instances[0].wallPlacement).toBeUndefined()
     expect(sceneFile.instances[0].label).toBeUndefined()
   })
 
@@ -254,6 +368,7 @@ describe('playground scene file serialization', () => {
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
         placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
       },
     ])
     withLimit.maxHeightMm = 120
@@ -268,6 +383,7 @@ describe('playground scene file serialization', () => {
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
           placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         },
       ])
       file.maxHeightMm = invalid
@@ -286,14 +402,17 @@ describe('playground scene file serialization', () => {
           label: null,
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
-          placement: null,
+          placement: { cellX: 1, cellY: 2, rotation: 0, supportedBy: null },
+          wallPlacement: { cellX: 3, cellY: 4, rotation: 0, supportedBy: null },
           colors: DEFAULT_MODEL_COLORS,
         },
       ],
       { maxHeightMm: 250 },
     )
     expect(sceneFile.maxHeightMm).toBe(250)
-    const result = parsePlaygroundSceneFile(JSON.parse(JSON.stringify(sceneFile)))
+    const result = parsePlaygroundSceneFile(
+      JSON.parse(JSON.stringify(sceneFile)),
+    )
     expect(result.valid).toBe(true)
     if (!result.valid) return
     expect(result.scene.maxHeightMm).toBe(250)
@@ -305,12 +424,15 @@ describe('playground scene file serialization', () => {
         label: null,
         modelId: 'box',
         parameters: { width: 20, depth: 30, height: 40 },
-        placement: null,
+        placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         colors: DEFAULT_MODEL_COLORS,
       },
     ])
     expect('maxHeightMm' in sceneFile).toBe(false)
-    const result = parsePlaygroundSceneFile(JSON.parse(JSON.stringify(sceneFile)))
+    const result = parsePlaygroundSceneFile(
+      JSON.parse(JSON.stringify(sceneFile)),
+    )
     expect(result.valid).toBe(true)
     if (!result.valid) return
     expect(result.scene.maxHeightMm).toBeNull()

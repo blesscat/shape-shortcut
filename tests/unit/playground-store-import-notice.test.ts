@@ -25,13 +25,14 @@ vi.mock('../../src/features/cad/worker-client', () => {
 
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
 import { createPlaygroundStore } from '../../src/features/cad/playground/store'
+import { SCENE_FILE_SCHEMA_VERSION } from '../../src/cad-contract/scene'
 
 const WALL_ONLY_MODEL: ModelId = 'opengrid-openconnect-tissue-box'
 const DESK_MODEL: ModelId = 'box'
 
 function sceneFileWith(...modelIds: ModelId[]): string {
   return JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: SCENE_FILE_SCHEMA_VERSION,
     kind: 'shape-shortcut/scene',
     grid: { system: 'opengrid' },
     instances: modelIds.map((modelId) => {
@@ -40,6 +41,8 @@ function sceneFileWith(...modelIds: ModelId[]): string {
       return {
         modelId,
         parameters: JSON.parse(JSON.stringify(definition.defaultParameters)),
+        placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+        wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
       }
     }),
   })

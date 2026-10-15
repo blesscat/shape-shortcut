@@ -142,6 +142,7 @@
       {locale}
       instance={selectedInstance}
       {store}
+      viewMode={snapshot.viewMode}
       panelResetVersion={snapshot.panelResetVersion}
     />
   {/if}

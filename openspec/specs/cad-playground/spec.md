@@ -6,27 +6,27 @@
 ## Requirements
 ### Requirement: Playground 場景與擺放
 
-The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and a placement of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. In desktop orientation, an instance whose footprint overlaps other instances' footprints MUST automatically stack on top of them when the two instances' stacking interfaces are compatible — cylinders only on a cylinder of the same inner diameter, and stackable boxes and organizer boxes only when the upper instance's bottom interface and the lower instance's top interface are both in stacking mode; its rendered base Z in mm MUST equal the compatible supporting instance's stacking datum minus its seating drop — the interface engagement both mated pieces share, so seated pieces visually interlock and their interface height counts once — plus a small render gap; where several compatible instances overlap, the greatest resulting base Z wins, and an instance overlapping nothing MUST stay at Z=0. An overlapping pair whose stacking interfaces are incompatible MUST NOT stack: both instances stay at their current level and are flagged as a conflict per the grid occupancy requirement. All models without a stacking interface can neither receive nor seat pieces. Stacking Z MUST be derived state computed from instance order and model heights; it MUST NOT be authored per instance, and the scene MUST NOT offer a manual Z-offset input. The scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability. Instance array order MUST be the deterministic stacking order: re-importing a scene file MUST reproduce the same stacked Z for every instance.
+The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and two independent placements — a desktop placement and a wall placement — each of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. In desktop orientation, an instance whose footprint overlaps other instances' footprints MUST automatically stack on top of them when the two instances' stacking interfaces are compatible — cylinders only on a cylinder of the same inner diameter, and stackable boxes and organizer boxes only when the upper instance's bottom interface and the lower instance's top interface are both in stacking mode; its rendered base Z in mm MUST equal the compatible supporting instance's stacking datum minus its seating drop — the interface engagement both mated pieces share, so seated pieces visually interlock and their interface height counts once — plus a small render gap; where several compatible instances overlap, the greatest resulting base Z wins, and an instance overlapping nothing MUST stay at Z=0. An overlapping pair whose stacking interfaces are incompatible MUST NOT stack: both instances stay at their current level and are flagged as a conflict per the grid occupancy requirement. All models without a stacking interface can neither receive nor seat pieces. Stacking Z MUST be derived state computed from instance order and model heights; it MUST NOT be authored per instance, and the scene MUST NOT offer a manual Z-offset input. The scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability. Instance array order MUST be the deterministic stacking order: re-importing a scene file MUST reproduce the same stacked Z for every instance.
 
-The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Coordinate inputs and rotation steps MUST be identical in both orientations. Automatic Z stacking and height-limit evaluation are desktop-orientation behaviors: wall orientation keeps every instance flush on the wall board, performs no Z stacking, and its occupancy and conflict rules stay two-dimensional — except that an overlapping pair whose desktop stacking interfaces are compatible remains conflict-free on the wall board, and instances the active orientation does not display never participate in occupancy, conflicts, or height evaluation.
+The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Each orientation MUST render and edit only its own placement: the desktop orientation renders from the desktop placement and the wall orientation renders from the wall placement, and a placement edit in one orientation MUST NOT change the instance's position or rotation in the other. Automatic Z stacking and height-limit evaluation are desktop-orientation behaviors: wall orientation keeps every instance flush on the wall board, performs no Z stacking, and its occupancy and conflict rules stay two-dimensional — except that an overlapping pair whose desktop stacking interfaces are compatible remains conflict-free on the wall board, and instances the active orientation does not display never participate in occupancy, conflicts, or height evaluation.
 
 A component whose authored geometry is in the flat print frame MUST declare a wall display plan so wall orientation renders it in its installed orientation: the OpenConnect interface face against the wall board, the body protruding toward +Y, and storage openings facing upward. The wall display plan MUST be presentation-level only: it MUST change the rendered transform and the wall footprint, and MUST NOT change the generated proxy mesh geometry or any exported STEP/STL/3MF file, which remain in the print frame. The plan MUST compose the component's full print-to-installed transform — rotation plus any installed-frame translation — so the mounted piece sits flush on the wall board plane. In wall orientation the occupied footprint of such a component MUST span its installed-frame horizontal width and installed vertical height (not the print-frame depth). When the plan declares the component's OpenConnect socket cell origins, the wall placement MUST anchor on the socket grid — the socket cell span's minimum corner at the placement cell — so every socket registers with a wall board cell, the body may overhang the socket span, and occupancy MUST follow the socket-anchored mounted body footprint.
 
 #### Scenario: Add instance to scene
 
 - **WHEN** the user adds a registered component to the playground
-- **THEN** the scene MUST contain a new instance with that component's default parameters at a placement the user can edit
-- **AND** the instance MUST appear in the 3D scene at the position its placement describes
+- **THEN** the scene MUST contain a new instance with that component's default parameters and an independently assigned desktop placement and wall placement
+- **AND** the instance MUST appear in the 3D scene at the position the active orientation's placement describes
 
-#### Scenario: Placement via coordinate input
+#### Scenario: Rotation input edits the active orientation
 
-- **WHEN** the user types integer values into the selected instance's `cellX`/`cellY` inputs and a rotation of 0/90/180/270
-- **THEN** the instance's placement MUST update to those values
-- **AND** the instance MUST render at the corresponding grid position and orientation
+- **WHEN** the user sets the selected instance's rotation input to 0/90/180/270
+- **THEN** the active orientation's placement MUST update to that rotation
+- **AND** the instance MUST render at the corresponding orientation in the active scene orientation
 
 #### Scenario: Unbounded coordinates
 
-- **WHEN** the user enters any integer grid coordinate, including negative values
+- **WHEN** an instance is dragged or imported at any integer grid coordinate, including negative values
 - **THEN** the placement MUST be accepted and rendered without a boundary error
 
 #### Scenario: Overlapping desktop placement stacks on top
@@ -51,7 +51,7 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 #### Scenario: Stacking renders in desktop orientation only
 
 - **WHEN** the scene is switched to wall orientation
-- **THEN** every instance MUST render mounted on the wall board at Z derived from its cell row
+- **THEN** every instance MUST render mounted on the wall board at Z derived from its wall placement row
 - **AND** no instance MUST be lifted by desktop stacking
 
 #### Scenario: Wall orientation mounts pieces vertically
@@ -59,7 +59,7 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 - **WHEN** the user switches the scene to wall orientation
 - **THEN** the grid MUST render as a vertical board, rows extending upward along +Z
 - **AND** wall-mount components MUST render with their OpenConnect interface face directly against the wall board (no full-scene rotation)
-- **AND** placements, occupancy, and selection MUST be unchanged
+- **AND** each instance MUST render from its wall placement, and its desktop placement MUST remain unchanged
 
 #### Scenario: OpenConnect wall pieces display installed orientation
 
@@ -119,9 +119,40 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 - **AND** desk-system instances MUST NOT render in the scene, appear in the instance list, or occupy placement cells
 - **WHEN** the scene is in desktop orientation
 - **THEN** only desk-system and unrestricted components MUST be offered and rendered
+### Requirement: Per-orientation instance placement
+
+Each playground instance MUST carry two independent placements: a desktop placement and a wall placement, each holding grid cell coordinates (`cellX`, `cellY`) and a rotation in 90-degree steps. Every placement edit MUST write only the active scene orientation's placement: desktop edits MUST NOT move the instance in wall orientation, and wall edits MUST NOT move the instance in desktop orientation. When an instance is added, duplicated, or imported, each scene orientation that displays the instance's component MUST have its placement assigned by an independent free-cell scan; the orientations MUST NOT copy placements from each other. Switching scene orientation MUST NOT modify either placement.
+
+#### Scenario: Wall drag leaves the desktop placement untouched
+
+- **GIVEN** a dual-system instance with independent desktop and wall placements
+- **WHEN** the user drags it to a new cell in wall orientation
+- **THEN** the wall placement MUST update to the dropped cells
+- **AND** the desktop placement MUST remain exactly as it was
+
+#### Scenario: Desktop drag leaves the wall placement untouched
+
+- **GIVEN** a dual-system instance with independent desktop and wall placements
+- **WHEN** the user drags it to a new cell in desktop orientation
+- **THEN** the desktop placement MUST update to the dropped cells
+- **AND** the wall placement MUST remain exactly as it was
+
+#### Scenario: Add assigns both orientations independently
+
+- **WHEN** the user adds a component that displays in both orientations
+- **THEN** the desktop placement and the wall placement MUST each be assigned a free-cell position by an independent scan
+- **AND** neither placement MUST be derived by copying the other
+
+#### Scenario: Rotation input edits only the active orientation
+
+- **GIVEN** the scene is in wall orientation with an instance selected
+- **WHEN** the user changes the instance's rotation input to 90
+- **THEN** only the wall placement's rotation MUST become 90
+- **AND** the desktop placement's rotation MUST remain unchanged
+
 ### Requirement: Pointer drag placement
 
-The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update the same placement state and coordinate inputs used by typed placement, and placement-only dragging MUST NOT request new CAD geometry.
+The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update only the active orientation's placement — desktop drops write the desktop placement, wall drops write the wall placement — and the other orientation's placement MUST remain unchanged. Placement-only dragging MUST NOT request new CAD geometry.
 
 The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing a drag MUST commit the snapped candidate placement regardless of whether it overlaps another instance; a committed overlapping placement MUST be flagged with the conflict color and persistent warning instead of being reverted. Cancelling the pointer interaction MUST restore the original placement without committing the candidate.
 
@@ -132,23 +163,24 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 - **GIVEN** a ready instance at a valid desktop placement
 - **WHEN** the user drags the rendered instance by one or more grid cells and releases on a valid candidate
 - **THEN** the instance MUST remain under the grabbed pointer offset while moving
-- **AND** the drop MUST commit the snapped integer `cellX` and `cellY`
-- **AND** the placement coordinate inputs MUST show the committed values
+- **AND** the drop MUST commit the snapped integer `cellX` and `cellY` to the desktop placement
+- **AND** the wall placement MUST remain unchanged
 - **AND** the camera pose MUST remain unchanged
 
 #### Scenario: Drag instance on wall grid
 
 - **GIVEN** a visible wall-compatible instance in wall orientation
 - **WHEN** the user drags it across the wall plane and releases on a valid candidate
-- **THEN** horizontal motion MUST update `cellX`
-- **AND** vertical world motion MUST update `cellY`
+- **THEN** horizontal motion MUST update the wall placement's `cellX`
+- **AND** vertical world motion MUST update the wall placement's `cellY`
 - **AND** the instance MUST remain mounted to the wall plane with its rotation unchanged
+- **AND** the desktop placement MUST remain unchanged
 
 #### Scenario: Drag pending placeholder
 
 - **GIVEN** an instance whose proxy mesh is still pending and whose placeholder is visible
 - **WHEN** the user drags and drops that placeholder
-- **THEN** the new snapped placement MUST be committed
+- **THEN** the new snapped placement MUST be committed to the active orientation's placement
 - **AND** the generated proxy MUST appear at that placement when generation completes
 
 #### Scenario: Overlapping drag commits with a warning
@@ -309,7 +341,7 @@ The playground instance panel MUST render the component's preset button row (res
 - **AND** no generation request for that instance MUST be sent
 ### Requirement: Instance 編輯期 system context
 
-Each playground instance MUST carry an editing-time OpenGrid system context used by the instance parameter panel for system-aware defaults, restore-defaults, and system selection controls. A new or imported instance MUST default its system context from the scene orientation (`desktop`→`desk`, `wall`→`wall`). A component panel's system context selection control (for example the desk/wall switch on the `opengrid-snap` panel) MUST change only the selected instance's system context. The instance system context MUST be editing-time state: it MUST NOT be written to the scene JSON, MUST NOT persist across export/import, and MUST NOT read from or write to the workspace browser persistence for component parameters. Scene import MUST accept existing scene files unchanged.
+Each playground instance MUST carry an editing-time OpenGrid system context used by the instance parameter panel for system-aware defaults, restore-defaults, and system selection controls. A new or imported instance MUST default its system context from the scene orientation (`desktop`→`desk`, `wall`→`wall`). A component panel's system context selection control (for example the desk/wall switch on the `opengrid-snap` panel) MUST change only the selected instance's system context. The instance system context MUST be editing-time state: it MUST NOT be written to the scene JSON, MUST NOT persist across export/import, and MUST NOT read from or write to the workspace browser persistence for component parameters. Scene import MUST accept current-version scene files unchanged, deriving each instance's system context from the scene orientation.
 
 #### Scenario: Context defaults from scene orientation
 
@@ -329,7 +361,7 @@ Each playground instance MUST carry an editing-time OpenGrid system context used
 - **GIVEN** an instance whose editing-time system context was changed away from the orientation default
 - **WHEN** the user exports the scene and imports it into a fresh playground
 - **THEN** the imported instance MUST have the orientation-default system context
-- **AND** its parameters, placement, and colors MUST be unchanged from the export
+- **AND** its parameters, placements, and colors MUST be unchanged from the export
 ### Requirement: 規劃級 proxy 渲染
 
 The playground MUST render every instance with a planning-grade preview mesh generated by the CAD Worker from the component's production builders with only the material-saving (省料) honeycomb features turned off, so grid cutouts, openings, stacking rails, seats, and wall-mount interfaces remain visible. The hexagonal column MUST keep its dedicated silhouette, which is cheaper than a full build while matching its exact outline. The playground MUST NOT display edge-line overlays. Selection or hover MUST be indicated by material color emphasis only. Camera manipulation MUST NOT change the selection: orbiting or zooming keeps the selected instance, and only a direct click on empty space clears it. Instances with identical `modelId` and parameters MUST share one rendered geometry, and a change to one instance's parameters MUST NOT regenerate the shared geometry used by unchanged instances.
@@ -397,12 +429,31 @@ Each scene MUST have a primary/secondary palette used as the default for its ins
 - **THEN** instance colors in a saved or in-memory scene MUST remain unchanged
 ### Requirement: 場景 JSON 匯入
 
-The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, an optional scene Z height limit `maxHeightMm`, and a list of instances. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported instances whose Z spans collide MUST be flagged with the conflict color and persistent warning. A well-formed `maxHeightMm` MUST be applied as the scene height limit; an absent or invalid `maxHeightMm` MUST import as no limit instead of rejecting. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
+The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, an optional scene Z height limit `maxHeightMm`, and a list of instances, where each instance carries a desktop `placement` and a required `wallPlacement`. A current-version settings file whose single instance omits both placement blocks (the component-workspace export shape) MUST be accepted as an unplaced instance that receives free-cell placements in each displayed orientation during import; omitting only one of the two blocks MUST be rejected as malformed. Import MUST reject files whose `schemaVersion` differs from the current schema version with the unsupported-version diagnostic; older scene files MUST NOT be migrated. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported instances whose Z spans collide MUST be flagged with the conflict color and persistent warning. A well-formed `maxHeightMm` MUST be applied as the scene height limit; an absent or invalid `maxHeightMm` MUST import as no limit instead of rejecting. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
 
 #### Scenario: Valid scene import
 
 - **WHEN** the user imports a well-formed scene file whose instances all reference registered components with valid parameters
-- **THEN** the scene MUST contain those instances with their placements and colors
+- **THEN** the scene MUST contain those instances with their desktop placements, wall placements, and colors
+
+#### Scenario: Workspace settings file imports as an unplaced instance
+
+- **GIVEN** a current-version settings file whose single instance omits both placement blocks
+- **WHEN** the user imports it into the playground
+- **THEN** the scene MUST contain that instance with both placements assigned by free-cell scans in each displayed orientation
+
+#### Scenario: Partially placed instance rejected as malformed
+
+- **GIVEN** a current-version file whose instance carries a desktop `placement` but omits `wallPlacement`
+- **WHEN** the user imports it
+- **THEN** the import MUST be rejected with the malformed-file diagnostic
+
+#### Scenario: Older schema version rejected
+
+- **GIVEN** a scene file whose `schemaVersion` differs from the current schema version
+- **WHEN** the user imports it
+- **THEN** the import MUST be rejected with the unsupported-version diagnostic
+- **AND** the current scene MUST remain unchanged
 
 #### Scenario: Height limit imports with the scene
 
@@ -465,12 +516,12 @@ After a successful scene import, the playground MUST compare the imported instan
 - **AND** the orientation notice MUST NOT appear
 ### Requirement: 場景 JSON 匯出
 
-The playground MUST export the current scene as a JSON file containing the schema version, kind marker, grid system, scene palette, an optional `maxHeightMm` scene height limit (present exactly when a limit is set), and every instance with its optional `label`, `parameters`, placement, and effective colors. The exported file MUST be importable by the playground again and MUST be accepted as a single-instance settings file when it contains exactly one instance.
+The playground MUST export the current scene as a JSON file containing the current schema version, kind marker, grid system, scene palette, an optional `maxHeightMm` scene height limit (present exactly when a limit is set), and every instance with its optional `label`, `parameters`, desktop `placement`, `wallPlacement`, and effective colors. The exported file MUST be importable by the playground again and MUST be accepted as a single-instance settings file when it contains exactly one instance.
 
 #### Scenario: Round trip
 
 - **WHEN** the user exports the current scene and imports the downloaded file into a fresh playground
-- **THEN** the scene MUST contain the same instances, placements, colors, and height limit
+- **THEN** the scene MUST contain the same instances, desktop placements, wall placements, colors, and height limit
 
 #### Scenario: Limit omitted when unset
 
@@ -565,7 +616,7 @@ The Playground add-component selector MUST offer only the approved models for th
 
 In wall orientation, each character of an `opengrid-wall-cover` instance MUST be centered horizontally and vertically in its own consecutive 28 mm logical grid cell. At rotation zero, the first character center MUST be at world X=`(cellX + 0.5) * 28 mm` and world Z=`(cellY + 0.5) * 28 mm`, with the cover base seated at world Y=0. Its nominal envelope MUST leave 1.2 mm clearance to all four edges of its cell. Placement MUST anchor the minimum corner of the rotated character-cell span, independently of whether the remover opening is enabled.
 
-Ready meshes, pending placeholders, typed placement, and drag placement MUST use the same cell-centered mounting transform. Occupancy MUST follow the rotated mounted body footprint, covering exactly one logical cell per character for all four right-angle rotations. Existing scene placement fields, integer coordinates, and parameter snapshots MUST remain compatible.
+Ready meshes, pending placeholders, rotation input, and drag placement MUST use the same cell-centered mounting transform. Occupancy MUST follow the rotated mounted body footprint, covering exactly one logical cell per character for all four right-angle rotations. Existing scene placement fields, integer coordinates, and parameter snapshots MUST remain compatible.
 
 #### Scenario: Single cover has equal margins
 
@@ -589,15 +640,15 @@ Ready meshes, pending placeholders, typed placement, and drag placement MUST use
 
 #### Scenario: Pending cover and drag placement share the mount
 
-- **WHEN** a pending Wall Cover is moved using typed coordinates or pointer dragging and its proxy later becomes ready
+- **WHEN** a pending Wall Cover is rotated via the rotation input or moved by pointer dragging and its proxy later becomes ready
 - **THEN** the ready cover MUST use the same cell-centered placement as its placeholder
 - **AND** placement-only edits MUST NOT request regenerated CAD geometry
 
 #### Scenario: Saved scene keeps its logical placement
 
-- **WHEN** an existing scene containing Wall Cover instances is imported, exported, or revisited
-- **THEN** its integer coordinates and rotations MUST retain their meanings
-- **AND** the Wall Cover instances MUST render using the corrected cell-centered placement without a scene-format migration
+- **WHEN** a current-version scene containing Wall Cover instances is imported, exported, or revisited
+- **THEN** its integer coordinates and rotations MUST retain their meanings in each orientation's placement
+- **AND** the Wall Cover instances MUST render using the cell-centered placement
 ### Requirement: 場景 Z 高度上限
 
 The playground MUST let the user set an optional scene Z height limit in millimeters through the desktop-orientation toolbar beside the grid extent inputs. The limit MUST be a positive number; clearing the input MUST remove the limit. When no limit is set, the playground MUST NOT evaluate or flag instance heights. When a limit is set in desktop orientation, any displayed floor instance whose stacked top Z (stacked base Z plus instance height in mm) exceeds the limit MUST render with the conflict (error) color and be included in a persistent visible text warning that states how many instances exceed the limit; instances fully below the limit MUST stay unflagged, including the instances a flagged one rests on. The flag MUST clear automatically when the instance drops back within the limit or the limit is removed. The conflict color MUST take precedence over selection and hover color emphasis for instances it marks. Height-limit flags are derived state; they MUST NOT be persisted in the scene JSON. Wall orientation MUST NOT evaluate the height limit.

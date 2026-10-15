@@ -130,16 +130,13 @@ function oneFingerDragFrames(start: ViewportPoint): MobileTouchFrame[] {
 }
 
 async function selectedCellX(page: Page): Promise<number> {
-  // The instance editor lives inside the sidebar drawer; open it to read the
-  // committed cell, then close it again so canvas gestures stay unobstructed.
-  await page.getByTestId('playground-sidebar-pill').click()
-  const value = Number(await page.locator('#playground-cell-x').inputValue())
-  await page
-    .getByTestId('playground-sidebar-drawer')
-    .getByRole('button', { name: '關閉場景面板' })
-    .click()
-  await expect(page.getByTestId('playground-sidebar-drawer')).toBeHidden()
-  return value
+  // The committed cell of the selected instance is observable on the
+  // viewport; the instance panel has no coordinate inputs anymore.
+  const raw = await page
+    .getByTestId('playground-viewport')
+    .getAttribute('data-selected-placement')
+  if (!raw) throw new Error('No placement is committed for the selection')
+  return Number(raw.split(',')[0])
 }
 
 for (const { initialMode, otherMode, modelId } of [

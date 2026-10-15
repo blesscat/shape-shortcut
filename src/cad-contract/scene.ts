@@ -3,7 +3,7 @@ import type { DiagnosticDescriptor } from './diagnostics'
 
 export const SCENE_FILE_KIND = 'shape-shortcut/scene' as const
 
-export const SCENE_FILE_SCHEMA_VERSION = 1 as const
+export const SCENE_FILE_SCHEMA_VERSION = 2 as const
 
 export const PLAYGROUND_SCENE_MAX_INSTANCES = 100 as const
 
@@ -37,6 +37,12 @@ export type SceneInstanceFile = {
   modelId: string
   parameters: unknown
   placement?: ScenePlacementFile
+  /**
+   * Required in scene files: the parser rejects a scene whose instances
+   * omit it. Component-workspace settings exports are not scenes and omit
+   * both placements.
+   */
+  wallPlacement?: ScenePlacementFile
   colors?: SceneColorsOverride
 }
 
@@ -241,6 +247,7 @@ export function parseSceneInstanceCommon(
   modelId: string
   parameters: unknown
   placement: ScenePlacement | null | undefined
+  wallPlacement: ScenePlacement | null
   colors: ModelColors
   error?: DiagnosticDescriptor
 } {
@@ -250,6 +257,26 @@ export function parseSceneInstanceCommon(
       modelId: '',
       parameters: undefined,
       placement: undefined,
+      wallPlacement: null,
+      colors: sceneColors,
+      error: { messageId: 'diagnostic.sceneFileMalformed' },
+    }
+  }
+  // A v2 scene instance always writes both placement blocks. A v2 settings
+  // file (component-workspace export) omits both because the instance is
+  // unplaced; the schema-version gate has already rejected pre-v2 files, so
+  // the shared absence of both blocks is the settings shape — accepted with
+  // both placements null for free-cell assignment. Any other missing block
+  // stays malformed.
+  const settingsShape =
+    entry.wallPlacement === undefined && entry.placement === undefined
+  if (entry.wallPlacement === undefined && !settingsShape) {
+    return {
+      label: null,
+      modelId: '',
+      parameters: undefined,
+      placement: undefined,
+      wallPlacement: null,
       colors: sceneColors,
       error: { messageId: 'diagnostic.sceneFileMalformed' },
     }
@@ -261,6 +288,24 @@ export function parseSceneInstanceCommon(
       modelId: '',
       parameters: undefined,
       placement,
+      wallPlacement: null,
+      colors: sceneColors,
+      error: { messageId: 'diagnostic.sceneInvalidPlacement' },
+    }
+  }
+  // `parseScenePlacement` also yields `undefined` for an absent value; the
+  // presence check above already rejected that case, so only the invalid
+  // (`null`) result reaches this branch.
+  const wallPlacement = settingsShape
+    ? null
+    : (parseScenePlacement(entry.wallPlacement) ?? null)
+  if (wallPlacement === null && !settingsShape) {
+    return {
+      label: null,
+      modelId: '',
+      parameters: undefined,
+      placement,
+      wallPlacement,
       colors: sceneColors,
       error: { messageId: 'diagnostic.sceneInvalidPlacement' },
     }
@@ -277,6 +322,7 @@ export function parseSceneInstanceCommon(
     modelId,
     parameters: entry.parameters,
     placement,
+    wallPlacement,
     colors: resolveInstanceColors(entry.colors, sceneColors),
   }
 }

@@ -82,7 +82,13 @@ export type PlaygroundInstance = {
    * switch, and is never persisted in the scene JSON.
    */
   systemContext: OpenGridSystemContext
+  /** Desktop-orientation placement; the wall orientation never reads it. */
   placement: ScenePlacement | null
+  /**
+   * Wall-orientation placement, independent from `placement`: edits in one
+   * orientation never move the instance in the other.
+   */
+  wallPlacement: ScenePlacement | null
   colors: ModelColors
   meshState: PlaygroundMeshState
   mesh: MeshSnapshot | null
@@ -144,6 +150,36 @@ export type PlaygroundSnapshot = {
 
 export type PlaygroundPlacementResult =
   { ok: true } | { ok: false; diagnostic: DiagnosticDescriptor }
+
+/**
+ * Single routing point for per-orientation placement reads: `desktop`
+ * resolves the desktop `placement`, `wall` resolves `wallPlacement`.
+ * Rendering, occupancy, drag preview, and panel sync must read placements
+ * through this accessor — never by picking the field directly.
+ */
+export function placementFor(
+  instance: Pick<PlaygroundInstance, 'placement' | 'wallPlacement'>,
+  viewMode: PlaygroundViewMode,
+): ScenePlacement | null {
+  return viewMode === 'wall' ? instance.wallPlacement : instance.placement
+}
+
+/**
+ * Write counterpart of `placementFor`: every per-view commit goes through
+ * here so a placement edit can only ever land in the addressed
+ * orientation's field.
+ */
+function writePlacementForView(
+  instance: PlaygroundInstance,
+  viewMode: PlaygroundViewMode,
+  placement: ScenePlacement | null,
+): void {
+  if (viewMode === 'wall') {
+    instance.wallPlacement = placement
+  } else {
+    instance.placement = placement
+  }
+}
 
 type PlaygroundPlacementCandidateResult =
   | {
@@ -291,6 +327,17 @@ export type PlaygroundStore = {
     cellY: number,
     rotation: ScenePlacement['rotation'],
   ) => PlaygroundPlacementResult
+  /**
+   * Drag-commit path: writes only the addressed orientation's placement,
+   * leaving the other orientation untouched.
+   */
+  setPlacementInViewMode: (
+    instanceId: string,
+    cellX: number,
+    cellY: number,
+    rotation: ScenePlacement['rotation'],
+    viewMode: PlaygroundViewMode,
+  ) => PlaygroundPlacementResult
   setParameter: (
     instanceId: string,
     key: ModelParameterKey,
@@ -362,16 +409,18 @@ export function createPlaygroundStore(): PlaygroundStore {
 
   /**
    * Cells an instance occupies, relative to its placement anchor (only the
-   * rotation matters). Wall display plans anchor on the OpenConnect socket
-   * grid, so the mounted body footprint — including overhang past the
-   * socket span — drives occupancy; every other component keeps the
-   * min-corner anchored X/Y extent in both orientations.
+   * rotation matters) in the given orientation. Wall display plans anchor
+   * on the OpenConnect socket grid, so the mounted body footprint —
+   * including overhang past the socket span — drives occupancy; every
+   * other component keeps the min-corner anchored X/Y extent in both
+   * orientations.
    */
   const relativeCellsFor = (
     instance: PlaygroundInstance,
     rotation: ScenePlacement['rotation'],
+    mode: PlaygroundViewMode = viewMode,
   ): PlaygroundCellRange | null => {
-    if (viewMode === 'wall') {
+    if (mode === 'wall') {
       const plan = wallDisplayPlanFor(getModelDefinition(instance.modelId))
       if (plan) {
         return wallDisplayCellRangeFor(plan, instance.parameters, {
@@ -401,7 +450,7 @@ export function createPlaygroundStore(): PlaygroundStore {
 
   // Occupancy keeps every placed instance, including failed ones: a failed
   // generation still occupies its planned footprint and a retry must not
-  // start from an overlap. Instances the active orientation does not
+  // start from an overlap. Instances the given orientation does not
   // display neither render nor occupy cells, so they stay out of every
   // derivation. A `candidate` replaces the excluded instance at its stored
   // array slot so preview derivations see the same stacking order the
@@ -409,22 +458,21 @@ export function createPlaygroundStore(): PlaygroundStore {
   const placedStackEntries = (
     excludeId?: string,
     candidate?: PlaygroundStackEntry,
+    mode: PlaygroundViewMode = viewMode,
   ): PlaygroundStackEntry[] =>
     instances.flatMap((instance) => {
       if (candidate && instance.id === excludeId) return [candidate]
-      if (instance.id === excludeId || instance.placement === null) return []
-      if (!modelVisibleInViewMode(instance.modelId, viewMode)) return []
-      const relativeCells = relativeCellsFor(
-        instance,
-        instance.placement.rotation,
-      )
+      const placement = placementFor(instance, mode)
+      if (instance.id === excludeId || placement === null) return []
+      if (!modelVisibleInViewMode(instance.modelId, mode)) return []
+      const relativeCells = relativeCellsFor(instance, placement.rotation, mode)
       if (!relativeCells) return []
       const bounds = boundsFor(instance)
       return [
         {
           id: instance.id,
           relativeCells,
-          placement: instance.placement,
+          placement,
           heightMm: bounds ? bounds.max[2] : null,
           stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
         },
@@ -463,7 +511,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       limit === null
         ? []
         : instances.flatMap((instance) => {
-            if (instance.placement === null) return []
+            if (placementFor(instance, viewMode) === null) return []
             if (!modelVisibleInViewMode(instance.modelId, viewMode)) return []
             const bounds = boundsFor(instance)
             if (!bounds) return []
@@ -484,21 +532,61 @@ export function createPlaygroundStore(): PlaygroundStore {
     }
   }
 
-  const assignPlacement = (instance: PlaygroundInstance): void => {
-    const relativeCells = relativeCellsFor(instance, 0)
+  /**
+   * Occupied-cell entries of the instances displayed in `mode`, for
+   * free-cell scans: only visible instances participate, exactly like the
+   * runtime occupancy derivations.
+   */
+  const occupiedEntriesForView = (
+    mode: PlaygroundViewMode,
+    excludeId?: string,
+  ): PlaygroundCellsEntry[] =>
+    instances.flatMap((instance) => {
+      if (instance.id === excludeId) return []
+      const placement = placementFor(instance, mode)
+      if (placement === null) return []
+      if (!modelVisibleInViewMode(instance.modelId, mode)) return []
+      const relativeCells = relativeCellsFor(instance, placement.rotation, mode)
+      if (!relativeCells) return []
+      return [{ id: instance.id, relativeCells, placement }]
+    })
+
+  /**
+   * Assigns a free anchor cell in one orientation, writing only that
+   * orientation's placement field. Components without evaluable bounds
+   * stay unplaced in that orientation.
+   */
+  const assignPlacementForView = (
+    instance: PlaygroundInstance,
+    mode: PlaygroundViewMode,
+  ): void => {
+    const relativeCells = relativeCellsFor(instance, 0, mode)
     if (!relativeCells) {
-      instance.placement = null
+      writePlacementForView(instance, mode, null)
       return
     }
     const free = findFreeAnchorCell(
       relativeCells,
-      placedStackEntries(instance.id),
+      occupiedEntriesForView(mode, instance.id),
     )
-    instance.placement = {
+    writePlacementForView(instance, mode, {
       cellX: free.cellX,
       cellY: free.cellY,
       rotation: 0,
       supportedBy: null,
+    })
+  }
+
+  /**
+   * Each scene orientation that displays the component gets an independent
+   * free-cell scan against that orientation's occupied cells; orientations
+   * never copy placements from each other. Orientations that do not
+   * display the component still receive a scanned placement so the file
+   * shape stays uniform.
+   */
+  const assignPlacement = (instance: PlaygroundInstance): void => {
+    for (const mode of ['desktop', 'wall'] as const) {
+      assignPlacementForView(instance, mode)
     }
   }
 
@@ -507,6 +595,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     cellX: number,
     cellY: number,
     rotation: ScenePlacement['rotation'],
+    mode: PlaygroundViewMode = viewMode,
   ): PlaygroundPlacementCandidateResult => {
     const instance = getInstance(instanceId)
     if (!instance) {
@@ -521,7 +610,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
       }
     }
-    if (!relativeCellsFor(instance, rotation)) {
+    if (!relativeCellsFor(instance, rotation, mode)) {
       return {
         ok: false,
         diagnostic: { messageId: 'diagnostic.sceneInvalidPlacement' },
@@ -545,17 +634,22 @@ export function createPlaygroundStore(): PlaygroundStore {
   const candidateStackEntries = (
     instance: PlaygroundInstance,
     placement: ScenePlacement,
+    mode: PlaygroundViewMode = viewMode,
   ): PlaygroundStackEntry[] | null => {
-    const relativeCells = relativeCellsFor(instance, placement.rotation)
+    const relativeCells = relativeCellsFor(instance, placement.rotation, mode)
     if (!relativeCells) return null
     const bounds = boundsFor(instance)
-    return placedStackEntries(instance.id, {
-      id: instance.id,
-      relativeCells,
-      placement,
-      heightMm: bounds ? bounds.max[2] : null,
-      stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
-    })
+    return placedStackEntries(
+      instance.id,
+      {
+        id: instance.id,
+        relativeCells,
+        placement,
+        heightMm: bounds ? bounds.max[2] : null,
+        stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
+      },
+      mode,
+    )
   }
 
   /**
@@ -570,14 +664,49 @@ export function createPlaygroundStore(): PlaygroundStore {
   const placementOverlaps = (
     instance: PlaygroundInstance,
     placement: ScenePlacement,
+    mode: PlaygroundViewMode = viewMode,
   ): boolean => {
-    const entries = candidateStackEntries(instance, placement)
+    const entries = candidateStackEntries(instance, placement, mode)
     if (!entries) return false
     const { matings } = stackedBaseZFor(entries)
     return stackConflictInstanceIds(entries, {
-      zAware: viewMode === 'desktop',
+      zAware: mode === 'desktop',
       matings,
     }).has(instance.id)
+  }
+
+  /**
+   * Shared placement commit: validates and writes the placement of the
+   * addressed orientation only. `setPlacement` keeps its historical
+   * active-orientation behavior for tests and internal callers; the drag
+   * commit reaches this through `setPlacementInViewMode` with the view the
+   * gesture started in.
+   */
+  const commitPlacementInView = (
+    mode: PlaygroundViewMode,
+    instanceId: string,
+    cellX: number,
+    cellY: number,
+    rotation: ScenePlacement['rotation'],
+  ): PlaygroundPlacementResult => {
+    const result = validatePlacementCandidate(
+      instanceId,
+      cellX,
+      cellY,
+      rotation,
+      mode,
+    )
+    if (!result.ok) {
+      diagnostic = result.diagnostic
+      emit()
+      return result
+    }
+    // Overlapping placements commit; the derived overlap warning on the
+    // snapshot flags them instead of a rejection.
+    writePlacementForView(result.instance, mode, result.placement)
+    diagnostic = null
+    emit()
+    return { ok: true }
   }
 
   const cacheKeyFor = (instance: PlaygroundInstance): string =>
@@ -990,6 +1119,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         // Scene orientation maps 1:1 onto the OpenGrid system context.
         systemContext: viewMode === 'wall' ? 'wall' : 'desk',
         placement: null,
+        wallPlacement: null,
         colors: { ...sceneColors },
         meshState: 'pending',
         mesh: null,
@@ -1035,6 +1165,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         rawParameters: { ...source.rawParameters },
         systemContext: source.systemContext,
         placement: null,
+        wallPlacement: null,
         colors: { ...source.colors },
         meshState: 'pending',
         mesh: null,
@@ -1087,23 +1218,16 @@ export function createPlaygroundStore(): PlaygroundStore {
       return stackedBaseZFor(entries).baseZ.get(instanceId) ?? 0
     },
     setPlacement(instanceId, cellX, cellY, rotation) {
-      const result = validatePlacementCandidate(
+      return commitPlacementInView(viewMode, instanceId, cellX, cellY, rotation)
+    },
+    setPlacementInViewMode(instanceId, cellX, cellY, rotation, targetView) {
+      return commitPlacementInView(
+        targetView,
         instanceId,
         cellX,
         cellY,
         rotation,
       )
-      if (!result.ok) {
-        diagnostic = result.diagnostic
-        emit()
-        return result
-      }
-      // Overlapping placements commit; the derived overlap warning on the
-      // snapshot flags them instead of a rejection.
-      result.instance.placement = result.placement
-      diagnostic = null
-      emit()
-      return { ok: true }
     },
     setParameter(instanceId, key, rawValue) {
       const instance = getInstance(instanceId)
@@ -1297,6 +1421,7 @@ export function createPlaygroundStore(): PlaygroundStore {
             // a file-carried context is intentionally not restored.
             systemContext: viewMode === 'wall' ? 'wall' : 'desk',
             placement: data.placement,
+            wallPlacement: data.wallPlacement,
             colors: { ...data.colors },
             meshState: 'pending',
             mesh: null,
@@ -1310,38 +1435,28 @@ export function createPlaygroundStore(): PlaygroundStore {
       const withAutoPlacement: PlaygroundInstance[] = candidateInstances.map(
         (instance) => ({ ...instance }),
       )
-      for (const instance of withAutoPlacement) {
-        if (!instance.placement) {
-          const relativeCells = relativeCellsFor(instance, 0)
+      // Imported instances missing a placement in one orientation get an
+      // independent free-cell scan for that orientation against its
+      // occupied cells (visible instances only); file-carried placements in
+      // the other orientation are never copied.
+      for (const mode of ['desktop', 'wall'] as const) {
+        for (const instance of withAutoPlacement) {
+          if (placementFor(instance, mode)) continue
+          const relativeCells = relativeCellsFor(instance, 0, mode)
           if (!relativeCells) {
-            instance.placement = null
+            writePlacementForView(instance, mode, null)
             continue
           }
           const free = findFreeAnchorCell(
             relativeCells,
-            withAutoPlacement.flatMap((other) => {
-              if (other.id === instance.id || other.placement === null)
-                return []
-              const otherCells = relativeCellsFor(
-                other,
-                other.placement.rotation,
-              )
-              if (!otherCells) return []
-              return [
-                {
-                  id: other.id,
-                  relativeCells: otherCells,
-                  placement: other.placement,
-                },
-              ]
-            }),
+            occupiedEntriesForView(mode, instance.id),
           )
-          instance.placement = {
+          writePlacementForView(instance, mode, {
             cellX: free.cellX,
             cellY: free.cellY,
             rotation: 0,
             supportedBy: null,
-          }
+          })
         }
       }
       // In-file placement conflicts import with the derived overlap warning
@@ -1370,6 +1485,7 @@ export function createPlaygroundStore(): PlaygroundStore {
             modelId: instance.modelId,
             parameters: instance.parameters,
             placement: instance.placement,
+            wallPlacement: instance.wallPlacement,
             colors: instance.colors,
           })),
           { maxHeightMm },

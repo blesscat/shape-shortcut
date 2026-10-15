@@ -5,6 +5,7 @@
   import BottomParameterDrawer from '../BottomParameterDrawer.svelte'
   import {
     createPlaygroundStore,
+    placementFor,
     type PlaygroundSnapshot,
     type PlaygroundViewMode,
   } from '../../../features/cad/playground/store'
@@ -92,7 +93,9 @@
       parameters: instance.parameters,
       mesh: instance.mesh,
       bounds: instance.bounds,
-      placement: instance.placement,
+      // Rendering only ever sees the active orientation's placement; the
+      // other orientation's field stays untouched by these reads.
+      placement: placementFor(instance, snapshot?.viewMode ?? 'desktop'),
       colorPrimary: instance.colors.primary,
       meshState: instance.meshState,
       overlapping:
@@ -380,11 +383,17 @@
             placement.rotation,
           ) ?? 0}
         onCommitPlacement={(instanceId, placement) => {
-          store?.setPlacement(
+          // The commit routes by the orientation the drag happened in, so
+          // the other orientation's placement is never touched. The branch
+          // only mounts with a store and snapshot; the guards satisfy the
+          // checker for the closure.
+          if (!store || !snapshot) return
+          store.setPlacementInViewMode(
             instanceId,
             placement.cellX,
             placement.cellY,
             placement.rotation,
+            snapshot.viewMode,
           )
         }}
       />

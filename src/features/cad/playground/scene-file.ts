@@ -12,6 +12,7 @@ import {
   type SceneGridSystem,
   type SceneParseResult,
   type ScenePlacement,
+  type ScenePlacementFile,
   type SceneInstanceDiagnostic,
 } from '../../../cad-contract/scene'
 import type { DiagnosticDescriptor } from '../../../cad-contract/diagnostics'
@@ -28,6 +29,7 @@ export type PlaygroundSceneInstanceData = {
   modelId: ModelId
   parameters: ModelParameterValues
   placement: ScenePlacement | null
+  wallPlacement: ScenePlacement | null
   colors: ModelColors
 }
 
@@ -75,15 +77,18 @@ function parsePlaygroundInstance(
     modelId: validation.value.modelId,
     parameters: validation.value.parameters,
     placement: common.placement ?? null,
+    wallPlacement: common.wallPlacement,
     colors: common.colors,
   }
 }
 
 /**
- * Parses a scene or single-instance settings file into validated playground
- * instances. Instance ids are reassigned in file order (`inst-1`, `inst-2`,
- * ...); file-provided ids are ignored. A file with any invalid instance is
- * rejected as a whole.
+ * Parses a scene JSON file into validated playground instances. Instance
+ * ids are reassigned in file order (`inst-1`, `inst-2`, ...); file-provided
+ * ids are ignored. A file with any invalid instance is rejected as a whole.
+ * A v2 scene instance carries both placement blocks; a v2 settings export
+ * (a single instance omitting both) imports as an unplaced instance that
+ * receives free-cell placements during scene import.
  */
 export function parsePlaygroundSceneFile(
   value: unknown,
@@ -111,6 +116,7 @@ export function serializePlaygroundScene(
     modelId: ModelId
     parameters: ModelParameterValues
     placement: ScenePlacement | null
+    wallPlacement: ScenePlacement | null
     colors: ModelColors
   }>,
   options: { maxHeightMm?: number | null } = {},
@@ -129,19 +135,30 @@ export function serializePlaygroundScene(
       ...(instance.label ? { label: instance.label } : {}),
       modelId: instance.modelId,
       parameters: cloneJsonableParameters(instance.parameters),
-      placement: instance.placement
-        ? {
-            cellX: instance.placement.cellX,
-            cellY: instance.placement.cellY,
-            rotation: instance.placement.rotation,
-            supportedBy: null,
-          }
-        : undefined,
+      placement: serializePlacementFile(instance.placement),
+      wallPlacement: serializePlacementFile(instance.wallPlacement),
       colors: {
         primary: instance.colors.primary.toLowerCase(),
         secondary: instance.colors.secondary.toLowerCase(),
       },
     })),
+  }
+}
+
+/**
+ * Placement blocks are written only when the instance has a placement;
+ * settings-file exports (both placements `null`) therefore omit both
+ * fields, while scene exports always carry them.
+ */
+function serializePlacementFile(
+  placement: ScenePlacement | null,
+): ScenePlacementFile | undefined {
+  if (!placement) return undefined
+  return {
+    cellX: placement.cellX,
+    cellY: placement.cellY,
+    rotation: placement.rotation,
+    supportedBy: null,
   }
 }
 

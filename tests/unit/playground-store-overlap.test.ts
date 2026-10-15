@@ -23,8 +23,12 @@ vi.mock('../../src/features/cad/worker-client', () => {
   }
 })
 
-import { createPlaygroundStore, type PlaygroundStore } from '../../src/features/cad/playground/store'
+import {
+  createPlaygroundStore,
+  type PlaygroundStore,
+} from '../../src/features/cad/playground/store'
 import { PLAYGROUND_STACK_CLEARANCE_MM } from '../../src/features/cad/playground/occupancy'
+import { SCENE_FILE_SCHEMA_VERSION } from '../../src/cad-contract/scene'
 import {
   boundsForOpenGridStackableBox,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
@@ -55,11 +59,13 @@ function sceneInstance(
   modelId: string
   parameters: Record<string, unknown>
   placement: ScenePlacement
+  wallPlacement: ScenePlacement
 } {
   return {
     modelId: 'opengrid-stackable-box',
     parameters: { ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS },
     placement: { cellX, cellY, rotation: 0, supportedBy: null },
+    wallPlacement: { cellX, cellY, rotation: 0, supportedBy: null },
   }
 }
 
@@ -115,7 +121,9 @@ describe('playground store soft overlap', () => {
     const next = setupStore()
 
     next.setPlacement('inst-2', 0, 0, 0)
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(
+      BOX_SEAT_Z,
+    )
 
     next.setPlacement('inst-2', 9, 9, 0)
     const snapshot = next.getSnapshot()
@@ -172,7 +180,9 @@ describe('playground store soft overlap', () => {
 
     // Deleting the supporter also drops the stacked instance.
     next.setParameter('inst-1', 'x', '3')
-    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
+    expect(next.getSnapshot().instanceStackedZ['inst-2']).toBeCloseTo(
+      BOX_SEAT_Z,
+    )
     next.removeInstance('inst-1')
     expect(next.getSnapshot().instanceStackedZ['inst-2']).toBe(0)
   })
@@ -181,7 +191,7 @@ describe('playground store soft overlap', () => {
     const next = setupStore()
 
     const scene = {
-      schemaVersion: 1,
+      schemaVersion: SCENE_FILE_SCHEMA_VERSION,
       kind: 'shape-shortcut/scene',
       grid: { system: 'opengrid' },
       instances: [sceneInstance(0, 0), sceneInstance(0, 0)],
@@ -269,6 +279,109 @@ describe('playground store soft overlap', () => {
     expect(next.getSnapshot().overlappingInstanceIds).toEqual([])
   })
 
+  it('keeps the desktop placement when a wall drag commit moves the instance', () => {
+    const next = setupStore()
+    const desktopBefore = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')?.placement
+
+    const result = next.setPlacementInViewMode('inst-1', 3, 4, 0, 'wall')
+    expect(result.ok).toBe(true)
+
+    const committed = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')
+    expect(committed?.wallPlacement).toEqual({
+      cellX: 3,
+      cellY: 4,
+      rotation: 0,
+      supportedBy: null,
+    })
+    expect(committed?.placement).toEqual(desktopBefore)
+  })
+
+  it('keeps the wall placement when a desktop drag commit moves the instance', () => {
+    const next = setupStore()
+    next.setViewMode('wall')
+    next.setPlacementInViewMode('inst-1', 3, 4, 0, 'wall')
+    const wallBefore = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')?.wallPlacement
+
+    next.setViewMode('desktop')
+    const result = next.setPlacementInViewMode('inst-1', -2, 5, 0, 'desktop')
+    expect(result.ok).toBe(true)
+
+    const committed = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')
+    expect(committed?.placement).toEqual({
+      cellX: -2,
+      cellY: 5,
+      rotation: 0,
+      supportedBy: null,
+    })
+    expect(committed?.wallPlacement).toEqual(wallBefore)
+  })
+
+  it('assigns added instances independent placements per view', () => {
+    const next = setupStore()
+    // inst-1 owns desktop cells (0,0)-(1,1) but sits far away on the wall
+    // board; the wall scan must therefore not treat the desktop footprint
+    // as occupied.
+    next.setPlacement('inst-1', 0, 0, 0)
+    next.setViewMode('wall')
+    next.setPlacement('inst-1', 6, 6, 0)
+    next.setViewMode('desktop')
+
+    expect(next.addInstance('opengrid-stackable-box')).toBe(true)
+
+    const added = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-3')
+    // Desktop scan avoids inst-1's desktop footprint; wall scan sees no
+    // wall occupancy (desk-only instances do not occupy wall cells), so it
+    // anchors at the scan origin. Neither is derived from the other.
+    expect(added?.placement).toEqual({
+      cellX: -2,
+      cellY: -2,
+      rotation: 0,
+      supportedBy: null,
+    })
+    // Numeric comparisons; `x + 0` merges the ring scan's -0 into +0.
+    expect(Number(added?.wallPlacement?.cellX) + 0).toBe(0)
+    expect(Number(added?.wallPlacement?.cellY) + 0).toBe(0)
+    expect(added?.wallPlacement?.rotation).toBe(0)
+    expect(added?.wallPlacement?.supportedBy).toBeNull()
+  })
+
+  it('writes rotation edits only to the active orientation placement', () => {
+    const next = setupStore()
+    next.setViewMode('wall')
+
+    const wallResult = next.setPlacementInViewMode('inst-1', 2, 3, 90, 'wall')
+    expect(wallResult.ok).toBe(true)
+    let committed = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')
+    expect(committed?.wallPlacement?.rotation).toBe(90)
+    expect(committed?.placement?.rotation).toBe(0)
+
+    const desktopResult = next.setPlacementInViewMode(
+      'inst-1',
+      2,
+      3,
+      180,
+      'desktop',
+    )
+    expect(desktopResult.ok).toBe(true)
+    committed = next
+      .getSnapshot()
+      .instances.find((instance) => instance.id === 'inst-1')
+    expect(committed?.placement?.rotation).toBe(180)
+    expect(committed?.wallPlacement?.rotation).toBe(90)
+  })
+
   it('ignores instances the active orientation does not display', () => {
     const next = setupStore()
     // A wall-system instance added while in desktop orientation stays
@@ -335,7 +448,7 @@ describe('playground store soft overlap', () => {
       expect(
         next.importScene(
           JSON.stringify({
-            schemaVersion: 1,
+            schemaVersion: SCENE_FILE_SCHEMA_VERSION,
             kind: 'shape-shortcut/scene',
             instances: [
               {
@@ -347,11 +460,23 @@ describe('playground store soft overlap', () => {
                   rotation,
                   supportedBy: null,
                 },
+                wallPlacement: {
+                  cellX: -4,
+                  cellY: -3,
+                  rotation,
+                  supportedBy: null,
+                },
               },
               {
                 modelId: 'opengrid-wall-cover',
                 parameters: { text: 'A' },
                 placement: {
+                  cellX: neighborX,
+                  cellY: -3,
+                  rotation: 0,
+                  supportedBy: null,
+                },
+                wallPlacement: {
                   cellX: neighborX,
                   cellY: -3,
                   rotation: 0,

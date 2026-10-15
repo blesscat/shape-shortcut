@@ -118,11 +118,7 @@ export const messages = {
   'playground.instance.editorHint':
     '進階設定與細節預覽請使用「{name}」工作區。',
   'playground.placement.title': '擺放位置（格子座標）',
-  'playground.placement.cellX': 'X',
-  'playground.placement.cellY': 'Y',
   'playground.placement.rotation': '旋轉',
-  'playground.placement.stepDown': '{axis} 減 1',
-  'playground.placement.stepUp': '{axis} 加 1',
   'playground.overlapWarning': '有 {count} 個元件重疊，請調整擺放位置。',
   'playground.heightLimit.title': '高度上限（mm）',
   'playground.heightLimitWarning':
