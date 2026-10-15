@@ -1,0 +1,6 @@
+# Expose native seeking for the short documentation movies.
+/docs/desk-assembly/*.mp4
+  Accept-Ranges: bytes
+
+/docs/desk-assembly/*.webm
+  Accept-Ranges: bytes

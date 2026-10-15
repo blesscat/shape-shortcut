@@ -46,3 +46,16 @@ generation cleans its own temporary mesh/frame data on success or failure.
 Inspect the six posters, the start/rest/lift poses, and the underside close-up
 before publishing. Keep the existing HTML settings, captions and assembly steps
 equivalent when changing a clip; a static-frame link is always available.
+
+Workers delivery also needs the scoped `Accept-Ranges: bytes` movie rules in
+`public/_headers`. Without this advertisement Chromium can fully buffer a movie
+while exposing a zero-length seekable timeline. Keep the hosting check alongside
+the regular dev-server playback checks:
+
+```sh
+pnpm exec playwright test -c playwright.workers.config.ts tests/e2e-workers/desk-assembly.spec.ts
+```
+
+Set `WORKERS_TEST_BASE_URL` to run that same regression against a deployed preview.
+It verifies the movie responses and actual no-JavaScript mobile seeking. The
+header mechanism follows [Cloudflare's static asset headers documentation](https://developers.cloudflare.com/workers/static-assets/headers/).
