@@ -4,28 +4,25 @@
     opengridStackableBoxDefinition,
     unitLabelFor,
   } from '../../../../features/cad/model-catalog'
-  import {
-    externalOpenGridStackableBoxHeightFor,
-    openGridStackableBoxOpeningBottomLengthMaximumFor,
-    validateOpenGridStackableBoxParameters,
-    OPENGRID_STACKABLE_BOX_CONFIGURATION,
-    OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
-    OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
-    type OpenGridStackableBoxOpeningDirection,
-    type OpenGridStackableBoxOpeningParameterKey,
-    type OpenGridStackableBoxParameters,
-  } from '../../../../cad-contract/units'
-  import { openGridStackableBoxHoneycombPanelCellCountFor } from '../../../../cad-kernel/lattice/opengrid-honeycomb-cells'
   import { calculateOpenGridStackableBoxCounts } from '../../../../features/cad/grid-dimensions'
   import GridDimensionCalculator from '../GridDimensionCalculator.svelte'
-  import HoneycombCellCountEstimate from '../HoneycombCellCountEstimate.svelte'
-  import HoneycombRenderWarning from '../HoneycombRenderWarning.svelte'
+  import HoneycombSettings from './HoneycombSettings.svelte'
+  import ModeRadioGroup from './ModeRadioGroup.svelte'
+  import OpeningSettings from './OpeningSettings.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
+  import TopRimSettings from './TopRimSettings.svelte'
   import type { ComponentPanelProps } from '../types'
-  import type { ParameterField as ParameterFieldDefinition } from '../../../../features/cad/model-catalog'
   import { formatValidationIssue } from '../../../../i18n/diagnostics'
   import { translate } from '../../../../i18n'
+  import {
+    bottomModeForRawParameters,
+    bottomModeOptions,
+    seatModeForRawParameters,
+    seatModeOptions,
+    topRimModeForRawParameters,
+    topRimModeOptions,
+  } from './stackable-box-panel-logic'
 
   let {
     locale,
@@ -42,319 +39,12 @@
     onInputChange('y', String(parameters.rows))
   }
 
-  type BoxTopRimMode = 'stacking-rail' | 'flat-top'
-  type BoxBottomMode = 'stacking' | 'thin-shell' | 'none'
-  type BoxSeatMode = 'none' | 'detachable-corner-seat' | 'integrated'
-
-  const topRimModeOptions: ReadonlyArray<{
-    value: BoxTopRimMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'stacking-rail',
-      labelKey: 'panel.box.topRimStacking',
-      descriptionKey: 'panel.box.topRimStackingDescription',
-    },
-    {
-      value: 'flat-top',
-      labelKey: 'panel.box.topRimFlat',
-      descriptionKey: 'panel.box.topRimFlatDescription',
-    },
-  ]
-
-  const bottomModeOptions: ReadonlyArray<{
-    value: BoxBottomMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'stacking',
-      labelKey: 'panel.box.bottomStacking',
-      descriptionKey: 'panel.box.bottomStackingDescription',
-    },
-    {
-      value: 'thin-shell',
-      labelKey: 'panel.box.bottomThinShell',
-      descriptionKey: 'panel.box.bottomThinShellDescription',
-    },
-    {
-      value: 'none',
-      labelKey: 'panel.box.bottomNone',
-      descriptionKey: 'panel.box.bottomNoneDescription',
-    },
-  ]
-
-  const seatModeOptions: ReadonlyArray<{
-    value: BoxSeatMode
-    labelKey: string
-    descriptionKey: string
-  }> = [
-    {
-      value: 'none',
-      labelKey: 'panel.seat.none',
-      descriptionKey: 'panel.seat.noneDescription',
-    },
-    {
-      value: 'detachable-corner-seat',
-      labelKey: 'panel.seat.detachableCornerSeat',
-      descriptionKey: 'panel.seat.detachableCornerSeatDescription',
-    },
-    {
-      value: 'integrated',
-      labelKey: 'panel.seat.integrated',
-      descriptionKey: 'panel.seat.integratedDescription',
-    },
-  ]
-
-  function seatModeForRawParameters(): BoxSeatMode {
-    const value = rawParameters.cornerSeatMode
-    if (value === 'none' || value === 'integrated') return value
-    return 'detachable-corner-seat'
-  }
-
-  function topRimModeForRawParameters(): BoxTopRimMode {
-    if (rawParameters.topRimMode === 'flat-top') return 'flat-top'
-    return 'stacking-rail'
-  }
-
-  function bottomModeForRawParameters(): BoxBottomMode {
-    const value = rawParameters.bottomMode
-    if (value === 'thin-shell' || value === 'none') return value
-    return 'stacking'
-  }
-
-  function handleSeatModeChange(event: Event): void {
-    if (!(event.currentTarget instanceof HTMLInputElement)) return
-    if (!event.currentTarget.checked) return
-    onInputChange('cornerSeatMode', event.currentTarget.value)
-  }
-
-  function handleTopRimModeChange(event: Event): void {
-    if (!(event.currentTarget instanceof HTMLInputElement)) return
-    if (!event.currentTarget.checked) return
-    onInputChange('topRimMode', event.currentTarget.value)
-  }
-
-  function handleBottomModeChange(event: Event): void {
-    if (!(event.currentTarget instanceof HTMLInputElement)) return
-    if (!event.currentTarget.checked) return
-    onInputChange('bottomMode', event.currentTarget.value)
-  }
-
   function modeErrorDescriptionId(): string | undefined {
     const ids: string[] = []
     if (fieldErrors.topRimMode) ids.push('topRimMode-error')
     if (fieldErrors.bottomMode) ids.push('bottomMode-error')
     return ids.length > 0 ? ids.join(' ') : undefined
   }
-
-  const openingGroups = [
-    {
-      direction: '-Y',
-      labelKey: 'panel.opening.direction.front',
-      keys: [
-        'openingMinusYDepth',
-        'openingMinusYBottomLength',
-        'openingMinusYAngle',
-      ],
-    },
-    {
-      direction: '+Y',
-      labelKey: 'panel.opening.direction.back',
-      keys: [
-        'openingPlusYDepth',
-        'openingPlusYBottomLength',
-        'openingPlusYAngle',
-      ],
-    },
-    {
-      direction: '-X',
-      labelKey: 'panel.opening.direction.left',
-      keys: [
-        'openingMinusXDepth',
-        'openingMinusXBottomLength',
-        'openingMinusXAngle',
-      ],
-    },
-    {
-      direction: '+X',
-      labelKey: 'panel.opening.direction.right',
-      keys: [
-        'openingPlusXDepth',
-        'openingPlusXBottomLength',
-        'openingPlusXAngle',
-      ],
-    },
-  ] as const
-
-  type OpeningGroupOpenState = Record<
-    OpenGridStackableBoxOpeningDirection,
-    boolean
-  >
-
-  let openingDisclosureOpen = $state(false)
-  let openingGroupOpen = $state<OpeningGroupOpenState>({
-    '-Y': false,
-    '+Y': false,
-    '-X': false,
-    '+X': false,
-  })
-  let previousOpeningValueSignature: string | undefined
-
-  function rawNumberFor(key: string): number | null {
-    const rawValue = rawParameters[key as keyof typeof rawParameters]
-    if (rawValue === undefined || rawValue.trim() === '') return null
-    const value = Number(rawValue)
-    return Number.isFinite(value) ? value : null
-  }
-
-  function openingGroupHasNonDefaultValue(
-    group: (typeof openingGroups)[number],
-  ): boolean {
-    return group.keys.some((key) => {
-      const rawValue = rawParameters[key]
-      if (rawValue === undefined || rawValue.trim() === '') return false
-      const value = Number(rawValue)
-      if (!Number.isFinite(value)) return true
-      return value !== OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS[key]
-    })
-  }
-
-  function hasNonDefaultOpeningValues(): boolean {
-    return openingGroups.some(openingGroupHasNonDefaultValue)
-  }
-
-  function openingValueSignatureForRawParameters(): string {
-    return OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS.map(
-      (key) => rawParameters[key] ?? '',
-    ).join('|')
-  }
-
-  $effect(() => {
-    const signature = openingValueSignatureForRawParameters()
-    if (signature === previousOpeningValueSignature) return
-    previousOpeningValueSignature = signature
-
-    for (const group of openingGroups) {
-      openingGroupOpen[group.direction] = openingGroupHasNonDefaultValue(group)
-    }
-    openingDisclosureOpen = hasNonDefaultOpeningValues()
-  })
-
-  function parametersForRange(): OpenGridStackableBoxParameters | null {
-    const x = rawNumberFor('x')
-    const y = rawNumberFor('y')
-    const height = rawNumberFor('height')
-    if (x === null || y === null || height === null) return null
-
-    const openingValues = {} as Record<
-      OpenGridStackableBoxOpeningParameterKey,
-      number
-    >
-    for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
-      openingValues[key] =
-        rawNumberFor(key) ?? OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS[key]
-    }
-
-    return {
-      x,
-      y,
-      height,
-      cornerSeatMode: seatModeForRawParameters(),
-      fullBottomHoleGrid: rawParameters.fullBottomHoleGrid === 'true',
-      topRimMode: topRimModeForRawParameters(),
-      bottomMode: bottomModeForRawParameters(),
-      honeycombMode: rawParameters.honeycombMode === 'true',
-      topRimEnabled: rawParameters.topRimEnabled === 'true',
-      topRimHeight:
-        rawNumberFor('topRimHeight') ??
-        OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
-      ...openingValues,
-    }
-  }
-
-  let honeycombCellCount = $derived.by(() => {
-    if (rawParameters.honeycombMode !== 'true') return null
-    const candidate = parametersForRange()
-    if (!candidate) return null
-    const validation = validateOpenGridStackableBoxParameters(candidate)
-    if (!validation.valid) return null
-    return openGridStackableBoxHoneycombPanelCellCountFor(validation.value)
-  })
-
-  function fieldsFor(
-    keys: readonly OpenGridStackableBoxOpeningParameterKey[],
-    direction: OpenGridStackableBoxOpeningDirection,
-    displayDirection: string,
-  ): ParameterFieldDefinition[] {
-    return keys.flatMap((key) => {
-      const field = opengridStackableBoxDefinition.parameterSchema.find(
-        (candidate) => candidate.key === key,
-      )
-      if (!field) return []
-      const displayedField = { ...field, axis: displayDirection }
-      if (field.key.endsWith('BottomLength')) {
-        const depth = rawNumberFor(keys[0])
-        const minimum =
-          depth !== null && depth > 0
-            ? 1
-            : OPENGRID_STACKABLE_BOX_CONFIGURATION.openingBottomLengthMin
-        const parameters = parametersForRange()
-        let calculatedMaximum = field.max
-        if (parameters) {
-          calculatedMaximum = openGridStackableBoxOpeningBottomLengthMaximumFor(
-            parameters,
-            direction,
-          )
-        }
-        const maximum = Math.max(
-          minimum,
-          Math.min(field.max, calculatedMaximum),
-        )
-        return [
-          {
-            ...displayedField,
-            min: minimum,
-            max: maximum,
-            sliderMin: minimum,
-            sliderMax: maximum,
-          },
-        ]
-      }
-      if (!field.key.endsWith('Depth')) return [displayedField]
-
-      const height = rawNumberFor('height')
-      if (height === null) return [displayedField]
-      const maximum = Math.max(field.min, Math.min(field.max, height))
-      return [{ ...displayedField, max: maximum, sliderMax: maximum }]
-    })
-  }
-
-  const topRimHeightField = $derived.by((): ParameterFieldDefinition => {
-    const parameters = parametersForRange()
-    const externalTop = parameters
-      ? externalOpenGridStackableBoxHeightFor(parameters)
-      : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHeight +
-        OPENGRID_STACKABLE_BOX_CONFIGURATION.bottomAssemblyHeight
-    const max = Math.max(
-      OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
-      Math.floor(externalTop / 2),
-    )
-    return {
-      key: 'topRimHeight',
-      label: 'parameter.topRimHeight',
-      axis: 'Z',
-      unit: 'mm',
-      control: 'range-text',
-      defaultValue: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
-      min: OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
-      max,
-      step: 1,
-      sliderMin: OPENGRID_STACKABLE_BOX_CONFIGURATION.minTopRimHeight,
-      sliderMax: max,
-    }
-  })
 </script>
 
 <fieldset class="m-0 grid gap-3 border-0 p-0">
@@ -365,46 +55,20 @@
     onApply={handleDimensionCalculation}
   />
   <div class="grid gap-2">
-    <fieldset
-      class="grid gap-2 border-0 p-0"
-      aria-describedby={fieldErrors.cornerSeatMode
+    <ModeRadioGroup
+      {locale}
+      {onInputChange}
+      fieldKey="cornerSeatMode"
+      testid="opengrid-stackable-box-seat-mode"
+      radioName="opengrid-stackable-box-seat-mode"
+      legendKey="panel.seat.mode"
+      options={seatModeOptions}
+      selectedValue={seatModeForRawParameters(rawParameters)}
+      errorDescriptionIds={fieldErrors.cornerSeatMode
         ? 'cornerSeatMode-error'
         : undefined}
-      aria-invalid={Boolean(fieldErrors.cornerSeatMode)}
-      aria-label={translate(locale, 'panel.seat.mode')}
-      role="radiogroup"
-      data-testid="opengrid-stackable-box-seat-mode"
-    >
-      <legend class="font-[650]">{translate(locale, 'panel.seat.mode')}</legend>
-      <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
-        {#each seatModeOptions as option (option.value)}
-          <label class="flex min-w-0 items-start gap-2">
-            <input
-              aria-label={translate(locale, option.labelKey)}
-              class="mt-1 accent-primary"
-              name="opengrid-stackable-box-seat-mode"
-              type="radio"
-              value={option.value}
-              checked={seatModeForRawParameters() === option.value}
-              onchange={handleSeatModeChange}
-            />
-            <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-          </label>
-        {/each}
-      </div>
-      <span class="text-sm text-muted-foreground">
-        {seatModeOptions.find(
-          (option) => option.value === seatModeForRawParameters(),
-        )?.descriptionKey
-          ? translate(
-              locale,
-              seatModeOptions.find(
-                (option) => option.value === seatModeForRawParameters(),
-              )!.descriptionKey,
-            )
-          : ''}
-      </span>
-    </fieldset>
+      ariaInvalid={Boolean(fieldErrors.cornerSeatMode)}
+    />
     <label class="flex min-w-0 items-start gap-2">
       <input
         aria-describedby={fieldErrors.fullBottomHoleGrid
@@ -426,112 +90,36 @@
       <span class="font-[650]">{translate(locale, 'panel.fullBottomHole')}</span
       >
     </label>
-    <label class="flex min-w-0 items-start gap-2">
-      <input
-        class="mt-1 accent-primary"
-        type="checkbox"
-        aria-label={translate(locale, 'panel.honeycomb')}
-        data-testid="opengrid-stackable-box-honeycomb-mode"
-        checked={rawParameters.honeycombMode === 'true'}
-        onchange={(event) => {
-          if (!(event.currentTarget instanceof HTMLInputElement)) return
-          onInputChange('honeycombMode', String(event.currentTarget.checked))
-        }}
-      />
-      <span class="font-[650]">{translate(locale, 'panel.honeycomb')}</span>
-      <span
-        class="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary"
-      >
-        {translate(locale, 'panel.honeycombBeta')}
-      </span>
-    </label>
-    {#if rawParameters.honeycombMode === 'true'}
-      <HoneycombRenderWarning {locale} />
-      {#if honeycombCellCount !== null}
-        <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
-      {/if}
-    {/if}
+    <HoneycombSettings {locale} {rawParameters} {onInputChange} />
   </div>
-  <fieldset
-    class="grid gap-2 border-0 p-0"
-    aria-describedby={modeErrorDescriptionId()}
-    aria-invalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
-    aria-label={translate(locale, 'panel.box.topRim')}
-    role="radiogroup"
-    data-testid="opengrid-stackable-box-top-rim-mode"
-  >
-    <legend class="font-[650]">{translate(locale, 'panel.box.topRim')}</legend>
-    <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
-      {#each topRimModeOptions as option (option.value)}
-        <label class="flex min-w-0 items-start gap-2">
-          <input
-            aria-describedby={modeErrorDescriptionId()}
-            aria-label={translate(locale, option.labelKey)}
-            class="mt-1 accent-primary"
-            data-testid={`opengrid-stackable-box-top-rim-${option.value}`}
-            name="opengrid-stackable-box-top-rim-mode"
-            type="radio"
-            value={option.value}
-            checked={topRimModeForRawParameters() === option.value}
-            onchange={handleTopRimModeChange}
-          />
-          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-        </label>
-      {/each}
-    </div>
-    <span class="text-sm text-muted-foreground">
-      {topRimModeOptions.find(
-        (option) => option.value === topRimModeForRawParameters(),
-      )?.descriptionKey
-        ? translate(
-            locale,
-            topRimModeOptions.find(
-              (option) => option.value === topRimModeForRawParameters(),
-            )!.descriptionKey,
-          )
-        : ''}
-    </span>
-  </fieldset>
-  <fieldset
-    class="grid gap-2 border-0 p-0"
-    aria-describedby={modeErrorDescriptionId()}
-    aria-invalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
-    aria-label={translate(locale, 'panel.box.bottom')}
-    role="radiogroup"
-    data-testid="opengrid-stackable-box-bottom-mode"
-  >
-    <legend class="font-[650]">{translate(locale, 'panel.box.bottom')}</legend>
-    <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
-      {#each bottomModeOptions as option (option.value)}
-        <label class="flex min-w-0 items-start gap-2">
-          <input
-            aria-describedby={modeErrorDescriptionId()}
-            aria-label={translate(locale, option.labelKey)}
-            class="mt-1 accent-primary"
-            data-testid={`opengrid-stackable-box-bottom-${option.value}`}
-            name="opengrid-stackable-box-bottom-mode"
-            type="radio"
-            value={option.value}
-            checked={bottomModeForRawParameters() === option.value}
-            onchange={handleBottomModeChange}
-          />
-          <span class="font-[650]">{translate(locale, option.labelKey)}</span>
-        </label>
-      {/each}
-    </div>
-    <span class="text-sm text-muted-foreground">
-      {bottomModeOptions.find(
-        (option) => option.value === bottomModeForRawParameters(),
-      )?.descriptionKey
-        ? translate(
-            locale,
-            bottomModeOptions.find(
-              (option) => option.value === bottomModeForRawParameters(),
-            )!.descriptionKey,
-          )
-        : ''}
-    </span>
-  </fieldset>
+  <ModeRadioGroup
+    {locale}
+    {onInputChange}
+    fieldKey="topRimMode"
+    testid="opengrid-stackable-box-top-rim-mode"
+    radioName="opengrid-stackable-box-top-rim-mode"
+    legendKey="panel.box.topRim"
+    options={topRimModeOptions}
+    selectedValue={topRimModeForRawParameters(rawParameters)}
+    errorDescriptionIds={modeErrorDescriptionId()}
+    ariaInvalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
+    optionTestidPrefix="opengrid-stackable-box-top-rim"
+    radioDescribedby
+  />
+  <ModeRadioGroup
+    {locale}
+    {onInputChange}
+    fieldKey="bottomMode"
+    testid="opengrid-stackable-box-bottom-mode"
+    radioName="opengrid-stackable-box-bottom-mode"
+    legendKey="panel.box.bottom"
+    options={bottomModeOptions}
+    selectedValue={bottomModeForRawParameters(rawParameters)}
+    errorDescriptionIds={modeErrorDescriptionId()}
+    ariaInvalid={Boolean(fieldErrors.topRimMode || fieldErrors.bottomMode)}
+    optionTestidPrefix="opengrid-stackable-box-bottom"
+    radioDescribedby
+  />
   {#if fieldErrors.cornerSeatMode}
     <span class="text-sm text-error" id="cornerSeatMode-error" role="alert"
       >{formatValidationIssue(locale, fieldErrors.cornerSeatMode)}</span
@@ -552,42 +140,7 @@
       >{formatValidationIssue(locale, fieldErrors.bottomMode)}</span
     >
   {/if}
-  <label class="flex items-start gap-2 text-sm">
-    <input
-      class="mt-0.5"
-      type="checkbox"
-      aria-label={translate(locale, 'panel.topRim')}
-      data-testid="opengrid-stackable-box-top-rim-enabled"
-      checked={rawParameters.topRimEnabled === 'true'}
-      onchange={(event) => {
-        if (!(event.currentTarget instanceof HTMLInputElement)) return
-        onInputChange('topRimEnabled', String(event.currentTarget.checked))
-      }}
-    />
-    <span>{translate(locale, 'panel.topRim')}</span>
-  </label>
-  {#if rawParameters.topRimEnabled === 'true'}
-    {@const value =
-      rawParameters.topRimHeight ?? String(topRimHeightField.defaultValue)}
-    <ParameterField
-      {locale}
-      label={displayParameterLabel(topRimHeightField, locale)}
-      unit={unitLabelFor(locale, topRimHeightField.unit)}
-      changed={value !== String(topRimHeightField.defaultValue)}
-      error={fieldErrors.topRimHeight}
-      errorId="topRimHeight-error"
-      onRestore={() =>
-        onInputChange('topRimHeight', String(topRimHeightField.defaultValue))}
-    >
-      <ParameterControl
-        {locale}
-        field={topRimHeightField}
-        {value}
-        error={fieldErrors.topRimHeight}
-        onChange={(nextValue) => onInputChange('topRimHeight', nextValue)}
-      />
-    </ParameterField>
-  {/if}
+  <TopRimSettings {locale} {rawParameters} {fieldErrors} {onInputChange} />
   {#each opengridStackableBoxDefinition.parameterSchema.slice(0, 3) as field (field.key)}
     {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
     <ParameterField
@@ -608,51 +161,5 @@
       />
     </ParameterField>
   {/each}
-  <details
-    class="grid gap-3 rounded-lg border border-border-field p-3"
-    data-testid="opengrid-stackable-box-opening-disclosure"
-    bind:open={openingDisclosureOpen}
-  >
-    <summary class="cursor-pointer font-[650]">
-      {translate(locale, 'panel.opening.settings')}
-    </summary>
-    <div class="grid gap-3 pt-1">
-      {#each openingGroups as group (group.direction)}
-        <details
-          class="grid gap-3 rounded-lg border border-border-field p-3"
-          data-direction={group.direction}
-          data-testid={`opengrid-stackable-box-opening-group-${group.direction}`}
-          bind:open={openingGroupOpen[group.direction]}
-        >
-          <summary class="cursor-pointer font-[650]">
-            {translate(locale, group.labelKey)}
-          </summary>
-          <fieldset class="grid gap-3 border-0 p-0 pt-1">
-            {#each fieldsFor(group.keys, group.direction, translate(locale, group.labelKey)) as field (field.key)}
-              {@const value =
-                rawParameters[field.key] ?? String(field.defaultValue)}
-              <ParameterField
-                {locale}
-                label={displayParameterLabel(field, locale)}
-                unit={unitLabelFor(locale, field.unit)}
-                changed={value !== String(field.defaultValue)}
-                error={fieldErrors[field.key]}
-                errorId={`${field.key}-error`}
-                onRestore={() =>
-                  onInputChange(field.key, String(field.defaultValue))}
-              >
-                <ParameterControl
-                  {locale}
-                  {field}
-                  {value}
-                  error={fieldErrors[field.key]}
-                  onChange={(nextValue) => onInputChange(field.key, nextValue)}
-                />
-              </ParameterField>
-            {/each}
-          </fieldset>
-        </details>
-      {/each}
-    </div>
-  </details>
+  <OpeningSettings {locale} {rawParameters} {fieldErrors} {onInputChange} />
 </fieldset>
