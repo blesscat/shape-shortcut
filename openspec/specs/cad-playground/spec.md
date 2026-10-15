@@ -643,3 +643,77 @@ The playground MUST delete the currently selected instance when the user presses
 - **WHEN** an instance is selected and the user presses Delete or Backspace outside of any text field
 - **THEN** that instance MUST be removed from the scene exactly once
 - **AND** typing either key inside a text field MUST NOT delete any instance
+
+### Requirement: Playground instance parameter inputs are interpreted by field type
+
+The playground instance parameter store MUST interpret each raw parameter
+input according to the field's type as declared by the component definition:
+numeric fields by their numeric value, enum fields by their literal option
+value, and boolean fields by their boolean value. A selection that is valid
+per the component's contract validation MUST be adopted into the instance's
+effective typed parameters and MUST drive regeneration. The store MUST NOT
+apply a single numeric coercion to every field.
+
+#### Scenario: Stacking mode selection takes effect
+
+- **WHEN** the user selects `堆疊模式` (`boxMode='stackable'`) on an
+  `opengrid-organizer-box` playground instance whose other parameters are
+  valid for stacking
+- **THEN** the instance's effective typed parameters MUST adopt
+  `boxMode='stackable'`
+- **AND** the regenerated model MUST use the stacking body interface
+- **AND** the mode control MUST keep showing the selected stacking option
+
+#### Scenario: Enum selection is not coerced to a number
+
+- **WHEN** any playground instance control submits an enum option value
+- **THEN** the store MUST NOT reject the input merely because the value is
+  non-numeric
+
+### Requirement: Multi-step parameter edits accumulate before validation
+
+When a panel applies one logical edit as a sequence of raw input updates
+(for example selecting `boxMode='stackable'` and then raising
+`wallThickness` to the mode floor), the store MUST validate the accumulated
+raw input, and the effective typed parameters MUST reflect every step of the
+sequence. A step that is individually invalid MUST NOT discard the steps
+that follow it.
+
+#### Scenario: Mode switch with wall raise lands both values
+
+- **GIVEN** an `opengrid-organizer-box` playground instance with
+  `wallThickness=2` in normal mode
+- **WHEN** the panel selects `boxMode='stackable'` and then submits
+  `wallThickness=3`
+- **THEN** the effective typed parameters MUST be
+  `boxMode='stackable'` with `wallThickness=3`
+- **AND** no field error from the intermediate step MUST remain visible
+
+### Requirement: Rejected inputs stay consistent with effective parameters
+
+When an input is rejected by validation, the last valid committed parameters
+MUST remain the effective model, the attempted raw selection MUST remain
+accompanied by a visible field error, and no state without a visible error
+MAY show a selection that differs from the effective typed parameters.
+
+#### Scenario: Invalid combination keeps the error visible
+
+- **WHEN** a submitted raw parameter set fails contract validation
+- **THEN** the last valid model MUST remain rendered
+- **AND** the rejected field's error MUST stay visible
+- **AND** once a later valid input is committed, the attempted selection and
+  the effective parameters MUST agree with no stale error
+
+### Requirement: Field errors name the specific field
+
+Every playground parameter field that can raise a validation issue MUST have
+a localized field label in every supported locale, and field-level validation
+messages MUST render that label. Enum and boolean parameter fields of
+playground-selectable components MUST NOT fall back to the generic
+`參數` label.
+
+#### Scenario: Box mode error names the field
+
+- **WHEN** a `boxMode` validation issue is displayed in the zh-Hant locale
+- **THEN** the message MUST begin with the localized field name `盒體模式`
+- **AND** MUST NOT begin with the generic label `參數`

@@ -34,17 +34,19 @@ import {
   parseWallCoverRawParameters,
 } from './wall-cover'
 
-export function parseRawParameters(
-  raw: RawParameters,
-  modelId: ModelId = 'box',
-):
+export type RawParameterParseResult =
   | { valid: true; value: ModelParameterValues }
   | {
       valid: false
       messageId: string
       field?: ModelParameterKey
       params?: DiagnosticParams
-    } {
+    }
+
+export function parseRawParameters(
+  raw: RawParameters,
+  modelId: ModelId = 'box',
+): RawParameterParseResult {
   if (modelId === 'opengrid-stackable-box') {
     raw = withStackableBoxLegacyModeRawParameters(raw)
   }
