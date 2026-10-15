@@ -196,6 +196,36 @@ describe('playground scene file parsing', () => {
     expect(result.error.messageId).toBe('diagnostic.sceneFileMalformed')
   })
 
+  it('accepts a v2 settings export omitting both placement blocks', () => {
+    const result = parsePlaygroundSceneFile(
+      sceneFileWith([
+        {
+          modelId: 'box',
+          parameters: { width: 20, depth: 30, height: 40 },
+        },
+      ]),
+    )
+    expect(result.valid).toBe(true)
+    if (!result.valid) return
+    expect(result.scene.instances).toHaveLength(1)
+    expect(result.scene.instances[0]?.placement).toBeNull()
+    expect(result.scene.instances[0]?.wallPlacement).toBeNull()
+  })
+
+  it('rejects a legacy settings file at the previous schema version', () => {
+    const legacy = sceneFileWith([
+      {
+        modelId: 'box',
+        parameters: { width: 20, depth: 30, height: 40 },
+      },
+    ])
+    legacy.schemaVersion = SCENE_FILE_SCHEMA_VERSION - 1
+    const result = parsePlaygroundSceneFile(legacy)
+    expect(result.valid).toBe(false)
+    if (result.valid) return
+    expect(result.error.messageId).toBe('diagnostic.sceneFileUnsupportedVersion')
+  })
+
   it('rejects invalid wall placements', () => {
     const result = parsePlaygroundSceneFile(
       sceneFileWith([

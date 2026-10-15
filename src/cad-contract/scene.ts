@@ -262,10 +262,15 @@ export function parseSceneInstanceCommon(
       error: { messageId: 'diagnostic.sceneFileMalformed' },
     }
   }
-  // A scene file must carry the wall orientation placement for every
-  // instance; its absence means a pre-v2 (or settings-shaped) file, which
-  // is rejected instead of migrated.
-  if (entry.wallPlacement === undefined) {
+  // A v2 scene instance always writes both placement blocks. A v2 settings
+  // file (component-workspace export) omits both because the instance is
+  // unplaced; the schema-version gate has already rejected pre-v2 files, so
+  // the shared absence of both blocks is the settings shape — accepted with
+  // both placements null for free-cell assignment. Any other missing block
+  // stays malformed.
+  const settingsShape =
+    entry.wallPlacement === undefined && entry.placement === undefined
+  if (entry.wallPlacement === undefined && !settingsShape) {
     return {
       label: null,
       modelId: '',
@@ -291,8 +296,10 @@ export function parseSceneInstanceCommon(
   // `parseScenePlacement` also yields `undefined` for an absent value; the
   // presence check above already rejected that case, so only the invalid
   // (`null`) result reaches this branch.
-  const wallPlacement = parseScenePlacement(entry.wallPlacement) ?? null
-  if (wallPlacement === null) {
+  const wallPlacement = settingsShape
+    ? null
+    : (parseScenePlacement(entry.wallPlacement) ?? null)
+  if (wallPlacement === null && !settingsShape) {
     return {
       label: null,
       modelId: '',

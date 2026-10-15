@@ -429,12 +429,24 @@ Each scene MUST have a primary/secondary palette used as the default for its ins
 - **THEN** instance colors in a saved or in-memory scene MUST remain unchanged
 ### Requirement: 場景 JSON 匯入
 
-The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, an optional scene Z height limit `maxHeightMm`, and a list of instances, where each instance carries a desktop `placement` and a required `wallPlacement`. Import MUST reject files whose `schemaVersion` differs from the current schema version with the unsupported-version diagnostic; older scene files MUST NOT be migrated. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported instances whose Z spans collide MUST be flagged with the conflict color and persistent warning. A well-formed `maxHeightMm` MUST be applied as the scene height limit; an absent or invalid `maxHeightMm` MUST import as no limit instead of rejecting. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
+The playground MUST import a scene JSON file describing `schemaVersion`, a kind marker, an optional grid system, an optional scene palette, an optional scene Z height limit `maxHeightMm`, and a list of instances, where each instance carries a desktop `placement` and a required `wallPlacement`. A current-version settings file whose single instance omits both placement blocks (the component-workspace export shape) MUST be accepted as an unplaced instance that receives free-cell placements in each displayed orientation during import; omitting only one of the two blocks MUST be rejected as malformed. Import MUST reject files whose `schemaVersion` differs from the current schema version with the unsupported-version diagnostic; older scene files MUST NOT be migrated. Import MUST validate each instance against the current registered component definitions, reject the import with an explicit diagnostic when the file is malformed, when any `modelId` is not registered, when required fields are missing, or when the instance limit would be exceeded. Placement conflicts inside a well-formed file MUST NOT reject the import; imported instances whose Z spans collide MUST be flagged with the conflict color and persistent warning. A well-formed `maxHeightMm` MUST be applied as the scene height limit; an absent or invalid `maxHeightMm` MUST import as no limit instead of rejecting. Legacy parameter values MUST be normalized using the same versioned normalization rules as the components, and unknown fields MUST be ignored. A rejected import MUST NOT modify the current scene.
 
 #### Scenario: Valid scene import
 
 - **WHEN** the user imports a well-formed scene file whose instances all reference registered components with valid parameters
 - **THEN** the scene MUST contain those instances with their desktop placements, wall placements, and colors
+
+#### Scenario: Workspace settings file imports as an unplaced instance
+
+- **GIVEN** a current-version settings file whose single instance omits both placement blocks
+- **WHEN** the user imports it into the playground
+- **THEN** the scene MUST contain that instance with both placements assigned by free-cell scans in each displayed orientation
+
+#### Scenario: Partially placed instance rejected as malformed
+
+- **GIVEN** a current-version file whose instance carries a desktop `placement` but omits `wallPlacement`
+- **WHEN** the user imports it
+- **THEN** the import MUST be rejected with the malformed-file diagnostic
 
 #### Scenario: Older schema version rejected
 

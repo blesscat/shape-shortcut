@@ -86,9 +86,9 @@ function parsePlaygroundInstance(
  * Parses a scene JSON file into validated playground instances. Instance
  * ids are reassigned in file order (`inst-1`, `inst-2`, ...); file-provided
  * ids are ignored. A file with any invalid instance is rejected as a whole.
- * Since schema version 2 every instance must carry a `wallPlacement`, so
- * component-workspace settings exports (no placements) are rejected as
- * malformed scenes.
+ * A v2 scene instance carries both placement blocks; a v2 settings export
+ * (a single instance omitting both) imports as an unplaced instance that
+ * receives free-cell placements during scene import.
  */
 export function parsePlaygroundSceneFile(
   value: unknown,
