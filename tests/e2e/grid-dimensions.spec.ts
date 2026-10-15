@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 async function expectSameRow(first: Locator, second: Locator): Promise<void> {
   const firstBox = await first.boundingBox()
@@ -6,6 +6,13 @@ async function expectSameRow(first: Locator, second: Locator): Promise<void> {
   expect(firstBox).not.toBeNull()
   expect(secondBox).not.toBeNull()
   expect(Math.abs(firstBox!.y - secondBox!.y)).toBeLessThanOrEqual(1)
+}
+
+/* Since #184 the parameter panel collapses into a bottom drawer on viewports
+   ≤760px; open it so the calculators are reachable, as a mobile user would. */
+async function openParameterDrawer(page: Page): Promise<void> {
+  await page.getByTestId('cad-params-pill').click()
+  await expect(page.getByTestId('cad-params-drawer')).toBeVisible()
 }
 
 test('grid dimension calculators apply counts and preserve manual controls', async ({
@@ -112,11 +119,12 @@ test('OpenGrid print planner applies the practical primary piece and preserves h
     .getByRole('combobox', { name: 'OpenGrid Y 半格方向' })
     .selectOption('top')
   await page.getByRole('checkbox', { name: '正中心螺絲孔' }).check()
+  /* The per-intersection 'custom' screw mode and its 交界 picker were retired
+     in #103; drive a non-default mode that still ships and assert below that
+     the print planner leaves it untouched. */
   await page
     .getByRole('combobox', { name: 'OpenGrid 螺絲孔模式' })
-    .selectOption('custom')
-  await page.getByRole('button', { name: '交界 1 × 1' }).click()
-  await expect(page.getByText('已選 1 孔')).toBeVisible()
+    .selectOption('by-row-column')
 
   const calculator = page.getByTestId('grid-dimension-calculator')
   await calculator.getByRole('textbox', { name: '目標 X（mm）' }).fill('1000')
@@ -139,8 +147,7 @@ test('OpenGrid print planner applies the practical primary piece and preserves h
   ).toBeChecked()
   await expect(
     page.getByRole('combobox', { name: 'OpenGrid 螺絲孔模式' }),
-  ).toHaveValue('custom')
-  await expect(page.getByText('已選 1 孔')).toBeVisible()
+  ).toHaveValue('by-row-column')
 
   const result = page.getByTestId('grid-print-plan-result')
   await expect(result).toContainText('目標：35 × 35 格')
@@ -183,7 +190,6 @@ test('OpenGrid print planner applies the practical primary piece and preserves h
   await expect(
     page.getByRole('checkbox', { name: '正中心螺絲孔' }),
   ).toBeChecked()
-  await expect(page.getByText('已選 1 孔')).toBeVisible()
 })
 
 test('OpenGrid fills a calculated remainder with a persisted centered frame', async ({
@@ -358,6 +364,7 @@ test('grid dimension calculators remain usable on narrow viewports', async ({
 
   for (const path of ['/cad/modular-grid-base', '/cad/hsw-cell']) {
     await page.goto(path)
+    await openParameterDrawer(page)
     const calculator = page.getByTestId('grid-dimension-calculator')
     await expect(calculator).toBeVisible()
     await expect(
@@ -392,6 +399,7 @@ test('grid dimension calculators remain usable on narrow viewports', async ({
   }
 
   await page.goto('/cad/opengrid')
+  await openParameterDrawer(page)
   const openGridCalculator = page.getByTestId('grid-dimension-calculator')
   for (const label of [
     '目標 X（mm）',

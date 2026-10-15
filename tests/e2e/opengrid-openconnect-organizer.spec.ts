@@ -10,6 +10,13 @@ test('OpenConnect organizer is Wall-only and starts from the canonical snapshot'
   skipHeadlessFirefoxWithoutWebGL(browserName)
 
   await page.goto('/zh-Hant/models')
+  /* The v2 system switcher (#174) shows exactly one system panel at a time;
+     the Wall panel is server-rendered but hidden until its tab is pressed,
+     and getByRole ignores hidden panels. Press Wall like a user would. */
+  await page
+    .getByRole('group', { name: '選擇系統' })
+    .getByRole('button', { name: 'Wall', exact: true })
+    .click()
   const wallCard = page.locator(
     '[data-entry-key="opengrid-openconnect-organizer-wall"]',
   )

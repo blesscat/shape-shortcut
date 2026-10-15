@@ -36,14 +36,16 @@ test('OpenGrid stackable-box is listed and exposes the half-cell controls', asyn
   page,
 }) => {
   await page.goto('/zh-Hant/models')
-  const modelLink = page
-    .getByRole('heading', { name: 'Grid Box (方盒)', exact: true })
-    .locator('..')
-    .getByRole('link', { name: '編輯 Grid Box (方盒)', exact: true })
-  await expect(modelLink).toHaveAttribute(
-    'href',
-    '/zh-Hant/cad/opengrid-stackable-box?system=desk',
-  )
+  /* Since #174 container cards split "Grid Box (方盒)" into a localized
+     primary heading（方盒）plus an English secondary line, so the card is
+     addressed by its data-entry-key and the heading is asserted separately. */
+  const card = page.locator('[data-entry-key="opengrid-stackable-box-desk"]')
+  await expect(
+    card.getByRole('heading', { name: '方盒', exact: true }),
+  ).toBeVisible()
+  await expect(
+    card.getByRole('link', { name: '編輯 Grid Box (方盒)', exact: true }),
+  ).toHaveAttribute('href', '/zh-Hant/cad/opengrid-stackable-box?system=desk')
   await page.goto('/zh-Hant/cad/opengrid-stackable-box')
 
   await expect(page).toHaveURL('/zh-Hant/cad/opengrid-stackable-box')

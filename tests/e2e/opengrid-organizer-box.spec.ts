@@ -9,12 +9,14 @@ test('OpenGrid organizer-box is listed and exposes the cavity controls', async (
   skipHeadlessFirefoxWithoutWebGL(browserName)
   await page.goto('/zh-Hant/models')
 
-  const card = page
-    .getByRole('heading', {
-      name: 'Organizer Box (收納方盒)',
-      exact: true,
-    })
-    .locator('..')
+  /* Since #174 container cards split "Organizer Box (收納方盒)" into a
+     localized primary heading（收納方盒）plus an English secondary line, so
+     the card is addressed by its data-entry-key and the heading is asserted
+     separately. */
+  const card = page.locator('[data-entry-key="opengrid-organizer-box-desk"]')
+  await expect(
+    card.getByRole('heading', { name: '收納方盒', exact: true }),
+  ).toBeVisible()
   await expect(
     card.getByRole('link', {
       name: '編輯 Organizer Box (收納方盒)',
