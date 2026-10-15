@@ -3,9 +3,11 @@
   import type { ScenePlacement } from '../../../cad-contract/scene'
   import { getModelDefinition } from '../../../features/cad/model-catalog'
   import type { OpenGridSystemContext } from '../../../features/cad/system-entry-context'
-  import type {
-    PlaygroundInstance,
-    PlaygroundStore,
+  import {
+    placementFor,
+    type PlaygroundInstance,
+    type PlaygroundStore,
+    type PlaygroundViewMode,
   } from '../../../features/cad/playground/store'
   import CadPanelNotes from '../component-panels/CadPanelNotes.svelte'
   import CadPanelParameters from '../component-panels/CadPanelParameters.svelte'
@@ -14,14 +16,14 @@
     locale: Locale
     instance: PlaygroundInstance
     store: PlaygroundStore
+    /** Scene orientation whose placement the panel displays and edits. */
+    viewMode: PlaygroundViewMode
     /** Snapshot `panelResetVersion`; bumps remount the parameter panel. */
     panelResetVersion: number
   }
 
-  let { locale, instance, store, panelResetVersion }: Props = $props()
+  let { locale, instance, store, viewMode, panelResetVersion }: Props = $props()
 
-  let cellX = $state('')
-  let cellY = $state('')
   let rotation = $state<ScenePlacement['rotation']>(0)
   let lastPlacementSignature = $state('')
 
@@ -57,40 +59,30 @@
   )
 
   $effect(() => {
-    // Resync the placement inputs only when the selected instance changes or
-    // its committed placement actually changes; unrelated store emissions
-    // must not clobber values the user is still editing.
-    const committed = instance.placement
-    const signature = `${instance.id}:${committed ? `${committed.cellX},${committed.cellY},${committed.rotation}` : 'none'}`
+    // Resync the rotation input only when the selected instance changes or
+    // the active orientation's committed placement actually changes;
+    // unrelated store emissions must not clobber a value the user is still
+    // editing.
+    const committed = placementFor(instance, viewMode)
+    const signature = `${viewMode}:${instance.id}:${committed ? `${committed.cellX},${committed.cellY},${committed.rotation}` : 'none'}`
     if (signature === lastPlacementSignature) return
     lastPlacementSignature = signature
-    cellX = String(committed?.cellX ?? 0)
-    cellY = String(committed?.cellY ?? 0)
     rotation = committed?.rotation ?? 0
   })
 
-  function commitPlacement(): void {
-    if (cellX.trim() === '' || cellY.trim() === '') return
-    const parsedX = Number(cellX)
-    const parsedY = Number(cellY)
-    if (!Number.isInteger(parsedX) || !Number.isInteger(parsedY)) return
-    store.setPlacement(instance.id, parsedX, parsedY, rotation)
+  function commitRotation(): void {
+    const committed = placementFor(instance, viewMode)
+    // Without a committed placement there is nothing to rotate in place;
+    // inventing anchor coordinates would move the instance.
+    if (!committed) return
+    store.setPlacementInViewMode(
+      instance.id,
+      committed.cellX,
+      committed.cellY,
+      rotation,
+      viewMode,
+    )
   }
-
-  function stepPlacement(axis: 'x' | 'y', delta: number): void {
-    const raw = axis === 'x' ? cellX : cellY
-    const parsed = Number(raw)
-    if (raw.trim() === '' || !Number.isInteger(parsed)) return
-    const nextX = axis === 'x' ? parsed + delta : Number(cellX)
-    const nextY = axis === 'y' ? parsed + delta : Number(cellY)
-    if (!Number.isInteger(nextX) || !Number.isInteger(nextY)) return
-    if (axis === 'x') cellX = String(nextX)
-    else cellY = String(nextY)
-    store.setPlacement(instance.id, nextX, nextY, rotation)
-  }
-
-  const STEP_BUTTON_CLASS =
-    'w-8 shrink-0 rounded-md border border-border-field bg-panel text-center text-base leading-none text-ink hover:bg-page disabled:cursor-not-allowed disabled:opacity-50'
 
   function handleColorInput(which: 'primary' | 'secondary', value: string) {
     return which === 'primary'
@@ -142,83 +134,13 @@
       {translate(locale, 'playground.placement.title')}
     </legend>
     <div class="flex items-center gap-2">
-      <label class="shrink-0" for="playground-cell-x">
-        {translate(locale, 'playground.placement.cellX')}
-      </label>
-      <div class="flex w-full items-center gap-1">
-        <button
-          class={STEP_BUTTON_CLASS}
-          type="button"
-          aria-label={translate(locale, 'playground.placement.stepDown', {
-            axis: 'X',
-          })}
-          onclick={() => stepPlacement('x', -1)}
-        >
-          −
-        </button>
-        <input
-          id="playground-cell-x"
-          class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
-          inputmode="numeric"
-          type="text"
-          bind:value={cellX}
-          onchange={commitPlacement}
-        />
-        <button
-          class={STEP_BUTTON_CLASS}
-          type="button"
-          aria-label={translate(locale, 'playground.placement.stepUp', {
-            axis: 'X',
-          })}
-          onclick={() => stepPlacement('x', 1)}
-        >
-          +
-        </button>
-      </div>
-    </div>
-    <div class="flex items-center gap-2">
-      <label class="shrink-0" for="playground-cell-y">
-        {translate(locale, 'playground.placement.cellY')}
-      </label>
-      <div class="flex w-full items-center gap-1">
-        <button
-          class={STEP_BUTTON_CLASS}
-          type="button"
-          aria-label={translate(locale, 'playground.placement.stepDown', {
-            axis: 'Y',
-          })}
-          onclick={() => stepPlacement('y', -1)}
-        >
-          −
-        </button>
-        <input
-          id="playground-cell-y"
-          class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.4rem] text-center text-base text-ink"
-          inputmode="numeric"
-          type="text"
-          bind:value={cellY}
-          onchange={commitPlacement}
-        />
-        <button
-          class={STEP_BUTTON_CLASS}
-          type="button"
-          aria-label={translate(locale, 'playground.placement.stepUp', {
-            axis: 'Y',
-          })}
-          onclick={() => stepPlacement('y', 1)}
-        >
-          +
-        </button>
-      </div>
-    </div>
-    <div class="flex items-center gap-2">
       <label class="shrink-0" for="playground-rotation">
         {translate(locale, 'playground.placement.rotation')}
       </label>
       <select
         id="playground-rotation"
         bind:value={rotation}
-        onchange={commitPlacement}
+        onchange={commitRotation}
         class="w-full rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
       >
         {#each [0, 90, 180, 270] as option (option)}

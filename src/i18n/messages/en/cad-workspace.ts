@@ -127,11 +127,7 @@ export const messages = {
   'playground.instance.editorHint':
     'Use the "{name}" workspace for advanced settings and detailed previews.',
   'playground.placement.title': 'Placement (grid cells)',
-  'playground.placement.cellX': 'X',
-  'playground.placement.cellY': 'Y',
   'playground.placement.rotation': 'Rotation',
-  'playground.placement.stepDown': 'Decrease {axis} by 1',
-  'playground.placement.stepUp': 'Increase {axis} by 1',
   'playground.overlapWarning':
     '{count} instance(s) overlap; adjust their placements.',
   'playground.heightLimit.title': 'Height limit (mm)',

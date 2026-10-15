@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { localizedPathFor } from '../../src/i18n/routes'
 import type { Locale } from '../../src/i18n'
 import type { ModelId } from '../../src/cad-contract/units'
+import { SCENE_FILE_SCHEMA_VERSION } from '../../src/cad-contract/scene'
 import { getModelDefinition } from '../../src/features/cad/model-catalog'
 
 type ViewportPoint = { x: number; y: number }
@@ -36,7 +37,7 @@ async function importModelScene(page: Page, modelId: ModelId): Promise<void> {
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: SCENE_FILE_SCHEMA_VERSION,
         kind: 'shape-shortcut/scene',
         grid: { system: 'opengrid' },
         instances: [
@@ -44,6 +45,12 @@ async function importModelScene(page: Page, modelId: ModelId): Promise<void> {
             modelId,
             parameters: definition.defaultParameters,
             placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+            wallPlacement: {
+              cellX: 0,
+              cellY: 0,
+              rotation: 0,
+              supportedBy: null,
+            },
           },
         ],
       }),
@@ -134,10 +141,14 @@ async function findInstancePoint(
 async function readSelectedPlacement(
   page: Page,
 ): Promise<{ cellX: number; cellY: number }> {
-  return {
-    cellX: Number(await page.locator('#playground-cell-x').inputValue()),
-    cellY: Number(await page.locator('#playground-cell-y').inputValue()),
-  }
+  // The instance panel has no coordinate inputs anymore; the committed
+  // placement of the selected instance is observable on the viewport.
+  const raw = await page
+    .getByTestId('playground-viewport')
+    .getAttribute('data-selected-placement')
+  if (!raw) throw new Error('No placement is committed for the selection')
+  const [cellX, cellY] = raw.split(',').map(Number)
+  return { cellX, cellY }
 }
 
 async function moveActiveDragToCell(
@@ -148,7 +159,13 @@ async function moveActiveDragToCell(
 ): Promise<void> {
   const viewport = page.getByTestId('playground-viewport')
   const target = `${cellX},${cellY}`
-  const offsets = [0, 16, -16, 32, -32, 48, -48, 64, -64]
+  // The desktop camera is perspective and oblique, so grid cells map to
+  // uneven screen offsets; scan a generous window around the anchor.
+  const offsets: number[] = []
+  for (let offset = 0; offset <= 256; offset += 16) {
+    if (offset > 0) offsets.push(-offset)
+    offsets.push(offset)
+  }
 
   for (const yOffset of offsets) {
     for (const xOffset of offsets) {
@@ -200,9 +217,21 @@ test.describe('OpenGrid playground planner', () => {
     ).toBeVisible()
     await waitForInstanceReady(page, 'inst-1')
 
-    const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('3')
-    await cellX.blur()
+    // Placement is drag-only now: the panel offers no coordinate inputs.
+    await expect(page.locator('#playground-cell-x')).toHaveCount(0)
+    await expect(page.locator('#playground-cell-y')).toHaveCount(0)
+    const viewport = page.getByTestId('playground-viewport')
+    const start = await findInstancePoint(page, 'inst-1')
+    const before = await readSelectedPlacement(page)
+
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(start.x + 96, start.y, { steps: 8 })
+    await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+    await page.mouse.up()
+
+    const committed = await readSelectedPlacement(page)
+    expect(committed).not.toEqual(before)
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
   })
 
@@ -231,18 +260,18 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-2')
 
     await page.getByTestId('playground-instance-inst-2').click()
-    const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('0')
-    await cellX.blur()
-    const cellY = page.locator('#playground-cell-y')
-    await cellY.fill('0')
-    await cellY.blur()
+    const viewport = page.getByTestId('playground-viewport')
+    const start = await findInstancePoint(page, 'inst-2')
+
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, start, 0, 0)
+    await page.mouse.up()
 
     await expect(page.getByTestId('playground-diagnostic')).toHaveCount(0)
     // Desktop stacking replaces the overlap conflict entirely.
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
-    await expect(cellX).toHaveValue('0')
-    const viewport = page.getByTestId('playground-viewport')
+    expect(await readSelectedPlacement(page)).toEqual({ cellX: 0, cellY: 0 })
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
     // Stacking is a planning aid; it must not block exports.
     await expect(page.getByTestId('playground-export-stl')).toBeEnabled()
@@ -251,9 +280,13 @@ test.describe('OpenGrid playground planner', () => {
       await expect(exportStep).toBeEnabled()
     }
 
-    // Moving the instance apart keeps the scene conflict-free.
-    await cellX.fill('9')
-    await cellX.blur()
+    // Moving the instance apart keeps the scene conflict-free; inst-2 now
+    // renders stacked at the drop cell, so locate it again first.
+    const movedPoint = await findInstancePoint(page, 'inst-2')
+    await page.mouse.move(movedPoint.x, movedPoint.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, movedPoint, 0, 3)
+    await page.mouse.up()
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   })
@@ -261,19 +294,22 @@ test.describe('OpenGrid playground planner', () => {
   test('lifts a neighbor when parameter growth reaches its column', async ({
     page,
   }) => {
-    await openPlayground(page)
+    await useCompactPlaygroundGrid(page)
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-1')
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-2')
 
     await page.getByTestId('playground-instance-inst-2').click()
-    const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('2')
-    await cellX.blur()
-    const cellY = page.locator('#playground-cell-y')
-    await cellY.fill('0')
-    await cellY.blur()
+    // inst-1 renders at its (0,0) anchor; cell (2,0) is two cells to its
+    // right, so search around inst-1's screen point for the drop cell.
+    const inst1Point = await findInstancePoint(page, 'inst-1')
+    const inst2Point = await findInstancePoint(page, 'inst-2')
+    await page.mouse.move(inst2Point.x, inst2Point.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, inst1Point, 2, 0)
+    await page.mouse.up()
+    expect(await readSelectedPlacement(page)).toEqual({ cellX: 2, cellY: 0 })
     const viewport = page.getByTestId('playground-viewport')
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
     await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
@@ -293,8 +329,9 @@ test.describe('OpenGrid playground planner', () => {
   test('imports a scene file with in-file desktop overlaps as a stack', async ({
     page,
   }) => {
-    const boxParams = getModelDefinition('opengrid-stackable-box')
-      ?.defaultParameters
+    const boxParams = getModelDefinition(
+      'opengrid-stackable-box',
+    )?.defaultParameters
     const overlappingPlacement = {
       cellX: 0,
       cellY: 0,
@@ -302,7 +339,7 @@ test.describe('OpenGrid playground planner', () => {
       supportedBy: null,
     }
     const scene = {
-      schemaVersion: 1,
+      schemaVersion: SCENE_FILE_SCHEMA_VERSION,
       kind: 'shape-shortcut/scene',
       grid: { system: 'opengrid' },
       instances: [
@@ -310,11 +347,13 @@ test.describe('OpenGrid playground planner', () => {
           modelId: 'opengrid-stackable-box',
           parameters: boxParams,
           placement: overlappingPlacement,
+          wallPlacement: overlappingPlacement,
         },
         {
           modelId: 'opengrid-stackable-box',
           parameters: boxParams,
           placement: overlappingPlacement,
+          wallPlacement: overlappingPlacement,
         },
       ],
     }
@@ -347,7 +386,7 @@ test.describe('OpenGrid playground planner', () => {
       supportedBy: null,
     }
     const scene = {
-      schemaVersion: 1,
+      schemaVersion: SCENE_FILE_SCHEMA_VERSION,
       kind: 'shape-shortcut/scene',
       grid: { system: 'opengrid' },
       instances: [
@@ -355,11 +394,13 @@ test.describe('OpenGrid playground planner', () => {
           modelId: 'opengrid-wall-cover',
           parameters: { text: 'A' },
           placement: wallPlacement,
+          wallPlacement: wallPlacement,
         },
         {
           modelId: 'opengrid-wall-cover',
           parameters: { text: 'B' },
           placement: wallPlacement,
+          wallPlacement: wallPlacement,
         },
       ],
     }
@@ -389,12 +430,11 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-2')
 
     await page.getByTestId('playground-instance-inst-2').click()
-    const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('0')
-    await cellX.blur()
-    const cellY = page.locator('#playground-cell-y')
-    await cellY.fill('0')
-    await cellY.blur()
+    const start = await findInstancePoint(page, 'inst-2')
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, start, 0, 0)
+    await page.mouse.up()
 
     // Desktop stacking keeps the overlapping pair conflict-free...
     const viewport = page.getByTestId('playground-viewport')
@@ -440,12 +480,11 @@ test.describe('OpenGrid playground planner', () => {
 
     // Stack inst-2 on inst-1: its top lands at 40.5 + 40 = 80.5 mm.
     await page.getByTestId('playground-instance-inst-2').click()
-    const cellX = page.locator('#playground-cell-x')
-    await cellX.fill('0')
-    await cellX.blur()
-    const cellY = page.locator('#playground-cell-y')
-    await cellY.fill('0')
-    await cellY.blur()
+    const start = await findInstancePoint(page, 'inst-2')
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, start, 0, 0)
+    await page.mouse.up()
 
     const limit = page.getByTestId('playground-height-limit')
     await limit.fill('50')
@@ -496,7 +535,7 @@ test.describe('OpenGrid playground planner', () => {
 
   test('imports a scene file into the playground', async ({ page }) => {
     const scene = {
-      schemaVersion: 1,
+      schemaVersion: SCENE_FILE_SCHEMA_VERSION,
       kind: 'shape-shortcut/scene',
       grid: { system: 'opengrid' },
       colors: { primary: '#112233', secondary: '#445566' },
@@ -505,6 +544,7 @@ test.describe('OpenGrid playground planner', () => {
           modelId: 'box',
           parameters: { width: 20, depth: 30, height: 40 },
           placement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
           colors: { primary: '#112233', secondary: '#445566' },
         },
       ],
@@ -572,13 +612,14 @@ test.describe('OpenGrid playground planner', () => {
     await waitForInstanceReady(page, 'inst-1')
 
     const scene = {
-      schemaVersion: 1,
+      schemaVersion: SCENE_FILE_SCHEMA_VERSION,
       kind: 'shape-shortcut/scene',
       grid: { system: 'opengrid' },
       instances: [
         {
           modelId: 'not-a-model',
           parameters: {},
+          wallPlacement: { cellX: 0, cellY: 0, rotation: 0, supportedBy: null },
         },
       ],
     }
@@ -624,12 +665,20 @@ test.describe('OpenGrid playground planner', () => {
   test('round-trips an exported scene back into the playground', async ({
     page,
   }) => {
-    await openPlayground(page)
+    await useCompactPlaygroundGrid(page)
     await addBoxInstance(page)
     await waitForInstanceReady(page, 'inst-1')
 
-    await page.locator('#playground-cell-x').fill('4')
-    await page.locator('#playground-cell-x').blur()
+    // Drag the instance to a new committed cell instead of typing
+    // coordinates; the exact cell is recorded and checked after re-import.
+    const before = await readSelectedPlacement(page)
+    const start = await findInstancePoint(page, 'inst-1')
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(start.x + 96, start.y, { steps: 8 })
+    await page.mouse.up()
+    const committed = await readSelectedPlacement(page)
+    expect(committed).not.toEqual(before)
     await page.locator('#playground-label').fill('測試片')
 
     const sceneDownload = page.waitForEvent('download')
@@ -652,7 +701,10 @@ test.describe('OpenGrid playground planner', () => {
       'ready',
       { timeout: 120_000 },
     )
-    await expect(page.locator('#playground-cell-x')).toHaveValue('4')
+    await expect(page.getByTestId('playground-viewport')).toHaveAttribute(
+      'data-selected-placement',
+      `${committed.cellX},${committed.cellY}`,
+    )
     await expect(page.locator('#playground-label')).toHaveValue('測試片')
   })
 })
@@ -1041,9 +1093,60 @@ test('selects an instance on tap and cancels a preview when orientation changes'
   expect(await readSelectedPlacement(page)).toEqual(originalPlacement)
 })
 
+test('keeps orientation drags independent: a wall drag never moves the desktop placement', async ({
+  page,
+}) => {
+  // The dual-system `opengrid` proxy generation can exceed the default
+  // timeout when workers run in parallel.
+  test.setTimeout(120_000)
+  await useCompactPlaygroundGrid(page)
+  await importModelScene(page, 'opengrid')
+  await waitForInstanceReady(page, 'inst-1')
+
+  const viewport = page.getByTestId('playground-viewport')
+  await expect(viewport).toHaveAttribute('data-selected-instance', 'inst-1')
+  const desktopBefore = await readSelectedPlacement(page)
+
+  // Wall orientation: dragging commits the wall placement only...
+  await page.getByTestId('playground-mode-wall').click()
+  await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
+  const wallBefore = await readSelectedPlacement(page)
+  const start = await findInstancePoint(page, 'inst-1')
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(start.x + 90, start.y - 70, { steps: 8 })
+  await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+  await page.mouse.up()
+  const wallAfter = await readSelectedPlacement(page)
+  expect(wallAfter).not.toEqual(wallBefore)
+
+  // ...and the desktop placement is exactly where it was.
+  await page.getByTestId('playground-mode-desktop').click()
+  await expect(viewport).toHaveAttribute('data-view-mode', 'desktop')
+  await page.getByTestId('playground-instance-inst-1').click()
+  expect(await readSelectedPlacement(page)).toEqual(desktopBefore)
+
+  // The reverse: a desktop drag leaves the wall placement untouched.
+  const desktopPoint = await findInstancePoint(page, 'inst-1')
+  await page.mouse.move(desktopPoint.x, desktopPoint.y)
+  await page.mouse.down()
+  await page.mouse.move(desktopPoint.x + 96, desktopPoint.y, { steps: 8 })
+  await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+  await page.mouse.up()
+  expect(await readSelectedPlacement(page)).not.toEqual(desktopBefore)
+
+  await page.getByTestId('playground-mode-wall').click()
+  await expect(viewport).toHaveAttribute('data-view-mode', 'wall')
+  await page.getByTestId('playground-instance-inst-1').click()
+  expect(await readSelectedPlacement(page)).toEqual(wallAfter)
+})
+
 test('maps wall dragging to cell X and cell Y while preserving the mount', async ({
   page,
 }) => {
+  // The dual-system `opengrid` proxy generation can exceed the default
+  // timeout when workers run in parallel.
+  test.setTimeout(120_000)
   await useCompactPlaygroundGrid(page)
   await page.getByTestId('playground-mode-wall').click()
   await importModelScene(page, 'opengrid')
@@ -1079,18 +1182,30 @@ test('keeps multi-character Wall Covers adjacent through rotation and dragging',
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: SCENE_FILE_SCHEMA_VERSION,
         kind: 'shape-shortcut/scene',
         instances: [
           {
             modelId: 'opengrid-wall-cover',
             parameters: { text: 'IAN', openConnect: false },
             placement: { cellX: -1, cellY: 0, rotation: 0, supportedBy: null },
+            wallPlacement: {
+              cellX: -1,
+              cellY: 0,
+              rotation: 0,
+              supportedBy: null,
+            },
           },
           {
             modelId: 'opengrid-wall-cover',
             parameters: { text: 'A' },
             placement: { cellX: 2, cellY: 0, rotation: 0, supportedBy: null },
+            wallPlacement: {
+              cellX: 2,
+              cellY: 0,
+              rotation: 0,
+              supportedBy: null,
+            },
           },
         ],
       }),

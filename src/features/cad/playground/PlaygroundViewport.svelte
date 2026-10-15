@@ -987,6 +987,14 @@
       .join(','),
   )
 
+  // Committed placement of the selected instance in the active orientation;
+  // lets tests observe placement commits now that the coordinate inputs are
+  // drag-only.
+  let selectedPlacement = $derived(
+    instances.find((instance) => instance.id === selectedInstanceId)
+      ?.placement ?? null,
+  )
+
   onMount(() => {
     if (!container) return
     const theme = observedTheme
@@ -1210,6 +1218,9 @@
   data-camera-position={renderedCameraPose?.position.join(',') ?? ''}
   data-camera-target={renderedCameraPose?.target.join(',') ?? ''}
   data-selected-instance={selectedInstanceId ?? ''}
+  data-selected-placement={selectedPlacement
+    ? `${selectedPlacement.cellX},${selectedPlacement.cellY}`
+    : ''}
   data-hover-instance={hoveredInstanceId ?? ''}
   data-overlap-instances={overlapInstanceIds}
   data-instance-stacked-z={instances

@@ -30,6 +30,7 @@ vi.mock('../../src/features/cad/worker-client', () => {
 })
 
 import { createPlaygroundStore } from '../../src/features/cad/playground/store'
+import { SCENE_FILE_SCHEMA_VERSION } from '../../src/cad-contract/scene'
 
 let meshCounter = 0
 
@@ -168,13 +169,19 @@ describe('playground store parameter edits', () => {
     expect(
       next.importScene(
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: SCENE_FILE_SCHEMA_VERSION,
           kind: 'shape-shortcut/scene',
           instances: [
             {
               modelId: 'opengrid-wall-cover',
               parameters,
               placement: {
+                cellX: -2,
+                cellY: 1,
+                rotation: 0,
+                supportedBy: null,
+              },
+              wallPlacement: {
                 cellX: -2,
                 cellY: 1,
                 rotation: 0,
@@ -195,10 +202,13 @@ describe('playground store parameter edits', () => {
     expect(next.getSnapshot().instances[0]?.meshState).toBe('ready')
     expect(harness.sentCommands).toEqual([])
     const exported = JSON.parse(next.exportSceneJson())
+    // The store is in wall orientation, so the move commits to the wall
+    // placement; the desktop placement keeps the imported file value.
     expect(exported.instances[0]).toMatchObject({
       modelId: 'opengrid-wall-cover',
       parameters,
-      placement: { cellX: -4, cellY: -3, rotation: 90, supportedBy: null },
+      placement: { cellX: -2, cellY: 1, rotation: 0, supportedBy: null },
+      wallPlacement: { cellX: -4, cellY: -3, rotation: 90, supportedBy: null },
     })
     vi.useRealTimers()
   })
