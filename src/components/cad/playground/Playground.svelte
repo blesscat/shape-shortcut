@@ -394,6 +394,10 @@
             placement.cellY,
             placement.rotation,
             snapshot.viewMode,
+            // Desktop drag stacking priority: every desktop drag commit —
+            // overlapping or not — splices the dragged instance to the end
+            // of the instance order. Wall drops keep the order unchanged.
+            { elevateToTop: snapshot.viewMode === 'desktop' },
           )
         }}
       />

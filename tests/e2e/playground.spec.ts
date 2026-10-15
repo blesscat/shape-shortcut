@@ -291,6 +291,40 @@ test.describe('OpenGrid playground planner', () => {
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   })
 
+  test('floats the earlier-added piece up when it is dragged onto the later piece', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-1')
+    await addBoxInstance(page)
+    await waitForInstanceReady(page, 'inst-2')
+
+    // The later box's committed anchor is the drag target.
+    await page.getByTestId('playground-instance-inst-2').click()
+    const target = await readSelectedPlacement(page)
+
+    await page.getByTestId('playground-instance-inst-1').click()
+    const viewport = page.getByTestId('playground-viewport')
+    const start = await findInstancePoint(page, 'inst-1')
+    const inst2Point = await findInstancePoint(page, 'inst-2')
+
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await moveActiveDragToCell(page, inst2Point, target.cellX, target.cellY)
+    await page.mouse.up()
+
+    await expect(page.getByTestId('playground-overlap-warning')).toHaveCount(0)
+    await expect(viewport).toHaveAttribute('data-overlap-instances', '')
+    // The drag moves the earlier-added box to the end of the instance
+    // order, so it renders seated on the later box while the later box
+    // stays grounded.
+    await expect(viewport).toHaveAttribute(
+      'data-instance-stacked-z',
+      /^inst-2:0(\.0)?,inst-1:[0-9]+(\.[0-9]+)?$/,
+    )
+  })
+
   test('lifts a neighbor when parameter growth reaches its column', async ({
     page,
   }) => {
@@ -1028,6 +1062,11 @@ for (const modelId of [
       await expect(
         page.getByTestId('playground-instance-inst-1'),
       ).toHaveAttribute('data-state', 'pending')
+      // A second instance gives the instance order an observable start.
+      await page.getByTestId('playground-add').click()
+      await expect(
+        page.getByTestId('playground-instance-inst-2'),
+      ).toHaveAttribute('data-state', 'pending')
 
       const viewport = page.getByTestId('playground-viewport')
       const start = await findInstancePoint(page, 'inst-1')
@@ -1041,6 +1080,14 @@ for (const modelId of [
 
       const committed = await readSelectedPlacement(page)
       expect(committed).not.toEqual(before)
+      // A desktop drag commit moves the dragged placeholder to the end of
+      // the instance order; a wall drop keeps the order unchanged.
+      await expect(viewport).toHaveAttribute(
+        'data-instance-stacked-z',
+        modelId === 'opengrid-stackable-box'
+          ? /^inst-2:0(\.0)?,inst-1:0(\.0)?$/
+          : /^inst-1:0(\.0)?,inst-2:0(\.0)?$/,
+      )
       releaseWasm()
       await waitForInstanceReady(page, 'inst-1')
       expect(await readSelectedPlacement(page)).toEqual(committed)
@@ -1065,6 +1112,7 @@ test('selects an instance on tap and cancels a preview when orientation changes'
   await page.getByTestId('playground-instance-inst-2').click()
   const firstPoint = await findInstancePoint(page, 'inst-1')
   const beforeCamera = await viewport.getAttribute('data-camera-position')
+  const orderBefore = await viewport.getAttribute('data-instance-stacked-z')
 
   await page.mouse.move(firstPoint.x, firstPoint.y)
   await page.mouse.down()
@@ -1091,6 +1139,10 @@ test('selects an instance on tap and cancels a preview when orientation changes'
   await page.getByTestId('playground-mode-desktop').click()
   await page.getByTestId('playground-instance-inst-1').click()
   expect(await readSelectedPlacement(page)).toEqual(originalPlacement)
+  // A cancelled or restored drag must not change the instance order.
+  expect(await viewport.getAttribute('data-instance-stacked-z')).toBe(
+    orderBefore,
+  )
 })
 
 test('keeps orientation drags independent: a wall drag never moves the desktop placement', async ({

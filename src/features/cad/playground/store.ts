@@ -336,7 +336,8 @@ export type PlaygroundStore = {
     cellX: number,
     cellY: number,
     rotation: ScenePlacement['rotation'],
-    viewMode: PlaygroundViewMode,
+    targetView: PlaygroundViewMode,
+    options?: { elevateToTop?: boolean },
   ) => PlaygroundPlacementResult
   setParameter: (
     instanceId: string,
@@ -452,18 +453,23 @@ export function createPlaygroundStore(): PlaygroundStore {
   // generation still occupies its planned footprint and a retry must not
   // start from an overlap. Instances the given orientation does not
   // display neither render nor occupy cells, so they stay out of every
-  // derivation. A `candidate` replaces the excluded instance at its stored
-  // array slot so preview derivations see the same stacking order the
-  // committed derivation will use.
+  // derivation. A `candidate` normally replaces the excluded instance at
+  // its stored array slot; with `candidateAtEnd` the excluded instance is
+  // removed and the candidate is appended last, mirroring the desktop drag
+  // commit that splices the dragged instance to the end of the order.
   const placedStackEntries = (
     excludeId?: string,
     candidate?: PlaygroundStackEntry,
     mode: PlaygroundViewMode = viewMode,
-  ): PlaygroundStackEntry[] =>
-    instances.flatMap((instance) => {
-      if (candidate && instance.id === excludeId) return [candidate]
+    options?: { candidateAtEnd?: boolean },
+  ): PlaygroundStackEntry[] => {
+    const candidateAtEnd = options?.candidateAtEnd === true
+    const entries = instances.flatMap((instance): PlaygroundStackEntry[] => {
+      if (instance.id === excludeId) {
+        return candidate && !candidateAtEnd ? [candidate] : []
+      }
       const placement = placementFor(instance, mode)
-      if (instance.id === excludeId || placement === null) return []
+      if (placement === null) return []
       if (!modelVisibleInViewMode(instance.modelId, mode)) return []
       const relativeCells = relativeCellsFor(instance, placement.rotation, mode)
       if (!relativeCells) return []
@@ -478,6 +484,9 @@ export function createPlaygroundStore(): PlaygroundStore {
         },
       ]
     })
+    if (candidate && candidateAtEnd) entries.push(candidate)
+    return entries
+  }
 
   /**
    * Derived orientation-aware conflict state: in both orientations only
@@ -628,8 +637,10 @@ export function createPlaygroundStore(): PlaygroundStore {
 
   /**
    * Builds the stack entries a candidate placement participates in: the
-   * candidate replaces the moved instance at its stored array slot, so the
-   * preview derivation matches the committed one exactly.
+   * candidate is removed from its stored slot and appended last, so the
+   * preview derivation matches the desktop drag commit exactly — the
+   * commit splices the dragged instance to the end of the order before
+   * re-deriving.
    */
   const candidateStackEntries = (
     instance: PlaygroundInstance,
@@ -649,6 +660,7 @@ export function createPlaygroundStore(): PlaygroundStore {
         stacking: stackingInterfaceFor(instance.modelId, instance.parameters),
       },
       mode,
+      { candidateAtEnd: true },
     )
   }
 
@@ -688,6 +700,7 @@ export function createPlaygroundStore(): PlaygroundStore {
     cellX: number,
     cellY: number,
     rotation: ScenePlacement['rotation'],
+    options?: { elevateToTop?: boolean },
   ): PlaygroundPlacementResult => {
     const result = validatePlacementCandidate(
       instanceId,
@@ -704,6 +717,16 @@ export function createPlaygroundStore(): PlaygroundStore {
     // Overlapping placements commit; the derived overlap warning on the
     // snapshot flags them instead of a rejection.
     writePlacementForView(result.instance, mode, result.placement)
+    if (options?.elevateToTop) {
+      // Desktop drag stacking priority: the dragged instance becomes the
+      // last-ordered instance, so the array order carries the stacking
+      // intent into the derived Z, the scene file, and re-imports. Panel
+      // edits keep pure-move semantics and never reorder.
+      instances = [
+        ...instances.filter((instance) => instance.id !== result.instance.id),
+        result.instance,
+      ]
+    }
     diagnostic = null
     emit()
     return { ok: true }
@@ -1220,13 +1243,14 @@ export function createPlaygroundStore(): PlaygroundStore {
     setPlacement(instanceId, cellX, cellY, rotation) {
       return commitPlacementInView(viewMode, instanceId, cellX, cellY, rotation)
     },
-    setPlacementInViewMode(instanceId, cellX, cellY, rotation, targetView) {
+    setPlacementInViewMode(instanceId, cellX, cellY, rotation, targetView, options) {
       return commitPlacementInView(
         targetView,
         instanceId,
         cellX,
         cellY,
         rotation,
+        options,
       )
     },
     setParameter(instanceId, key, rawValue) {

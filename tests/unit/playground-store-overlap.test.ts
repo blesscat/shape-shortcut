@@ -139,18 +139,23 @@ describe('playground store soft overlap', () => {
     expect(next.validatePlacement('inst-2', 5, 5, 0)).toBe(true)
   })
 
-  it('keeps the preview Z equal to the committed Z for a non-last instance', () => {
+  it('previews the drag at the committed end-of-order landing height', () => {
     const next = setupStore()
 
-    // inst-1 (first in the array) dragged onto inst-2's cells must preview
-    // the committed arrangement: inst-1 grounds at Z=0 and inst-2 lifts on
-    // top of it, not the other way around.
-    expect(next.stackedZForPlacement('inst-1', 9, 9, 0)).toBe(0)
+    // inst-1 (earlier in the array) dragged onto inst-2's cells must
+    // preview the committed arrangement: the desktop drag commit moves
+    // inst-1 to the end of the order, so inst-1 seats on inst-2.
+    expect(next.stackedZForPlacement('inst-1', 9, 9, 0)).toBeCloseTo(
+      BOX_SEAT_Z,
+    )
 
-    next.setPlacement('inst-1', 9, 9, 0)
+    const result = next.setPlacementInViewMode('inst-1', 9, 9, 0, 'desktop', {
+      elevateToTop: true,
+    })
+    expect(result.ok).toBe(true)
     const snapshot = next.getSnapshot()
-    expect(snapshot.instanceStackedZ['inst-1']).toBe(0)
-    expect(snapshot.instanceStackedZ['inst-2']).toBeCloseTo(BOX_SEAT_Z)
+    expect(snapshot.instanceStackedZ['inst-1']).toBeCloseTo(BOX_SEAT_Z)
+    expect(snapshot.instanceStackedZ['inst-2']).toBe(0)
     expect(snapshot.overlappingInstanceIds).toEqual([])
   })
 
