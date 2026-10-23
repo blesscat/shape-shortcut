@@ -40,7 +40,8 @@ export const messages = {
   'home.explore.wall.title': 'OpenGrid Wall',
   'home.explore.wall.description':
     '把收納延伸到牆上，搭配層架、方格與配件，留出更多桌面空間。',
-  'home.explore.wall.alt': 'OpenGrid Wall 配件展示：方格收納與層架，非安裝示意',
+  'home.explore.wall.alt':
+    'OpenGrid Wall 收納組合：直立底板搭配圓孔收納、方格收納與大小層架',
   'home.explore.wall.cta': '從 Wall 底板開始',
   'home.workflow.title': '從想法到列印，只要三步。',
   'home.workflow.choose.title': '挑一個模型',

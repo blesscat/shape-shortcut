@@ -135,6 +135,8 @@ try {
         ...provenance,
         settings: native.settings,
         placements: native.placements,
+        wallParts: native.wallParts,
+        wallClearances: native.wallClearances,
 
         meshes: Object.fromEntries(
           Object.entries(native.meshes).map(([id, mesh]) => [

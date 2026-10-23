@@ -43,7 +43,7 @@ export const messages = {
   'home.explore.wall.description':
     'Bring storage to the wall with shelves, organizers and accessories, and free up your desktop.',
   'home.explore.wall.alt':
-    'OpenGrid Wall accessories: an organizer and a shelf, shown separately rather than installed',
+    'OpenGrid Wall storage: an upright board with round and rectangular organizers and two shelf sizes',
   'home.explore.wall.cta': 'Start with a Wall board',
   'home.workflow.title': 'From an idea to a print, in three steps.',
   'home.workflow.choose.title': 'Pick a model',

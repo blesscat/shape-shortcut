@@ -6,8 +6,10 @@ explicit offline operation; `pnpm build` never initializes the CAD kernel.
 
 The native process uses the canonical Board, Grid Box, Round Box, OpenConnect
 Organizer and OpenConnect Shelf builders. Desk box/board heights are resolved by
-native solid intersection. The Wall composition displays two separate complete
-accessories, not an installation or a claim that no mounting parts are needed.
+native solid intersection. The Wall composition uses a Full Board, OpenConnect Snaps, two organizers and
+two shelf sizes. Print orientations are reversed before mounting; socket origins
+are aligned to actual Board cells. This is a product visualization, not a wall
+fastening or load-rating guide.
 Colors are illustrative print colors, not additional geometry or export options.
 
 The capture writes four 1200×800 WebP files and a settings/source/checksum manifest

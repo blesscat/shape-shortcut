@@ -154,12 +154,12 @@
     "src/cad-kernel/transform/index.ts": "fc8b639a54e8cdcf891ec17d09e23987962ec6f72ff5fbbf891c2e65286ccac3",
     "vendor/replicad-opencascadejs/src/replicad_single.d.ts": "62ceca4ccc15446575d89f8e26f1397eea3073c5b2beefddd19ef162fed9e277",
     "vendor/replicad-opencascadejs/src/replicad_single.wasm": "14a0ce8cf22ed97e749fb436ee72bfd47099556e9e8af012b6dd9f51a201b80e",
-    "scripts/home-visuals/capture.mjs": "fadf4a3877481b6ba9e9fca460a1a0eeb8bd5a51b8e86b43544339c4339a7daa",
+    "scripts/home-visuals/capture.mjs": "879b1aed3b71bb65f90ccfa0cd9232e2c9b2361e9cc0eff177353e80002f7c51",
     "scripts/home-visuals/native.mjs": "127ef413f58dd8e625afb4f3e8ce8c5c7d8321897032f0fe6dc17c842275bd93",
-    "scripts/home-visuals/produce.ts": "b50abf710e8628ecbf51b06a743068e088b57ad8a1d5be2c275c7145b203467a",
-    "scripts/home-visuals/renderer.mjs": "94ae649765b3f114a1d2c9ab6cea9774f9e0b131248927777dc14ad15ef88bfd"
+    "scripts/home-visuals/produce.ts": "b4e7b4f06ae08dae33c2e35c3a01e3e0512d94ff5d25cd50cec6ae4bcc58101f",
+    "scripts/home-visuals/renderer.mjs": "10ba8bd9d3cfea410644f7cb1775d1dc4c51b2fbe6e2c04db07cbb0afa05d29e"
   },
-  "sourceHash": "31bfdca038bc303e0262ecf284a9a4bf4f5433bf5d0a785ded49e7fc59ca062c",
+  "sourceHash": "32d8955b29aea2096c5d2808bc9838c8b2be939bdce31e4c4d530314d85847a7",
   "settings": {
     "board": {
       "variant": "Lite",
@@ -271,6 +271,62 @@
       "openingMinusYBottomLength": 1,
       "openingMinusYAngle": 90
     },
+    "wallBoard": {
+      "variant": "Full",
+      "rows": 6,
+      "columns": 8,
+      "halfCellX": "none",
+      "halfCellY": "none",
+      "targetWidth": 0,
+      "targetDepth": 0,
+      "fitToTarget": false,
+      "targetFrameShape": "none",
+      "targetFrameSides": {
+        "top": true,
+        "right": true,
+        "bottom": true,
+        "left": true
+      },
+      "chamfers": "none",
+      "chamferCorners": {
+        "topLeft": true,
+        "topRight": true,
+        "bottomLeft": true,
+        "bottomRight": true
+      },
+      "connectorHoles": "none",
+      "connectorSides": {
+        "top": true,
+        "right": true,
+        "bottom": true,
+        "left": true
+      },
+      "screwKind": "official-default",
+      "screwMode": "corners",
+      "screwCenter": false,
+      "screwEveryRows": 1,
+      "screwEveryColumns": 2,
+      "screwDiameter": 4.1,
+      "screwHeadDiameter": 7.2,
+      "screwHeadInset": 1,
+      "screwHeadIsCountersunk": true,
+      "screwHeadCountersunkDegree": 90
+    },
+    "wallSnap": {
+      "variant": "Full",
+      "profile": "Standard",
+      "offset": 0,
+      "footprint": "full",
+      "fourCornerLocatingHoles": false,
+      "centerRemoverHole": false,
+      "openConnect": true,
+      "topText": "none",
+      "magnetHoleShape": "none",
+      "magnetHoleLength": 0,
+      "magnetHoleWidth": 0,
+      "magnetHoleDiameter": 0,
+      "magnetHoleThickness": 0
+    },
     "organizer": {
       "openConnectHorizontalAlignment": "center",
       "openConnectVerticalAlignment": "top",
@@ -293,6 +349,36 @@
       "labelSlotEnabled": false,
       "labelGridUnits": 3
     },
+    "squareOrganizer": {
+      "openConnectHorizontalAlignment": "center",
+      "openConnectVerticalAlignment": "top",
+      "holeCountX": 2,
+      "holeCountY": 1,
+      "holeSpacingMode": "linked",
+      "holeSpacingX": 1,
+      "holeSpacingY": 1,
+      "holeShape": "rectangle",
+      "holeDiameter": 20,
+      "holeWidth": 24,
+      "holeHeight": 24,
+      "holeCornerRadius": 3,
+      "holeDepth": 36,
+      "bottomThickness": 1,
+      "edgeThickness": 1,
+      "tiltAngle": 15,
+      "topRimEnabled": false,
+      "topRimHeight": 2,
+      "labelSlotEnabled": false,
+      "labelGridUnits": 3
+    },
+    "smallShelf": {
+      "openConnectHorizontalAlignment": "center",
+      "openConnectVerticalAlignment": "top",
+      "columns": 2,
+      "rows": 2,
+      "connectorRows": 1,
+      "angle": 14
+    },
     "shelf": {
       "openConnectHorizontalAlignment": "center",
       "openConnectVerticalAlignment": "top",
@@ -306,6 +392,122 @@
     "boxZ": 1.6750001907348633,
     "trayZ": 1.6750001907348633,
     "cylinderZ": 4.000000953674316
+  },
+  "wallParts": [
+    {
+      "mesh": "wallBoard",
+      "color": "#d4c5b4",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "mesh": "organizer",
+      "color": "#7eaa99",
+      "position": [
+        -70,
+        -10,
+        111
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        -70,
+        0,
+        126
+      ]
+    },
+    {
+      "mesh": "squareOrganizer",
+      "color": "#a8b9c3",
+      "position": [
+        -70,
+        -10,
+        47
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        -70,
+        0,
+        70
+      ]
+    },
+    {
+      "mesh": "shelf",
+      "color": "#dc927b",
+      "position": [
+        42,
+        -10,
+        28
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        14,
+        0,
+        42
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        42,
+        0,
+        42
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        70,
+        0,
+        42
+      ]
+    },
+    {
+      "mesh": "smallShelf",
+      "color": "#e9bd74",
+      "position": [
+        56,
+        -10,
+        112
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        42,
+        0,
+        126
+      ]
+    },
+    {
+      "mesh": "wallSnap",
+      "color": "#c8aa7a",
+      "position": [
+        70,
+        0,
+        126
+      ]
+    }
+  ],
+  "wallClearances": {
+    "organizer": 0,
+    "squareOrganizer": 0,
+    "shelf": 0,
+    "smallShelf": 0
   },
   "meshes": {
     "board": {
@@ -368,13 +570,13 @@
       "bounds": {
         "min": [
           -21.5,
-          -43,
-          0
+          -49.04056167602539,
+          -11.986656188964844
         ],
         "max": [
           21.5,
-          10.818635940551758,
-          29.012941360473633
+          3.200000047683716,
+          29
         ]
       }
     },
@@ -382,13 +584,69 @@
       "bounds": {
         "min": [
           -42,
-          -88.27865600585938,
-          -3.552713678800501e-15
+          -84,
+          0
         ],
         "max": [
           42,
-          3.1049463748931885,
-          27.94243049621582
+          3.200000047683716,
+          28
+        ]
+      }
+    },
+    "wallBoard": {
+      "bounds": {
+        "min": [
+          -112,
+          -6.800000190734863,
+          0
+        ],
+        "max": [
+          112,
+          9.325873406851315e-15,
+          168
+        ]
+      }
+    },
+    "wallSnap": {
+      "bounds": {
+        "min": [
+          -12.800000190734863,
+          -9.399999618530273,
+          -12.800000190734863
+        ],
+        "max": [
+          12.800000190734863,
+          1.3766765081835467e-15,
+          12.800000190734863
+        ]
+      }
+    },
+    "squareOrganizer": {
+      "bounds": {
+        "min": [
+          -25.5,
+          -34.69037628173828,
+          -7.586732387542725
+        ],
+        "max": [
+          25.5,
+          3.200000047683716,
+          37
+        ]
+      }
+    },
+    "smallShelf": {
+      "bounds": {
+        "min": [
+          -28,
+          -56,
+          0
+        ],
+        "max": [
+          28,
+          3.200000047683716,
+          28
         ]
       }
     }
@@ -403,12 +661,12 @@
       "sha256": "313a1501aa16e3aaff548d89f14bee5528c23e67907aeebeeb8644b64703f5df"
     },
     "wall.light.webp": {
-      "bytes": 15596,
-      "sha256": "31166ad5ea5a24047c317c166cd2b01c8261f80d38d67d8fb4a9d5a78e4bde09"
+      "bytes": 28294,
+      "sha256": "2e5d5c06f867eec46592c8e24e0fc3595503af343ecb0d0825d85c3d38e1d36b"
     },
     "wall.dark.webp": {
-      "bytes": 18004,
-      "sha256": "c46abbf63e1a628ab8dc4c235185cf7f622a5d7e0d69c9e7f7428b0fdba4edff"
+      "bytes": 33252,
+      "sha256": "a2fe221399b362a94c389e19e2b579f0c62e7e6950fcb23132e0d366fd9ed3de"
     }
   }
 }

@@ -67,10 +67,9 @@ window.renderHome = (kind, theme) => {
     part('cylinder', '#e9bd74', [14, 20, data.placements.cylinderZ])
     part('tray', '#a8b9c3', [56, -28, data.placements.trayZ])
   } else {
-    // A product arrangement, not a mounting diagram: both complete Wall
-    // accessories are shown separately with their real connector interfaces.
-    part('organizer', '#7eaa99', [-60, 14, 0])
-    part('shelf', '#dc927b', [58, 0, 0])
+    for (const item of data.wallParts) {
+      part(item.mesh, item.color, item.position)
+    }
   }
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(2000, 2000),
@@ -91,8 +90,10 @@ window.renderHome = (kind, theme) => {
   camera.position.set(210, -300, 250)
   camera.lookAt(0, 0, 18)
   if (kind === 'wall') {
-    camera.position.set(170, -330, 200)
-    camera.lookAt(0, -25, 15)
+    camera.position.set(200, -360, 245)
+    camera.lookAt(0, -20, 83)
+    camera.zoom = 0.82
+    camera.updateProjectionMatrix()
   }
   renderer.render(scene, camera)
   scene.traverse((object) => {
