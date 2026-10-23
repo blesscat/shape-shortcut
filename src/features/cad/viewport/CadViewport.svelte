@@ -3,6 +3,7 @@
     DEFAULT_MODEL_COLORS,
     type ModelColors,
   } from '../../../cad-contract/model-colors'
+  import type { SimplifiedStatus } from '../progressive-preview/display'
   import ModelColorControls from './ModelColorControls.svelte'
 
   import { onMount } from 'svelte'
@@ -40,6 +41,8 @@
     partMeshes?: ModelPartMeshSnapshot[]
     modelRevision: string | null
     parameters: ModelParameterValues | null
+    simplified?: SimplifiedStatus | null
+    preserveCamera?: boolean
     stale: boolean
     presentation: CadViewportPresentation
     appearance?: CadViewportAppearance
@@ -55,6 +58,8 @@
     modelRevision,
     parameters,
     stale,
+    simplified = null,
+    preserveCamera = false,
     presentation,
     appearance = 'light',
     onPreparationTiming,
@@ -150,6 +155,7 @@
   data-testid="cad-viewport"
   data-model-revision={modelRevision ?? ''}
   data-presentation={presentation}
+  data-preview-kind={simplified ? 'simplified' : 'committed'}
   onpointerleave={() => {
     faceHover = null
   }}
@@ -175,6 +181,8 @@
       <Canvas>
         <CadViewportScene
           {mesh}
+          simplified={simplified !== null}
+          {preserveCamera}
           {partMeshes}
           {modelRevision}
           {parameters}
@@ -196,7 +204,15 @@
       </div>
     {/if}
   </div>
-  {#if stale}
+  {#if simplified}
+    <span
+      class="absolute top-16 left-4 max-w-[calc(100%-2rem)] rounded-full border border-stale bg-stale-background px-[0.7rem] py-[0.35rem] text-[0.85rem] text-stale-text"
+      role="status"
+      data-testid="cad-simplified-status"
+    >
+      {translate(locale, `cad.viewport.simplified.${simplified}`)}
+    </span>
+  {:else if stale}
     <span
       class="absolute bottom-4 left-4 rounded-full border border-stale bg-stale-background px-[0.7rem] py-[0.35rem] text-[0.85rem] text-stale-text"
     >

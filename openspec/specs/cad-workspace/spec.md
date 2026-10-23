@@ -283,7 +283,7 @@ Worker 建模成功只代表 candidate 建立成功，不代表 current model �
 
 ### Requirement: Mesh viewport
 
-The viewport MUST use Threlte with Three.js to display the latest committed model mesh, regardless of whether the selected catalog entry is a box or a component. It MUST NOT execute B-Rep modelling or STEP export. Dimension annotations MUST describe the selected committed model's actual X, Y and Z bounds and MUST remain associated with the same committed model revision. While the committed model revision is unchanged, parameter input and stale-state changes MUST NOT change the viewport camera pose or framing; camera fitting MAY occur when the viewport size changes or when a new committed model revision replaces the current one. Viewport lighting MUST keep exposed model surfaces, including raised features, thin walls and recessed cavities, visually legible across all viewing angles supported by the existing OrbitControls configuration. Lighting MUST provide enough orientation-independent fill to prevent exposed surfaces from becoming near-black solely because they face away from the primary light, while preserving directional contrast so adjacent faces and geometric relief remain distinguishable. The viewport MUST also display a fixed-position orientation indicator with visible X, Y and Z axis labels. The indicator MUST represent the same world coordinate system as the model and grid, including the CAD Z-up convention, and MUST update its orientation whenever the viewport camera or orbit pose changes without moving from its viewport corner.
+The viewport MUST use Threlte with Three.js to display the latest committed model mesh, except while a component opts into the labeled simplified display defined by cad-progressive-preview. Simplified display geometry is not a committed revision, MUST NOT enable export or B-Rep face measurements, and MUST NOT display committed dimension annotations. Replacement of a simplified display by its committed result MUST preserve the camera pose and framing. It MUST NOT execute B-Rep modelling or STEP export. Dimension annotations MUST describe the selected committed model's actual X, Y and Z bounds and MUST remain associated with the same committed model revision. While the committed model revision is unchanged, parameter input and stale-state changes MUST NOT change the viewport camera pose or framing; camera fitting MAY occur when the viewport size changes or when a new committed model revision replaces the current one. Viewport lighting MUST keep exposed model surfaces, including raised features, thin walls and recessed cavities, visually legible across all viewing angles supported by the existing OrbitControls configuration. Lighting MUST provide enough orientation-independent fill to prevent exposed surfaces from becoming near-black solely because they face away from the primary light, while preserving directional contrast so adjacent faces and geometric relief remain distinguishable. The viewport MUST also display a fixed-position orientation indicator with visible X, Y and Z axis labels. The indicator MUST represent the same world coordinate system as the model and grid, including the CAD Z-up convention, and MUST update its orientation whenever the viewport camera or orbit pose changes without moving from its viewport corner.
 
 #### Scenario: 有效 component mesh
 
@@ -354,7 +354,7 @@ The viewport MUST use Threlte with Three.js to display the latest committed mode
 
 - **Given** viewport 已顯示 committed model，且使用者未在 3D viewport 內進行 orbit 操作
 - **When** 使用者拖曳 slider、使用鍵盤調整 slider，或修改其他參數，而新 model revision 尚未 committed
-- **Then** viewport 必須繼續顯示原本的 committed mesh
+- **Then** viewport 必須繼續顯示原本的 committed mesh，或對已啟用 cad-progressive-preview 的 component 顯示新參數的簡化預覽
 - **And** camera 的方向、target、zoom/framing 不得因輸入事件而改變
 - **And** 輸入事件不得使既有模型被重新 fit 而產生旋轉或跳動
 - **And** XYZ 座標方向指示器不得因輸入事件自行改變方向
@@ -364,7 +364,7 @@ The viewport MUST use Threlte with Three.js to display the latest committed mode
 - **Given** 使用者已修改參數，且新的 model revision 已成功 committed
 - **When** viewport 替換成新的 committed mesh
 - **Then** viewport 必須顯示新 revision 對應的模型與尺寸標註
-- **And** camera framing 必須使新模型可見
+- **And** 初次取景必須使模型可見；由簡化預覽替換為正式模型時必須保留使用者的 camera pose 與 framing
 - **And** 既有 Orbit 操作必須仍可使用
 - **And** XYZ 座標方向指示器必須繼續顯示新 viewport camera pose 的方向
 
@@ -378,7 +378,7 @@ The viewport MUST use Threlte with Three.js to display the latest committed mode
 
 #### Scenario: 沒有可用模型
 
-- **Given** workspace 尚未有 committed model，或目前沒有可供預覽的 mesh
+- **Given** workspace 沒有 committed mesh，也沒有可供顯示的簡化預覽
 - **When** 使用者查看 viewport
 - **Then** viewport 不得顯示尺寸線或尺寸標籤
 - **And** viewport 必須顯示既有的無模型或 WebGL fallback 訊息

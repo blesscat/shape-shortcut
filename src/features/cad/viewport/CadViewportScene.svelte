@@ -44,6 +44,8 @@
     mesh: MeshSnapshot
     partMeshes?: ModelPartMeshSnapshot[]
     modelRevision: string
+    simplified?: boolean
+    preserveCamera?: boolean
     parameters: ModelParameterValues | null
     theme: CadViewportTheme
     presentation: CadViewportPresentation
@@ -65,6 +67,8 @@
     partMeshes,
     modelRevision,
     parameters,
+    simplified = false,
+    preserveCamera = false,
     theme,
     presentation,
     onPreparationTiming,
@@ -72,7 +76,7 @@
   }: Props = $props()
 
   let enableFaceHover = $derived(
-    presentation === 'workspace' && onFaceHover !== undefined,
+    presentation === 'workspace' && !simplified && onFaceHover !== undefined,
   )
 
   // interactivity() injects a Threlte plugin and must run exactly once at
@@ -154,32 +158,34 @@
     {...CAD_VIEWPORT_GIZMO}
   />
 {/if}
-{#key modelRevision}
+{#key preserveCamera ? 'persistent-camera' : modelRevision}
   <Bounds margin={boundsMarginFor(presentation)} animate={false}>
-    {#if partMeshes && partMeshes.length > 0}
-      {#each partMeshes as part (part.name)}
-        {#if isCadViewportPartName(part.name)}
-          <ModelMesh
-            mesh={part.mesh}
-            {theme}
-            materialColor={colorForCadViewportPart(part.name, colors)}
-            {onPreparationTiming}
-            {enableFaceHover}
-            {onFaceHover}
-          />
-        {/if}
-      {/each}
-    {:else}
-      <ModelMesh
-        {mesh}
-        materialColor={colors.primary}
-        {theme}
-        {onPreparationTiming}
-        {enableFaceHover}
-        {onFaceHover}
-      />
-    {/if}
-    {#if presentation === 'workspace'}
+    {#key modelRevision}
+      {#if partMeshes && partMeshes.length > 0}
+        {#each partMeshes as part (part.name)}
+          {#if isCadViewportPartName(part.name)}
+            <ModelMesh
+              mesh={part.mesh}
+              {theme}
+              materialColor={colorForCadViewportPart(part.name, colors)}
+              {onPreparationTiming}
+              {enableFaceHover}
+              {onFaceHover}
+            />
+          {/if}
+        {/each}
+      {:else}
+        <ModelMesh
+          {mesh}
+          materialColor={simplified ? '#b8c8d8' : colors.primary}
+          {theme}
+          {onPreparationTiming}
+          {enableFaceHover}
+          {onFaceHover}
+        />
+      {/if}
+    {/key}
+    {#if presentation === 'workspace' && !simplified}
       <DimensionAnnotations {locale} {mesh} {parameters} {theme} />
     {/if}
   </Bounds>

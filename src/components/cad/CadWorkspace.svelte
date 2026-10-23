@@ -18,6 +18,8 @@
     type ComponentParameterStore,
   } from '../../features/cad/parameters'
   import { getModelDefinition } from '../../features/cad/model-catalog'
+  import { createPreviewDisplaySelector } from '../../features/cad/progressive-preview/display'
+  import { supportsProgressivePreview } from '../../features/cad/progressive-preview/geometry'
   import CadViewport from '../../features/cad/viewport/CadViewport.svelte'
   import {
     viewportAppearanceForSearch,
@@ -69,6 +71,15 @@
   let isNarrow = $state(false)
   let drawerOpen = $state(false)
   let pillButton = $state<HTMLButtonElement | null>(null)
+
+  const selectPreview = createPreviewDisplaySelector()
+  let preview = $derived.by(() => {
+    if (!snapshot) return null
+    return selectPreview(
+      snapshot.state,
+      Object.keys(snapshot.fieldErrors).length > 0,
+    )
+  })
 
   const t = (key: string, values?: Record<string, string | number | boolean>) =>
     translate(locale, key, values)
@@ -281,10 +292,12 @@
       {locale}
       {colors}
       onColorsChange={(next) => colorStore?.set(next)}
-      mesh={snapshot.state.committed?.mesh ?? null}
-      partMeshes={snapshot.state.committed?.partMeshes}
-      modelRevision={snapshot.state.committed?.revision ?? null}
-      parameters={snapshot.state.committed?.parameters ?? null}
+      mesh={preview?.mesh ?? null}
+      partMeshes={preview?.partMeshes}
+      modelRevision={preview?.revision ?? null}
+      parameters={preview?.parameters ?? null}
+      simplified={preview?.simplified ?? null}
+      preserveCamera={supportsProgressivePreview(snapshot.modelId)}
       stale={snapshot.state.stale}
       {presentation}
       {appearance}
