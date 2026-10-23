@@ -753,18 +753,18 @@
   function renderPlacement(
     instanceId: string,
     placement: ScenePlacement,
+    phase: 'preview' | 'committed',
   ): void {
     const instance = instances.find((candidate) => candidate.id === instanceId)
     if (!instance) return
-    // The preview renders at the candidate placement's derived stack height,
-    // not the committed one, so dragging onto a stack shows the landing Z.
     const placedInstance: PlaygroundViewportInstance = {
       ...instance,
       placement,
-      stackedZ:
-        viewMode === 'desktop'
-          ? stackedZForPlacement(instanceId, placement)
-          : instance.stackedZ,
+    }
+    // Only a drag preview evaluates the candidate last in stacking order.
+    // Restoring a cancelled gesture must retain the committed stack height.
+    if (phase === 'preview' && viewMode === 'desktop') {
+      placedInstance.stackedZ = stackedZForPlacement(instanceId, placement)
     }
     // Ready meshes are authored in the print frame and mount with the
     // display rotation composed in; pending placeholder boxes are authored
@@ -822,7 +822,11 @@
 
   function restorePressedInstance(): void {
     if (!pointerPress?.instanceId || !pointerPress.originalPlacement) return
-    renderPlacement(pointerPress.instanceId, pointerPress.originalPlacement)
+    renderPlacement(
+      pointerPress.instanceId,
+      pointerPress.originalPlacement,
+      'committed',
+    )
   }
 
   function cancelPointerInteraction(): void {
@@ -925,7 +929,7 @@
 
     const valid = onValidatePlacement(press.instanceId, placement)
     dragPreview = { instanceId: press.instanceId, placement, valid }
-    renderPlacement(press.instanceId, placement)
+    renderPlacement(press.instanceId, placement, 'preview')
     applyColors(observedTheme)
   }
 
@@ -1168,7 +1172,11 @@
     untrack(() => {
       rebuildScene(theme)
       if (dragPreview) {
-        renderPlacement(dragPreview.instanceId, dragPreview.placement)
+        renderPlacement(
+          dragPreview.instanceId,
+          dragPreview.placement,
+          'preview',
+        )
       }
     })
   })
