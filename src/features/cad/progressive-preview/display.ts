@@ -4,7 +4,7 @@ import type {
 } from '../../../cad-contract/messages'
 import type { ModelParameterValues } from '../../../cad-contract/units'
 import type { CadState } from '../state'
-import { createSimplifiedMesh, supportsProgressivePreview } from './geometry'
+import { createSimplifiedMesh } from './geometry'
 
 export type SimplifiedStatus = 'pending' | 'invalid' | 'failed'
 export type PreviewDisplay = {
@@ -48,8 +48,6 @@ export function createPreviewDisplaySelector() {
       key = null
       cached = null
     }
-    if (!supportsProgressivePreview(state.modelId))
-      return committedDisplay(state)
     if (
       state.committed &&
       !state.stale &&

@@ -1,3 +1,4 @@
+import { labelCardPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridLabelCard,
@@ -68,6 +69,8 @@ export const opengridLabelCardDefinition: ModelDefinition = {
   },
   defaultParameters: OPENGRID_LABEL_CARD_CONFIGURATION.defaultParameters,
   supportedSystemContexts: ['desk', 'wall'],
+  simplifiedPreview: (parameters) =>
+    labelCardPreview(parameters as Parameters<typeof labelCardPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-label-card.webp',

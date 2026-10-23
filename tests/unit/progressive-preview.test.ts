@@ -1,3 +1,12 @@
+import {
+  openGridOpenConnectOrganizerLayoutFor,
+  type OpenGridOpenConnectOrganizerParameters,
+} from '../../src/cad-contract/units/opengrid-openconnect-organizer'
+import {
+  openGridDividerPlanBoundsFor,
+  type OpenGridDividerParameters,
+} from '../../src/cad-contract/units/opengrid-divider'
+import { modelDefinitions } from '../../src/features/cad/model-catalog'
 import { describe, expect, it } from 'vitest'
 import { Mesh, MeshBasicMaterial, Raycaster, Vector3, DoubleSide } from 'three'
 import { createSimplifiedMesh } from '../../src/features/cad/progressive-preview/geometry'
@@ -109,7 +118,9 @@ describe('simplified display geometry', () => {
       honeycombMode: true,
     })!
     expect(honeycomb.triangleCount).toBe(plain.triangleCount)
-    expect(honeycomb.positions).toEqual(plain.positions)
+    expect(new Float32Array(honeycomb.positions)).toEqual(
+      new Float32Array(plain.positions),
+    )
     const large = createSimplifiedMesh('opengrid-organizer-box', {
       ...organizer,
       holeCountX: 10,
@@ -122,7 +133,7 @@ describe('simplified display geometry', () => {
     expect(new Uint32Array(large.indices).length).toBe(large.triangleCount * 3)
   })
 
-  it('rejects invalid inputs and leaves unsupported models alone', () => {
+  it('rejects invalid inputs', () => {
     expect(
       createSimplifiedMesh('opengrid-stackable-box', { ...box, height: NaN }),
     ).toBeNull()
@@ -140,16 +151,12 @@ describe('simplified display geometry', () => {
     ).toBeNull()
     expect(
       createSimplifiedMesh('box', { width: 20, depth: 30, height: 40 }),
-    ).toBeNull()
+    ).not.toBeNull()
   })
 })
 
 describe('provisional lifecycle', () => {
-  it.each([
-    'opengrid-stackable-box',
-    'opengrid-stackable-cylinder',
-    'opengrid-organizer-box',
-  ] as ModelId[])(
+  it.each(modelDefinitions.map((definition) => definition.id))(
     'shows %s before engine readiness and caches progress updates',
     (modelId) => {
       const state = initialCadState(modelId)
@@ -221,6 +228,200 @@ describe('provisional lifecycle', () => {
         status: 'invalid-input',
       }),
     ).toBeNull()
-    expect(select(initialCadState('box'))).toBeNull()
+    expect(select(initialCadState('box'))!.simplified).toBe('pending')
   })
+})
+
+describe('catalog preview contract', () => {
+  it.each(modelDefinitions)(
+    '$id produces finite nonempty geometry from validated defaults and presets',
+    (definition) => {
+      const inputs = [
+        definition.defaultParameters,
+        ...(definition.presets ?? []).map((preset) => ({
+          ...definition.defaultParameters,
+          ...preset.overrides,
+        })),
+      ]
+      for (const input of inputs) {
+        const mesh = createSimplifiedMesh(definition.id, input)!
+        expect(mesh).not.toBeNull()
+        expect(mesh.triangleCount).toBeGreaterThan(0)
+        expect(mesh.triangleCount).toBeLessThan(100_000)
+        expect(
+          [...new Float32Array(mesh.positions)].every(Number.isFinite),
+        ).toBe(true)
+        expect([...new Float32Array(mesh.normals)].every(Number.isFinite)).toBe(
+          true,
+        )
+        expect(new Uint32Array(mesh.indices).length).toBe(
+          mesh.triangleCount * 3,
+        )
+        for (let axis = 0; axis < 3; axis++)
+          expect(mesh.bounds.max[axis]).toBeGreaterThan(mesh.bounds.min[axis])
+      }
+      expect(createSimplifiedMesh(definition.id, null as never)).toBeNull()
+    },
+  )
+
+  it('keeps modular and honeycomb cell openings and repeats each cell', () => {
+    for (const id of ['modular-grid-base', 'hsw-cell'] as const) {
+      const one = createSimplifiedMesh(id, { rows: 1, columns: 1 })!
+      const many = createSimplifiedMesh(id, { rows: 2, columns: 3 })!
+      expect(verticalHits(one)).toEqual([])
+      expect(many.triangleCount).toBe(one.triangleCount * 6)
+      expect(many.bounds.max[0]).toBeGreaterThan(one.bounds.max[0])
+    }
+  })
+
+  it('orients and separates repeated hexagonal columns', () => {
+    const p = { height: 40, count: 3, gap: 5, orientation: 'standing' as const }
+    const standing = createSimplifiedMesh('hexagonal-column', p)!
+    const lying = createSimplifiedMesh('hexagonal-column', {
+      ...p,
+      orientation: 'lying',
+    })!
+    expect(standing.bounds.max[2]).toBeCloseTo(p.height)
+    expect(lying.bounds.max[0] - lying.bounds.min[0]).toBeCloseTo(p.height)
+    expect(lying.bounds.max[2]).toBeLessThan(standing.bounds.max[2])
+    expect(lying.triangleCount).toBe(standing.triangleCount)
+    expect(verticalHits(standing, 0, 4)).toEqual([])
+  })
+
+  it('shows wall-cover pieces with gaps while omitting text geometry', () => {
+    const definition = modelDefinitions.find(
+      (d) => d.id === 'opengrid-wall-cover',
+    )!
+    const a = createSimplifiedMesh(definition.id, {
+      ...definition.defaultParameters,
+      text: 'A',
+    })!
+    const ab = createSimplifiedMesh(definition.id, {
+      ...definition.defaultParameters,
+      text: 'AB',
+    })!
+    expect(ab.triangleCount).toBe(2 * a.triangleCount)
+    expect(verticalHits(ab)).toEqual([])
+  })
+
+  it('keeps the tissue dispensing slot open and the container hollow', () => {
+    const definition = modelDefinitions.find(
+      (d) => d.id === 'opengrid-openconnect-tissue-box',
+    )!
+    const mesh = createSimplifiedMesh(
+      definition.id,
+      definition.defaultParameters,
+    )!
+    const p = definition.defaultParameters as {
+      y: number
+      wallThickness: number
+      bottomThickness: number
+      slotWidth: number
+    }
+    const center = (p.y + 2 * p.wallThickness) / 2
+    expect(verticalHits(mesh, 0, center)).toEqual([])
+    expect(
+      Math.max(...verticalHits(mesh, 0, center + p.slotWidth)),
+    ).toBeCloseTo(p.bottomThickness)
+  })
+})
+
+describe('additional component shapes', () => {
+  it('keeps OpenConnect organizer cavities at their print-frame positions', () => {
+    const d = modelDefinitions.find(
+      (d) => d.id === 'opengrid-openconnect-organizer',
+    )!
+    for (const holeShape of OPENGRID_ORGANIZER_BOX_SHAPES) {
+      const p = {
+        ...d.defaultParameters,
+        holeShape,
+        holeCountX: 3,
+        holeCountY: 2,
+      } as OpenGridOpenConnectOrganizerParameters
+      const l = openGridOpenConnectOrganizerLayoutFor(p)
+      const mesh = createSimplifiedMesh(d.id, p)!
+      for (const [x, y] of l.cavityCenters)
+        expect(
+          Math.max(...verticalHits(mesh, x, y - l.bodyDepth / 2)),
+        ).toBeCloseTo(p.bottomThickness)
+      expect(
+        Math.max(
+          ...verticalHits(mesh, l.bodyWidth / 2 - 0.5, -l.bodyDepth / 2),
+        ),
+      ).toBeCloseTo(l.bodyThickness)
+    }
+  })
+
+  it('centers asymmetric divider arms and retains empty quadrants', () => {
+    const d = modelDefinitions.find((d) => d.id === 'opengrid-divider')!
+    const p = {
+      ...d.defaultParameters,
+      left: 0,
+      right: 3,
+      up: 2,
+      down: 0,
+    } as OpenGridDividerParameters
+    const plan = openGridDividerPlanBoundsFor(p)
+    const mesh = createSimplifiedMesh(d.id, p)!
+    expect(mesh.bounds.min[0] + mesh.bounds.max[0]).toBeCloseTo(0)
+    expect(mesh.bounds.min[1] + mesh.bounds.max[1]).toBeCloseTo(0)
+    expect(mesh.bounds.max[0] - mesh.bounds.min[0]).toBeCloseTo(
+      plan.maxX - plan.minX,
+    )
+    expect(
+      verticalHits(mesh, mesh.bounds.max[0] - 2, mesh.bounds.max[1] - 2),
+    ).toEqual([])
+  })
+
+  it('adds shelf compartments and reacts to its slope', () => {
+    const d = modelDefinitions.find((d) => d.id === 'opengrid-open-shelf')!
+    const simple = createSimplifiedMesh(d.id, {
+      ...d.defaultParameters,
+      cellX: 1,
+      cellZ: 1,
+      angle: 0,
+    })!
+    const divided = createSimplifiedMesh(d.id, {
+      ...d.defaultParameters,
+      cellX: 3,
+      cellZ: 3,
+      angle: 0,
+    })!
+    const sloped = createSimplifiedMesh(d.id, {
+      ...d.defaultParameters,
+      cellX: 3,
+      cellZ: 3,
+      angle: 15,
+    })!
+    expect(divided.triangleCount).toBeGreaterThan(simple.triangleCount)
+    expect(new Float32Array(sloped.positions)).not.toEqual(
+      new Float32Array(divided.positions),
+    )
+    const front = Math.max(...verticalHits(sloped, 0, sloped.bounds.min[1] + 1))
+    const rear = Math.max(...verticalHits(sloped, 0, sloped.bounds.max[1] - 1))
+    expect(front).toBeGreaterThan(rear)
+  })
+})
+
+it('reflects divider wall thickness above the wider locating base', () => {
+  const definition = modelDefinitions.find((d) => d.id === 'opengrid-divider')!
+  const parameters = {
+    ...definition.defaultParameters,
+    left: 2,
+    right: 2,
+    up: 0,
+    down: 0,
+    height: 40,
+    wallThickness: 1,
+  }
+  const thin = createSimplifiedMesh(definition.id, parameters)!
+  const thick = createSimplifiedMesh(definition.id, {
+    ...parameters,
+    wallThickness: 3,
+  })!
+  // Offset from the central peg; this ray hits the base of the thin wall,
+  // but the top of the thicker wall at the same planar location.
+  expect(Math.max(...verticalHits(thin, 10, 1))).toBeLessThan(parameters.height)
+  expect(Math.max(...verticalHits(thick, 10, 1))).toBeCloseTo(parameters.height)
+  expect(thin.bounds).toEqual(thick.bounds)
 })

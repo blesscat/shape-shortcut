@@ -19,6 +19,7 @@ function fakeDefinition(
     selectionLabel: 'models.model.opengrid-stackable-box.selection',
     selectionDescription: 'models.model.opengrid-stackable-box.description',
     parameterSchema: [],
+    simplifiedPreview: opengridStackableBoxDefinition.simplifiedPreview,
     previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
     defaultParameters: { ...OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS },
     validateParameters: (value) => {

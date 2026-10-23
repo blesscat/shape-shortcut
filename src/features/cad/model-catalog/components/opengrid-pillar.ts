@@ -1,3 +1,4 @@
+import { pillarPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForPillar,
@@ -100,6 +101,8 @@ export const opengridPillarDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-pillar.description',
   parameterSchema: PILLAR_PARAMETER_SCHEMA,
   defaultParameters: { ...PILLAR_CONFIGURATION.defaultParameters },
+  simplifiedPreview: (parameters) =>
+    pillarPreview(parameters as Parameters<typeof pillarPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-pillar.webp',

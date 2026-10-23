@@ -1,3 +1,4 @@
+import { modularGridPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForModularGridBase,
@@ -71,6 +72,8 @@ export const modularGridBaseDefinition: ModelDefinition = {
   selectionDescription: 'models.model.modular-grid-base.description',
   parameterSchema: GRID_PARAMETER_SCHEMA,
   defaultParameters: { rows: 1, columns: 1 },
+  simplifiedPreview: (parameters) =>
+    modularGridPreview(parameters as Parameters<typeof modularGridPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   validateParameters: validateGridDefinitionParameters,
   boundsForParameters: boundsForGridDefinition,

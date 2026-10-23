@@ -1,3 +1,4 @@
+import { boxPreview } from '../../progressive-preview/containers'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridStackableBox,
@@ -199,6 +200,8 @@ export const opengridStackableBoxDefinition: ModelDefinition = {
       },
     },
   ],
+  simplifiedPreview: (parameters) =>
+    boxPreview(parameters as Parameters<typeof boxPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-stackable-box.webp',

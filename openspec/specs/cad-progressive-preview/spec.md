@@ -6,7 +6,7 @@ Give users an interactive, clearly provisional view of current model proportions
 
 ### Requirement: Parameter-derived simplified geometry
 
-The component workspaces for `opengrid-stackable-box`, `opengrid-stackable-cylinder`, and `opengrid-organizer-box` MUST display a simplified model from valid current parameters before exact generation completes, including during engine initialization. The display MUST represent the body footprint, height, open interior and floor presence; organizer cavities MUST reflect count, placement, and selected basic shape. Honeycomb holes, fillets, side cutouts, sockets and precision mating details MAY be omitted. The display MUST remain lightweight and independent of exact CAD generation. Other models and playground MUST retain their existing behavior.
+Every registered catalog component workspace MUST display a simplified model from valid current parameters before exact generation completes, including during engine initialization. The display MUST represent recognizable body proportions, major openings, repeated parts, and orientation. Containers MUST preserve open interiors and floor presence; organizers MUST preserve cavity count, placement and basic shape; shelves MUST preserve tiers and compartments; boards MUST preserve their grid silhouette. Honeycomb perforations, fillets, text, sockets and precision mating details MAY be omitted. Preview generation MUST remain lightweight and independent of exact CAD generation. Playground assembly retains its committed-instance behavior.
 
 #### Scenario: First load
 - **WHEN** a supported component initializes with valid parameters while the CAD engine is still loading
@@ -45,3 +45,17 @@ Simplified previews MUST NOT invoke an additional exact CAD build or alter exist
 - **WHEN** a representative supported model is generated with simplified display enabled
 - **THEN** only the existing exact generation request MUST be issued
 - **AND** recorded preview and completion timings MUST distinguish early visual feedback from final readiness
+
+### Requirement: Progressive preview is the catalog default
+
+Every current and future catalog definition MUST provide a synchronous display-only preview description using its validated parameters. Registration MUST require this description, without a separate model allowlist or an opt-in workspace switch. Fixed assets and chooser-hidden routable models MUST participate. Descriptions MUST NOT contain native CAD shapes or export data.
+
+#### Scenario: New catalog component
+- **WHEN** a component is added to the catalog
+- **THEN** the shared definition contract MUST require its simplified preview description
+- **AND** the shared workspace MUST use it automatically before exact completion
+
+#### Scenario: Catalog coverage
+- **WHEN** each registered model opens with valid defaults
+- **THEN** it MUST produce finite nonempty provisional geometry without a Worker or asset download
+- **AND** existing exact-result export eligibility and invalid/failure retention MUST remain in force

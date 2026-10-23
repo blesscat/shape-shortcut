@@ -1,3 +1,4 @@
+import { tissuePreview } from '../../progressive-preview/shelves'
 import type { OpenConnectAlignmentKey } from '../../../../cad-contract/units/openconnect-alignment'
 import {
   TISSUE_BOX_DEFAULTS,
@@ -64,6 +65,8 @@ export const tissueBoxDefinition: ModelDefinition = {
     field('slotWidth', 5, 390, 'Y'),
   ],
   defaultParameters: { ...TISSUE_BOX_DEFAULTS },
+  simplifiedPreview: (parameters) =>
+    tissuePreview(parameters as Parameters<typeof tissuePreview>[0]),
   previewMetadata: { centeredOnXY: false, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-openconnect-tissue-box-wall.webp',

@@ -1,3 +1,4 @@
+import { connectShelfPreview } from '../../progressive-preview/shelves'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOpenConnectShelf,
@@ -117,6 +118,10 @@ export const opengridOpenConnectShelfDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-openconnect-shelf.description',
   parameterSchema: OPENGRID_OPENCONNECT_SHELF_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS },
+  simplifiedPreview: (parameters) =>
+    connectShelfPreview(
+      parameters as Parameters<typeof connectShelfPreview>[0],
+    ),
   previewMetadata: { centeredOnXY: false, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-openconnect-shelf.webp',

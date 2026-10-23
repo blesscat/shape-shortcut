@@ -1,3 +1,4 @@
+import { cylinderPreview } from '../../progressive-preview/containers'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridStackableCylinder,
@@ -277,6 +278,8 @@ export const opengridStackableCylinderDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-stackable-cylinder.description',
   parameterSchema: OPENGRID_STACKABLE_CYLINDER_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS },
+  simplifiedPreview: (parameters) =>
+    cylinderPreview(parameters as Parameters<typeof cylinderPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-stackable-cylinder.webp',

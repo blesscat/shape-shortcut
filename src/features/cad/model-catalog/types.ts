@@ -1,3 +1,4 @@
+import type { PreviewDescription } from '../progressive-preview/description'
 import type {
   ModelBounds,
   ModelId,
@@ -157,6 +158,8 @@ export type ModelDefinition<
   defaultParameters: ModelParameterValues
   /** Named parameter presets shown as apply buttons; optional. */
   presets?: ReadonlyArray<ModelPreset>
+  /** Required for every model. Receives validated parameters; synchronous and CAD-free. */
+  simplifiedPreview: (parameters: ModelParameterValues) => PreviewDescription
   previewMetadata: { centeredOnXY: boolean; baseAtZ: number }
   previewImage?: PreviewImage
   validateParameters: (parameters: unknown) => ModelValidation

@@ -1,3 +1,4 @@
+import { removerPreview } from '../../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../../cad-contract/units'
 import {
   boundsForOpenGridSnapRemover,
@@ -52,6 +53,8 @@ export const openGridSnapRemoverDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-snap-remover.description',
   parameterSchema: [],
   defaultParameters: {},
+  simplifiedPreview: (parameters) =>
+    removerPreview(parameters as Parameters<typeof removerPreview>[0]),
   previewMetadata: {
     centeredOnXY: false,
     baseAtZ: -5.005506125135993,
