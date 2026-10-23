@@ -1,3 +1,4 @@
+import { hswPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForHswCell,
@@ -72,6 +73,8 @@ export const hswCellDefinition: ModelDefinition = {
   selectionDescription: 'models.model.hsw-cell.description',
   parameterSchema: HSW_PARAMETER_SCHEMA,
   defaultParameters: { rows: 1, columns: 1 },
+  simplifiedPreview: (parameters) =>
+    hswPreview(parameters as Parameters<typeof hswPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/hsw-cell.webp',

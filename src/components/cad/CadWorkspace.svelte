@@ -19,7 +19,6 @@
   } from '../../features/cad/parameters'
   import { getModelDefinition } from '../../features/cad/model-catalog'
   import { createPreviewDisplaySelector } from '../../features/cad/progressive-preview/display'
-  import { supportsProgressivePreview } from '../../features/cad/progressive-preview/geometry'
   import CadViewport from '../../features/cad/viewport/CadViewport.svelte'
   import {
     viewportAppearanceForSearch,
@@ -297,7 +296,7 @@
       modelRevision={preview?.revision ?? null}
       parameters={preview?.parameters ?? null}
       simplified={preview?.simplified ?? null}
-      preserveCamera={supportsProgressivePreview(snapshot.modelId)}
+      preserveCamera={true}
       stale={snapshot.state.stale}
       {presentation}
       {appearance}

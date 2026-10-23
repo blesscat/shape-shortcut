@@ -1,3 +1,4 @@
+import { boardPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGrid,
@@ -67,6 +68,8 @@ export const opengridDefinition: ModelDefinition = {
     detailsKey: 'models.model.opengrid.parameterDetails',
   },
   defaultParameters: { ...OPENGRID_CONFIGURATION.defaultParameters },
+  simplifiedPreview: (parameters) =>
+    boardPreview(parameters as Parameters<typeof boardPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid.webp',

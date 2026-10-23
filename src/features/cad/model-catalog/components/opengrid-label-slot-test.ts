@@ -1,3 +1,4 @@
+import { labelSlotPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridLabelSlotTest,
@@ -72,6 +73,8 @@ export const opengridLabelSlotTestDefinition: ModelDefinition = {
   },
   defaultParameters: OPENGRID_LABEL_SLOT_TEST_CONFIGURATION.defaultParameters,
   supportedSystemContexts: ['wall'],
+  simplifiedPreview: (parameters) =>
+    labelSlotPreview(parameters as Parameters<typeof labelSlotPreview>[0]),
   previewMetadata: { centeredOnXY: false, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-label-slot-test.webp',

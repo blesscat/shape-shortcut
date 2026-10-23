@@ -1,3 +1,4 @@
+import { organizerPreview } from '../../progressive-preview/containers'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOrganizerBox,
@@ -220,6 +221,8 @@ export const opengridOrganizerBoxDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-organizer-box.description',
   parameterSchema: OPENGRID_ORGANIZER_BOX_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS },
+  simplifiedPreview: (parameters) =>
+    organizerPreview(parameters as Parameters<typeof organizerPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-organizer-box.webp',

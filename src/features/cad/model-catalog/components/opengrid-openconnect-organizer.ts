@@ -1,3 +1,4 @@
+import { connectOrganizerPreview } from '../../progressive-preview/shelves'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOpenConnectOrganizer,
@@ -201,6 +202,10 @@ export const opengridOpenConnectOrganizerDefinition: ModelDefinition = {
     'models.model.opengrid-openconnect-organizer.description',
   parameterSchema: OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS },
+  simplifiedPreview: (parameters) =>
+    connectOrganizerPreview(
+      parameters as Parameters<typeof connectOrganizerPreview>[0],
+    ),
   previewMetadata: { centeredOnXY: false, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-openconnect-organizer-wall.webp',

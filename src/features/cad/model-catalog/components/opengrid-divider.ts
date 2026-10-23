@@ -1,3 +1,4 @@
+import { dividerPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridDivider,
@@ -175,6 +176,8 @@ export const opengridDividerDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-divider.description',
   parameterSchema: OPENGRID_DIVIDER_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_DIVIDER_CONFIGURATION.defaultParameters },
+  simplifiedPreview: (parameters) =>
+    dividerPreview(parameters as Parameters<typeof dividerPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-divider.webp',

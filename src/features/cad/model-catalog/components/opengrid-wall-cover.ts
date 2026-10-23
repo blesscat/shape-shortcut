@@ -1,3 +1,4 @@
+import { wallCoverPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridWallCover,
@@ -82,6 +83,8 @@ export const opengridWallCoverDefinition: ModelDefinition = {
   },
   defaultParameters: OPENGRID_WALL_COVER_CONFIGURATION.defaultParameters,
   supportedSystemContexts: ['wall'],
+  simplifiedPreview: (parameters) =>
+    wallCoverPreview(parameters as Parameters<typeof wallCoverPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-wall-cover.webp',

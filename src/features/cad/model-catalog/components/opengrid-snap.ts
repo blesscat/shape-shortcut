@@ -1,3 +1,4 @@
+import { snapPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridSnap,
@@ -145,6 +146,8 @@ export const opengridSnapDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-snap.description',
   parameterSchema: OPENGRID_SNAP_PARAMETER_SCHEMA,
   defaultParameters: OPENGRID_SNAP_CONFIGURATION.defaultParameters,
+  simplifiedPreview: (parameters) =>
+    snapPreview(parameters as Parameters<typeof snapPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   previewImage: {
     src: '/model-previews/opengrid-snap.webp',

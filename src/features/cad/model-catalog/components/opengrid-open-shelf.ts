@@ -1,3 +1,4 @@
+import { shelfPreview } from '../../progressive-preview/shelves'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForOpenGridOpenShelf,
@@ -131,6 +132,8 @@ export const opengridOpenShelfDefinition: ModelDefinition = {
   selectionDescription: 'models.model.opengrid-open-shelf.description',
   parameterSchema: OPENGRID_OPEN_SHELF_PARAMETER_SCHEMA,
   defaultParameters: { ...OPENGRID_OPEN_SHELF_DEFAULT_PARAMETERS },
+  simplifiedPreview: (parameters) =>
+    shelfPreview(parameters as Parameters<typeof shelfPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: -3 },
   previewImage: {
     src: '/model-previews/opengrid-open-shelf.webp',

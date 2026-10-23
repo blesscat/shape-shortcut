@@ -1,3 +1,4 @@
+import { hexagonalPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForHexagonalColumn,
@@ -92,6 +93,8 @@ export const hexagonalColumnDefinition: ModelDefinition = {
     gap: HEXAGONAL_COLUMN_CONFIGURATION.defaultGap,
     orientation: HEXAGONAL_COLUMN_CONFIGURATION.defaultOrientation,
   },
+  simplifiedPreview: (parameters) =>
+    hexagonalPreview(parameters as Parameters<typeof hexagonalPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   validateParameters: validateHexagonalColumnDefinitionParameters,
   boundsForParameters: boundsForHexagonalColumnDefinition,

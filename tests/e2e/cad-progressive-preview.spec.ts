@@ -1,3 +1,4 @@
+import { modelDefinitions } from '../../src/features/cad/model-catalog'
 import { expect, test, type Page } from '@playwright/test'
 import { skipHeadlessFirefoxWithoutWebGL, waitForCadReady } from './helpers'
 
@@ -67,11 +68,7 @@ async function history(page: Page): Promise<Observation> {
   )
 }
 
-for (const model of [
-  'opengrid-stackable-box',
-  'opengrid-stackable-cylinder',
-  'opengrid-organizer-box',
-]) {
+for (const model of modelDefinitions.map((definition) => definition.id)) {
   test(`${model} displays an interactive provisional model before WASM and replaces it without a camera reset`, async ({
     page,
     browserName,
@@ -98,7 +95,10 @@ for (const model of [
       )
       await expect(canvas).toBeVisible()
       await expect(
-        page.getByRole('button', { name: '下載 STL', exact: true }),
+        page.getByRole('button', {
+          name: model === 'opengrid-wall-cover' ? '下載 3MF' : '下載 STL',
+          exact: true,
+        }),
       ).toBeDisabled()
       expect(
         (await history(page)).messages.some((m) => m.kind === 'model.ready'),

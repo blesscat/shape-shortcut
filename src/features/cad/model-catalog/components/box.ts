@@ -1,3 +1,4 @@
+import { simpleBoxPreview } from '../../progressive-preview/components'
 import type { ModelParameterValues } from '../../../../cad-contract/units'
 import {
   boundsForBox,
@@ -77,6 +78,8 @@ export const boxDefinition: ModelDefinition = {
   selectionDescription: 'models.model.box.description',
   parameterSchema: BOX_PARAMETER_SCHEMA,
   defaultParameters: { ...PROTOTYPE_CONFIGURATION.defaultDimensions },
+  simplifiedPreview: (parameters) =>
+    simpleBoxPreview(parameters as Parameters<typeof simpleBoxPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
   validateParameters: validateBoxDefinitionParameters,
   boundsForParameters: boundsForBoxDefinition,
