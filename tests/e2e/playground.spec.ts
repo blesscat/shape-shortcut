@@ -291,6 +291,66 @@ test.describe('OpenGrid playground planner', () => {
     await expect(viewport).toHaveAttribute('data-overlap-instances', '')
   })
 
+  test('restores the rendered lower piece when a stacked drag is cancelled', async ({
+    page,
+  }) => {
+    await openPlayground(page)
+    const modelId = 'opengrid-stackable-box'
+    const definition = getModelDefinition(modelId)!
+    await page.getByTestId('playground-import-input').setInputFiles({
+      name: 'stack.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          schemaVersion: SCENE_FILE_SCHEMA_VERSION,
+          kind: 'shape-shortcut/scene',
+          instances: [0, 1].map((cellX) => ({
+            modelId,
+            parameters: definition.defaultParameters,
+            placement: { cellX, cellY: 0, rotation: 0, supportedBy: null },
+            wallPlacement: { cellX, cellY: 0, rotation: 0, supportedBy: null },
+          })),
+        }),
+      ),
+    })
+    await waitForInstanceReady(page, 'inst-1')
+    await waitForInstanceReady(page, 'inst-2')
+    await page.getByTestId('playground-instance-inst-1').click()
+    const viewport = page.getByTestId('playground-viewport')
+    const canvas = viewport.locator('canvas')
+    const start = await findInstancePoint(page, 'inst-1')
+    await page.mouse.move(0, 0)
+    await expect(viewport).toHaveAttribute('data-hover-instance', '')
+    const originalOrder = await viewport.getAttribute('data-instance-stacked-z')
+    const originalPlacement = await readSelectedPlacement(page)
+    const originalImage = await canvas.screenshot()
+
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(start.x + 60, start.y + 30, { steps: 5 })
+    await expect(viewport).toHaveAttribute('data-drag-instance', 'inst-1')
+    await canvas.dispatchEvent('pointercancel', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+      bubbles: true,
+    })
+    await page.mouse.up()
+    await page.mouse.move(0, 0)
+    await expect(viewport).toHaveAttribute('data-drag-instance', '')
+    await expect(viewport).toHaveAttribute('data-hover-instance', '')
+    expect(await readSelectedPlacement(page)).toEqual(originalPlacement)
+    await expect(viewport).toHaveAttribute(
+      'data-instance-stacked-z',
+      originalOrder!,
+    )
+    // Observe the actual rendered scene: committed store attributes alone
+    // cannot detect a mesh left at the transient preview height.
+    await expect
+      .poll(async () => (await canvas.screenshot()).equals(originalImage))
+      .toBe(true)
+  })
+
   test('floats the earlier-added piece up when it is dragged onto the later piece', async ({
     page,
   }) => {
