@@ -267,6 +267,11 @@ export const messages = {
   'cad.viewport.webglUnsupported':
     'Unable to create a 3D preview. Check that the browser supports WebGL.',
   'cad.viewport.empty': 'No model preview is available yet.',
+  'cad.viewport.simplified.pending': 'Simplified preview · Building full model',
+  'cad.viewport.simplified.invalid':
+    'Simplified preview · Last valid input; check parameters',
+  'cad.viewport.simplified.failed':
+    'Simplified preview · Model generation failed',
   'cad.viewport.stale': 'Preview is out of sync with the current input',
   'viewport.dimension.width': 'Width',
   'viewport.dimension.depth': 'Depth',
