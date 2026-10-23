@@ -30,21 +30,20 @@ export type CadViewportTheme = {
   contactShadow: string
 }
 
-/* Warm light viewport theme (design-tokens.css Part D-A, v2 / 4.2.3). Dark
-   values arrive via the CSS tokens; this constant only backstops token-less
-   contexts such as light-mode thumbnails. */
+/* Neutral light fallback for token-less contexts and deterministic thumbnails.
+   Keep it aligned with the light semantic viewport slots in global.css. */
 export const CAD_VIEWPORT_THEME_FALLBACK = {
-  background: '#f7f3ef',
-  gridMajor: '#52525b',
-  gridMinor: 'rgba(82, 82, 91, 0.85)',
-  gizmoBackground: '#fff7f2',
+  background: '#f0f1f4',
+  gridMajor: '#9ca3b0',
+  gridMinor: 'rgba(156, 163, 176, 0.42)',
+  gizmoBackground: '#ffffff',
   gizmoX: '#c8401f',
   gizmoY: '#1f7a3a',
   gizmoZ: '#0284c7',
-  gizmoLabel: '#362a24',
-  edge: '#3a2e27',
+  gizmoLabel: '#252833',
+  edge: '#454b58',
   annotation: '#0284c7',
-  annotationLabel: '#6e5f57',
+  annotationLabel: '#626775',
   hover: '#ffb454',
   selection: '#0284c7',
   selectionFill: 'rgba(2, 132, 199, 0.14)',
@@ -52,11 +51,11 @@ export const CAD_VIEWPORT_THEME_FALLBACK = {
   errorFill: 'rgba(214, 69, 43, 0.16)',
   faceHighlight: 'rgba(255, 180, 84, 0.35)',
   hemisphereSky: '#ffffff',
-  hemisphereGround: '#c9bcb2',
+  hemisphereGround: '#b8bfcb',
   keyLight: '#ffffff',
-  oppositeFill: '#f3eae2',
-  boardFace: '#efe6dc',
-  boardEdge: '#3a2e27',
+  oppositeFill: '#eef1f6',
+  boardFace: '#e4e7ec',
+  boardEdge: '#454b58',
   contactShadow: 'rgba(59, 43, 36, 0.2)',
 } as const satisfies CadViewportTheme
 

@@ -187,7 +187,7 @@ export function createAssemblyViewer(
   }
 
   function setTheme(dark: boolean) {
-    scene.background = new THREE.Color(dark ? '#182522' : '#f3f2eb')
+    scene.background = new THREE.Color(dark ? '#181a20' : '#f0f1f4')
     for (const part of state.parts) {
       let color = dark ? '#5ab69e' : '#328d79'
       if (part.mesh === 'board') color = dark ? '#758b85' : '#b5c5be'

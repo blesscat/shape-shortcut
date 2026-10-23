@@ -66,21 +66,31 @@ function parameterSummary() {
 <SiteLayout
   {locale}
   fullWidth
+  cadWorkspace
   title={t('cad.pageTitle', { name: modelName })}
   description={modelDescription}
 >
-  <section aria-labelledby="cad-title">
+  <section
+    aria-labelledby="cad-title"
+    class:list={['cad-page', attribution && 'has-attribution']}
+    data-dev-actions={import.meta.env.DEV || undefined}
+  >
     <header
-      class="mb-4 flex flex-wrap items-center justify-between gap-3"
+      class="mb-3 flex flex-wrap items-center justify-between gap-3"
       data-testid="cad-header"
     >
       <div class="min-w-0">
-        <CadSystemContextLabel
-          client:only="svelte"
-          modelId={modelId}
-          locale={locale}
-        />
-        <h1 class="m-0 text-4xl font-semibold leading-tight" id="cad-title">
+        <div class="min-h-5">
+          <CadSystemContextLabel
+            client:only="svelte"
+            modelId={modelId}
+            locale={locale}
+          />
+        </div>
+        <h1
+          class="m-0 break-words text-xl font-semibold leading-tight sm:text-2xl"
+          id="cad-title"
+        >
           {t('cad.currentlyEditing', { name: modelName })}
         </h1>
       </div>
@@ -92,41 +102,113 @@ function parameterSummary() {
       </a>
     </header>
     <div
-      class="rounded-2xl border border-border-card bg-panel p-5 shadow-card"
+      class="cad-loading-shell mt-3 grid items-start gap-4"
       id="cad-fallback"
     >
-      <h2 class="mb-4 text-2xl font-semibold leading-tight">
-        {t('cad.loading', { name: modelName })}
-      </h2>
-      <p class="mb-4 leading-normal">{modelDescription}</p>
-      <section class="mb-4 grid gap-2" data-testid="cad-static-summary">
-        <h2 class="m-0 text-xl font-semibold leading-tight">
-          {t('cad.staticSummary')}
+      <div
+        class="cad-loading-summary rounded-2xl border border-border-card bg-panel p-4"
+      >
+        <h2 class="mb-4 text-lg font-semibold leading-tight">
+          {t('cad.loading', { name: modelName })}
         </h2>
-        <h3 class="m-0 text-base font-semibold">
-          {t('cad.parametersHeading')}
-        </h3>
-        <ul class="m-0 grid gap-1 pl-5 leading-normal">
-          {parameterSummary().map((summary) => <li>{summary}</li>)}
-        </ul>
-        <p class="m-0 leading-normal">
-          {
-            t('cad.exportFormats', {
-              formats: t(exportFormatsLineKeyFor(definition)),
-            })
-          }
+        <p class="mb-4 leading-normal">{modelDescription}</p>
+        <section class="mb-4 grid gap-2" data-testid="cad-static-summary">
+          <h2 class="m-0 text-xl font-semibold leading-tight">
+            {t('cad.staticSummary')}
+          </h2>
+          <h3 class="m-0 text-base font-semibold">
+            {t('cad.parametersHeading')}
+          </h3>
+          <ul class="m-0 grid gap-1 pl-5 leading-normal">
+            {parameterSummary().map((summary) => <li>{summary}</li>)}
+          </ul>
+          <p class="m-0 leading-normal">
+            {
+              t('cad.exportFormats', {
+                formats: t(exportFormatsLineKeyFor(definition)),
+              })
+            }
+          </p>
+        </section>
+        <p class="mb-4 leading-normal">{t('cad.requirements')}</p>
+        <p class="mb-0">
+          <a
+            class="text-ink underline underline-offset-4"
+            href={publicPathFor(locale, 'models')}
+            >{t('common.backToModelsArrow')}</a
+          >
         </p>
-      </section>
-      <p class="mb-4 leading-normal">{t('cad.requirements')}</p>
-      <p class="mb-0">
-        <a
-          class="text-ink underline underline-offset-4"
-          href={publicPathFor(locale, 'models')}
-          >{t('common.backToModelsArrow')}</a
-        >
-      </p>
+      </div>
+      <div
+        class="cad-loading-preview flex items-center justify-center rounded-2xl border border-border-card bg-viewport p-4 text-center text-sm text-muted-foreground"
+        data-testid="cad-loading-preview"
+      >
+        {t('cad.loading', { name: modelName })}
+      </div>
     </div>
     <CadWorkspace client:only="svelte" modelId={modelId} locale={locale} />
     {attribution && <CadAttributionNotice {locale} {attribution} />}
   </section>
 </SiteLayout>
+
+<style>
+  .cad-page {
+    --cad-mobile-action-height: 112px;
+  }
+  @media (max-width: 380px) {
+    .cad-page[data-dev-actions] {
+      --cad-mobile-action-height: 160px;
+    }
+  }
+  .cad-loading-shell[hidden] {
+    display: none;
+  }
+  .cad-loading-preview {
+    height: calc(100dvh - 16rem);
+  }
+  @media (min-width: 761px) {
+    .cad-page {
+      --cad-desktop-height: clamp(120px, calc(100dvh - 260px), 520px);
+    }
+    .cad-page.has-attribution {
+      --cad-desktop-height: clamp(120px, calc(100dvh - 360px), 520px);
+    }
+    .cad-page :global([data-testid='cad-viewport']) {
+      height: var(--cad-desktop-height);
+    }
+    .cad-page :global([data-testid='cad-workspace-panel']) {
+      max-height: var(--cad-desktop-height);
+    }
+    .cad-page :global([data-testid='cad-attribution']) {
+      max-height: 96px;
+      overflow-y: auto;
+      margin-block: 12px 0;
+    }
+
+    .cad-loading-shell {
+      grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+    }
+    .cad-loading-summary {
+      max-height: var(--cad-desktop-height);
+      overflow-y: auto;
+    }
+    .cad-loading-preview {
+      height: var(--cad-desktop-height);
+    }
+  }
+  @media (min-width: 761px) and (max-height: 600px) {
+    .cad-page,
+    .cad-page.has-attribution {
+      --cad-desktop-height: clamp(96px, calc(100dvh - 280px), 520px);
+    }
+    .cad-page :global([data-testid='cad-attribution']) {
+      max-height: 48px;
+    }
+  }
+  @media (max-width: 760px) {
+    .cad-loading-preview {
+      margin-top: var(--cad-mobile-action-height);
+      grid-row: 1;
+    }
+  }
+</style>

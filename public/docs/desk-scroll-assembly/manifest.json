@@ -9,7 +9,7 @@
     "scripts/desk-assembly/native.mjs": "f326a0814f780aee19dbd5697f70a4dc43cfda35adb19468debd880b13216a9e",
     "scripts/desk-assembly/produce.ts": "d097c9c8c6cd63af6693627ef3ad55a9c532fc29be2d42d4b6bd31adb42ae9dc",
     "scripts/desk-assembly/provenance.mjs": "00fde5de9c00b2ea1f61acfa903265106770a8b4c3a48f44afdf993f6417896f",
-    "scripts/desk-assembly/renderer.mjs": "8b38716183c8329252fe645028544ebae230294548f4d493ef3a9fef7d1838c5",
+    "scripts/desk-assembly/renderer.mjs": "542c1eed323420de63b447f31824c2502380517f0beb8d40e8188d5001092e27",
     "scripts/desk-assembly/scenes.mjs": "dc8423cd59bfbfe5b675c159c1698d5168eb428befb1d3377bec34eb03eed02f",
     "scripts/desk-assembly/verify.mjs": "e9f35a3feb83197d283bb9e8fe960146d9a564aa8a6319bf840af4bf00499cd3",
     "src/cad-contract/diagnostics.ts": "509d49262270461a08f5425f1490dcff9c045477c339752347fb73a93f3c96f6",
@@ -17,7 +17,7 @@
     "src/cad-contract/messages/index.ts": "ee35a3c91506ee2198167d457bf391b0362551e8815ba3eb94a5551a9e2124b8",
     "src/cad-contract/model-colors.ts": "25ac960bcc1a362de55d028c66381e307585b26b9a30d4c3a7135ace03464049",
     "src/cad-contract/preview-timing.ts": "847616337e54ef0ee602b650d8008ddbbaaf824895064ec2d69c87ee369ab6e3",
-    "src/cad-contract/scene.ts": "d92220b1d7bc902303183b312118161de6006e47f9b82f94dffb3a810973373a",
+    "src/cad-contract/scene.ts": "923a2d6e7b1eedbed87108d8a8080bcd0ffdadbde1105cac19ab4d1dfbee2a75",
     "src/cad-contract/three-mf.ts": "a9f7c9d70bd537788cd253cb94d9bd114014c04bd8fe170ea34da549e5566c47",
     "src/cad-contract/units/box.ts": "3949f83d84473f48985182a7e98bf82b48af81277838e374e97f213839010c88",
     "src/cad-contract/units/half-cell.ts": "5aa70708c1d9ad4552807d620b104007a483688f347e7397986d4eff5ecfbeb2",
@@ -157,7 +157,7 @@
     "vendor/replicad-opencascadejs/src/replicad_single.wasm": "14a0ce8cf22ed97e749fb436ee72bfd47099556e9e8af012b6dd9f51a201b80e",
     "scripts/desk-scroll-assembly/generate.mjs": "1a8757cb8f5a49ff07488f4a2e493c7fec7db4fa4c125723f2845ffddac5e683"
   },
-  "sourceHash": "08b2204bf63f5afccebdc3be4b42f4d1566c1c737338e9f6f0e6b3a259a1261e",
+  "sourceHash": "508a4c73cb72e6c4c2040559a86c5c27bddd1a9dc25070fea654a7af4f94a325",
   "meshes": {
     "board": {
       "positions": {

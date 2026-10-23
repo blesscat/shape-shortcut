@@ -40,7 +40,7 @@ let objects
 function setup(id, theme) {
   scene = new THREE.Scene()
   const dark = theme === 'dark'
-  scene.background = new THREE.Color(dark ? '#182522' : '#f3f2eb')
+  scene.background = new THREE.Color(dark ? '#181a20' : '#f0f1f4')
   scene.add(new THREE.AmbientLight(0xffffff, 0.8))
   const key = new THREE.DirectionalLight(0xfff1dc, 2.4)
   key.position.set(-60, -90, 120)

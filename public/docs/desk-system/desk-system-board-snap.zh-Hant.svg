@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="430" viewBox="0 0 600 430" role="img" aria-labelledby="title desc">
   <title id="title">使用 Snap 固定位置</title>
   <desc id="desc">拆解示意：2×2 底板、四個 Desk Snap，以及帶有內建角座的方盒。</desc>
-  <rect width="600" height="430" rx="12" fill="#f8fafc"/>
+  <rect width="600" height="430" rx="12" fill="#f0f1f4"/>
   <polygon points="93.00000000000003,246.5 300,323 300,317.8 93.00000000000003,241.3" fill="#eaf2ff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="507,246.5 300,323 300,317.8 507,241.3" fill="#eaf2ff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="300,164.8 507,241.3 300,317.8 93.00000000000003,241.3" fill="#eaf2ff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
-<polygon points="300,173.3 380.5,203.05 300,232.8 219.5,203.05" fill="#f8fafc" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
-<polygon points="403.5,211.55 484,241.3 403.5,271.05 323,241.3" fill="#f8fafc" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
-<polygon points="196.5,211.55 277,241.3 196.5,271.05 116,241.3" fill="#f8fafc" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
-<polygon points="300,249.8 380.5,279.55 300,309.3 219.5,279.55" fill="#f8fafc" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,173.3 380.5,203.05 300,232.8 219.5,203.05" fill="#f0f1f4" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="403.5,211.55 484,241.3 403.5,271.05 323,241.3" fill="#f0f1f4" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="196.5,211.55 277,241.3 196.5,271.05 116,241.3" fill="#f0f1f4" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,249.8 380.5,279.55 300,309.3 219.5,279.55" fill="#f0f1f4" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="214.9,188.75 300,220.2 300,213.7 214.9,182.25" fill="#e7fbf7" stroke="#0d9488" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="385.1,188.75 300,220.2 300,213.7 385.1,182.25" fill="#e7fbf7" stroke="#0d9488" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="300,150.8 385.1,182.25 300,213.7 214.9,182.25" fill="#e7fbf7" stroke="#0d9488" stroke-width="2" stroke-linejoin="round"/>
@@ -27,7 +27,7 @@
 <path d="M 300 244 V 261" stroke="#f59e0b" stroke-width="10" stroke-linecap="round"/>
 <polygon points="300,86.2 484,154.2 484,102.19999999999999 300,34.19999999999999" fill="#f3eefe" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="300,86.2 116,154.2 116,102.19999999999999 300,34.19999999999999" fill="#f3eefe" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
-<polygon points="300,86.2 484,154.2 300,222.2 116,154.2" fill="#f8fafc" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="300,86.2 484,154.2 300,222.2 116,154.2" fill="#f0f1f4" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="94.38,160.7 300,236.69 300,178.19 94.38,102.19999999999999" fill="#f3eefe" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
 <polygon points="505.62,160.7 300,236.69 300,178.19 505.62,102.19999999999999" fill="#f3eefe" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
 <path d="M 300 26.20999999999998 L 505.62 102.19999999999999 L 300 178.19 L 94.38 102.19999999999999 Z M 116 102.19999999999999 L 300 170.2 L 484 102.19999999999999 L 300 34.19999999999999 Z" fill="#f3eefe" fill-rule="evenodd" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>

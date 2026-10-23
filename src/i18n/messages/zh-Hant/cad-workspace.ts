@@ -2,6 +2,27 @@
 // Domain: cad-workspace
 
 export const messages = {
+  'cad.presentation.guide': '組裝教學與設定說明',
+  'cad.presentation.dimensions': '尺寸',
+  'cad.presentation.structure': '結構',
+  'cad.presentation.formats': '檔案用途說明',
+  'cad.presentation.stlHelp': 'STL 包含模型幾何；列印設定請在切片軟體中選擇。',
+  'cad.presentation.threeMfHelp':
+    '此模型支援雙色 3MF，匯出會使用目前的模型配色。',
+  'cad.presentation.settingsHelp':
+    '設定 JSON 保存已接受的參數與配色，可匯入 Playground。',
+  'cad.presentation.progressHelp': '進度說明',
+  'cad.presentation.progressExplanation':
+    '計數代表目前操作的進度，不是整個模型的完成百分比。完整模型更新完成後，才可下載精確結果。',
+  'cad.presentation.status.booting': '正在準備工作區',
+  'cad.presentation.status.loading-engine': '正在載入 CAD 引擎',
+  'cad.presentation.status.generating': '正在更新模型，預覽尚未完成',
+  'cad.presentation.status.ready': '模型已更新',
+  'cad.presentation.status.invalid-input': '請檢查標示的參數',
+  'cad.presentation.status.recoverable-error': '更新失敗，可重試',
+  'cad.presentation.status.fatal-worker-error': 'CAD 引擎已停止，可重試',
+  'cad.presentation.status.exporting': '正在準備下載',
+
   'cad.attribution.tissueBox.modified':
     '此參數化面紙盒整合經轉向配置的 OpenConnect 鎖定母座，新增向上傾斜支撐、底部抽取槽，以及省料側壁與底板。',
   'cad.currentlyEditing': '目前編輯：{name}',

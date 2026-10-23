@@ -155,3 +155,36 @@ test('narrow CAD workspace collapses parameters into a bottom drawer', async ({
   await expect(pill).toHaveAttribute('aria-expanded', 'false')
   await expect(pill).toBeFocused()
 })
+
+test('short desktop keeps the preview, scrollable controls and attribution reachable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 })
+  await page.goto('/zh-Hant/cad/opengrid')
+  const panel = page.getByTestId('cad-workspace-panel')
+  await expect(panel).toBeVisible()
+  const metrics = await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="cad-workspace-panel"]')!
+    const attribution = document.querySelector(
+      '[data-testid="cad-attribution"]',
+    )!
+    const viewport = document.querySelector('[data-testid="cad-viewport"]')!
+    return {
+      documentHeight: document.documentElement.scrollHeight,
+      availableHeight: window.innerHeight,
+      viewportHeight: viewport.getBoundingClientRect().height,
+      panelScrolls: panel.scrollHeight > panel.clientHeight,
+      attributionScrolls: attribution.scrollHeight > attribution.clientHeight,
+      attributionOverflow: getComputedStyle(attribution).overflowY,
+      footerBottom: document.querySelector('footer')!.getBoundingClientRect()
+        .bottom,
+    }
+  })
+  expect(metrics.documentHeight).toBeLessThanOrEqual(metrics.availableHeight)
+  expect(metrics.viewportHeight).toBeGreaterThanOrEqual(96)
+  expect(metrics.viewportHeight).toBeLessThanOrEqual(520)
+  expect(metrics.panelScrolls).toBe(true)
+  expect(metrics.attributionScrolls).toBe(true)
+  expect(metrics.attributionOverflow).toBe('auto')
+  expect(metrics.footerBottom).toBeLessThanOrEqual(metrics.availableHeight)
+})

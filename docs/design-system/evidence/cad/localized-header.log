@@ -1,0 +1,17 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 286ms using pnpm v11.20.0
+
+Running 2 tests using 1 worker
+
+(node:1734224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link (754ms)
+  ✓  2 [chromium] › tests/e2e/workspace-header.spec.ts:30:1 › English CAD header returns to the English model catalog (185ms)
+
+  2 passed (1.4s)

@@ -1,0 +1,3446 @@
+[
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 312,
+        "height": 384,
+        "top": 405.1875,
+        "right": 336,
+        "bottom": 789.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 201.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 201.578125,
+        "right": 729.609375,
+        "bottom": 665.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 50.421875,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 495.1875,
+        "width": 312,
+        "height": 384,
+        "top": 495.1875,
+        "right": 336,
+        "bottom": 879.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 450.1875,
+        "width": 342,
+        "height": 588,
+        "top": 450.1875,
+        "right": 366,
+        "bottom": 1038.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 303.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 303.578125,
+        "right": 729.609375,
+        "bottom": 767.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "playground",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 518.96875,
+        "width": 312,
+        "height": 384,
+        "top": 518.96875,
+        "right": 336,
+        "bottom": 902.96875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "playground",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 518.96875,
+        "width": 342,
+        "height": 588,
+        "top": 518.96875,
+        "right": 366,
+        "bottom": 1106.96875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "playground",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "playground",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 336.265625,
+        "width": 699.21875,
+        "height": 464,
+        "top": 336.265625,
+        "right": 729.609375,
+        "bottom": 800.265625,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "light",
+    "model": "playground",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 312,
+        "height": 384,
+        "top": 405.1875,
+        "right": 336,
+        "bottom": 789.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 201.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 201.578125,
+        "right": 729.609375,
+        "bottom": 665.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 50.421875,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 495.1875,
+        "width": 312,
+        "height": 384,
+        "top": 495.1875,
+        "right": 336,
+        "bottom": 879.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 450.1875,
+        "width": 342,
+        "height": 588,
+        "top": 450.1875,
+        "right": 366,
+        "bottom": 1038.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 303.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 303.578125,
+        "right": 729.609375,
+        "bottom": 767.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 518.96875,
+        "width": 312,
+        "height": 384,
+        "top": 518.96875,
+        "right": 336,
+        "bottom": 902.96875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 518.96875,
+        "width": 342,
+        "height": 588,
+        "top": 518.96875,
+        "right": 366,
+        "bottom": 1106.96875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 336.265625,
+        "width": 699.21875,
+        "height": 464,
+        "top": 336.265625,
+        "right": 729.609375,
+        "bottom": 800.265625,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "zh-Hant",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 312,
+        "height": 384,
+        "top": 405.1875,
+        "right": 336,
+        "bottom": 789.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 201.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 201.578125,
+        "right": 729.609375,
+        "bottom": 665.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 50.421875,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-stackable-box",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 450.1875,
+        "width": 312,
+        "height": 384,
+        "top": 450.1875,
+        "right": 336,
+        "bottom": 834.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 258.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 258.578125,
+        "right": 729.609375,
+        "bottom": 722.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "opengrid-openconnect-shelf",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "playground",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 572.15625,
+        "width": 312,
+        "height": 384,
+        "top": 572.15625,
+        "right": 336,
+        "bottom": 956.15625,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "playground",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 572.15625,
+        "width": 342,
+        "height": 588,
+        "top": 572.15625,
+        "right": 366,
+        "bottom": 1160.15625,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "playground",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "playground",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 333.078125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 333.078125,
+        "right": 729.609375,
+        "bottom": 797.078125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "light",
+    "model": "playground",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 312,
+        "height": 384,
+        "top": 405.1875,
+        "right": 336,
+        "bottom": 789.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 201.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 201.578125,
+        "right": 729.609375,
+        "bottom": 665.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 50.421875,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-stackable-box-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-stackable-box",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 450.1875,
+        "width": 312,
+        "height": 384,
+        "top": 450.1875,
+        "right": 336,
+        "bottom": 834.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 405.1875,
+        "width": 342,
+        "height": 588,
+        "top": 405.1875,
+        "right": 366,
+        "bottom": 993.1875,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 258.578125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 258.578125,
+        "right": 729.609375,
+        "bottom": 722.578125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": "simplified-opengrid-openconnect-shelf-0",
+      "preview": "simplified",
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "opengrid-openconnect-shelf",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 360,
+    "height": 640,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 572.15625,
+        "width": 312,
+        "height": 384,
+        "top": 572.15625,
+        "right": 336,
+        "bottom": 956.15625,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 224,
+        "width": 360,
+        "height": 416,
+        "top": 224,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 288,
+        "top": 56,
+        "right": 352,
+        "bottom": 344,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 352,
+        "width": 360,
+        "height": 288,
+        "top": 352,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 288,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 344,
+        "height": 282,
+        "top": 56,
+        "right": 352,
+        "bottom": 338,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 346,
+        "width": 360,
+        "height": 294,
+        "top": 346,
+        "right": 360,
+        "bottom": 640,
+        "left": 0
+      },
+      "unobscuredHeight": 282,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 390,
+    "height": 844,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 24,
+        "y": 572.15625,
+        "width": 342,
+        "height": 588,
+        "top": 572.15625,
+        "right": 366,
+        "bottom": 1160.15625,
+        "left": 24
+      },
+      "drawer": {
+        "x": 0,
+        "y": 295.40625,
+        "width": 390,
+        "height": 548.59375,
+        "top": 295.40625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 400,
+        "top": 56,
+        "right": 382,
+        "bottom": 456,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 464,
+        "width": 390,
+        "height": 380,
+        "top": 464,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 400,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 374,
+        "height": 392,
+        "top": 56,
+        "right": 382,
+        "bottom": 448,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 456,
+        "width": 390,
+        "height": 388,
+        "top": 456,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "unobscuredHeight": 392,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 844,
+    "height": 390,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 760,
+    "height": 720,
+    "realDevice": false,
+    "legacy": {
+      "viewport": {
+        "x": 30.390625,
+        "y": 333.078125,
+        "width": 699.21875,
+        "height": 464,
+        "top": 333.078125,
+        "right": 729.609375,
+        "bottom": 797.078125,
+        "left": 30.390625
+      },
+      "drawer": {
+        "x": 0,
+        "y": 252,
+        "width": 760,
+        "height": 468,
+        "top": 252,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 0,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "candidate": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 332,
+        "top": 56,
+        "right": 752,
+        "bottom": 388,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 396,
+        "width": 760,
+        "height": 324,
+        "top": 396,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 332,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "keyboardResize": "46",
+    "afterResize": {
+      "viewport": {
+        "x": 8,
+        "y": 56,
+        "width": 744,
+        "height": 325,
+        "top": 56,
+        "right": 752,
+        "bottom": 381,
+        "left": 8
+      },
+      "drawer": {
+        "x": 0,
+        "y": 389,
+        "width": 760,
+        "height": 331,
+        "top": 389,
+        "right": 760,
+        "bottom": 720,
+        "left": 0
+      },
+      "unobscuredHeight": 325,
+      "revision": null,
+      "preview": null,
+      "overflow": false
+    },
+    "cameraVerified": false,
+    "softwareKeyboardVerified": false
+  },
+  {
+    "locale": "en",
+    "appearance": "dark",
+    "model": "playground",
+    "width": 761,
+    "height": 720,
+    "realDevice": false,
+    "mode": "desktop-boundary",
+    "drawerCount": 0
+  }
+]

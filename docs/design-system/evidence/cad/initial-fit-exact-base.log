@@ -1,0 +1,36 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 288ms using pnpm v11.20.0
+
+Running 1 test using 1 worker
+
+(node:1754805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial box fits the visible canvas at 1440px (1.3s)
+
+
+  1) [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial box fits the visible canvas at 1440px
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 20
+    Received:   299
+
+      56 |       }, png.toString('base64'))
+      57 |       expect(pixels.modelPixels).toBeGreaterThan(1000)
+    > 58 |       expect(pixels.clippedPixels).toBeLessThan(20)
+         |                                    ^
+      59 |     })
+      60 |   }
+      61 | }
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/cad-initial-fit.spec.ts:58:36
+
+    Error Context: ../../../../../../tmp/cad-fit-base-failure/cad-initial-fit-initial-bo-5b771-he-visible-canvas-at-1440px-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial box fits the visible canvas at 1440px

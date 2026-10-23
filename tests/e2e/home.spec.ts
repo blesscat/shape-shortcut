@@ -262,7 +262,7 @@ test('home, model selection, and docs are static Astro pages', async ({
     .evaluate((element) => getComputedStyle(element).backgroundColor)
   expect(ctaBackground).not.toBe(navigationBackground)
   await expect(
-    page.getByRole('link', { name: '編輯 →', exact: true }),
+    page.getByRole('link', { name: '調整模型 →', exact: true }),
   ).toHaveCount(0)
   await expect(page.locator('[data-model-id]')).toHaveCount(0)
   await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
@@ -291,7 +291,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(
     page.getByRole('heading', { name: '挑一個你喜歡的，帶回家列印' }),
   ).toBeVisible()
-  await expect(page.locator('main')).toHaveCSS('max-width', 'none')
+  await expect(page.locator('main')).not.toHaveCSS('max-width', 'none')
   await expect(
     page.getByTestId('model-selection').locator('p').first(),
   ).toBeVisible()
@@ -321,7 +321,7 @@ test('home, model selection, and docs are static Astro pages', async ({
     container
       .getByRole('heading', { name: displayName, exact: true })
       .locator('xpath=ancestor::article[1]')
-      .getByRole('link', { name: `編輯 ${displayName}`, exact: true })
+      .getByRole('link', { name: `調整模型 ${displayName}`, exact: true })
 
   const deskSystem = page.getByTestId('model-subgroup-desk')
   const wallRelated = page.getByTestId('model-subgroup-wall')
@@ -397,12 +397,12 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(
     deskZoneContainers
       .locator('[data-model-id="opengrid-stackable-box"]')
-      .getByRole('link', { name: '編輯 Grid Box (方盒)', exact: true }),
+      .getByRole('link', { name: '調整模型 Grid Box (方盒)', exact: true }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid-stackable-box?system=desk')
   await expect(
     deskZoneContainers
       .locator('[data-model-id="opengrid-stackable-cylinder"]')
-      .getByRole('link', { name: '編輯 Round Box (圓盒)', exact: true }),
+      .getByRole('link', { name: '調整模型 Round Box (圓盒)', exact: true }),
   ).toHaveAttribute(
     'href',
     '/zh-Hant/cad/opengrid-stackable-cylinder?system=desk',
@@ -414,9 +414,12 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(
     deskZoneContainers
       .locator('[data-model-id="opengrid-open-shelf"]')
-      .getByRole('link', { name: '編輯 Open Shelf (斜開格櫃)', exact: true }),
+      .getByRole('link', {
+        name: '調整模型 Open Shelf (斜開格櫃)',
+        exact: true,
+      }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid-open-shelf?system=desk')
-  const openGridCards = deskSystem.locator('[data-model-id]')
+  const openGridCards = deskZoneBase.locator('[data-model-id]')
   await expect(openGridCards.nth(0)).toHaveAttribute(
     'data-model-id',
     'opengrid',
@@ -434,6 +437,9 @@ test('home, model selection, and docs are static Astro pages', async ({
   }
   expect(snapCardBounds.y).toBeGreaterThan(bottomCardBounds.y)
   expect(snapCardBounds.x).toBeCloseTo(bottomCardBounds.x, 0)
+  expect((await deskZoneContainers.boundingBox())!.y).toBeLessThan(
+    bottomCardBounds.y,
+  )
   const containerCards = deskZoneContainers.locator('[data-model-id]')
   const containerCardPositions = await containerCards.evaluateAll((cards) =>
     cards.map((card) => {
@@ -502,7 +508,7 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(
     standalonePanel
       .locator('[data-model-id="hsw-cell"]')
-      .getByRole('link', { name: '編輯 六角蜂巢', exact: true }),
+      .getByRole('link', { name: '調整模型 六角蜂巢', exact: true }),
   ).toBeVisible()
   await systemTabs.nth(0).click()
   await expect(deskSystem).toBeVisible()
@@ -529,157 +535,6 @@ test('home, model selection, and docs are static Astro pages', async ({
     page.getByRole('link', { name: '返回模型選擇' }),
   ).toHaveAttribute('href', '/zh-Hant/models')
   await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
-})
-
-test('primary navigation stays at the top while scrolling', async ({
-  page,
-}) => {
-  await page.goto('/en/')
-
-  const navigation = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  })
-  await expect(navigation).toHaveCSS('position', 'sticky')
-
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-
-  // While scrolled the capsule is compact but still pinned at the edge.
-  await expect
-    .poll(() =>
-      navigation.evaluate((element) =>
-        Math.round(element.getBoundingClientRect().top),
-      ),
-    )
-    .toBe(0)
-})
-
-test('primary navigation collapses to a compact capsule while scrolled', async ({
-  page,
-}) => {
-  await page.goto('/en/')
-
-  const navigation = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  })
-  const themeToggle = page.locator('[data-theme-toggle]')
-  const navLinks = [
-    navigation.getByRole('link', { name: 'Docs', exact: true }),
-    navigation.getByRole('link', { name: 'Pick a model', exact: true }),
-    navigation.getByRole('link', { name: 'About', exact: true }),
-  ]
-
-  const navEdge = (edge: 'top' | 'bottom') =>
-    navigation.evaluate(
-      (element, edge) => Math.round(element.getBoundingClientRect()[edge]),
-      edge,
-    )
-  const navHeight = () =>
-    navigation.evaluate((element) =>
-      Math.round(element.getBoundingClientRect().height),
-    )
-
-  // At the top of the page the capsule rests in flow, 24px below the edge,
-  // with every navigation link exposed.
-  await expect.poll(() => navEdge('top')).toBe(24)
-  const expandedHeight = await navHeight()
-  const expandedToggleHeight = await themeToggle.evaluate(
-    (element) => element.getBoundingClientRect().height,
-  )
-  await expect(navigation).not.toHaveAttribute('data-compact', '')
-  for (const link of navLinks) await expect(link).toBeVisible()
-
-  await page.evaluate(() => window.scrollTo(0, 400))
-  await expect(navigation).toHaveAttribute('data-compact', '')
-  await expect.poll(() => navEdge('top')).toBe(0)
-  // py-4 -> py-1.5 shrinks the capsule by exactly 20px (16 -> 6 per side).
-  await expect.poll(navHeight).toBe(expandedHeight - 20)
-  // Secondary links fold away; controls keep their expanded sizes.
-  for (const link of navLinks) await expect(link).toBeHidden()
-  expect(
-    await themeToggle.evaluate(
-      (element) => element.getBoundingClientRect().height,
-    ),
-  ).toBe(expandedToggleHeight)
-
-  // On a narrow viewport the folded links unwrap the capsule into a
-  // single ~50px row instead of the wrapped two-row layout.
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.evaluate(() => window.scrollTo(0, 400))
-  await expect(navigation).toHaveAttribute('data-compact', '')
-  await expect.poll(navHeight).toBeLessThan(60)
-
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await page.evaluate(() => window.scrollTo(0, 0))
-  await expect(navigation).not.toHaveAttribute('data-compact', '')
-  await expect.poll(() => navEdge('top')).toBe(24)
-  for (const link of navLinks) await expect(link).toBeVisible()
-})
-
-test('primary navigation starts compact when a page loads mid-scroll', async ({
-  page,
-}) => {
-  await page.goto('/en/')
-  await page.evaluate(() => window.scrollTo(0, 400))
-  await page.reload()
-
-  const navigation = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  })
-  await expect(navigation).toHaveAttribute('data-compact', '')
-})
-
-test('primary navigation collapses identically in dark mode', async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: 'dark' })
-  await page.goto('/en/')
-
-  const navigation = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  })
-
-  const expandedHeight = await navigation.evaluate((element) =>
-    Math.round(element.getBoundingClientRect().height),
-  )
-
-  await page.evaluate(() => window.scrollTo(0, 400))
-  await expect(navigation).toHaveAttribute('data-compact', '')
-  // The compact capsule pins to the same top edge as light mode; the warm
-  // system keeps identical geometry across color schemes.
-  await expect
-    .poll(() =>
-      navigation.evaluate((element) =>
-        Math.round(element.getBoundingClientRect().top),
-      ),
-    )
-    .toBe(0)
-  // The capsule shrinks by the same 20px as in light mode.
-  await expect
-    .poll(() =>
-      navigation.evaluate((element) =>
-        Math.round(element.getBoundingClientRect().height),
-      ),
-    )
-    .toBe(expandedHeight - 20)
-})
-
-test('primary navigation switches states without animation under reduced motion', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/en/')
-
-  const navigation = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  })
-
-  const transitionProperty = await navigation.evaluate(
-    (element) => getComputedStyle(element).transitionProperty,
-  )
-  expect(transitionProperty).toBe('none')
-
-  await page.evaluate(() => window.scrollTo(0, 400))
-  await expect(navigation).toHaveAttribute('data-compact', '')
 })
 
 test('Traditional Chinese homepage uses the Desk System entry flow', async ({
@@ -927,7 +782,7 @@ test.describe('model chooser without JavaScript', () => {
     await expect(
       page
         .getByTestId('model-subgroup-other')
-        .getByRole('link', { name: '編輯 六角蜂巢', exact: true }),
+        .getByRole('link', { name: '調整模型 六角蜂巢', exact: true }),
     ).toHaveAttribute('href', '/zh-Hant/cad/hsw-cell')
     await expect(
       page
@@ -938,7 +793,7 @@ test.describe('model chooser without JavaScript', () => {
   })
 })
 
-test('model cards keep long localized names on one line', async ({ page }) => {
+test('model cards keep complete localized names readable', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/models')
 
@@ -1148,3 +1003,36 @@ test('unknown CAD model routes do not initialize the workspace', async ({
   expect(removedResponse?.status()).toBe(404)
   await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
 })
+
+for (const locale of ['zh-Hant', 'en'] as const) {
+  test(`${locale} narrow chooser keeps full names, purposes and actions readable`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 })
+    await page.goto(`/${locale}/models`)
+    const tools = page.getByTestId('model-zone-tools-desk')
+    await tools.locator('summary').click()
+    const cards = page.locator('[data-system-panel="desk"] [data-model-id]')
+    for (const card of await cards.all()) {
+      await expect(card.locator('[data-model-purpose]')).toBeVisible()
+      const heading = card.getByRole('heading')
+      await expect(heading).toBeVisible()
+      expect(
+        await heading.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      ).toBe(true)
+      const action = card.getByRole('link', {
+        name: /^(調整模型|Customize model) /,
+      })
+      await expect(action).toBeVisible()
+    }
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true)
+  })
+}

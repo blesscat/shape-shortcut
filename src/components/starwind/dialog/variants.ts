@@ -12,8 +12,8 @@ export const dialogBackdrop = tv({
 })
 
 const dialogContentBase = [
-  'fixed top-16 left-[50%] z-50 translate-x-[-50%] sm:top-[50%] sm:translate-y-[-50%]',
-  'bg-background w-full max-w-md rounded-lg border p-8 shadow-lg',
+  'fixed top-4 left-[50%] z-50 translate-x-[-50%] sm:top-[50%] sm:translate-y-[-50%]',
+  'bg-background w-full max-w-md rounded-container border p-8 shadow-lg',
   'data-starting-style:!animate-none data-starting-style:opacity-0',
   'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fill-mode-forwards transition-[translate,scale,opacity] duration-200',
   'fade-in zoom-in-95 slide-in-from-bottom-2',
@@ -29,8 +29,8 @@ export const dialogContent = tv({
 
 const dialogCloseButtonBase = [
   'text-muted-foreground',
-  'absolute top-5.5 right-5.5 rounded-sm [&>svg]:opacity-70 hover:[&>svg]:opacity-100',
-  'focus-visible:ring-outline/50 transition-[color,box-shadow] outline-none focus-visible:ring-3',
+  'absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-control [&>svg]:opacity-70 hover:[&>svg]:opacity-100',
+  'focus-visible:ring-outline transition-[color,box-shadow] outline-none focus-visible:ring-3',
 ]
 
 export const dialogCloseButton = tv({

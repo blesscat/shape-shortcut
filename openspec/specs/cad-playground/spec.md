@@ -552,7 +552,9 @@ The playground MUST export binary STL for individual instances with a committed 
 - **THEN** its export actions MUST be unavailable
 ### Requirement: 窄版場景 sidebar bottom drawer
 
-在 cad breakpoint（`max-cad`，≤760px）以下，Playground MUST 將 sidebar 內容
+Playground MUST use the same selected mobile panel mode as CAD workspace. Until candidate-split passes the workspace mobile comparison gate and the Playground-specific checks below, legacy-overlay MUST remain the shipped mode for both. The original overlay description and scenarios below apply in legacy-overlay; the candidate-specific scenario governs candidate-split.
+
+在 legacy-overlay mode 的 cad breakpoint（`max-cad`，≤760px）以下，Playground MUST 將 sidebar 內容
 （新增元件、instance 清單、選中 instance 編輯器，含複製、刪除、重試與
 per-instance 匯出）放進與 workspace 同款的非強制互動 bottom drawer：預設
 收合、由常駐 pill 開啟、65dvh 高度、內容內部捲動、半透明面板底色（純 alpha、
@@ -579,6 +581,21 @@ view mode、grid cells 與場景匯入/匯出 MUST 留在原位。Breakpoint 以
 - **WHEN** viewport 寬度大於 760px
 - **THEN** Playground MUST 維持既有 sidebar 版面
 - **AND** MUST NOT 渲染 drawer 或 sidebar pill
+
+#### Scenario: Candidate split preserves complete scene editing
+
+- **WHEN** the guarded candidate-split mode is open on a narrow Playground
+- **THEN** the scene MUST occupy a separate unobscured viewport above the resizable opaque sidebar region, using the same accessible resize, collapse, focus, safe-area and camera-stability behavior as CAD workspace
+- **AND** add-component choices, instance list, selected-instance parameters, placement, colors, duplicate, delete, retry and per-instance exports MUST all remain available
+- **AND** view mode, grid dimensions and scene import/export MUST remain in the header
+- **AND** panel resizing MUST NOT change selection, placement, scene data, draft inputs, camera pose or generate geometry; existing scene touch selection, placement and orbit behavior MUST remain available within the visible viewport
+
+#### Scenario: Playground comparison blocks unsafe candidate promotion
+
+- **WHEN** the candidate mobile panel is evaluated for release
+- **THEN** the same device, locale and appearance matrix as the CAD comparison MUST verify a multi-instance scene, selection changes, editing, scrolling, software keyboard, panel resizing and per-instance actions
+- **AND** scene import/export and existing parameter accumulation, rejection, validation and occupancy behavior MUST remain unchanged
+- **AND** a failed or incomplete Playground comparison MUST retain legacy-overlay for both workspace and Playground rather than shipping inconsistent mobile modes
 ### Requirement: Playground add-component choices
 
 The Playground add-component selector MUST offer only the approved models for the active scene orientation, in the order defined below, using their existing localized catalog labels. The selector restriction MUST apply equally to the desktop sidebar and narrow-screen drawer. Switching orientations MUST clear any pending choice unavailable in the new orientation and disable the add action until a valid model is selected. Registered models outside these choices MUST remain compatible with scene import, parameter editing, rendering under the existing orientation rules, and per-instance export.
@@ -816,3 +833,14 @@ A desktop drag commit MUST make the dragged instance the uppermost piece of the 
 - **WHEN** the candidate placement is previewed during the drag
 - **THEN** the dragged instance MUST render at the seat height it will have after the drop
 - **AND** the preview height MUST equal the committed stacked base Z for the same candidate
+
+### Requirement: Scene controls share the workspace presentation hierarchy
+
+Playground MUST use the shared semantic appearance, readable parameter controls and clear status/action hierarchy while keeping scene-level controls, the instance list and selected-instance editing visibly distinct. Presentation changes MUST preserve each instance's lifecycle, validation, placement and colors. Export explanations MUST reflect the existing per-instance format availability and scene JSON semantics.
+
+#### Scenario: Switching the selected instance
+
+- **WHEN** a user selects another scene instance
+- **THEN** the editor MUST visibly identify the selected instance and show its own parameters, validation and lifecycle state
+- **AND** primary/secondary action styling MUST NOT change the meaning of duplicate, delete, retry or export
+- **AND** the previously selected instance's accepted values and valid accumulated edits MUST follow the existing scene editing contract

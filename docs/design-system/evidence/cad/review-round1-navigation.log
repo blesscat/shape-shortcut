@@ -1,0 +1,39 @@
+
+Running 26 tests using 2 workers
+
+(node:1853135) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1853136) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › tests/e2e/site-navigation.spec.ts:4:3 › en navigation preserves destinations and document position while compact (517ms)
+  ✓   2 [chromium] › tests/e2e/site-navigation.spec.ts:46:3 › en narrow menu exposes complete routes and returns focus (543ms)
+  ✓   3 [chromium] › tests/e2e/site-navigation.spec.ts:4:3 › zh-Hant navigation preserves destinations and document position while compact (366ms)
+  ✓   4 [chromium] › tests/e2e/site-navigation.spec.ts:46:3 › zh-Hant narrow menu exposes complete routes and returns focus (475ms)
+  ✓   5 [chromium] › tests/e2e/site-navigation.spec.ts:76:1 › native mobile navigation remains usable without JavaScript (216ms)
+  ✓   6 [chromium] › tests/e2e/site-navigation.spec.ts:93:1 › reduced-motion navigation changes state without transition (120ms)
+  ✓   8 [chromium] › tests/e2e/site-navigation.spec.ts:140:3 › en mobile menu closes on forward and backward focus exit (217ms)
+  ✓   9 [chromium] › tests/e2e/site-navigation.spec.ts:180:5 › en light footer links retain accessible targets and keyboard focus (126ms)
+  ✓  10 [chromium] › tests/e2e/site-navigation.spec.ts:180:5 › en dark footer links retain accessible targets and keyboard focus (115ms)
+  ✓  11 [chromium] › tests/e2e/site-navigation.spec.ts:140:3 › zh-Hant mobile menu closes on forward and backward focus exit (218ms)
+  ✓   7 [chromium] › tests/e2e/site-navigation.spec.ts:108:1 › narrow model dialog fits the viewport and keeps close and final content reachable (855ms)
+  ✓  12 [chromium] › tests/e2e/site-navigation.spec.ts:180:5 › zh-Hant light footer links retain accessible targets and keyboard focus (122ms)
+  ✓  13 [chromium] › tests/e2e/site-navigation.spec.ts:180:5 › zh-Hant dark footer links retain accessible targets and keyboard focus (137ms)
+(node:1853719) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1853732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  14 [firefox] › tests/e2e/site-navigation.spec.ts:4:3 › en navigation preserves destinations and document position while compact (1.1s)
+  ✓  15 [firefox] › tests/e2e/site-navigation.spec.ts:46:3 › en narrow menu exposes complete routes and returns focus (1.1s)
+  ✓  16 [firefox] › tests/e2e/site-navigation.spec.ts:4:3 › zh-Hant navigation preserves destinations and document position while compact (527ms)
+  ✓  18 [firefox] › tests/e2e/site-navigation.spec.ts:76:1 › native mobile navigation remains usable without JavaScript (341ms)
+  ✓  17 [firefox] › tests/e2e/site-navigation.spec.ts:46:3 › zh-Hant narrow menu exposes complete routes and returns focus (640ms)
+  ✓  19 [firefox] › tests/e2e/site-navigation.spec.ts:93:1 › reduced-motion navigation changes state without transition (248ms)
+  ✓  21 [firefox] › tests/e2e/site-navigation.spec.ts:140:3 › en mobile menu closes on forward and backward focus exit (411ms)
+  ✓  22 [firefox] › tests/e2e/site-navigation.spec.ts:180:5 › en light footer links retain accessible targets and keyboard focus (265ms)
+  ✓  20 [firefox] › tests/e2e/site-navigation.spec.ts:108:1 › narrow model dialog fits the viewport and keeps close and final content reachable (1.0s)
+  ✓  23 [firefox] › tests/e2e/site-navigation.spec.ts:180:5 › en dark footer links retain accessible targets and keyboard focus (263ms)
+  ✓  24 [firefox] › tests/e2e/site-navigation.spec.ts:140:3 › zh-Hant mobile menu closes on forward and backward focus exit (424ms)
+  ✓  25 [firefox] › tests/e2e/site-navigation.spec.ts:180:5 › zh-Hant light footer links retain accessible targets and keyboard focus (281ms)
+  ✓  26 [firefox] › tests/e2e/site-navigation.spec.ts:180:5 › zh-Hant dark footer links retain accessible targets and keyboard focus (261ms)
+
+  26 passed (7.0s)

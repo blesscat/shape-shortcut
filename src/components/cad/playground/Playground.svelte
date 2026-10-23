@@ -170,7 +170,7 @@
 
 <div class="grid gap-4" data-testid="playground">
   <header class="flex flex-wrap items-center justify-between gap-3">
-    <h1 class="m-0 text-3xl font-semibold leading-tight">
+    <h1 class="m-0 break-words text-xl font-semibold leading-tight sm:text-2xl">
       {t('playground.title')}
     </h1>
     <div class="flex flex-wrap items-center gap-2">

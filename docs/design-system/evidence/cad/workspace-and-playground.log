@@ -1,0 +1,194 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 297ms using pnpm v11.20.0
+
+Running 44 tests using 1 worker
+
+(node:1695651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › tests/e2e/mesh-face-progress.spec.ts:4:1 › CAD UI shows face progress and clears it at terminal state (855ms)
+  ✓   2 [chromium] › tests/e2e/playground.spec.ts:195:3 › OpenGrid playground planner › adds an instance, renders its proxy, and edits its placement (6.0s)
+  ✓   3 [chromium] › tests/e2e/playground.spec.ts:238:3 › OpenGrid playground planner › regenerates only the edited instance when parameters change (10.5s)
+  ✓   4 [chromium] › tests/e2e/playground.spec.ts:252:3 › OpenGrid playground planner › stacks an overlapping desktop placement without a conflict warning (8.3s)
+  ✓   5 [chromium] › tests/e2e/playground.spec.ts:294:3 › OpenGrid playground planner › restores the rendered lower piece when a stacked drag is cancelled (6.3s)
+  ✓   6 [chromium] › tests/e2e/playground.spec.ts:354:3 › OpenGrid playground planner › floats the earlier-added piece up when it is dragged onto the later piece (7.3s)
+  ✓   7 [chromium] › tests/e2e/playground.spec.ts:388:3 › OpenGrid playground planner › lifts a neighbor when parameter growth reaches its column (9.9s)
+  ✓   8 [chromium] › tests/e2e/playground.spec.ts:423:3 › OpenGrid playground planner › imports a scene file with in-file desktop overlaps as a stack (319ms)
+  ✓   9 [chromium] › tests/e2e/playground.spec.ts:471:3 › OpenGrid playground planner › keeps a visible conflict warning for overlapping wall placements (467ms)
+  ✓  10 [chromium] › tests/e2e/playground.spec.ts:517:3 › OpenGrid playground planner › keeps desktop stacks conflict-free after switching to wall (7.6s)
+  ✓  11 [chromium] › tests/e2e/playground.spec.ts:543:3 › OpenGrid playground planner › deletes the selected instance with the Delete key (6.6s)
+  ✓  12 [chromium] › tests/e2e/playground.spec.ts:566:3 › OpenGrid playground planner › flags stacked instances above the scene height limit (7.1s)
+  ✓  13 [chromium] › tests/e2e/playground.spec.ts:604:3 › OpenGrid playground planner › downloads the scene file and a per-instance STEP export (9.3s)
+  ✓  14 [chromium] › tests/e2e/playground.spec.ts:630:3 › OpenGrid playground planner › imports a scene file into the playground (2.0s)
+  ✓  15 [chromium] › tests/e2e/playground.spec.ts:669:3 › OpenGrid playground planner › notifies when imported components belong to the other orientation (556ms)
+  ✓  16 [chromium] › tests/e2e/playground.spec.ts:701:3 › OpenGrid playground planner › rejects scene files with unknown models without changing the scene (5.7s)
+  ✓  17 [chromium] › tests/e2e/playground.spec.ts:732:3 › OpenGrid playground planner › delivers proxies to identical instances added in quick succession (5.7s)
+  ✘  18 [chromium] › tests/e2e/playground.spec.ts:745:3 › OpenGrid playground planner › marks the selected instance on the viewport (30.0s)
+(node:1705194) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  19 [chromium] › tests/e2e/playground.spec.ts:759:3 › OpenGrid playground planner › round-trips an exported scene back into the playground (6.3s)
+  ✓  20 [chromium] › tests/e2e/playground.spec.ts:815:3 › loads the initialized playground viewport in zh-Hant (255ms)
+  ✓  21 [chromium] › tests/e2e/playground.spec.ts:815:3 › loads the initialized playground viewport in en (252ms)
+  ✘  22 [chromium] › tests/e2e/playground.spec.ts:829:1 › switches the scene between desktop and wall orientations (30.0s)
+(node:1709680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  23 [chromium] › tests/e2e/playground.spec.ts:859:1 › orbit dragging keeps the selection; clicking empty space clears it (30.0s)
+(node:1712414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  24 [chromium] › tests/e2e/playground.spec.ts:883:1 › window focus/blur does not reset the scene or selection (4.7s)
+  ✓  25 [chromium] › tests/e2e/playground.spec.ts:915:1 › persists the camera pose per orientation and can reset it (9.1s)
+  ✓  26 [chromium] › tests/e2e/playground.spec.ts:984:1 › drags a ready instance on the desktop grid without moving the camera (7.5s)
+  ✓  27 [chromium] › tests/e2e/playground.spec.ts:1023:1 › keeps updating an active drag after the pointer returns inside the activation threshold (7.5s)
+  ✓  28 [chromium] › tests/e2e/playground.spec.ts:1053:1 › freezes residual camera damping before an instance drag starts (8.0s)
+  ✓  29 [chromium] › tests/e2e/playground.spec.ts:1097:3 › keeps a dragged pending opengrid-stackable-box placeholder at its committed placement when its proxy becomes ready (7.0s)
+  ✓  30 [chromium] › tests/e2e/playground.spec.ts:1097:3 › keeps a dragged pending opengrid-wall-cover placeholder at its committed placement when its proxy becomes ready (2.3s)
+  ✓  31 [chromium] › tests/e2e/playground.spec.ts:1160:1 › selects an instance on tap and cancels a preview when orientation changes (8.0s)
+  ✓  32 [chromium] › tests/e2e/playground.spec.ts:1208:1 › keeps orientation drags independent: a wall drag never moves the desktop placement (5.6s)
+  ✓  33 [chromium] › tests/e2e/playground.spec.ts:1256:1 › maps wall dragging to cell X and cell Y while preserving the mount (4.9s)
+  ✓  34 [chromium] › tests/e2e/playground.spec.ts:1287:1 › keeps multi-character Wall Covers adjacent through rotation and dragging (3.0s)
+  ✓  35 [chromium] › tests/e2e/playground.spec.ts:1355:1 › mounts OpenConnect wall pieces in installed orientation (2.4s)
+  ✓  36 [chromium] › tests/e2e/playground.spec.ts:1386:1 › commits an overlapping drag as a stack and keeps the camera (8.1s)
+  ✓  37 [chromium] › tests/e2e/playground.spec.ts:1427:1 › refits only the default wall camera when framing inputs change (1.9s)
+  ✓  38 [chromium] › tests/e2e/playground.spec.ts:1490:1 › remembers the scene grid size across reloads (539ms)
+  ✓  39 [chromium] › tests/e2e/playground.spec.ts:1530:1 › separates wall and desk systems by orientation (12.7s)
+  ✓  40 [chromium] › tests/e2e/playground.spec.ts:1575:1 › edits an imported typed component through its workspace panel (9.6s)
+  ✓  41 [chromium] › tests/e2e/playground.spec.ts:1611:1 › applies an instance preset without touching sibling instances (7.3s)
+  ✘  42 [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link (5.5s)
+(node:1726371) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  43 [chromium] › tests/e2e/workspace-persistence.spec.ts:4:1 › CAD workspaces restore valid parameters independently per component (18.9s)
+  ✓  44 [chromium] › tests/e2e/workspace-persistence.spec.ts:75:1 › migrates legacy divider snapshots with alignment and peg defaults (1.6s)
+
+
+  1) [chromium] › tests/e2e/playground.spec.ts:745:3 › OpenGrid playground planner › marks the selected instance on the viewport
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByTestId('playground-instance-inst-1')
+    Expected: "ready"
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 120000ms
+      - waiting for getByTestId('playground-instance-inst-1')
+        14 × locator resolved to <button data-state="pending" data-testid="playground-instance-inst-1" class="w-full rounded-lg px-2 py-2 text-left text-base hover:bg-page border border-border-card bg-page font-[650]">…</button>
+           - unexpected value "pending"
+        - waiting for "http://127.0.0.1:3468/zh-Hant/cad/playground" navigation to finish...
+        - navigated to "http://127.0.0.1:3468/zh-Hant/cad/playground"
+      - Test timeout of 30000ms exceeded.
+
+
+      65 |   await expect(
+      66 |     page.getByTestId(`playground-instance-${instanceId}`),
+    > 67 |   ).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+         |     ^
+      68 | }
+      69 |
+      70 | async function useCompactPlaygroundGrid(page: Page): Promise<void> {
+        at waitForInstanceReady (/home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:67:5)
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:748:11
+
+    Error Context: ../../../../../../tmp/cad-followup/playground-OpenGrid-playgr-a0a2e-ed-instance-on-the-viewport-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/playground.spec.ts:829:1 › switches the scene between desktop and wall orientations
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByTestId('playground-instance-inst-1')
+    Expected: "ready"
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 120000ms
+      - waiting for getByTestId('playground-instance-inst-1')
+        7 × locator resolved to <button data-state="pending" data-testid="playground-instance-inst-1" class="w-full rounded-lg px-2 py-2 text-left text-base hover:bg-page border border-border-card bg-page font-[650]">…</button>
+          - unexpected value "pending"
+        - waiting for "http://127.0.0.1:3468/zh-Hant/cad/playground" navigation to finish...
+        - navigated to "http://127.0.0.1:3468/zh-Hant/cad/playground"
+      - Test timeout of 30000ms exceeded.
+
+
+      65 |   await expect(
+      66 |     page.getByTestId(`playground-instance-${instanceId}`),
+    > 67 |   ).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+         |     ^
+      68 | }
+      69 |
+      70 | async function useCompactPlaygroundGrid(page: Page): Promise<void> {
+        at waitForInstanceReady (/home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:67:5)
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:835:9
+
+    Error Context: ../../../../../../tmp/cad-followup/playground-switches-the-sc-ff7d7-sktop-and-wall-orientations-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/playground.spec.ts:859:1 › orbit dragging keeps the selection; clicking empty space clears it
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByTestId('playground-instance-inst-1')
+    Expected: "ready"
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 120000ms
+      - waiting for getByTestId('playground-instance-inst-1')
+        6 × locator resolved to <button data-state="pending" data-testid="playground-instance-inst-1" class="w-full rounded-lg px-2 py-2 text-left text-base hover:bg-page border border-border-card bg-page font-[650]">…</button>
+          - unexpected value "pending"
+      - Test timeout of 30000ms exceeded.
+
+
+      65 |   await expect(
+      66 |     page.getByTestId(`playground-instance-${instanceId}`),
+    > 67 |   ).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+         |     ^
+      68 | }
+      69 |
+      70 | async function useCompactPlaygroundGrid(page: Page): Promise<void> {
+        at waitForInstanceReady (/home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:67:5)
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/playground.spec.ts:864:9
+
+    Error Context: ../../../../../../tmp/cad-followup/playground-orbit-dragging--fbad9-cking-empty-space-clears-it-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByRole('link', { name: '返回模型選擇' })
+    Expected: "/models"
+    Received: "/zh-Hant/models"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for getByRole('link', { name: '返回模型選擇' })
+        14 × locator resolved to <a href="/zh-Hant/models" data-astro-cid-ggvu2jn5="" class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink no-underline hover:bg-page focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus">返回模型選擇</a>
+           - unexpected value "/zh-Hant/models"
+
+
+      23 |   const returnLink = page.getByRole('link', { name: '返回模型選擇' })
+      24 |   await expect(returnLink).toBeVisible()
+    > 25 |   await expect(returnLink).toHaveAttribute('href', '/models')
+         |                            ^
+      26 |   await returnLink.click()
+      27 |   await expect(page).toHaveURL('/models')
+      28 | })
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/workspace-header.spec.ts:25:28
+
+    Error Context: ../../../../../../tmp/cad-followup/workspace-header-CAD-heade-4cb6c-ent-model-and-a-return-link-chromium/error-context.md
+
+  4 failed
+    [chromium] › tests/e2e/playground.spec.ts:745:3 › OpenGrid playground planner › marks the selected instance on the viewport
+    [chromium] › tests/e2e/playground.spec.ts:829:1 › switches the scene between desktop and wall orientations
+    [chromium] › tests/e2e/playground.spec.ts:859:1 › orbit dragging keeps the selection; clicking empty space clears it
+    [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link
+  40 passed (5.5m)

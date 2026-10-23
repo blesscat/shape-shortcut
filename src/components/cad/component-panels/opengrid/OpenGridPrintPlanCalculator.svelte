@@ -178,7 +178,7 @@
   </div>
 
   <button
-    class="h-[2.725rem] cursor-pointer rounded-lg border-0 bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:bg-disabled"
+    class="h-[2.725rem] cursor-pointer rounded-lg border-0 bg-primary px-3 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:bg-disabled disabled:text-disabled-foreground"
     type="button"
     onclick={handleCalculate}
   >

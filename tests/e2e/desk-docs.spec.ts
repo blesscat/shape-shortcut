@@ -57,6 +57,13 @@ for (const locale of locales) {
       locale.code === 'en' ? 'removes the floor' : '移除盒底',
     )
     await expect(page.getByTestId('cad-workspace')).toHaveCount(0)
+    const standaloneLinks = page.locator(
+      '[data-testid="docs-wall-system"] a, a[href="#docs-snap-fixing-title"]',
+    )
+    for (const link of await standaloneLinks.all()) {
+      const box = await link.boundingBox()
+      expect(box?.height).toBeGreaterThanOrEqual(44)
+    }
   })
 
   test(`${locale.code} Desk quick start exposes the static workflow`, async ({
@@ -249,3 +256,59 @@ for (const { code, colorScheme } of [
     }
   })
 }
+
+test('chapter navigation remains usable on desktop and narrow screens', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/en/docs/')
+  const navigation = page.getByTestId('docs-section-nav')
+  const wall = navigation.locator('a[href="#docs-wall-system-title"]')
+  await expect(wall).toBeVisible()
+  await wall.click()
+  await expect(wall).toHaveAttribute('aria-current', 'location')
+  const heading = page.locator('#docs-wall-system-title')
+  await expect
+    .poll(async () =>
+      heading.evaluate((element) => element.getBoundingClientRect().top),
+    )
+    .toBeGreaterThanOrEqual(0)
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.goto('/en/docs/')
+  const disclosure = navigation.locator('details')
+  await expect(disclosure).not.toHaveAttribute('open')
+  await disclosure.locator('summary').click()
+  await expect(wall).toBeVisible()
+  await wall.click()
+  await expect(disclosure).not.toHaveAttribute('open')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    )
+    .toBe(true)
+})
+
+test.describe('chapter navigation without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+  test('wide chapters and narrow disclosure stay accessible', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/en/docs/')
+    const navigation = page.getByTestId('docs-section-nav')
+    const wall = navigation.getByRole('link', { name: /Wall/ })
+    await expect(wall).toBeVisible()
+    await wall.click()
+    await expect(page).toHaveURL(/#docs-wall-system-title$/)
+    await page.setViewportSize({ width: 320, height: 640 })
+    await page.goto('/en/docs/')
+    await navigation.locator('summary').click()
+    await expect(wall).toBeVisible()
+    await wall.click()
+    await expect(page).toHaveURL(/#docs-wall-system-title$/)
+  })
+})

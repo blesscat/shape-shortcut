@@ -11,13 +11,12 @@ remaining control fully usable in both states for all themes and locales.
 
 ### Requirement: Navigation stays pinned while scrolling
 
-The shared navigation capsule SHALL remain pinned to the top of the
-viewport while the page is scrolled past its resting position.
+The shared navigation SHALL remain pinned at the top while scrolling. Brand, models, docs, About, theme, language and configured support destinations MUST remain reachable in both expanded and compact states. Models/docs MUST have direct desktop links; narrow layouts MUST provide an accessible menu when links do not fit. The support action MUST have secondary visual emphasis relative to the page's main task.
 
 #### Scenario: Scrolled to the bottom of a long page
 
 - **WHEN** the user scrolls a long page far from the top
-- **THEN** the navigation capsule MUST still be pinned at the top of the
+- **THEN** the navigation bar MUST still be pinned at the top of the
   viewport
 - **AND** every control the current form presents (brand link, theme
   toggle, locale switch, support trigger) MUST remain visible and
@@ -25,83 +24,77 @@ viewport while the page is scrolled past its resting position.
 
 ### Requirement: Navigation collapses to a compact form when scrolled past the top
 
-The navigation capsule SHALL present an expanded form while the page rests
-near the top, and a compact form once the page is scrolled beyond a small
-threshold. The compact form MUST reduce the viewport space the capsule
-occupies (its bottom edge MUST sit higher than in the expanded form).
-Returning near the top MUST restore the expanded form.
+The navigation SHALL present an expanded form near the page top and a compact form beyond a small threshold. The compact chrome MUST occupy less visible vertical space without changing the reserved page-content offset. Returning near the top MUST restore the expanded form. A jump to a deep anchor MUST resolve the correct compact state without additional scrolling.
 
-#### Scenario: Page at the top shows the expanded capsule
+#### Scenario: Page at the top shows the expanded navigation bar
 
 - **WHEN** the page is at or near the top (scroll position within the
   threshold)
-- **THEN** the navigation capsule MUST be in its expanded form
+- **THEN** the navigation bar MUST be in its expanded form
 
-#### Scenario: Scrolling past the threshold collapses the capsule
+#### Scenario: Scrolling past the threshold collapses the navigation bar
 
 - **WHEN** the user scrolls the page beyond the threshold
-- **THEN** the navigation capsule MUST switch to the compact form
-- **AND** the capsule's bottom edge MUST sit measurably higher in the
+- **THEN** the navigation bar MUST switch to the compact form
+- **AND** the navigation bar's bottom edge MUST sit measurably higher in the
   viewport than the expanded form's bottom edge
 
-#### Scenario: Scrolling back to the top expands the capsule
+#### Scenario: Scrolling back to the top expands the navigation bar
 
 - **WHEN** the user scrolls back near the top of the page
-- **THEN** the navigation capsule MUST return to the expanded form
+- **THEN** the navigation bar MUST return to the expanded form
 
-#### Scenario: Landing on an in-page anchor keeps the capsule compact
+#### Scenario: Landing on an in-page anchor keeps the navigation bar compact
 
 - **WHEN** the page is loaded or jumped to an anchor far from the top
-- **THEN** the navigation capsule MUST present the compact form without
+- **THEN** the navigation bar MUST present the compact form without
   requiring further scrolling
 
 ### Requirement: Compact form folds secondary navigation links
 
-In the compact form the capsule SHALL fold the secondary navigation links
-(docs, models, about). The brand link, theme toggle, locale switch, and
-support trigger SHALL remain visible and operable, and the folded links
-SHALL return when the page scrolls back near the top.
+The compact form SHALL retain direct models/docs/About links whenever width allows. When these destinations are folded on narrow screens they MUST remain reachable through a labeled menu trigger, without scrolling to the top. The brand, theme, language and configured support action MUST remain reachable. The closed menu's links MUST not be focusable; opening the menu MUST expose them to keyboard and assistive technology. Escape and explicit close MUST close the menu and restore focus to its trigger.
 
 #### Scenario: Navigation links fold while scrolled
 
-- **WHEN** the capsule is in its compact form
-- **THEN** the docs, models, and about links MUST NOT be visible or
-  focusable
-- **AND** the brand link, theme toggle, locale switch, and support
-  trigger MUST remain visible and operable
+- **WHEN** the navigation bar is in its compact form
+- **THEN** the docs, models, and about destinations MUST remain reachable directly or through the labeled menu
+- **AND** the brand link, theme toggle, locale switch, and configured support action MUST remain reachable and operable
 
 #### Scenario: Folded links return near the top
 
-- **WHEN** the page scrolls back near the top and the capsule expands
-- **THEN** the docs, models, and about links MUST be visible and
-  focusable again
+- **WHEN** the page scrolls back near the top and the navigation bar expands
+- **THEN** the docs, models, and about destinations MUST remain reachable, with direct links restored when width allows
+
+#### Scenario: Folded destinations work without scrolling back
+
+- **WHEN** a narrow-screen user opens the navigation menu while far down a page
+- **THEN** models, docs and About MUST be available as keyboard-operable localized links
+- **AND** closing with Escape MUST return focus to the menu trigger
+
+#### Scenario: Navigation works without client scripting
+
+- **WHEN** JavaScript is unavailable on a static page
+- **THEN** all primary destinations MUST remain reachable through visible links or a native disclosure
 
 ### Requirement: Navigation state switches never move page content
 
-Switching between the expanded and compact forms SHALL only change the
-navigation capsule itself: page content below moves solely as the
-consequence of the capsule's own height change. Switching themes while
-scrolled MUST NOT change the capsule's size or state.
+Expanded/compact switching SHALL change only navigation chrome within a reserved header area. It MUST NOT shift document content, anchor destinations or CAD framing. Switching themes MUST preserve the navigation size, state and pinned offset.
 
 #### Scenario: Theme switches never shift layout
 
 - **WHEN** the user switches between light and dark themes at any scroll
   position
-- **THEN** the capsule's form (expanded or compact) and size MUST NOT
+- **THEN** the navigation bar's form (expanded or compact) and size MUST NOT
   change
-- **AND** its pinned offset MUST only differ by the theme's static design
-  offset (the dark capsule floats lower in both forms)
+- **AND** its pinned offset and reserved content offset MUST remain identical across themes
 
 ### Requirement: Compact form preserves interactive target sizes
 
-In the compact form, the capsule SHALL reduce only its own chrome
-(padding, folded links, pinned offset). Every remaining interactive
-control (brand link, theme toggle, locale switch, support trigger) SHALL
-retain the same rendered size and hit area as in the expanded form.
+Compact navigation SHALL reduce chrome rather than shrinking interactive targets. Brand, theme, language, menu, support and visible destination links MUST retain at least 44px hit areas and unchanged text size across expanded/compact states.
 
 #### Scenario: Theme toggle size is unchanged between states
 
-- **WHEN** the capsule switches between expanded and compact forms
+- **WHEN** the navigation bar switches between expanded and compact forms
 - **THEN** the theme toggle's rendered size MUST be identical in both
   states
 - **AND** every navigation link, whenever rendered, MUST keep the same
@@ -109,22 +102,19 @@ retain the same rendered size and hit area as in the expanded form.
 
 ### Requirement: Collapse behavior is identical across themes and locales
 
-The scroll-collapse behavior SHALL be the same in light and dark themes and
-on every localized route. Both themes MUST switch states at the same
-thresholds; the compact pinned offset MAY differ between themes (the dark
-theme keeps the capsule floating below the top edge in both states).
+Scroll-collapse behavior SHALL use the same thresholds and pinned offset in both appearances and all supported locales. Responsive folding MUST account for complete localized labels without truncating destinations or producing horizontal overflow.
 
 #### Scenario: Dark mode collapses at the same scroll threshold
 
 - **WHEN** the user scrolls past the threshold in dark mode
-- **THEN** the capsule MUST switch to the compact form exactly as in light
+- **THEN** the navigation bar MUST switch to the compact form exactly as in light
   mode
 - **AND** switching themes while scrolled MUST NOT change which form
   (expanded or compact) is presented
 
 ### Requirement: Reduced-motion users switch states without animation
 
-For users with reduced motion enabled, the capsule SHALL switch between
+For users with reduced motion enabled, the navigation bar SHALL switch between
 expanded and compact forms without an animated transition. The state
 switching itself MUST still happen.
 
@@ -132,5 +122,5 @@ switching itself MUST still happen.
 
 - **WHEN** reduced motion is enabled and the user scrolls past the
   threshold
-- **THEN** the capsule MUST switch to the compact form
+- **THEN** the navigation bar MUST switch to the compact form
 - **AND** the switch MUST NOT be animated

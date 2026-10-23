@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { revealInvalidFields } from './reveal-invalid-fields'
   import TissueBoxComponentPanel from './opengrid-openconnect-tissue-box/TissueBoxComponentPanel.svelte'
   import OpenGridLabelSlotTestComponentPanel from './opengrid-label-slot-test/OpenGridLabelSlotTestComponentPanel.svelte'
   import type {
@@ -49,130 +50,132 @@
   }: Props = $props()
 </script>
 
-{#if modelId === 'box'}
-  <BoxComponentPanel {locale} {rawParameters} {fieldErrors} {onInputChange} />
-{:else if modelId === 'modular-grid-base'}
-  <ModularGridBaseComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'hsw-cell'}
-  <HswCellComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'hexagonal-column'}
-  <HexagonalColumnComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-pillar'}
-  <OpenGridPillarComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid'}
-  <OpenGridComponentPanel
-    {locale}
-    parameters={parameters as OpenGridParameters}
-    {systemContext}
-    {fieldErrors}
-    onParametersChange={onOpenGridParametersChange}
-    onDimensionCalculationInvalid={onOpenGridDimensionCalculationInvalid}
-  />
-{:else if modelId === 'opengrid-divider'}
-  <OpenGridDividerComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-organizer-box'}
-  <OpenGridOrganizerBoxComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-stackable-box'}
-  <OpenGridStackableBoxComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-stackable-cylinder'}
-  <OpenGridStackableCylinderComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-snap'}
-  <OpenGridSnapComponentPanel
-    {locale}
-    parameters={parameters as OpenGridSnapParameters}
-    {systemContext}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-    {onSystemContextChange}
-  />
-{:else if modelId === 'opengrid-open-shelf'}
-  <OpenGridOpenShelfComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-openconnect-shelf'}
-  <OpenGridOpenConnectShelfComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-openconnect-tissue-box'}
-  <TissueBoxComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-openconnect-organizer'}
-  <OpenGridOpenConnectOrganizerComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-wall-cover'}
-  <OpenGridWallCoverComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-label-card'}
-  <OpenGridLabelCardComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{:else if modelId === 'opengrid-label-slot-test'}
-  <OpenGridLabelSlotTestComponentPanel
-    {locale}
-    {rawParameters}
-    {fieldErrors}
-    {onInputChange}
-  />
-{/if}
+<div use:revealInvalidFields class="grid min-w-0 gap-3">
+  {#if modelId === 'box'}
+    <BoxComponentPanel {locale} {rawParameters} {fieldErrors} {onInputChange} />
+  {:else if modelId === 'modular-grid-base'}
+    <ModularGridBaseComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'hsw-cell'}
+    <HswCellComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'hexagonal-column'}
+    <HexagonalColumnComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-pillar'}
+    <OpenGridPillarComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid'}
+    <OpenGridComponentPanel
+      {locale}
+      parameters={parameters as OpenGridParameters}
+      {systemContext}
+      {fieldErrors}
+      onParametersChange={onOpenGridParametersChange}
+      onDimensionCalculationInvalid={onOpenGridDimensionCalculationInvalid}
+    />
+  {:else if modelId === 'opengrid-divider'}
+    <OpenGridDividerComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-organizer-box'}
+    <OpenGridOrganizerBoxComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-stackable-box'}
+    <OpenGridStackableBoxComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-stackable-cylinder'}
+    <OpenGridStackableCylinderComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-snap'}
+    <OpenGridSnapComponentPanel
+      {locale}
+      parameters={parameters as OpenGridSnapParameters}
+      {systemContext}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+      {onSystemContextChange}
+    />
+  {:else if modelId === 'opengrid-open-shelf'}
+    <OpenGridOpenShelfComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-openconnect-shelf'}
+    <OpenGridOpenConnectShelfComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-openconnect-tissue-box'}
+    <TissueBoxComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-openconnect-organizer'}
+    <OpenGridOpenConnectOrganizerComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-wall-cover'}
+    <OpenGridWallCoverComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-label-card'}
+    <OpenGridLabelCardComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-label-slot-test'}
+    <OpenGridLabelSlotTestComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {/if}
+</div>

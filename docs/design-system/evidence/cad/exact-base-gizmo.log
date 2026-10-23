@@ -1,0 +1,45 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 329ms using pnpm v11.20.0
+
+Running 1 test using 1 worker
+
+(node:1697163) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › tests/e2e/cad-viewport-gizmo.spec.ts:94:1 › XYZ orientation gizmo follows orbit and stays anchored through model updates (7.5s)
+
+
+  1) [chromium] › tests/e2e/cad-viewport-gizmo.spec.ts:94:1 › XYZ orientation gizmo follows orbit and stays anchored through model updates
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "必須是有限的整數。"
+    Received string:    "寬度 輸入無效，請檢查參數後重試。"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for getByRole('alert')
+        14 × locator resolved to <span role="alert" id="width-error" class="text-sm text-error">寬度 輸入無效，請檢查參數後重試。</span>
+           - unexpected value "寬度 輸入無效，請檢查參數後重試。"
+
+
+      121 |
+      122 |   await width.fill('25.5')
+    > 123 |   await expect(page.getByRole('alert')).toContainText('必須是有限的整數。')
+          |                                         ^
+      124 |   await expect(page.getByText('預覽與目前輸入不同步')).toBeVisible()
+      125 |   expectRectToBeStable(initialRect, await readRect(gizmo))
+      126 |
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/cad-viewport-gizmo.spec.ts:123:41
+
+    Error Context: ../../../../../../tmp/cad-base-gizmo/cad-viewport-gizmo-XYZ-ori-bd1fd-hored-through-model-updates-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/e2e/cad-viewport-gizmo.spec.ts:94:1 › XYZ orientation gizmo follows orbit and stays anchored through model updates

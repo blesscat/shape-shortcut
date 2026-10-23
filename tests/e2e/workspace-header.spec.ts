@@ -22,7 +22,21 @@ test('CAD header shows the current model and a return link', async ({
 
   const returnLink = page.getByRole('link', { name: '返回模型選擇' })
   await expect(returnLink).toBeVisible()
-  await expect(returnLink).toHaveAttribute('href', '/models')
+  await expect(returnLink).toHaveAttribute('href', '/zh-Hant/models')
   await returnLink.click()
-  await expect(page).toHaveURL('/models')
+  await expect(page).toHaveURL('/zh-Hant/models')
+})
+
+test('English CAD header returns to the English model catalog', async ({
+  page,
+}) => {
+  await page.goto('/en/cad/box')
+  await expect(
+    page.getByRole('heading', { name: 'Editing: Box', exact: true }),
+  ).toBeVisible()
+  const returnLink = page.locator('[data-testid="cad-header"] a')
+  await expect(returnLink).toBeVisible()
+  await expect(returnLink).toHaveAttribute('href', '/en/models')
+  await returnLink.click()
+  await expect(page).toHaveURL('/en/models')
 })

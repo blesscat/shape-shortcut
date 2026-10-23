@@ -240,7 +240,7 @@
 
 <style>
   .viewport {
-    --viewport-radius: 2rem;
+    --viewport-radius: 1rem;
   }
 
   .viewport-surface {

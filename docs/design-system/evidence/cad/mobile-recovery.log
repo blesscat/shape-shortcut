@@ -1,0 +1,19 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 297ms using pnpm v11.20.0
+
+Running 4 tests using 1 worker
+
+(node:1657004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › tests/e2e/cad-refresh-recovery.spec.ts:5:5 › legacy mobile recovery and export zh-Hant light (2.1s)
+  ✓  2 [chromium] › tests/e2e/cad-refresh-recovery.spec.ts:5:5 › legacy mobile recovery and export zh-Hant dark (2.0s)
+  ✓  3 [chromium] › tests/e2e/cad-refresh-recovery.spec.ts:5:5 › legacy mobile recovery and export en light (2.0s)
+  ✓  4 [chromium] › tests/e2e/cad-refresh-recovery.spec.ts:5:5 › legacy mobile recovery and export en dark (2.0s)
+
+  4 passed (8.5s)

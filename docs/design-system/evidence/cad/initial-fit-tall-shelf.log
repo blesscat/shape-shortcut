@@ -1,0 +1,18 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 345ms using pnpm v11.20.0
+
+Running 3 tests using 1 worker
+
+(node:1759426) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial opengrid-openconnect-shelf fits the visible canvas at 1440px (6.4s)
+  ✓  2 [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial opengrid-openconnect-shelf fits the visible canvas at 761px (6.8s)
+  ✓  3 [chromium] › tests/e2e/cad-initial-fit.spec.ts:10:5 › initial opengrid-openconnect-shelf fits the visible canvas at 390px (6.7s)
+
+  3 passed (20.4s)

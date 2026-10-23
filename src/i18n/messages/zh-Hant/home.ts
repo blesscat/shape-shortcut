@@ -3,9 +3,9 @@ export const messages = {
   'home.metaDescription':
     'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：挑一個 OpenGrid 收納模型，調好尺寸、即時預覽、直接下載 STL——不用裝軟體，也不用花錢。',
   'home.explore.desk.categorySummary':
-    '底版跟 Snap 是基礎，先挑喜歡的容器，小工具都收在下面。',
+    '先挑喜歡的容器，再搭配底板與 Snap；工具與配件可按需展開。',
   'home.explore.wall.categorySummary':
-    '底版和 Snap 是基礎，層架、方格、面紙盒都是容器，小工具收在下面。',
+    '先挑層架、方格或面紙盒，再搭配底板與 Snap；工具與配件可按需展開。',
   'home.maker.eyebrow': '關於這個專案',
   'home.maker.title': '把好用的 3D 列印工具，收在同一個抽屜',
   'home.maker.body':

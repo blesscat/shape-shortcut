@@ -2,6 +2,31 @@
 // Domain: cad-workspace
 
 export const messages = {
+  'cad.presentation.guide': 'Assembly guide and setting explanations',
+  'cad.presentation.dimensions': 'Dimensions',
+  'cad.presentation.structure': 'Structure',
+  'cad.presentation.formats': 'About these files',
+  'cad.presentation.stlHelp':
+    'STL contains model geometry. Choose print settings in your slicer.',
+  'cad.presentation.threeMfHelp':
+    'This model supports a two-color 3MF export with your current model colors.',
+  'cad.presentation.settingsHelp':
+    'Settings JSON keeps accepted parameters and colors for import into Playground.',
+  'cad.presentation.progressHelp': 'About this progress',
+  'cad.presentation.progressExplanation':
+    'Counts describe the current operation, not a percentage of the whole model. Exact output is available after the model finishes updating.',
+  'cad.presentation.status.booting': 'Preparing the workspace',
+  'cad.presentation.status.loading-engine': 'Loading the CAD engine',
+  'cad.presentation.status.generating':
+    'Updating model — preview is not yet final',
+  'cad.presentation.status.ready': 'Model is up to date',
+  'cad.presentation.status.invalid-input': 'Check the highlighted parameters',
+  'cad.presentation.status.recoverable-error':
+    'Update failed — retry is available',
+  'cad.presentation.status.fatal-worker-error':
+    'CAD engine stopped — retry is available',
+  'cad.presentation.status.exporting': 'Preparing your download',
+
   'cad.attribution.tissueBox.modified':
     'This parametric tissue holder integrates the oriented OpenConnect locked socket with upward-tilted support, bottom dispensing slot and optional perforated side walls and bottom.',
   'cad.currentlyEditing': 'Editing: {name}',
