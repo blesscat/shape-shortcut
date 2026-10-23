@@ -1,123 +1,105 @@
 import { expect, test } from '@playwright/test'
 
 for (const locale of ['zh-Hant', 'en']) {
-  test(`${locale} assembly clips wait for play and support pause and replay`, async ({
+  test(`${locale} homepage is a static entry to the assembly guide`, async ({
     page,
   }) => {
-    const movieRequests: string[] = []
-    const runtimeRequests: string[] = []
+    const mediaRequests: string[] = []
     page.on('request', (request) => {
-      const url = request.url()
-      if (/\/docs\/desk-assembly\/.*\.(mp4|webm)/.test(url))
-        movieRequests.push(url)
-      if (/\.wasm|cad\.worker|three\.module/.test(url))
-        runtimeRequests.push(url)
+      if (
+        /\.(mp4|webm|wasm)(?:\?|$)|cad\.worker|desk-scroll-assembly/.test(
+          request.url(),
+        )
+      )
+        mediaRequests.push(request.url())
     })
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(`/${locale}/`)
-    const videos = page.locator('[data-assembly-video] video:visible')
-    await expect(videos).toHaveCount(1)
-    const video = videos.first()
-    await expect(video).toHaveAttribute('preload', 'none')
-    await expect(video).toHaveAttribute('controls', '')
-    await expect(video).toHaveAttribute('aria-label', /Board/)
-    expect(
-      await video.evaluate((element: HTMLVideoElement) => ({
-        paused: element.paused,
-        time: element.currentTime,
-        autoplay: element.autoplay,
-        loop: element.loop,
-      })),
-    ).toEqual({ paused: true, time: 0, autoplay: false, loop: false })
-    expect(movieRequests).toEqual([])
-    expect(runtimeRequests).toEqual([])
-    await video.scrollIntoViewIfNeeded()
-    // Activate the native media API without inspecting browser-private controls.
-    await video.evaluate((element: HTMLVideoElement) => element.play())
-    await expect
-      .poll(() =>
-        video.evaluate((element: HTMLVideoElement) => element.currentTime),
-      )
-      .toBeGreaterThan(0.2)
-    await video.evaluate((element: HTMLVideoElement) => element.pause())
-    const stopped = await video.evaluate(
-      (element: HTMLVideoElement) => element.currentTime,
+    await expect(page.locator('video, canvas')).toHaveCount(0)
+    await expect(
+      page.getByTestId('home-workflow').getByRole('listitem'),
+    ).toHaveCount(3)
+    const sections = page
+      .getByTestId('home-sections')
+      .locator(':scope > section')
+    await expect(sections).toHaveCount(5)
+    const bounds = await sections.evaluateAll((elements) =>
+      elements.map((element) => element.getBoundingClientRect().top),
     )
-    await page.waitForTimeout(150)
-    expect(
-      await video.evaluate((element: HTMLVideoElement) => element.currentTime),
-    ).toBe(stopped)
-    await video.evaluate((element: HTMLVideoElement) => {
-      element.currentTime = element.duration - 0.1
-      return element.play()
-    })
-    await expect
-      .poll(() => video.evaluate((element: HTMLVideoElement) => element.ended))
-      .toBe(true)
-    await video.evaluate((element: HTMLVideoElement) => {
-      element.currentTime = 0
-      return element.play()
-    })
-    await expect
-      .poll(() =>
-        video.evaluate((element: HTMLVideoElement) => element.currentTime),
-      )
-      .toBeGreaterThan(0.1)
-    expect(runtimeRequests).toEqual([])
+    expect(bounds).toEqual([...bounds].sort((a, b) => a - b))
+    await expect(sections.nth(0)).toContainText('Shape Shortcut')
+    await expect(sections.nth(1)).toContainText('OpenGrid Wall')
+    await expect(sections.nth(2).getByRole('listitem')).toHaveCount(3)
+    await expect(sections.nth(4)).toContainText('Prototype')
+    expect(mediaRequests).toEqual([])
+    await page.getByTestId('home-guide').getByRole('link').click()
+    await expect(page).toHaveURL(
+      new RegExp(`/${locale}/docs/#assembly-direct-placement-align$`),
+    )
+    await expect(page.locator('#assembly-direct-placement-align')).toBeVisible()
   })
 }
 
-test('switching theme pauses the hidden movie and exposes matching media', async ({
+for (const theme of ['light', 'dark'] as const) {
+  test(`${theme} homepage remains usable without JavaScript on mobile`, async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      colorScheme: theme,
+      viewport: { width: 390, height: 844 },
+    })
+    try {
+      const page = await context.newPage()
+      for (const locale of ['zh-Hant', 'en']) {
+        await page.goto(`${baseURL}/${locale}/`)
+        await expect(page.locator('video, canvas')).toHaveCount(0)
+        await expect(
+          page.getByTestId('home-hero').getByRole('link').first(),
+        ).toHaveAttribute('href', `/${locale}/models`)
+        const image = page
+          .getByTestId('home-hero-visual')
+          .locator('img:visible')
+        await expect(image).toHaveAttribute('src', `/home/desk.${theme}.webp`)
+        expect(
+          await image.evaluate(
+            (img: HTMLImageElement) =>
+              img.complete &&
+              img.naturalWidth === 1200 &&
+              img.naturalHeight === 800,
+          ),
+        ).toBe(true)
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true)
+        await page.getByTestId('home-guide').getByRole('link').click()
+        await expect(
+          page.locator('#assembly-direct-placement-align'),
+        ).toBeVisible()
+      }
+    } finally {
+      await context.close()
+    }
+  })
+}
+
+test('homepage pictures follow the theme toggle without loading movie data', async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/en/')
-  const light = page.locator(
-    '[data-assembly-video="snap-fixing"] video[data-appearance="light"]',
+  const hero = page.getByTestId('home-hero-visual')
+  await expect(hero.locator('img:visible')).toHaveAttribute(
+    'src',
+    '/home/desk.light.webp',
   )
-  const dark = page.locator(
-    '[data-assembly-video="snap-fixing"] video[data-appearance="dark"]',
-  )
-  await light.evaluate((element: HTMLVideoElement) => element.play())
   await page.locator('[data-theme-toggle]').click()
-  await expect(dark).toBeVisible()
-  await expect(light).toBeHidden()
-  await expect
-    .poll(() => light.evaluate((element: HTMLVideoElement) => element.paused))
-    .toBe(true)
-  await expect(dark).toHaveAttribute('poster', /dark\.webp$/)
-  await expect(
-    page.locator('[data-assembly-video="snap-fixing"] a:visible'),
-  ).toHaveAttribute('href', /dark\.webp$/)
-})
-
-test('failed movie delivery leaves a static frame and assembly instructions', async ({
-  page,
-}) => {
-  const failedMovies: string[] = []
-  page.on('requestfailed', (request) => {
-    if (/\/docs\/desk-assembly\/.*\.(mp4|webm)/.test(request.url())) {
-      failedMovies.push(request.url())
-    }
-  })
-  await page.route('**/docs/desk-assembly/*.mp4', (route) => route.abort())
-  await page.route('**/docs/desk-assembly/*.webm', (route) => route.abort())
-  await page.goto('/zh-Hant/')
-  const video = page.locator(
-    '[data-assembly-video="snap-fixing"] video:visible',
+  await expect(hero.locator('img:visible')).toHaveAttribute(
+    'src',
+    '/home/desk.dark.webp',
   )
-  await video.evaluate((element: HTMLVideoElement) => {
-    // Engines differ in when a failed <source> settles play(). The written
-    // fallback must remain usable even while native loading is pending.
-    void element.play().catch(() => {})
-  })
-  await expect.poll(() => failedMovies.length).toBeGreaterThan(0)
-  const still = page.locator('[data-assembly-video="snap-fixing"] a:visible')
-  await expect(still).toHaveText('查看靜態組裝圖')
-  const response = await page.request.get((await still.getAttribute('href'))!)
-  expect(response.ok()).toBe(true)
-  expect(response.headers()['content-type']).toContain('image/webp')
-  await expect(
-    page.locator('[data-assembly-video="snap-fixing"]'),
-  ).toContainText('查看靜態組裝圖')
+  await expect(page.locator('video')).toHaveCount(0)
 })

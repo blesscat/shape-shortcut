@@ -68,7 +68,7 @@ test('assembly movies advertise byte seeking through the deployed asset service'
 })
 
 for (const appearance of ['light', 'dark'] as const) {
-  test(`${appearance} hosted movies seek through native controls without page JavaScript`, async ({
+  test(`${appearance} hosted homepage links to Docs without page JavaScript or movies`, async ({
     browser,
     baseURL,
   }) => {
@@ -80,45 +80,24 @@ for (const appearance of ['light', 'dark'] as const) {
     try {
       const page = await context.newPage()
       await page.goto(`${baseURL}/zh-Hant/`)
-      const movies = page.locator('[data-assembly-video] video:visible')
-      await expect(movies).toHaveCount(1)
-      for (const movie of await movies.all()) {
-        await movie.scrollIntoViewIfNeeded()
-        await movie.focus()
-        await page.keyboard.press('Space')
-        await expect
-          .poll(() =>
-            movie.evaluate((element: HTMLVideoElement) => element.currentTime),
-          )
-          .toBeGreaterThan(0.1)
-        await page.keyboard.press('Space')
-        await expect
-          .poll(() =>
-            movie.evaluate((element: HTMLVideoElement) => {
-              if (element.seekable.length === 0) return false
-              return (
-                element.seekable.end(element.seekable.length - 1) >=
-                element.duration - 0.1
-              )
-            }),
-          )
-          .toBe(true)
-        await movie.evaluate((element: HTMLVideoElement) => {
-          element.currentTime = element.duration / 2
-        })
-        await expect
-          .poll(() =>
-            movie.evaluate((element: HTMLVideoElement) =>
-              Math.abs(element.currentTime - element.duration / 2),
-            ),
-          )
-          .toBeLessThan(0.1)
-        await expect
-          .poll(() =>
-            movie.evaluate((element: HTMLVideoElement) => element.seeking),
-          )
-          .toBe(false)
-      }
+      await expect(page.locator('video, canvas')).toHaveCount(0)
+      const image = page.getByTestId('home-hero-visual').locator('img:visible')
+      await expect(image).toHaveAttribute(
+        'src',
+        `/home/desk.${appearance}.webp`,
+      )
+      expect(
+        await image.evaluate(
+          (element: HTMLImageElement) => element.naturalWidth,
+        ),
+      ).toBeGreaterThan(0)
+      await page.getByTestId('home-guide').getByRole('link').click()
+      await expect(
+        page.locator('#assembly-direct-placement-align'),
+      ).toBeVisible()
+      await expect(
+        page.locator('[data-assembly-guide="direct-placement"] img:visible'),
+      ).toHaveCount(1)
     } finally {
       await context.close()
     }
