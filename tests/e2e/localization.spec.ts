@@ -403,7 +403,7 @@ test('localized public pages and CAD controls expose both locales', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant')
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
+      name: /讓收納，\s*剛好適合你的空間。/,
     }),
   ).toBeVisible()
 
@@ -411,7 +411,7 @@ test('localized public pages and CAD controls expose both locales', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(
     page.getByRole('heading', {
-      name: 'First time with Desk System? This page is all you need',
+      name: 'Print your first Desk setup',
     }),
   ).toBeVisible()
   await expect(

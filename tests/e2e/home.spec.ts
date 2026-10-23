@@ -222,18 +222,18 @@ test('home, model selection, and docs are static Astro pages', async ({
   await expect(page).toHaveURL(/\/zh-Hant\/$/)
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
+      name: /讓收納，\s*剛好適合你的空間。/,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-hero')).toBeVisible()
-  await expect(page.getByTestId('home-capabilities')).toBeVisible()
-  await expect(page.getByTestId('home-desk-system')).toBeVisible()
+  await expect(page.getByTestId('home-workflow')).toBeVisible()
+  await expect(page.getByTestId('home-guide')).toBeVisible()
   await expect(page.getByTestId('home-explore')).toBeVisible()
   await expectHomepageExploreCards(page)
   await expect(page.getByTestId('home-maker')).toBeVisible()
   await expect(page.getByTestId('home-maker')).toContainText('Blesscat')
-  await expect(page.getByText('改了馬上看', { exact: true })).toBeVisible()
-  await expect(page.getByText('下載就印', { exact: true })).toBeVisible()
+  await expect(page.getByText('調成合適的尺寸', { exact: true })).toBeVisible()
+  await expect(page.getByText('下載，準備列印', { exact: true })).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Shape Shortcut' }),
   ).toHaveAttribute('aria-current', 'page')
@@ -242,17 +242,17 @@ test('home, model selection, and docs are static Astro pages', async ({
       .getByRole('navigation', { name: '主要導覽' })
       .getByRole('link', { name: '選擇模型', exact: true }),
   ).not.toHaveAttribute('aria-current', 'page')
-  const primaryCta = page.getByRole('link', { name: '來挑模型 →' })
+  const primaryCta = page.getByRole('link', { name: '開始挑模型' })
   await expect(primaryCta).toHaveAttribute('href', '/zh-Hant/models')
   const deskCta = page.getByRole('link', {
-    name: '不知道從哪開始？從 Desk System 開始玩 →',
+    name: '從 Desk 底板開始',
   })
   await expect(deskCta).toHaveAttribute(
     'href',
     '/zh-Hant/cad/opengrid?system=desk',
   )
   await expect(
-    page.getByRole('link', { name: '先看看怎麼玩' }),
+    page.getByRole('link', { name: '查看組裝教學' }),
   ).toHaveAttribute('href', '/zh-Hant/docs/')
   const ctaBackground = await primaryCta.evaluate(
     (element) => getComputedStyle(element).backgroundColor,
@@ -682,40 +682,6 @@ test('primary navigation switches states without animation under reduced motion'
   await expect(navigation).toHaveAttribute('data-compact', '')
 })
 
-for (const code of ['zh-Hant', 'en']) {
-  test(`${code} homepage reuses the fixing movie and its static frame`, async ({
-    page,
-  }) => {
-    for (const colorScheme of ['light', 'dark'] as const) {
-      await page.emulateMedia({ colorScheme })
-      await page.goto(`/${code}/`)
-      const section = page.getByTestId('home-desk-system')
-      const video = section.locator(
-        `[data-assembly-video="snap-fixing"] video[data-appearance="${colorScheme}"]`,
-      )
-      await expect(video).toBeVisible()
-      await expect(video).toHaveAttribute(
-        'poster',
-        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
-      )
-      await expect(video).toHaveAttribute('preload', 'none')
-      await expect(section.locator('figcaption')).toContainText(
-        /position fixing|固定位置/,
-      )
-      await expect(video).toHaveAttribute(
-        'aria-label',
-        /position fixing|固定位置/,
-      )
-      await expect(
-        section.locator('[data-assembly-video] a:visible'),
-      ).toHaveAttribute(
-        'href',
-        `/docs/desk-assembly/snap-fixing.${colorScheme}.webp`,
-      )
-    }
-  })
-}
-
 test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   page,
 }) => {
@@ -731,7 +697,7 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   )
   await expect(
     page.getByRole('heading', {
-      name: /桌面好亂？挑個模型調一調\s*列印出來就對了。/,
+      name: /讓收納，\s*剛好適合你的空間。/,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-in-browser')).toBeVisible()
@@ -745,23 +711,23 @@ test('Traditional Chinese homepage uses the Desk System entry flow', async ({
   )
   await expect(page.getByTestId('home-maker')).toContainText('Prototype')
   await expect(page.getByTestId('home-hero')).toBeVisible()
-  await expect(page.getByTestId('home-desk-system')).toBeVisible()
+  await expect(page.getByTestId('home-guide')).toBeVisible()
   await expectHomepageExploreCards(page)
-  await expect(page.getByRole('link', { name: '來挑模型 →' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: '開始挑模型' })).toHaveAttribute(
     'href',
     '/zh-Hant/models',
   )
   await expect(
-    page.getByRole('link', { name: '不知道從哪開始？從 Desk System 開始玩 →' }),
+    page.getByRole('link', { name: '從 Desk 底板開始' }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid?system=desk')
   await expect(
-    page.getByRole('link', { name: '先看看怎麼玩' }),
+    page.getByRole('link', { name: '查看組裝教學' }),
   ).toHaveAttribute('href', '/zh-Hant/docs/')
   await expect(
-    page.getByRole('link', { name: '玩 Wall System →' }),
+    page.getByRole('link', { name: '從 Wall 底板開始' }),
   ).toHaveAttribute('href', '/zh-Hant/cad/opengrid?system=wall')
   await expect(
-    page.getByAltText('OpenGrid Desk System Board 底板預覽'),
+    page.getByAltText('OpenGrid 桌面收納組合：底板搭配方盒、淺盒與圓盒'),
   ).toBeVisible()
   await expectStaticHomepage(page, runtimeObservation)
 })
@@ -781,7 +747,7 @@ test('English homepage uses localized promotional content and routes', async ({
   )
   await expect(
     page.getByRole('heading', {
-      name: /Desk messy\?\s*Pick a model, tweak it\s*print it\./,
+      name: /Make room\s*for your kind of space\./,
     }),
   ).toBeVisible()
   await expect(page.getByTestId('home-badge-free-forever')).toBeVisible()
@@ -793,21 +759,23 @@ test('English homepage uses localized promotional content and routes', async ({
   await expect(page.getByText('HSW')).toHaveCount(0)
   await expectHomepageExploreCards(page)
   await expect(
-    page.getByRole('link', { name: 'Browse models →' }),
+    page.getByRole('link', { name: 'Browse models' }),
   ).toHaveAttribute('href', '/en/models')
   await expect(
     page.getByRole('link', {
-      name: 'Not sure where to start? Try the Desk System →',
+      name: 'Start with a Desk board',
     }),
   ).toHaveAttribute('href', '/en/cad/opengrid?system=desk')
   await expect(
-    page.getByRole('link', { name: 'See how it works' }),
+    page.getByRole('link', { name: 'Assembly guide' }),
   ).toHaveAttribute('href', '/en/docs/')
   await expect(
-    page.getByRole('link', { name: 'Try Wall System →' }),
+    page.getByRole('link', { name: 'Start with a Wall board' }),
   ).toHaveAttribute('href', '/en/cad/opengrid?system=wall')
   await expect(
-    page.getByAltText('OpenGrid Desk System Board preview'),
+    page.getByAltText(
+      'OpenGrid desk storage: a board with grid boxes, shallow trays and a round box',
+    ),
   ).toBeVisible()
   await expectStaticHomepage(page, runtimeObservation)
 })
@@ -817,7 +785,7 @@ test('localized homepage keeps Desk and Wall explore cards aligned', async ({
 }) => {
   const viewportCases = [
     { width: 1440, height: 900, stacked: true, split: false },
-    { width: 900, height: 900, stacked: false, split: true },
+    { width: 900, height: 900, stacked: true, split: false },
     { width: 390, height: 844, stacked: true, split: false },
   ]
 
@@ -841,17 +809,17 @@ test('localized homepage keeps Desk and Wall explore cards aligned', async ({
   }
 })
 
-test('localized homepage final CTA remains readable in both color schemes', async ({
+test('localized homepage primary CTA remains readable in both color schemes', async ({
   page,
 }) => {
   const homepageCtaCases = [
     {
       path: '/zh-Hant/',
-      name: '贊助方式',
+      name: '開始挑模型',
     },
     {
       path: '/en/',
-      name: 'Support options',
+      name: 'Browse models',
     },
   ] as const
 
@@ -862,7 +830,9 @@ test('localized homepage final CTA remains readable in both color schemes', asyn
 
     for (const homepage of homepageCtaCases) {
       await page.goto(homepage.path)
-      const cta = page.getByTestId('home-final-cta')
+      const cta = page
+        .getByTestId('home-hero')
+        .getByRole('link', { name: homepage.name })
 
       await expect(cta).toContainText(homepage.name)
       await cta.focus()

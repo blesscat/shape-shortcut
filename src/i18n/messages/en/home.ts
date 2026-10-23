@@ -1,74 +1,11 @@
-// English messages. Keys must mirror zh-Hant; parity is enforced in ./index.ts via the mapped type.
-// Domain: home
-
 export const messages = {
   'home.metaTitle': 'Shape Shortcut | OpenGrid customizer — tweak it, print it',
   'home.metaDescription':
     'Shape Shortcut is a no-install, browser-based CAD tool: pick an OpenGrid storage model, dial in the size, preview it live, and download the STL — no software to install, no cost.',
-  'home.title': 'Desk messy? Pick a model, tweak it\nprint it.',
-  'home.description':
-    'Shape Shortcut is a no-install, browser-based CAD tool. Pick an OpenGrid storage model, dial in the size, preview it live, and download — everything runs in your browser.',
-  'home.primaryCta': 'Browse models →',
-  'home.secondaryCta': 'See how it works',
-  'home.heroNote': 'Not sure where to start? Try the Desk System →',
-  'home.heroVisual.boardAlt': 'OpenGrid Desk System Board preview',
-  'home.heroVisual.caption':
-    'Follow your feel, print your way — move a parameter and the preview keeps up.',
-  'home.features': 'What this tool does',
-  'home.capabilities.title':
-    'Four little things that add up to one smooth path',
-  'home.feature.browser.title': 'Nothing to install',
-  'home.feature.browser.description':
-    'Open a web page and start tweaking; keep your desktop for the important stuff.',
-  'home.feature.parameters.title': 'Tweak whatever you like',
-  'home.feature.parameters.description':
-    'Every model has its own sizes and options, checked for you in real time.',
-  'home.feature.preview.title': 'See changes instantly',
-  'home.feature.preview.description':
-    'Move a slider and the 3D preview follows. Look first, print later.',
-  'home.feature.export.title': 'Download and print',
-  'home.feature.export.description':
-    'STL prints as-is; Wall Cover, the label card, and more also come as dual-color 3MF.',
-  'home.desk.eyebrow': 'Start with one Board',
-  'home.desk.title': 'Four steps to your own desk system',
-  'home.desk.description':
-    'To fix a box’s position, lay the Board, add Snap, pick one locating style, then install the matching box.',
-  'home.desk.flowAlt':
-    '3D Desk position fixing clip: a Board, four Snaps and an integrated-seat Grid Box.',
-  'home.desk.flowCaption':
-    'For position fixing: BOARD → SNAP → LOCATING → BOX. The clip shows the integrated-seat option.',
-  'home.desk.step.board.title': 'Lay down the Board',
-  'home.desk.step.board.description':
-    'It just sits on your desk; screws are optional.',
-  'home.desk.step.snap.title': 'Add a Snap',
-  'home.desk.step.snap.description': 'One Snap for every spot a box will sit.',
-  'home.desk.step.locating.title': 'Pick one locating style',
-  'home.desk.step.locating.description':
-    'Separate locking corners, or built-in ones on the box. Either works.',
-  'home.desk.step.container.title': 'Drop in a box, done',
-  'home.desk.step.container.description':
-    'Grid Box or Round Box, place and go.',
-  'home.desk.docsCta': 'Read the full guide',
-  'home.explore.eyebrow': 'Two routes',
-  'home.explore.title': 'Desk, or wall?',
-  'home.explore.desk.title': 'OpenGrid Desk',
-  'home.explore.desk.description':
-    "The desk person's friend: a Board, some Snaps, a few adjustable boxes, and the desk sorts itself out.",
-  'home.explore.desk.cta': 'Try Desk System →',
-  'home.explore.desk.alt': 'OpenGrid Desk System Board and container preview',
   'home.explore.desk.categorySummary':
     'Board and Snap are your base. Pick the containers you like first — tools are tucked away below.',
-  'home.explore.wall.title': 'OpenGrid Wall',
-  'home.explore.wall.description':
-    'For wall people: Board + Snap go up, and Wall Cover, the label card, and more print in two colors.',
-  'home.explore.wall.cta': 'Try Wall System →',
-  'home.explore.wall.alt': 'OpenGrid Wall Board preview',
   'home.explore.wall.categorySummary':
     'The wall board and Snap are your base. Shelves, organizers, and the tissue box are containers; tools stay tucked below.',
-  'home.final.title': 'Found it useful? Buy it a coffee.',
-  'home.final.description':
-    'Pick a model, tune it, print it. If this project helped, one coffee keeps it growing.',
-  'home.final.cta': 'Support options',
   'home.maker.eyebrow': 'About the project',
   'home.maker.title': 'Keeping good 3D-printing tools in one drawer',
   'home.maker.body':
@@ -82,10 +19,44 @@ export const messages = {
   'home.badge.noInstall': 'No install',
   'home.badge.inBrowser': 'Runs in your browser',
   'home.badge.freeForever': 'Downloads free, forever',
-  'home.capabilities.description':
-    'From having an idea to holding a printable file — no tool switching along the way.',
-  'home.fileCard.whereLabel': 'Where it runs',
-  'home.fileCard.whereValue': 'Your browser',
-  'home.fileCard.downloadLabel': 'What you get',
   'home.fileCard.downloadValue': 'STL · dual-color 3MF on select models',
+  'home.title': 'Make room',
+  'home.titleAccent': 'for your kind of space.',
+  'home.description':
+    'Pick an OpenGrid storage model with Shape Shortcut. Adjust its size in your browser, preview the shape, and download a file to print yourself.',
+  'home.primaryCta': 'Browse models',
+  'home.secondaryCta': 'Assembly guide',
+  'home.heroVisual.alt':
+    'OpenGrid desk storage: a board with grid boxes, shallow trays and a round box',
+  'home.heroVisual.caption': 'A little order starts here.',
+  'home.explore.eyebrow': 'Find your starting point',
+  'home.explore.title': 'On your desk. Or up on the wall.',
+  'home.explore.desk.label': 'DESK STORAGE',
+  'home.explore.desk.title': 'OpenGrid Desk',
+  'home.explore.desk.description':
+    'Give stationery and small things a place of their own, sized for the space on your desk.',
+  'home.explore.desk.alt':
+    'An OpenGrid Desk board with an arrangement of storage containers',
+  'home.explore.desk.cta': 'Start with a Desk board',
+  'home.explore.wall.label': 'WALL STORAGE',
+  'home.explore.wall.title': 'OpenGrid Wall',
+  'home.explore.wall.description':
+    'Bring storage to the wall with shelves, organizers and accessories, and free up your desktop.',
+  'home.explore.wall.alt':
+    'OpenGrid Wall storage: an upright board with round and rectangular organizers and two shelf sizes',
+  'home.explore.wall.cta': 'Start with a Wall board',
+  'home.workflow.title': 'From an idea to a print, in three steps.',
+  'home.workflow.choose.title': 'Pick a model',
+  'home.workflow.choose.description':
+    'Start with what you need: a board, a container or an accessory.',
+  'home.workflow.adjust.title': 'Make it fit',
+  'home.workflow.adjust.description':
+    'Adjust the parameters in your browser and check the shape and size in the 3D preview.',
+  'home.workflow.download.title': 'Download, then print',
+  'home.workflow.download.description':
+    'Download an STL for your slicer. Select models also offer dual-color 3MF.',
+  'home.guide.title': 'New to OpenGrid?',
+  'home.guide.description':
+    'Start with one board and one box. Follow the illustrated assembly guide to build your first desk setup.',
+  'home.guide.cta': 'Follow the guide',
 }

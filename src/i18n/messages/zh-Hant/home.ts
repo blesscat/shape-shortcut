@@ -1,73 +1,11 @@
-// zh-Hant messages (reference locale). Values unchanged from the pre-split combined file.
-// Domain: home
-
 export const messages = {
   'home.metaTitle': 'Shape Shortcut｜OpenGrid 模型客製化，調一調就能印',
   'home.metaDescription':
     'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：挑一個 OpenGrid 收納模型，調好尺寸、即時預覽、直接下載 STL——不用裝軟體，也不用花錢。',
-  'home.title': '桌面好亂？挑個模型調一調\n列印出來就對了。',
-  'home.description':
-    'Shape Shortcut 是免安裝的瀏覽器 CAD 工具：挑一個 OpenGrid 收納模型，調好尺寸、即時預覽、直接下載——不用裝軟體，也不用花錢。',
-  'home.primaryCta': '來挑模型 →',
-  'home.secondaryCta': '先看看怎麼玩',
-  'home.heroNote': '不知道從哪開始？從 Desk System 開始玩 →',
-  'home.heroVisual.boardAlt': 'OpenGrid Desk System Board 底板預覽',
-  'home.heroVisual.caption': '跟著感覺調，跟著感覺印——參數一動，預覽就跟上。',
-  'home.features': '這個工具能做什麼',
-  'home.capabilities.title': '四件小事，湊成一條順手的路',
-  'home.feature.browser.title': '不用裝任何軟體',
-  'home.feature.browser.description':
-    '打開網頁就能開始調模型，桌面空間留給真正重要的事。',
-  'home.feature.parameters.title': '想改哪裡就改哪裡',
-  'home.feature.parameters.description':
-    '每個模型都有自己的尺寸與選項，還會即時幫你檢查合理不合理。',
-  'home.feature.preview.title': '改了馬上看',
-  'home.feature.preview.description':
-    '參數一動，3D 預覽就跟著變——先看順眼，再決定要不要印。',
-  'home.feature.export.title': '下載就印',
-  'home.feature.export.description':
-    'STL 拿去就能印；Wall Cover、標籤卡等多個模型還有雙色 3MF，多色直接開印。',
-  'home.desk.eyebrow': '從一塊 Board 開始',
-  'home.desk.title': '四步驟，組出你的桌面系統',
-  'home.desk.description':
-    '需要固定盒子的位置時，先放好 Board，再加裝 Snap，選一種定位方式，最後安裝對應的盒子。',
-  'home.desk.flowAlt':
-    '桌面固定位置 3D 組裝短片：Board、四個 Snap，以及內建角座的 Grid Box。',
-  'home.desk.flowCaption':
-    '固定位置：BOARD → SNAP → 定位方式 → 盒子。短片示範內建角座版本。',
-  'home.desk.step.board.title': '放好 Board',
-  'home.desk.step.board.description':
-    '列印完直接放桌面就好，不鎖螺絲也穩；想更牢再用板上的螺絲孔，隨你。',
-  'home.desk.step.snap.title': '準備 Snap',
-  'home.desk.step.snap.description':
-    '每個要放盒子的格子，配一個對應的 Snap，讓盒子站得穩穩的。',
-  'home.desk.step.locating.title': '挑一種定位方式',
-  'home.desk.step.locating.description':
-    '獨立鎖定角座，或盒子內建角座——二選一，喜歡哪個用哪個。',
-  'home.desk.step.container.title': '放上盒子，完成',
-  'home.desk.step.container.description':
-    'Grid Box 或 Round Box 往上一放，桌面系統就緒。',
-  'home.desk.docsCta': '想看更詳細的教學',
-  'home.explore.eyebrow': '兩條路線',
-  'home.explore.title': '收納要放桌上，還是掛上牆？',
-  'home.explore.desk.title': 'OpenGrid Desk',
-  'home.explore.desk.description':
-    '桌面派的好朋友：Board、Snap 加幾個可調收納盒，書桌立刻整齊。',
-  'home.explore.desk.cta': '玩 Desk System →',
-  'home.explore.desk.alt': 'OpenGrid Desk System Board 與收納盒預覽',
   'home.explore.desk.categorySummary':
     '底版跟 Snap 是基礎，先挑喜歡的容器，小工具都收在下面。',
-  'home.explore.wall.title': 'OpenGrid Wall',
-  'home.explore.wall.description':
-    '牆面派看這邊：Board 配 Snap 掛上牆，Wall Cover、標籤卡等還能雙色列印。',
-  'home.explore.wall.cta': '玩 Wall System →',
-  'home.explore.wall.alt': 'OpenGrid Wall Board 底板預覽',
   'home.explore.wall.categorySummary':
     '底版和 Snap 是基礎，層架、方格、面紙盒都是容器，小工具收在下面。',
-  'home.final.title': '覺得有用？請它喝杯咖啡',
-  'home.final.description':
-    '挑一個模型、調好參數、印出來——如果這個專案幫上了忙，一杯咖啡能讓它長得更好。',
-  'home.final.cta': '贊助方式',
   'home.maker.eyebrow': '關於這個專案',
   'home.maker.title': '把好用的 3D 列印工具，收在同一個抽屜',
   'home.maker.body':
@@ -81,10 +19,42 @@ export const messages = {
   'home.badge.noInstall': '免安裝',
   'home.badge.inBrowser': '瀏覽器裡算',
   'home.badge.freeForever': '下載永久免費',
-  'home.capabilities.description':
-    '從「有個想法」到「拿到能印的檔案」，中間不用換任何工具。',
-  'home.fileCard.whereLabel': '在哪裡算',
-  'home.fileCard.whereValue': '你的瀏覽器裡',
-  'home.fileCard.downloadLabel': '能下載什麼',
   'home.fileCard.downloadValue': 'STL · 部分模型雙色 3MF',
+  'home.title': '讓收納，',
+  'home.titleAccent': '剛好適合你的空間。',
+  'home.description':
+    '用 Shape Shortcut 挑選 OpenGrid 收納模型，在瀏覽器調整尺寸、預覽外型，再下載檔案自行列印。',
+  'home.primaryCta': '開始挑模型',
+  'home.secondaryCta': '查看組裝教學',
+  'home.heroVisual.alt': 'OpenGrid 桌面收納組合：底板搭配方盒、淺盒與圓盒',
+  'home.heroVisual.caption': '從一個角落，開始整理。',
+  'home.explore.eyebrow': '找到你的使用場景',
+  'home.explore.title': '放在桌上，或延伸到牆上。',
+  'home.explore.desk.label': '桌面收納',
+  'home.explore.desk.title': 'OpenGrid Desk',
+  'home.explore.desk.description':
+    '讓文具、小物各有位置，依照桌面空間調整收納尺寸。',
+  'home.explore.desk.alt': 'OpenGrid Desk 底板與多種收納容器的完成組合',
+  'home.explore.desk.cta': '從 Desk 底板開始',
+  'home.explore.wall.label': '牆面收納',
+  'home.explore.wall.title': 'OpenGrid Wall',
+  'home.explore.wall.description':
+    '把收納延伸到牆上，搭配層架、方格與配件，留出更多桌面空間。',
+  'home.explore.wall.alt':
+    'OpenGrid Wall 收納組合：直立底板搭配圓孔收納、方格收納與大小層架',
+  'home.explore.wall.cta': '從 Wall 底板開始',
+  'home.workflow.title': '從想法到列印，只要三步。',
+  'home.workflow.choose.title': '挑一個模型',
+  'home.workflow.choose.description':
+    '從用途出發，找到適合你的底板、容器或配件。',
+  'home.workflow.adjust.title': '調成合適的尺寸',
+  'home.workflow.adjust.description':
+    '在瀏覽器調整參數，用 3D 預覽確認外型與尺寸。',
+  'home.workflow.download.title': '下載，準備列印',
+  'home.workflow.download.description':
+    '下載 STL，交給切片軟體準備列印；部分模型另提供雙色 3MF。',
+  'home.guide.title': '第一次接觸 OpenGrid？',
+  'home.guide.description':
+    '從一塊底板和一個盒子開始，跟著動畫圖解完成第一組桌面收納。',
+  'home.guide.cta': '跟著圖解開始',
 }

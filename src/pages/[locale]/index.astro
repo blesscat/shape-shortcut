@@ -5,10 +5,9 @@ import { Badge } from '../../components/starwind/badge'
 import { Button } from '../../components/starwind/button'
 import { Card } from '../../components/starwind/card'
 import ModelPreviewPicture from '../../components/ModelPreviewPicture.astro'
-import AssemblyVideo from '../../components/docs/AssemblyVideo.astro'
-import BrowserIcon from '@tabler/icons/outline/browser.svg'
+import LayoutGridIcon from '@tabler/icons/outline/layout-grid.svg'
 import AdjustmentsIcon from '@tabler/icons/outline/adjustments-horizontal.svg'
-import Rotate3dIcon from '@tabler/icons/outline/rotate-3d.svg'
+import ArrowRightIcon from '@tabler/icons/outline/arrow-right.svg'
 import DownloadIcon from '@tabler/icons/outline/download.svg'
 import BrandGithubIcon from '@tabler/icons/outline/brand-github.svg'
 import MailIcon from '@tabler/icons/outline/mail.svg'
@@ -35,33 +34,19 @@ const aboutPath = publicPathFor(locale, 'about')
 const inlineLinkClass =
   'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
 
-/* Presentational-only title treatment: highlight the action phrase and
-   stack the headline on two lines. Each locale's copy carries an explicit
-   newline where the headline should break, and the comma that the break
-   replaces is left out of the copy so no rendered line starts with
-   punctuation. */
-const homeTitleHtml = t('home.title')
-  .replace(
-    /(挑個模型調一調|Pick a model, tweak it)/,
-    '<span class="text-primary-strong dark:text-primary">$1</span>',
-  )
-  .replace(/\n/g, '<br />')
-
 const heroBadges = [
   { key: 'home.badge.noInstall', testid: 'home-badge-no-install' },
   { key: 'home.badge.inBrowser', testid: 'home-badge-in-browser' },
   { key: 'home.badge.freeForever', testid: 'home-badge-free-forever' },
 ] as const
-
-const fileCardRows = [
-  {
-    labelKey: 'home.fileCard.whereLabel',
-    valueKey: 'home.fileCard.whereValue',
-  },
-  {
-    labelKey: 'home.fileCard.downloadLabel',
-    valueKey: 'home.fileCard.downloadValue',
-  },
+const systems = [
+  { id: 'desk', href: deskBoardPath, number: '01' },
+  { id: 'wall', href: wallBoardPath, number: '02' },
+] as const
+const steps = [
+  { id: 'choose', Icon: LayoutGridIcon },
+  { id: 'adjust', Icon: AdjustmentsIcon },
+  { id: 'download', Icon: DownloadIcon },
 ] as const
 ---
 
@@ -70,13 +55,13 @@ const fileCardRows = [
   title={t('home.metaTitle')}
   description={t('home.metaDescription')}
 >
-  <div class="grid gap-24 lg:gap-32">
+  <div class="grid gap-16 lg:gap-24" data-testid="home-sections">
     <section
-      class="grid items-center gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-12"
+      class="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12"
       aria-labelledby="home-title"
       data-testid="home-hero"
     >
-      <div class="grid gap-5 lg:order-2">
+      <div class="grid gap-5">
         <ul
           class="m-0 flex list-none flex-wrap gap-2 p-0"
           data-testid="home-hero-badges"
@@ -98,11 +83,15 @@ const fileCardRows = [
           }
         </ul>
         <h1
-          class="m-0 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl"
+          class="m-0 text-4xl font-semibold leading-tight sm:text-5xl"
           id="home-title"
-          set:html={homeTitleHtml}
-        />
-        <p class="m-0 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+        >
+          {t('home.title')}<br /><span
+            class="text-primary-strong dark:text-primary"
+            >{t('home.titleAccent')}</span
+          >
+        </h1>
+        <p class="m-0 max-w-xl text-lg leading-relaxed text-muted-foreground">
           {t('home.description')}
         </p>
         <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -111,267 +100,54 @@ const fileCardRows = [
             href={modelsPath}
             variant="neon"
             size="lg"
-            class="w-full no-underline sm:w-auto"
+            class="no-underline">{t('home.primaryCta')}</Button
           >
-            {t('home.primaryCta')}
-          </Button>
           <Button
             as="a"
             href={docsPath}
             variant="outline"
             size="lg"
-            class="w-full border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10 sm:w-auto"
+            class="no-underline">{t('home.secondaryCta')}</Button
           >
-            {t('home.secondaryCta')}
-          </Button>
         </div>
-        <p class="m-0 text-sm leading-normal text-muted-foreground">
-          <a class={inlineLinkClass} href={deskBoardPath}
-            >{t('home.heroNote')}</a
-          >
+        <p
+          class="m-0 text-sm text-muted-foreground"
+          data-testid="home-file-card"
+        >
+          {t('home.fileCard.downloadValue')}
         </p>
-        <Card size="sm" class="grid gap-3 p-4" data-testid="home-file-card">
-          <dl class="m-0 grid gap-2.5">
-            {
-              fileCardRows.map((row) => (
-                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <dt class="font-mono text-sm font-semibold tracking-wide text-muted-foreground">
-                    {t(row.labelKey)}
-                  </dt>
-                  <dd class="m-0 text-right text-sm font-semibold text-foreground">
-                    {t(row.valueKey)}
-                  </dd>
-                </div>
-              ))
-            }
-          </dl>
-        </Card>
       </div>
-
       <figure
-        class="m-0 grid content-start gap-3 rounded-container p-3 lg:order-1"
+        class="m-0 overflow-hidden rounded-container border border-border bg-muted"
         data-testid="home-hero-visual"
       >
         <ModelPreviewPicture
-          class="aspect-[16/10] h-full w-full rounded-img border border-border bg-muted object-cover shadow-soft"
-          src="/model-previews/opengrid-desk.webp"
-          darkSrc="/model-previews/opengrid-desk-dark.webp"
-          width="640"
-          height="400"
+          class="block aspect-[3/2] h-auto w-full object-cover"
+          src="/home/desk.light.webp"
+          darkSrc="/home/desk.dark.webp"
+          width={1200}
+          height={800}
           loading="eager"
-          alt={t('home.heroVisual.boardAlt')}
+          alt={t('home.heroVisual.alt')}
         />
-        <figcaption class="text-sm leading-normal text-ink-faint">
-          {t('home.heroVisual.caption')}
+        <figcaption
+          class="flex flex-wrap items-center justify-between gap-2 px-5 py-4 text-sm text-muted-foreground"
+        >
+          <span class="font-semibold text-foreground">OpenGrid Desk</span><span
+            >{t('home.heroVisual.caption')}</span
+          >
         </figcaption>
       </figure>
     </section>
-
-    <section
-      class="grid gap-10"
-      aria-labelledby="home-capabilities-title"
-      data-testid="home-capabilities"
-    >
-      <header class="grid justify-items-center gap-2 text-center">
-        <p
-          class="m-0 font-mono text-sm font-semibold tracking-[0.12em] text-muted-foreground uppercase"
-        >
-          {t('home.features')}
-        </p>
-        <h2
-          class="m-0 text-3xl font-semibold leading-tight"
-          id="home-capabilities-title"
-        >
-          {t('home.capabilities.title')}
-        </h2>
-        <p class="m-0 max-w-2xl leading-relaxed text-muted-foreground">
-          {t('home.capabilities.description')}
-        </p>
-      </header>
-      <div
-        class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        aria-label={t('home.features')}
-      >
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <div class="flex items-center gap-2.5">
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-success/30 bg-success-soft text-success dark:text-success"
-            >
-              <BrowserIcon class="size-5" aria-hidden="true" />
-            </span>
-            <h3 class="m-0 text-lg font-semibold leading-tight">
-              {t('home.feature.browser.title')}
-            </h3>
-          </div>
-          <div class="h-px w-full bg-border" aria-hidden="true"></div>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('home.feature.browser.description')}
-          </p>
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <div class="flex items-center gap-2.5">
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-amber-600/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400"
-            >
-              <AdjustmentsIcon class="size-5" aria-hidden="true" />
-            </span>
-            <h3 class="m-0 text-lg font-semibold leading-tight">
-              {t('home.feature.parameters.title')}
-            </h3>
-          </div>
-          <div class="h-px w-full bg-border" aria-hidden="true"></div>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('home.feature.parameters.description')}
-          </p>
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <div class="flex items-center gap-2.5">
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary-strong dark:text-primary"
-            >
-              <Rotate3dIcon class="size-5" aria-hidden="true" />
-            </span>
-            <h3 class="m-0 text-lg font-semibold leading-tight">
-              {t('home.feature.preview.title')}
-            </h3>
-          </div>
-          <div class="h-px w-full bg-border" aria-hidden="true"></div>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('home.feature.preview.description')}
-          </p>
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <div class="flex items-center gap-2.5">
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary/10 text-primary"
-            >
-              <DownloadIcon class="size-5" aria-hidden="true" />
-            </span>
-            <h3 class="m-0 text-lg font-semibold leading-tight">
-              {t('home.feature.export.title')}
-            </h3>
-          </div>
-          <div class="h-px w-full bg-border" aria-hidden="true"></div>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('home.feature.export.description')}
-          </p>
-        </Card>
-      </div>
-    </section>
-
-    <Card
-      as="section"
-      class="grid gap-8 p-5 sm:p-8"
-      aria-labelledby="home-desk-title"
-      data-testid="home-desk-system"
-    >
-      <header class="grid justify-items-center gap-3 text-center">
-        <p
-          class="m-0 font-mono text-sm font-semibold tracking-[0.12em] text-primary-strong uppercase dark:text-primary"
-        >
-          {t('home.desk.eyebrow')}
-        </p>
-        <h2
-          class="m-0 text-3xl font-semibold leading-tight"
-          id="home-desk-title"
-        >
-          {t('home.desk.title')}
-        </h2>
-        <p class="m-0 max-w-3xl leading-relaxed text-muted-foreground">
-          {t('home.desk.description')}
-        </p>
-      </header>
-
-      <div class="grid gap-8">
-        <figure class="m-0 grid gap-3">
-          <AssemblyVideo
-            {locale}
-            scene="snap-fixing"
-            label={t('home.desk.flowAlt')}
-          />
-          <figcaption class="text-sm leading-normal text-ink-faint">
-            {t('home.desk.flowCaption')}
-          </figcaption>
-        </figure>
-
-        <div class="grid gap-5">
-          <ol class="m-0 grid gap-6 p-0 sm:grid-cols-2 lg:grid-cols-4">
-            <li class="grid justify-items-center gap-3 text-center">
-              <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
-                >1</span
-              >
-              <div class="grid gap-1">
-                <h3 class="m-0 font-semibold">
-                  {t('home.desk.step.board.title')}
-                </h3>
-                <p class="m-0 text-sm leading-normal text-muted-foreground">
-                  {t('home.desk.step.board.description')}
-                </p>
-              </div>
-            </li>
-            <li class="grid justify-items-center gap-3 text-center">
-              <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
-                >2</span
-              >
-              <div class="grid gap-1">
-                <h3 class="m-0 font-semibold">
-                  {t('home.desk.step.snap.title')}
-                </h3>
-                <p class="m-0 text-sm leading-normal text-muted-foreground">
-                  {t('home.desk.step.snap.description')}
-                </p>
-              </div>
-            </li>
-            <li class="grid justify-items-center gap-3 text-center">
-              <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-amber-400 font-semibold text-amber-700 dark:text-amber-400"
-                >3</span
-              >
-              <div class="grid gap-1">
-                <h3 class="m-0 font-semibold">
-                  {t('home.desk.step.locating.title')}
-                </h3>
-                <p class="m-0 text-sm leading-normal text-muted-foreground">
-                  {t('home.desk.step.locating.description')}
-                </p>
-              </div>
-            </li>
-            <li class="grid justify-items-center gap-3 text-center">
-              <span
-                class="grid size-10 shrink-0 place-items-center rounded-full border-2 border-primary font-semibold text-primary-strong dark:text-primary"
-                >4</span
-              >
-              <div class="grid gap-1">
-                <h3 class="m-0 font-semibold">
-                  {t('home.desk.step.container.title')}
-                </h3>
-                <p class="m-0 text-sm leading-normal text-muted-foreground">
-                  {t('home.desk.step.container.description')}
-                </p>
-              </div>
-            </li>
-          </ol>
-          <Button
-            as="a"
-            href={docsPath}
-            variant="outline"
-            class="justify-self-center no-underline"
-            >{t('home.desk.docsCta')}</Button
-          >
-        </div>
-      </div>
-    </Card>
 
     <section
       class="grid gap-6"
       aria-labelledby="home-explore-title"
       data-testid="home-explore"
     >
-      <header class="grid justify-items-center gap-2 text-center">
+      <header class="grid gap-2">
         <p
-          class="m-0 font-mono text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+          class="m-0 text-sm font-semibold text-primary-strong dark:text-primary"
         >
           {t('home.explore.eyebrow')}
         </p>
@@ -383,85 +159,119 @@ const fileCardRows = [
         </h2>
       </header>
       <div class="grid gap-6 md:grid-cols-2">
-        <Card
-          as="article"
-          class="grid gap-4 p-4 sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
-        >
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-desk.webp"
-            darkSrc="/model-previews/opengrid-desk-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('home.explore.desk.alt')}
-          />
-          <div class="grid gap-2">
-            <h3 class="m-0 text-xl font-semibold leading-tight">
-              {t('home.explore.desk.title')}
-            </h3>
-            <p class="m-0 text-sm leading-normal text-muted-foreground">
-              {t('home.explore.desk.description')}
-            </p>
-            <p
-              class="m-0 text-sm leading-normal text-ink-faint"
-              data-testid="home-explore-desk-category-summary"
+        {
+          systems.map((system) => (
+            <Card
+              as="article"
+              class="grid content-start gap-0 overflow-hidden p-0"
             >
-              {t('home.explore.desk.categorySummary')}
-            </p>
-            <a class={inlineLinkClass} href={deskBoardPath}
-              >{t('home.explore.desk.cta')}</a
-            >
-          </div>
-        </Card>
-        <Card
-          as="article"
-          class="grid gap-4 p-4 sm:grid-cols-[minmax(9rem,0.85fr)_minmax(0,1.15fr)] sm:items-center lg:grid-cols-1"
-        >
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-wall.webp"
-            darkSrc="/model-previews/opengrid-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('home.explore.wall.alt')}
-          />
-          <div class="grid gap-2">
-            <h3 class="m-0 text-xl font-semibold leading-tight">
-              {t('home.explore.wall.title')}
-            </h3>
-            <p class="m-0 text-sm leading-normal text-muted-foreground">
-              {t('home.explore.wall.description')}
-            </p>
-            <p
-              class="m-0 text-sm leading-normal text-ink-faint"
-              data-testid="home-explore-wall-category-summary"
-            >
-              {t('home.explore.wall.categorySummary')}
-            </p>
-            <a class={inlineLinkClass} href={wallBoardPath}
-              >{t('home.explore.wall.cta')}</a
-            >
-          </div>
-        </Card>
+              <ModelPreviewPicture
+                class="block aspect-[3/2] h-auto w-full object-cover"
+                src={`/home/${system.id}.light.webp`}
+                darkSrc={`/home/${system.id}.dark.webp`}
+                width={1200}
+                height={800}
+                alt={t(`home.explore.${system.id}.alt`)}
+              />
+              <div class="grid gap-3 p-5 sm:p-6">
+                <p class="m-0 font-mono text-sm text-muted-foreground">
+                  {system.number} / {t(`home.explore.${system.id}.label`)}
+                </p>
+                <h3 class="m-0 text-2xl font-semibold">
+                  {t(`home.explore.${system.id}.title`)}
+                </h3>
+                <p class="m-0 leading-relaxed text-muted-foreground">
+                  {t(`home.explore.${system.id}.description`)}
+                </p>
+                <p
+                  class="m-0 text-sm leading-relaxed text-muted-foreground"
+                  data-testid={`home-explore-${system.id}-category-summary`}
+                >
+                  {t(`home.explore.${system.id}.categorySummary`)}
+                </p>
+                <a
+                  class={`inline-flex min-h-11 items-center gap-2 justify-self-start ${inlineLinkClass}`}
+                  href={system.href}
+                >
+                  {t(`home.explore.${system.id}.cta`)}
+                  <ArrowRightIcon class="size-4" aria-hidden="true" />
+                </a>
+              </div>
+            </Card>
+          ))
+        }
       </div>
     </section>
 
+    <section
+      class="grid gap-8"
+      aria-labelledby="home-workflow-title"
+      data-testid="home-workflow"
+    >
+      <h2
+        class="m-0 text-3xl font-semibold leading-tight"
+        id="home-workflow-title"
+      >
+        {t('home.workflow.title')}
+      </h2>
+      <ol class="m-0 grid list-none gap-8 p-0 md:grid-cols-3">
+        {
+          steps.map(({ id, Icon }, index) => (
+            <li class="grid content-start gap-3 border-t border-border pt-5">
+              <div class="flex items-center justify-between text-primary-strong dark:text-primary">
+                <>
+                  <Icon class="size-6" aria-hidden="true" />
+                  <span class="font-mono text-sm">0{index + 1}</span>
+                </>
+              </div>
+              <h3 class="m-0 text-xl font-semibold">
+                {t(`home.workflow.${id}.title`)}
+              </h3>
+              <p class="m-0 leading-relaxed text-muted-foreground">
+                {t(`home.workflow.${id}.description`)}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section
+      class="grid items-center gap-5 rounded-container bg-muted p-6 sm:p-8 md:grid-cols-[1fr_auto]"
+      aria-labelledby="home-guide-title"
+      data-testid="home-guide"
+    >
+      <div class="grid gap-2">
+        <h2 class="m-0 text-2xl font-semibold" id="home-guide-title">
+          {t('home.guide.title')}
+        </h2>
+        <p class="m-0 max-w-2xl leading-relaxed text-muted-foreground">
+          {t('home.guide.description')}
+        </p>
+      </div>
+      <Button
+        as="a"
+        href={`${docsPath}#assembly-direct-placement-align`}
+        variant="outline"
+        class="justify-self-start no-underline">{t('home.guide.cta')}</Button
+      >
+    </section>
     <Card
       as="section"
       class="grid gap-6 p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:p-8"
       aria-labelledby="home-maker-title"
       data-testid="home-maker"
     >
-      <img
-        class="mx-auto aspect-square w-24 rounded-2xl border border-border bg-muted object-cover sm:mx-0 sm:w-28"
-        src="/about/blesscat.png"
-        width="640"
-        height="640"
-        loading="lazy"
-        alt={t('home.maker.portraitAlt')}
-      />
+      <div>
+        <img
+          class="mx-auto aspect-square w-24 rounded-2xl border border-border bg-muted object-cover sm:mx-0 sm:w-28"
+          src="/about/blesscat.png"
+          width="640"
+          height="640"
+          loading="lazy"
+          alt={t('home.maker.portraitAlt')}
+        />
+      </div>
       <div class="grid gap-4">
         <p
           class="m-0 font-mono text-sm font-semibold tracking-[0.12em] text-primary-strong uppercase dark:text-primary"
@@ -486,7 +296,7 @@ const fileCardRows = [
             href={aboutPath}
             variant="outline"
             size="sm"
-            class="border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10"
+            class="min-h-11 border-primary-strong/60 bg-transparent text-primary-strong hover:bg-primary-strong/5 hover:text-primary-strong no-underline dark:border-primary/60 dark:bg-transparent dark:text-primary dark:hover:bg-primary/10"
           >
             {t('home.maker.aboutCta')}
           </Button>
@@ -510,9 +320,9 @@ const fileCardRows = [
             supportProviders.length > 0 && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="neon"
                 size="sm"
-                class={`inline-flex min-h-11 items-center rounded-none px-0 text-left hover:bg-transparent ${inlineLinkClass}`}
+                class="min-h-11 no-underline"
                 data-support-dialog-open
                 data-testid="home-maker-support-trigger"
                 aria-controls="support-dialog"
@@ -524,51 +334,6 @@ const fileCardRows = [
           }
         </div>
       </div>
-    </Card>
-
-    <Card
-      as="section"
-      class="grid gap-4 bg-banner p-6 text-banner-foreground ring-0 sm:p-8"
-      aria-labelledby="home-final-title"
-    >
-      <h2
-        class="m-0 text-3xl font-semibold leading-tight"
-        id="home-final-title"
-      >
-        {t('home.final.title')}
-      </h2>
-      <p class="m-0 max-w-2xl leading-relaxed text-banner-foreground/85">
-        {t('home.final.description')}
-      </p>
-      <p class="m-0">
-        {
-          supportProviders.length > 0 ? (
-            <Button
-              type="button"
-              variant="neon"
-              size="lg"
-              class="no-underline"
-              data-support-dialog-open
-              data-testid="home-final-cta"
-              aria-controls="support-dialog"
-              aria-haspopup="dialog"
-            >
-              {t('home.final.cta')}
-            </Button>
-          ) : (
-            <Button
-              as="a"
-              href={aboutPath}
-              variant="neon"
-              size="lg"
-              class="no-underline"
-              data-testid="home-final-cta"
-            >
-              {t('home.final.cta')}
-            </Button>
-          )
-        }
-      </p>
     </Card>
   </div>
 </SiteLayout>

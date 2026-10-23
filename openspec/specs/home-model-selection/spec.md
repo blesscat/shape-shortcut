@@ -465,8 +465,7 @@ Box, MUST remain available with their existing model IDs and routes.
 The localized product homepage MUST present Shape Shortcut as a browser CAD
 product before presenting any single model system. It MUST explain browser-based
 parameter editing, live 3D preview, and CAD export, provide a clear primary entry
-into the localized model chooser, and retain the Desk workflow as a featured
-example. The homepage MUST also expose static starting points for Desk System,
+into the localized model chooser, and retain a compact Desk assembly guide entry. The homepage MUST also expose static starting points for Desk System,
 Wall System without rendering the full model chooser or a promotional card for
 standalone models.
 
@@ -492,8 +491,7 @@ standalone models.
 #### Scenario: Featured Desk workflow remains discoverable
 
 - **WHEN** a visitor continues below the product Hero
-- **THEN** the page MUST expose the existing Desk System workflow as a featured
-  example with a localized documentation link
+- **THEN** the page MUST expose a concise Desk System guide invitation with a localized documentation link instead of repeating assembly steps
 - **AND** the workflow MUST preserve the existing `system=desk` route context
 
 #### Scenario: Promotional content is localized and accessible
@@ -505,6 +503,13 @@ standalone models.
   or equivalent visible text
 - **AND** homepage links MUST preserve the existing locale route, model ID,
   `system=desk|wall` context, and query-string behavior
+
+#### Scenario: Visitors find a starting point before detailed explanations
+- **WHEN** a visitor reads either localized homepage
+- **THEN** sections MUST appear in this order: product hero, Desk/Wall starting points, three-step tool workflow, compact assembly guide entry, and consolidated maker/support section
+- **AND** the tool workflow MUST explain choosing a model, adjusting dimensions with a preview, and downloading for printing
+- **AND** the closing section MUST retain Prototype disclosure, author information, About and available support actions without a separate support banner
+- **AND** the homepage MUST contain no video player, movie request, assembly animation, CAD Worker, or WebGL canvas
 
 ### Requirement: Desk 與 Wall 起始卡片採用一致響應式排列
 
@@ -542,6 +547,13 @@ MUST not be the only source of the product explanation.
 - **THEN** the Hero visual, product copy, and primary CTA MUST remain available
 - **AND** no client-only CAD workspace or canvas MUST be required to understand
   the product entry flow
+
+#### Scenario: Static visuals show storage outcomes
+- **WHEN** a visitor views the hero or Desk/Wall starting points
+- **THEN** theme-aware static visuals MUST show actual printable CAD storage compositions rather than a lone board or movie poster
+- **AND** hero text MUST precede the visual on narrow screens and appear beside it on wide screens
+- **AND** images MUST have localized alternative text, reserved dimensions and remain usable without JavaScript
+- **AND** homepage visuals MUST be reproducible offline without loading a CAD runtime on the public page
 
 ### Requirement: 零件分類與分區呈現
 
