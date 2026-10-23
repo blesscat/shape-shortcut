@@ -6,7 +6,7 @@
 ## Requirements
 ### Requirement: Playground 場景與擺放
 
-The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and two independent placements — a desktop placement and a wall placement — each of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. In desktop orientation, an instance whose footprint overlaps other instances' footprints MUST automatically stack on top of them when the two instances' stacking interfaces are compatible — cylinders only on a cylinder of the same inner diameter, and stackable boxes and organizer boxes only when the upper instance's bottom interface and the lower instance's top interface are both in stacking mode; its rendered base Z in mm MUST equal the compatible supporting instance's stacking datum minus its seating drop — the interface engagement both mated pieces share, so seated pieces visually interlock and their interface height counts once — plus a small render gap; where several compatible instances overlap, the greatest resulting base Z wins, and an instance overlapping nothing MUST stay at Z=0. An overlapping pair whose stacking interfaces are incompatible MUST NOT stack: both instances stay at their current level and are flagged as a conflict per the grid occupancy requirement. All models without a stacking interface can neither receive nor seat pieces. Stacking Z MUST be derived state computed from instance order and model heights; it MUST NOT be authored per instance, and the scene MUST NOT offer a manual Z-offset input. The scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability. Instance array order MUST be the deterministic stacking order: re-importing a scene file MUST reproduce the same stacked Z for every instance.
+The system MUST provide a playground route that holds a scene of multiple component instances. Each instance MUST reference a registered `modelId` with parameters validated by that component's current definition, and two independent placements — a desktop placement and a wall placement — each of grid cell coordinates (`cellX`, `cellY`) plus a rotation in 90-degree steps. Grid cell coordinates MUST be unitless grid cells on the OpenGrid 28 mm pitch and MUST accept any integer value, including negative values. In desktop orientation, an instance whose footprint overlaps other instances' footprints MUST automatically stack on top of them when the two instances' stacking interfaces are compatible — cylinders only on a cylinder of the same inner diameter, and stackable boxes and organizer boxes only when the upper instance's bottom interface and the lower instance's top interface are both in stacking mode; its rendered base Z in mm MUST equal the compatible supporting instance's stacking datum minus its seating drop — the interface engagement both mated pieces share, so seated pieces visually interlock and their interface height counts once — plus a small render gap; where several compatible instances overlap, the greatest resulting base Z wins, and an instance overlapping nothing MUST stay at Z=0. An overlapping pair whose stacking interfaces are incompatible MUST NOT stack: both instances stay at their current level and are flagged as a conflict per the grid occupancy requirement. All models without a stacking interface can neither receive nor seat pieces. Stacking Z MUST be derived state computed from instance order and model heights; it MUST NOT be authored per instance, and the scene MUST NOT offer a manual Z-offset input. The scene data model MUST carry a `supportedBy` placement field reserved for future stacking that is always `null` in this capability. Instance array order MUST be the deterministic stacking order: instances added or duplicated later order after earlier ones, and a desktop drag commit MUST move the dragged instance to the end of the order per the drag stacking priority; re-importing a scene file MUST reproduce the same stacked Z for every instance from the file's instance order.
 
 The playground MUST offer desktop and wall scene orientations. In desktop orientation the grid plane is horizontal (footprint X/Y, height +Z). In wall orientation the grid is a vertical wall board: columns run along X, rows (`cellY`) run upward along +Z, and pieces mount onto the board with their protrusion toward +Y. Each orientation MUST render and edit only its own placement: the desktop orientation renders from the desktop placement and the wall orientation renders from the wall placement, and a placement edit in one orientation MUST NOT change the instance's position or rotation in the other. Automatic Z stacking and height-limit evaluation are desktop-orientation behaviors: wall orientation keeps every instance flush on the wall board, performs no Z stacking, and its occupancy and conflict rules stay two-dimensional — except that an overlapping pair whose desktop stacking interfaces are compatible remains conflict-free on the wall board, and instances the active orientation does not display never participate in occupancy, conflicts, or height evaluation.
 
@@ -33,7 +33,7 @@ A component whose authored geometry is in the flat print frame MUST declare a wa
 
 - **GIVEN** the desktop scene contains an instance whose footprint occupies grid cells
 - **WHEN** the user places another instance whose footprint overlaps those cells
-- **THEN** the placement MUST be applied and the new instance MUST render resting on the lower instance's top with a small fixed clearance
+- **THEN** the placement MUST be applied and the later-ordered instance MUST render resting on the earlier-ordered instance's top with a small fixed clearance
 - **AND** no conflict color or overlap warning MUST appear for the stacked pair
 
 #### Scenario: Stack order is deterministic across re-import
@@ -152,9 +152,9 @@ Each playground instance MUST carry two independent placements: a desktop placem
 
 ### Requirement: Pointer drag placement
 
-The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update only the active orientation's placement — desktop drops write the desktop placement, wall drops write the wall placement — and the other orientation's placement MUST remain unchanged. Placement-only dragging MUST NOT request new CAD geometry.
+The playground MUST let a user move a ready proxy instance or pending placeholder by starting a primary-pointer drag on that rendered instance. During the drag, the candidate placement MUST follow the pointer on the active orientation's grid plane and snap to integer OpenGrid cells while preserving the instance's existing rotation. Desktop dragging MUST map to the X/Y placement plane, and wall dragging MUST map to the X/Z wall plane with world Z corresponding to `cellY`. A successful drop MUST update only the active orientation's placement — desktop drops write the desktop placement, wall drops write the wall placement — and the other orientation's placement MUST remain unchanged. A desktop drop MUST additionally apply the drag stacking priority: the dragged instance moves to the end of the instance order. Placement-only dragging MUST NOT request new CAD geometry.
 
-The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing a drag MUST commit the snapped candidate placement regardless of whether it overlaps another instance; a committed overlapping placement MUST be flagged with the conflict color and persistent warning instead of being reverted. Cancelling the pointer interaction MUST restore the original placement without committing the candidate.
+The playground MUST keep drag preview state transient until drop. It MUST visibly distinguish a candidate that passes occupancy validation from one that overlaps another instance. Releasing a drag MUST commit the snapped candidate placement regardless of whether it overlaps another instance; a committed overlapping placement MUST be flagged with the conflict color and persistent warning instead of being reverted. Cancelling the pointer interaction MUST restore the original placement without committing the candidate — a cancelled or restored drag MUST NOT change the instance order.
 
 Pointer gesture routing MUST depend on where the gesture starts. A primary-pointer drag that starts on an instance MUST manipulate that instance without orbiting or changing the persisted camera pose. A primary-pointer drag that starts on empty viewport space MUST retain the existing camera orbit behavior. A primary press and release on an instance without a drag MUST select it without moving it. For touch input, one contact that starts on an instance MUST move it, one contact that starts on empty space MUST orbit, and a second concurrent contact MUST cancel an active instance preview before the multi-touch camera gesture proceeds.
 
@@ -179,8 +179,9 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 #### Scenario: Drag pending placeholder
 
 - **GIVEN** an instance whose proxy mesh is still pending and whose placeholder is visible
-- **WHEN** the user drags and drops that placeholder
-- **THEN** the new snapped placement MUST be committed to the active orientation's placement
+- **WHEN** the user drags and drops that placeholder in desktop orientation
+- **THEN** the new snapped placement MUST be committed to the desktop placement
+- **AND** the dragged instance MUST move to the end of the instance order
 - **AND** the generated proxy MUST appear at that placement when generation completes
 
 #### Scenario: Overlapping drag commits with a warning
@@ -198,6 +199,7 @@ Pointer gesture routing MUST depend on where the gesture starts. A primary-point
 - **WHEN** the pointer interaction is cancelled or the active orientation changes
 - **THEN** the instance MUST return to its original placement
 - **AND** the candidate MUST NOT be written to the scene
+- **AND** the instance order MUST remain unchanged
 
 #### Scenario: Empty-space drag still orbits
 
@@ -768,3 +770,49 @@ playground-selectable components MUST NOT fall back to the generic
 - **WHEN** a `boxMode` validation issue is displayed in the zh-Hant locale
 - **THEN** the message MUST begin with the localized field name `盒體模式`
 - **AND** MUST NOT begin with the generic label `參數`
+
+### Requirement: Desktop drag stacking priority
+
+A desktop drag commit MUST make the dragged instance the uppermost piece of the derived stacking order by moving it to the end of the instance order, so that when its footprint overlaps compatible stacking supports it seats on them, and when several compatible supports overlap the greatest resulting seat height wins. The reorder MUST happen on every desktop drag commit, including drops that overlap nothing. Wall drops MUST NOT change the instance order. Dropping a piece that other instances currently rest on MUST re-derive the stacked Z of those instances at the drop — they settle onto the ground or the next best support — and re-dropping the piece at its previous position MUST NOT restore the previous stack. During the drag, only the dragged instance MUST preview its landing height, computed with the candidate evaluated last in the instance order; every other instance's stacked height MUST be re-derived only at the drop.
+
+#### Scenario: Dragged piece lands on top regardless of prior order
+
+- **GIVEN** the desktop scene contains an earlier-added stackable box and a later-added compatible piece that overlap nothing
+- **WHEN** the user drags the earlier-added box onto the later-added piece's cells and releases
+- **THEN** the dragged box MUST become the upper piece and render seated on the other piece's stacking datum with the fixed clearance
+- **AND** the other piece MUST remain at its current height
+
+#### Scenario: Dragging a mid-stack piece drops the upper stack
+
+- **GIVEN** three desktop instances stacked in one footprint, with the middle piece dragged
+- **WHEN** the user drops the middle piece on a target whose footprint overlaps the bottom piece
+- **THEN** the dragged piece MUST seat on the highest compatible support remaining in the target footprint, because it is derived last
+- **AND** the piece that previously rested on the middle piece MUST re-derive at the drop and settle onto the ground or the next best support
+- **AND** re-dropping the middle piece at its original cells MUST NOT restore the piece onto it
+
+#### Scenario: Non-overlapping drop still moves the stacking order
+
+- **GIVEN** a desktop instance dragged to empty cells that overlap nothing
+- **WHEN** the drag commits
+- **THEN** the instance MUST move to the end of the instance order
+- **AND** its stacked base Z MUST remain ground level
+
+#### Scenario: Incompatible overlap still flags after the reorder
+
+- **GIVEN** two desktop instances whose stacking interfaces are incompatible
+- **WHEN** the user drags one onto the other's cells and releases
+- **THEN** the dragged instance MUST move to the end of the instance order
+- **AND** both instances MUST stay at ground level and render with the conflict color with the persistent warning
+
+#### Scenario: Wall drop keeps the instance order
+
+- **GIVEN** the scene is in wall orientation with at least two instances
+- **WHEN** the user drags one instance across the wall plane and releases
+- **THEN** the instance order MUST remain unchanged
+
+#### Scenario: Drag preview matches the committed landing height
+
+- **GIVEN** a desktop drag over a compatible support's cells
+- **WHEN** the candidate placement is previewed during the drag
+- **THEN** the dragged instance MUST render at the seat height it will have after the drop
+- **AND** the preview height MUST equal the committed stacked base Z for the same candidate
