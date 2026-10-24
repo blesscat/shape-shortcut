@@ -13,6 +13,7 @@ import {
 import { buildCardBox } from '../../src/cad-kernel/components/card-box/builder'
 import { buildCardBoxDivider } from '../../src/cad-kernel/components/card-box/divider'
 import { buildCardBoxCover } from '../../src/cad-kernel/components/card-box/cover'
+import { cardBoxDefinition } from '../../src/features/cad/model-catalog/components/card-box'
 import { countSolids } from '../../src/cad-kernel/shape-query/solids'
 import {
   CARD_BOX_CONFIGURATION,
@@ -67,9 +68,9 @@ async function deleteBuild(build: {
 }
 
 describe('card-box part builds at the parameter boundaries', () => {
-  for (const [label, cardWidth, cardHeight, storageDepth, coverTitle] of [
-    ['min', 40, 60, 20, ''],
-    ['max', 100, 150, 150, CARD_BOX_CONFIGURATION.defaultCoverTitle],
+  for (const [label, cardWidth, cardHeight, storageDepth] of [
+    ['min', 40, 60, 20],
+    ['max', 100, 150, 150],
   ] as const) {
     it(`builds all four parts at ${label} dimensions (${cardWidth}×${cardHeight}×${storageDepth})`, async () => {
       for (const part of ['box', 'lid', 'divider', 'cover'] as const) {
@@ -79,9 +80,6 @@ describe('card-box part builds at the parameter boundaries', () => {
             cardWidth,
             cardHeight,
             storageDepth,
-            // The default title legitimately exceeds the min cover safe
-            // area (errors never shrink art), so the min build runs blank.
-            coverTitle,
           }),
         )
         try {
@@ -96,6 +94,26 @@ describe('card-box part builds at the parameter boundaries', () => {
         }
       }
     })
+  }
+})
+
+describe('card-box card-size presets build with default parameters', () => {
+  for (const preset of cardBoxDefinition.presets ?? []) {
+    for (const part of ['assembly', 'cover'] as const) {
+      it(`builds ${part} for preset ${preset.id}`, async () => {
+        const build = await buildCardBox(
+          parameters({
+            ...(preset.overrides as Partial<CardBoxParameters>),
+            part,
+          }),
+        )
+        try {
+          expect(measureVolume(build.shape)).toBeGreaterThan(0)
+        } finally {
+          await deleteBuild(build)
+        }
+      })
+    }
   }
 })
 

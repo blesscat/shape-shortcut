@@ -302,12 +302,17 @@ card-box MUST 為每一個零件選擇提供同步簡化預覽：assembly（中�
 
 ### Requirement: 參數邊界建構
 
-四個零件 MUST 在參數範圍邊界都能成功建構：最小（40 × 60 × 20）與最大（100 × 150 × 150）皆 MUST 無錯誤完成生成。封面片的邊界建構以無圖稿組態（空標題、空副標題、無 SVG）驗證：預設標題在最小尺寸會超出安全區並回報錯誤，此為「錯誤優先於縮圖」的預期行為（見封面片幾何與版面）。
+四個零件 MUST 在參數範圍邊界都能成功建構：最小（40 × 60 × 20）與最大（100 × 150 × 150）皆 MUST 以預設參數（含預設標題「CARDS」，預設標題文字高度 6 mm）無錯誤完成生成。預設標題 MUST 能放入最小卡寬的封面安全區。
 
 #### Scenario: 最小尺寸建構成功
 
-- **WHEN** cardWidth=40、cardHeight=60、storageDepth=20 時依序建構 box、lid、divider、cover（封面以無圖稿組態）
+- **WHEN** cardWidth=40、cardHeight=60、storageDepth=20 時依序建構 box、lid、divider、cover（皆使用預設參數）
 - **THEN** 每個零件 MUST 成功產生有效幾何
+
+#### Scenario: 所有卡片尺寸預設皆可建構
+
+- **WHEN** 對七組卡片尺寸 preset 各自以預設參數疊合 overrides 建構 `assembly` 與 `cover`
+- **THEN** 每次建構 MUST 無錯誤完成
 
 #### Scenario: 最大尺寸建構成功
 
