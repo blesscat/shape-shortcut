@@ -149,7 +149,7 @@ function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
     shapes.push(
       makeBox(
         [-halfW, -(halfD + 0.9), lidZ],
-        [halfW, halfD + 0.9, lidZ + c.dividerSlotWidth * 1.8],
+        [halfW, halfD + 0.9, lidZ + c.lidRoofThickness],
       ) as Shape3D,
     )
   }
