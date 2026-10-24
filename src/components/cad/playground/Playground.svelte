@@ -168,7 +168,7 @@
 
 <svelte:window onkeydown={handleDeleteKeydown} />
 
-<div class="grid gap-4" data-testid="playground">
+<div class="playground grid gap-4" data-testid="playground">
   <header class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="m-0 break-words text-xl font-semibold leading-tight sm:text-2xl">
       {t('playground.title')}
@@ -346,7 +346,7 @@
     <div
       class={isNarrow
         ? 'relative min-w-0'
-        : 'grid min-w-0 items-start grid-cols-[minmax(240px,340px)_minmax(0,1fr)] gap-4'}
+        : 'playground-workspace grid min-w-0 items-start grid-cols-[minmax(240px,340px)_minmax(0,1fr)] gap-4'}
     >
       {#if !isNarrow}
         <PlaygroundSidebar
@@ -444,3 +444,24 @@
     </div>
   {/if}
 </div>
+
+<style>
+  /*
+   * Desktop: fill the page section. The toolbar and notices keep their
+   * natural height; the sidebar/viewport row grows into the rest and never
+   * shrinks below the floor the page provides.
+   */
+  @media (width > 760px) {
+    .playground {
+      display: flex;
+      flex-direction: column;
+      flex: 1 0 auto;
+      min-height: 0;
+    }
+    .playground-workspace {
+      flex: 1 0 var(--playground-workspace-min-height, 0px);
+      min-height: 0;
+      grid-template-rows: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -74,7 +74,7 @@
 
 <aside
   class={variant === 'panel'
-    ? 'grid max-h-[calc(100dvh-14rem)] gap-4 overflow-auto rounded-2xl border border-border-card bg-panel p-4'
+    ? 'grid max-h-full gap-4 overflow-auto rounded-2xl border border-border-card bg-panel p-4'
     : 'grid gap-4'}
   data-testid="playground-sidebar"
 >
