@@ -97,4 +97,7 @@ export const messages = {
   'parameter.openConnect': 'Remover hole',
   'parameter.openConnectHorizontalAlignment': 'Horizontal alignment',
   'parameter.openConnectVerticalAlignment': 'Vertical alignment',
+  'parameters.cardBoxCardWidth': 'Card width',
+  'parameters.cardBoxCardHeight': 'Card height',
+  'parameters.cardBoxStorageDepth': 'Storage depth',
 }

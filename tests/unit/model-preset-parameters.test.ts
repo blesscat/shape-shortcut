@@ -183,6 +183,7 @@ describe('catalog presets', () => {
     )
     expect(withPresets.map((definition) => definition.id)).toEqual([
       'opengrid-stackable-box',
+      'card-box',
     ])
   })
 })

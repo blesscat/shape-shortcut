@@ -7,6 +7,7 @@ import type {
   ModelPartMeshSnapshot,
 } from '../../../cad-contract/messages'
 import {
+  CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_CONFIGURATION,
@@ -118,6 +119,9 @@ function defaultParametersForModel(modelId: ModelId): ModelParameterValues {
     return { ...TISSUE_BOX_DEFAULTS }
   if (modelId === 'opengrid-openconnect-organizer') {
     return { ...OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS }
+  }
+  if (modelId === 'card-box') {
+    return { ...CARD_BOX_CONFIGURATION.defaultParameters }
   }
   throw new Error(`UNKNOWN_MODEL_ID:${modelId}`)
 }

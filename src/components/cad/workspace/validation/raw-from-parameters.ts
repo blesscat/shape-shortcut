@@ -32,6 +32,12 @@ export function rawFromParameters(
 ): RawParameters {
   if (Object.keys(parameters).length === 0) return {}
 
+  if ('cardWidth' in parameters) {
+    return Object.fromEntries(
+      Object.entries(parameters).map(([key, value]) => [key, String(value)]),
+    ) as RawParameters
+  }
+
   if ('slotLength' in parameters && 'outerRadius' in parameters) {
     const normalized = {
       ...parameters,

@@ -25,6 +25,7 @@ import {
   parseSeatModeRawParameter,
 } from '../raw-input-parsers'
 import { parseOpenGridDividerRawParameters } from './divider'
+import { parseCardBoxRawParameters } from './card-box'
 import { parseOpenGridLabelCardRawParameters } from './label-card'
 import { parseOpenGridOpenConnectOrganizerRawParameters } from './openconnect-organizer'
 import { parseOpenGridOrganizerBoxRawParameters } from './organizer-box'
@@ -123,6 +124,10 @@ export function parseRawParameters(
 
   if (modelId === 'opengrid-divider') {
     return parseOpenGridDividerRawParameters(raw)
+  }
+
+  if (modelId === 'card-box') {
+    return parseCardBoxRawParameters(raw)
   }
 
   const parsed: Partial<

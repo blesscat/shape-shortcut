@@ -123,6 +123,26 @@ export const OPENGRID_OPENCONNECT_ORGANIZER_PARAMETER_KEYS: ModelParameterKey[] 
 export function parameterKeysForModel(
   modelId: ModelId,
 ): readonly ModelParameterKey[] {
+  if (modelId === 'card-box') {
+    return [
+      'part',
+      'cardWidth',
+      'cardHeight',
+      'storageDepth',
+      'dividerTabPosition',
+      'dividerText',
+      'dividerStyle',
+      'coverTitle',
+      'coverTitleTextHeight',
+      'coverSubtitle',
+      'coverSubtitleTextHeight',
+      'coverSvgWidth',
+      'coverVerticalPosition',
+      'coverStyle',
+      'usesCoverSvg',
+      'coverSvgFingerprint',
+    ]
+  }
   if (modelId === 'box') return DIMENSION_KEYS
   if (modelId === 'modular-grid-base') return GRID_PARAMETER_KEYS
   if (modelId === 'hsw-cell') return GRID_PARAMETER_KEYS

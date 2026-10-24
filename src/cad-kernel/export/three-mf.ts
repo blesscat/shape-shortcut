@@ -91,6 +91,7 @@ export function threeMfMetaFor(
     | 'opengrid-wall-cover'
     | ContainerThreeMfModelId
     | 'opengrid-label-tag'
+    | 'card-box'
     | 'opengrid-label-card',
   fileName: string,
 ): ThreeMfPackageMeta {
@@ -114,6 +115,18 @@ export function threeMfMetaFor(
       baseMaterialName: 'Label Card Body',
       baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
       accentMaterialName: 'Label Card Accent',
+      accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
+      accentPartName: 'accent',
+    }
+  }
+  if (modelId === 'card-box') {
+    return {
+      modelSettingsName: 'card-box',
+      sourceFileName: fileName,
+      platerName: 'Card Box',
+      baseMaterialName: 'Card Box Body',
+      baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
+      accentMaterialName: 'Card Box Accent',
       accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
       accentPartName: 'accent',
     }

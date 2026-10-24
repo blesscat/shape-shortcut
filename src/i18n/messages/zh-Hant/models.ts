@@ -67,6 +67,10 @@ export const messages = {
   'models.model.hexagonal-column.description':
     '可調整長度、支數、柱間隙與擺放方向的六角柱。',
   'models.model.hexagonal-column.alt': '可調六角柱預覽',
+  'models.model.card-box.name': '卡片收納盒',
+  'models.model.card-box.description':
+    '參數化的卡牌收納盒，附滑蓋、可標示的隔板與印刷標籤面板。',
+  'models.model.card-box.alt': '卡片收納盒預覽',
   'models.model.opengrid.name': 'opengrid board (底版)',
   'models.model.opengrid.selection': 'Board (底版)',
   'models.model.opengrid.description':

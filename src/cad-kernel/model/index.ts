@@ -31,11 +31,14 @@ import {
   validateModelParameters,
   type ModelId,
   type ModelParameterValues,
+  type CardBoxSvgOutlineData,
   type OpenGridVariant,
   type OpenGridSnapProfile,
   type OpenGridSnapVariant,
 } from '../../cad-contract/units'
 import { buildBoxBRep } from '../components/box/builder'
+import { buildCardBox } from '../components/card-box/builder'
+import { isCardBoxParameters } from '../../cad-contract/units/card-box'
 import { buildHswCell } from '../components/hsw-cell/builder'
 import { buildHexagonalColumn } from '../components/hexagonal-column/builder'
 import { buildModularGridBase } from '../components/modular-grid-base/builder'
@@ -81,6 +84,8 @@ import { buildOpenGridOpenConnectShelf } from '../components/opengrid-openconnec
 export type KernelBuildContext = {
   getModularGridBaseTemplate: () => Promise<Shape3D>
   getHswCellTemplate: () => Promise<Shape3D>
+  /** card-box only: cleaned cover-SVG outlines from the generate command. */
+  cardBoxCoverSvg?: CardBoxSvgOutlineData
   getHexagonalColumnReference?: () => Promise<Shape3D>
   getOpenGridPrototype?: (variant: OpenGridVariant) => Promise<Shape3D>
   getOpenGridCanonicalTile?: (
@@ -611,6 +616,22 @@ export const opengridLabelCardKernelDefinition: KernelModelDefinition = {
   build: buildOpenGridLabelCardModel,
 }
 
+async function buildCardBoxModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<Shape3D> {
+  if (!isCardBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
+  }
+  const build = await buildCardBox(parameters, context.cardBoxCoverSvg)
+  return build.shape
+}
+
+export const cardBoxKernelDefinition: KernelModelDefinition = {
+  id: 'card-box',
+  build: buildCardBoxModel,
+}
+
 export const opengridLabelSlotTestKernelDefinition: KernelModelDefinition = {
   id: 'opengrid-label-slot-test',
   async build(parameters, context) {
@@ -662,6 +683,7 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridLabelCardKernelDefinition,
   opengridLabelSlotTestKernelDefinition,
   opengridLabelLedgeTestKernelDefinition,
+  cardBoxKernelDefinition,
 ]
 
 export function getKernelModelDefinition(
@@ -850,6 +872,17 @@ export async function buildModelBRepWithParts(
       yieldToEventLoop: context.yieldToEventLoop,
       isGenerationCurrent: context.isGenerationCurrent,
     })
+  }
+
+  if (modelId === 'card-box') {
+    if (!isCardBoxParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
+    }
+    const build = await buildCardBox(parameters, context.cardBoxCoverSvg)
+    return {
+      shape: build.shape,
+      parts: build.parts,
+    }
   }
 
   return {

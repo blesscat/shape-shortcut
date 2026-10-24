@@ -259,7 +259,17 @@ test('visible model previews are captured from ready generators', async ({
         'data-presentation',
         'thumbnail',
       )
-      await waitForCadReady(page)
+      if (definition.id === 'card-box') {
+        // The card-box assembly intentionally disables downloads, so
+        // readiness is the committed revision, not the STEP button.
+        await expect(page.getByTestId('cad-viewport')).toHaveAttribute(
+          'data-model-revision',
+          /.+/,
+          { timeout: 30_000 },
+        )
+      } else {
+        await waitForCadReady(page)
+      }
       await page.waitForTimeout(300)
       const canvas = page.getByTestId('cad-viewport').locator('canvas')
       await expect(canvas).toBeVisible()

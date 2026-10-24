@@ -79,6 +79,13 @@ export const messages = {
   'cad.labelCard.threeMfNote': '雙色效果僅適用於 3MF。',
   'cad.action.retry': '重試',
   'cad.presets.opengrid-stackable-box.3x3-desk-style': '3×3 測試樣式',
+  'cad.presets.card-box.tarot-70x120': '塔羅 70×120',
+  'cad.presets.card-box.standard-tcg-63x88': '標準 TCG 63×88',
+  'cad.presets.card-box.standard-tcg-sleeved-66x91': '標準 TCG 含套 66×91',
+  'cad.presets.card-box.japanese-small-59x86': '日版小型 59×86',
+  'cad.presets.card-box.japanese-small-sleeved-62x89': '日版小型 含套 62×89',
+  'cad.presets.card-box.mini-american-41x63': '美式迷你 41×63',
+  'cad.presets.card-box.mini-euro-44x68': '歐版迷你 44×68',
   'cad.drawer.title': '參數',
   'cad.drawer.open': '開啟參數面板',
   'cad.drawer.close': '關閉參數面板',
@@ -202,6 +209,10 @@ export const messages = {
   'diagnostic.workerTimeout': 'CAD Worker 處理超時，請重試。',
   'diagnostic.meshInvalid': '預覽模型資料無效，Worker 將重新啟動。',
   'diagnostic.staleGeneration': '這次建模已被較新的輸入取代。',
+  'diagnostic.cardBoxCoverArtOutsideSafeArea':
+    '封面圖稿超出可列印的安全區。請縮小標題、副標題或 SVG 寬度。',
+  'diagnostic.cardBoxSvgUnsupported':
+    '匯入的封面 SVG 無法使用。請重新匯入支援的 SVG 或關閉使用。',
   'validation.invalid': '{field} 輸入無效，請檢查參數後重試。',
   'validation.wallCoverTextRequired': '{field} 至少需要 1 個字元。',
   'validation.wallCoverTextTooLong': '{field} 不可超過 {max} 個字元。',
@@ -231,6 +242,16 @@ export const messages = {
   'validation.labelCardStyleInvalid': '{field} 必須是齊平或凸起。',
   'validation.labelCardIconUnknown': '{field} 不在內建 icon 集內。',
   'validation.labelCardTextTooLong': '{field} 不可超過 {max} 個字元。',
+  'validation.cardBoxPartInvalid':
+    '{field} 必須是 card-box 零件（assembly、box、lid、divider 或 cover）。',
+  'validation.cardBoxTabPositionInvalid':
+    '{field} 必須是 left、center 或 right。',
+  'validation.cardBoxStyleInvalid': '{field} 必須是 flat 或 raised。',
+  'validation.cardBoxTextTooLong': '{field} 不能超過 {max} 個字元。',
+  'validation.cardBoxSvgFingerprintMissing':
+    '封面設定為使用匯入的 SVG，但資料遺失。請重新匯入 SVG 或關閉使用。',
+  'validation.cardBoxDividerTextTooWide':
+    '分隔板文字放不進拉 Tab。請縮短文字。',
   'validation.parameter': '參數',
   'validation.invalidNumber': '{field} 必須是有效數字。',
   'validation.requiredDimension': '{axis} 尺寸不可空白。',

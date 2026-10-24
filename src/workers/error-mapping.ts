@@ -60,6 +60,16 @@ export function cadErrorCodeFor(
     return 'LABEL_CARD_ACCENT_INVALID'
   }
   if (
+    message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE') ||
+    message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA') ||
+    message.includes('CARD_BOX_SVG_')
+  ) {
+    return 'CARD_BOX_GEOMETRY_INVALID'
+  }
+  if (message.includes('MODEL_PARAMETERS_MISMATCH:card-box')) {
+    return 'INVALID_INPUT'
+  }
+  if (
     message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
     message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')
   ) {
@@ -146,6 +156,13 @@ export function cadErrorStageFor(
   ) {
     return 'meshing'
   }
+  if (message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE')) {
+    return 'building'
+  }
+  if (message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
+    return 'building'
+  }
+  if (message.includes('CARD_BOX_SVG_')) return 'building'
   if (
     message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
     message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')

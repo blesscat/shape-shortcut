@@ -27,6 +27,7 @@ import {
   parametersForScenePreview,
 } from '../../src/cad-kernel/scene/proxy'
 import type { KernelBuildContext } from '../../src/cad-kernel/model'
+import { CARD_BOX_CONFIGURATION } from '../../src/cad-contract/units'
 import { importHswCellTemplate } from '../../src/cad-kernel/components/hsw-cell/builder'
 import { importModularGridBaseTemplate } from '../../src/cad-kernel/components/modular-grid-base/builder'
 import { importOpenGridOpenConnectShelfLockedSlot } from '../../src/cad-kernel/components/opengrid-openconnect-shelf/slot'
@@ -104,6 +105,25 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
     parameters: {
       ...OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
       topRimEnabled: true,
+    },
+  },
+  {
+    modelId: 'card-box',
+    parameters: { ...CARD_BOX_CONFIGURATION.defaultParameters },
+  },
+  {
+    modelId: 'card-box',
+    parameters: {
+      ...CARD_BOX_CONFIGURATION.defaultParameters,
+      part: 'cover',
+      coverStyle: 'flat',
+    },
+  },
+  {
+    modelId: 'card-box',
+    parameters: {
+      ...CARD_BOX_CONFIGURATION.defaultParameters,
+      part: 'divider',
     },
   },
   {

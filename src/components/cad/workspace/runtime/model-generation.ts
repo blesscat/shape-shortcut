@@ -5,6 +5,7 @@ import {
   OPENGRID_OPENCONNECT_SHELF_CONFIGURATION,
   PILLAR_CONFIGURATION,
   PROTOTYPE_CONFIGURATION,
+  isCardBoxParameters,
   isOpenGridParameters,
   openGridOpenConnectShelfMaximumAngleForRows,
   validateOpenGridGenerationSupport,
@@ -15,6 +16,7 @@ import {
   type ModelParameterValues,
   type OpenGridParameters,
 } from '../../../../cad-contract/units'
+import { loadCardBoxCoverSvgForRequest } from '../../../../features/cad/card-box-svg/store'
 import { newOperationId } from '../../../../features/cad/worker-client'
 import {
   errorForInput,
@@ -124,6 +126,12 @@ export function createModelGenerationHandlers(
         return
       }
     }
+    const coverSvg =
+      modelId === 'card-box' &&
+      isCardBoxParameters(parameters) &&
+      parameters.usesCoverSvg
+        ? loadCardBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
+        : undefined
     const requestId = client.send({
       kind: 'model.generate',
       operationId,
@@ -131,6 +139,7 @@ export function createModelGenerationHandlers(
       modelId,
       parameters,
       previewConfig: previewConfigForModel(modelId),
+      coverSvg,
     })
     context.refs.operations.current.set(operationId, {
       kind: 'model',

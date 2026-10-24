@@ -70,6 +70,10 @@ export const messages = {
   'models.model.hexagonal-column.description':
     'Hexagonal columns with adjustable length, count, gap, and orientation.',
   'models.model.hexagonal-column.alt': 'Adjustable hexagonal column preview',
+  'models.model.card-box.name': 'Card Box',
+  'models.model.card-box.description':
+    'A parametric storage box for trading cards with a sliding lid, an optional label divider, and a printed label cover.',
+  'models.model.card-box.alt': 'Card box preview',
   'models.model.opengrid.name': 'OpenGrid Board',
   'models.model.opengrid.selection': 'Board',
   'models.model.opengrid.description':

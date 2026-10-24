@@ -162,6 +162,20 @@ function labelCardFieldErrorFor(
   }
 }
 
+function cardBoxFieldErrorFor(
+  operation: { kind: string; modelId?: ModelId } | undefined,
+  messageId: string,
+): FieldDiagnostic | null {
+  if (
+    operation?.kind !== 'model' ||
+    operation.modelId !== 'card-box' ||
+    messageId !== 'validation.cardBoxDividerTextTooWide'
+  ) {
+    return null
+  }
+  return { field: 'dividerText', messageId }
+}
+
 function wallCoverFieldErrorFor(
   operation: { kind: string; modelId?: ModelId } | undefined,
   messageId: string,
@@ -554,6 +568,15 @@ export function createWorkerEventHandler(
         if (labelCardFieldError) {
           context.setFieldErrors({
             [labelCardFieldError.field]: labelCardFieldError,
+          })
+        }
+        const cardBoxFieldError = cardBoxFieldErrorFor(
+          operation,
+          event.messageId,
+        )
+        if (cardBoxFieldError) {
+          context.setFieldErrors({
+            [cardBoxFieldError.field]: cardBoxFieldError,
           })
         }
         if (event.code === 'ENGINE_INIT_FAILED') {

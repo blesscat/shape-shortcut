@@ -439,6 +439,30 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    if (message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('validation.cardBoxDividerTextTooWide'),
+        true,
+      )
+    }
+    if (message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.cardBoxCoverArtOutsideSafeArea'),
+        true,
+      )
+    }
+    if (message.includes('CARD_BOX_SVG_')) {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.cardBoxSvgUnsupported'),
+        true,
+      )
+    }
 
     if (code === 'OPENGRID_DIVIDER_QUALITY_INVALID') {
       return makeError(

@@ -1,14 +1,17 @@
 import {
-  cast,
   getOC,
   isShape3D,
+  makeBox,
   makePolygon,
   Sketch,
+  cast,
   type Shape3D,
 } from 'replicad'
 import {
+  CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
   validateModelParameters,
+  type CardBoxParameters,
   type HexagonalColumnParameters,
   type ModelId,
   type ModelParameterValues,
@@ -106,6 +109,100 @@ function hexagonalColumnProxy(parameters: HexagonalColumnParameters): Shape3D {
 }
 
 /**
+ * Simplified card-box silhouette: the hollow wall tube with floor, the lid
+ * plate and the interior divider as plain boxes — far cheaper than the full
+ * rails/grooves/text build, and enough for planning previews.
+ */
+function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
+  const c = CARD_BOX_CONFIGURATION
+  const t = c.wallThickness
+  const outerWidth = parameters.cardWidth + 2 * t
+  const outerDepth = parameters.storageDepth + 2 * t - 1.8
+  const height = parameters.cardHeight + 2
+  const halfW = outerWidth / 2
+  const halfD = outerDepth / 2
+  const showTube = parameters.part === 'assembly' || parameters.part === 'box'
+  const shapes: Shape3D[] = []
+  if (showTube) {
+    shapes.push(
+      // Floor
+      makeBox([-halfW, -halfD, 0], [halfW, halfD, c.floorThickness]) as Shape3D,
+      // Front / back walls
+      makeBox([-halfW, -halfD, 0], [halfW, -halfD + t, height]) as Shape3D,
+      makeBox([-halfW, halfD - t, 0], [halfW, halfD, height]) as Shape3D,
+      // Left / right walls
+      makeBox(
+        [-halfW, -halfD + t, 0],
+        [-halfW + t, halfD - t, height],
+      ) as Shape3D,
+      makeBox(
+        [halfW - t, -halfD + t, 0],
+        [halfW, halfD - t, height],
+      ) as Shape3D,
+    )
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'lid') {
+    const lidZ =
+      parameters.part === 'assembly' ? parameters.cardHeight + 7.2 : 0
+    shapes.push(
+      makeBox(
+        [-halfW, -(halfD + 0.9), lidZ],
+        [halfW, halfD + 0.9, lidZ + c.dividerSlotWidth * 1.8],
+      ) as Shape3D,
+    )
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'divider') {
+    // Assembly: the divider stands in the center slot. Single-part scene
+    // preview: flat on the bed, matching the print-orientation bounds.
+    if (parameters.part === 'assembly') {
+      shapes.push(
+        makeBox(
+          [-halfW + t, -c.dividerPlateThickness / 2, c.floorThickness],
+          [
+            halfW - t,
+            c.dividerPlateThickness / 2,
+            c.floorThickness + parameters.cardHeight + 5,
+          ],
+        ) as Shape3D,
+      )
+    } else {
+      shapes.push(
+        makeBox(
+          [-halfW + t, 0, 0],
+          [halfW - t, parameters.cardHeight + 5, c.dividerPlateThickness],
+        ) as Shape3D,
+      )
+    }
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'cover') {
+    // Assembly: the cover stands in the front channel, art facing the
+    // front. Single-part scene preview: flat on the bed, matching the
+    // print-orientation contract bounds.
+    if (parameters.part === 'assembly') {
+      const channelOuterY = -(halfD + 0.85)
+      shapes.push(
+        makeBox(
+          [-halfW + t, channelOuterY, c.floorThickness],
+          [
+            halfW - t,
+            channelOuterY + c.coverPlateThickness,
+            c.floorThickness + parameters.cardHeight,
+          ],
+        ) as Shape3D,
+      )
+    } else {
+      shapes.push(
+        makeBox(
+          [-halfW + t, 0, 0],
+          [halfW - t, parameters.cardHeight, c.coverPlateThickness],
+        ) as Shape3D,
+      )
+    }
+  }
+  return compoundShapes(shapes)
+}
+
+/**
  * Builds the scene preview B-Rep for an instance. The preview renders the
  * component's real characteristic geometry through the production builders
  * (grid cutouts, openings, stacking rails, seats, wall-mount interfaces,
@@ -125,6 +222,9 @@ export async function buildScenePreviewBRep(
   const model = validation.value
   if (modelId === 'hexagonal-column') {
     return hexagonalColumnProxy(model.parameters as HexagonalColumnParameters)
+  }
+  if (modelId === 'card-box') {
+    return cardBoxProxy(model.parameters as CardBoxParameters)
   }
   return buildModelBRep(
     modelId,

@@ -275,6 +275,7 @@
         canExport={snapshot.canExport}
         supportsThreeMf={snapshot.supportsThreeMf}
         canExportThreeMf={snapshot.canExportThreeMf}
+        downloadHintKey={snapshot.downloadHintKey}
         onInputChange={handleInputChange}
         onSystemContextChange={handleSystemContextChange}
         onOpenGridParametersChange={handleOpenGridParametersChange}
@@ -324,6 +325,7 @@
           canExport={snapshot.canExport}
           supportsThreeMf={snapshot.supportsThreeMf}
           canExportThreeMf={snapshot.canExportThreeMf}
+          downloadHintKey={snapshot.downloadHintKey}
           onExport={handleExport}
           onRetry={handleRetry}
           onDownloadSettings={handleDownloadSettings}

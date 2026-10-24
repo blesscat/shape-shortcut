@@ -11,6 +11,7 @@
   } from '../../../cad-contract/units'
   import BoxComponentPanel from './box/BoxComponentPanel.svelte'
   import HexagonalColumnComponentPanel from './hexagonal-column/HexagonalColumnComponentPanel.svelte'
+  import CardBoxComponentPanel from './card-box/CardBoxComponentPanel.svelte'
   import HswCellComponentPanel from './hsw-cell/HswCellComponentPanel.svelte'
   import ModularGridBaseComponentPanel from './modular-grid-base/ModularGridBaseComponentPanel.svelte'
   import OpenGridComponentPanel from './opengrid/OpenGridComponentPanel.svelte'
@@ -70,6 +71,13 @@
     />
   {:else if modelId === 'hexagonal-column'}
     <HexagonalColumnComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'card-box'}
+    <CardBoxComponentPanel
       {locale}
       {rawParameters}
       {fieldErrors}
