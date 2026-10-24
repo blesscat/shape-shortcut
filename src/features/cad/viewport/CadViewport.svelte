@@ -7,6 +7,7 @@
   import ModelColorControls from './ModelColorControls.svelte'
 
   import { onMount } from 'svelte'
+  import { devicePixelRatio } from 'svelte/reactivity/window'
   import { Canvas } from '@threlte/core'
   import type {
     MeshSnapshot,
@@ -82,6 +83,13 @@
 
   const TOOLTIP_OFFSET = 14
   const TOOLTIP_MARGIN = 8
+  // Matches the Playground renderer so tall viewports stay bounded on
+  // high-density screens.
+  const MAX_CANVAS_PIXEL_RATIO = 2
+
+  let canvasPixelRatio = $derived(
+    Math.min(devicePixelRatio.current ?? 1, MAX_CANVAS_PIXEL_RATIO),
+  )
 
   let tooltipLayout = $derived.by(() => {
     if (!faceHover || !container) return null
@@ -178,7 +186,7 @@
       </div>
     {:else if mesh && modelRevision}
       <!-- Threlte owns the canvas lifecycle and Three.js render loop. -->
-      <Canvas>
+      <Canvas dpr={canvasPixelRatio}>
         <CadViewportScene
           {mesh}
           simplified={simplified !== null}
