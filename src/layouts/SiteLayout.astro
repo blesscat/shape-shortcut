@@ -435,37 +435,45 @@ const supportCopyById: Record<
       >
         <slot />
       </main>
-      <footer
-        class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground"
-        aria-label={t('navigation.footer')}
-      >
-        <div
-          class="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-4"
-        >
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="font-semibold tracking-wide text-foreground"
-              >Shape Shortcut</span
-            >
-            <span>© {buildYear} Blesscat. All rights reserved.</span>
-          </div>
-          <div class="site-footer-links flex flex-wrap gap-x-4 gap-y-2">
-            <a href={publicPathFor(locale, 'models')}
-              >{t('navigation.models')}</a
-            >
-            <a href={publicPathFor(locale, 'docs')}>{t('navigation.docs')}</a>
-            <a href={publicPathFor(locale, 'about')}>{t('navigation.about')}</a>
-            <a
-              class="font-sans"
-              href="https://github.com/blesscat"
-              target="_blank"
-              rel="noopener noreferrer">{t('navigation.github')}</a
-            >
-            <a class="font-sans" href="mailto:blesscat@gmail.com"
-              >{t('navigation.email')}</a
-            >
-          </div>
-        </div>
-      </footer>
+      {
+        !cadWorkspace && (
+          <footer
+            class="border-t border-border bg-card px-[clamp(1rem,4vw,4rem)] py-8 text-sm text-muted-foreground"
+            aria-label={t('navigation.footer')}
+          >
+            <div class="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-4">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="font-semibold tracking-wide text-foreground">
+                  Shape Shortcut
+                </span>
+                <span>© {buildYear} Blesscat. All rights reserved.</span>
+              </div>
+              <div class="site-footer-links flex flex-wrap gap-x-4 gap-y-2">
+                <a href={publicPathFor(locale, 'models')}>
+                  {t('navigation.models')}
+                </a>
+                <a href={publicPathFor(locale, 'docs')}>
+                  {t('navigation.docs')}
+                </a>
+                <a href={publicPathFor(locale, 'about')}>
+                  {t('navigation.about')}
+                </a>
+                <a
+                  class="font-sans"
+                  href="https://github.com/blesscat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('navigation.github')}
+                </a>
+                <a class="font-sans" href="mailto:blesscat@gmail.com">
+                  {t('navigation.email')}
+                </a>
+              </div>
+            </div>
+          </footer>
+        )
+      }
       <script is:inline>
         const supportDialog = document.getElementById('support-dialog')
         const canUseSupportModal =
@@ -549,16 +557,10 @@ const supportCopyById: Record<
           [data-cad-shell] > main {
             padding: 16px;
           }
-          [data-cad-shell] > footer {
-            padding-block: 12px;
-          }
         }
         @media (min-width: 761px) and (max-height: 600px) {
           [data-cad-shell] > main {
             padding: 8px 16px;
-          }
-          [data-cad-shell] > footer {
-            padding-block: 8px;
           }
         }
 

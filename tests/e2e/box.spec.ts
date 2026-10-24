@@ -187,9 +187,6 @@ test('CAD workspace preserves responsive columns within the viewport', async ({
     )
 
   await expect.poll(columnCount).toBe(1)
-  const loadingViewportHeight = await viewport.evaluate(
-    (element) => element.getBoundingClientRect().height,
-  )
   const hasHorizontalOverflow = () =>
     page.evaluate(
       () =>
@@ -209,11 +206,21 @@ test('CAD workspace preserves responsive columns within the viewport', async ({
   await expect(page.getByTestId('cad-progress')).toBeVisible()
   await expect.poll(hasHorizontalOverflow).toBeTruthy()
   await expect.poll(hasVerticalOverflow).toBeTruthy()
+  // The two-column viewport fills the window down to the main padding.
   await expect
     .poll(() =>
-      viewport.evaluate((element) => element.getBoundingClientRect().height),
+      viewport.evaluate((element) => {
+        const mainPaddingBottom = Number.parseFloat(
+          getComputedStyle(document.querySelector('main')!).paddingBottom,
+        )
+        return (
+          window.innerHeight -
+          mainPaddingBottom -
+          element.getBoundingClientRect().bottom
+        )
+      }),
     )
-    .toBeLessThanOrEqual(loadingViewportHeight)
+    .toBeCloseTo(0, 0)
   expect(runtimeErrors).toEqual([])
 })
 

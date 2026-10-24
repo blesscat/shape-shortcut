@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 test('desktop parameter menu scrolls independently from the model viewport', async ({
   page,
@@ -101,7 +101,10 @@ test('wide OpenGrid workspace keeps document scrolling inside the parameter pane
   })
 
   expect(viewportAfterScroll).toEqual(viewportBeforeScroll)
-  expect(viewportAfterScroll.height).toBeLessThanOrEqual(520)
+  expect(viewportAfterScroll.height).toBeLessThan(panelMetrics.scrollHeight)
+  expect(
+    viewportAfterScroll.top + viewportAfterScroll.height,
+  ).toBeLessThanOrEqual(documentMetrics.clientHeight)
 })
 
 test('narrow CAD workspace collapses parameters into a bottom drawer', async ({
@@ -176,15 +179,187 @@ test('short desktop keeps the preview, scrollable controls and attribution reach
       panelScrolls: panel.scrollHeight > panel.clientHeight,
       attributionScrolls: attribution.scrollHeight > attribution.clientHeight,
       attributionOverflow: getComputedStyle(attribution).overflowY,
-      footerBottom: document.querySelector('footer')!.getBoundingClientRect()
-        .bottom,
+      attributionBottom: attribution.getBoundingClientRect().bottom,
     }
   })
   expect(metrics.documentHeight).toBeLessThanOrEqual(metrics.availableHeight)
   expect(metrics.viewportHeight).toBeGreaterThanOrEqual(96)
-  expect(metrics.viewportHeight).toBeLessThanOrEqual(520)
   expect(metrics.panelScrolls).toBe(true)
   expect(metrics.attributionScrolls).toBe(true)
   expect(metrics.attributionOverflow).toBe('auto')
-  expect(metrics.footerBottom).toBeLessThanOrEqual(metrics.availableHeight)
+  expect(metrics.attributionBottom).toBeLessThanOrEqual(metrics.availableHeight)
+})
+
+async function readDesktopFill(page: Page) {
+  return page.evaluate(() => {
+    const viewport = document
+      .querySelector('[data-testid="cad-viewport"]')!
+      .getBoundingClientRect()
+    const main = document.querySelector('main')!
+    const attribution = document.querySelector(
+      '[data-testid="cad-attribution"]',
+    )
+    const attributionBlockHeight = attribution
+      ? attribution.getBoundingClientRect().height +
+        Number.parseFloat(getComputedStyle(attribution).marginTop)
+      : 0
+    const mainPaddingBottom = Number.parseFloat(
+      getComputedStyle(main).paddingBottom,
+    )
+    return {
+      windowHeight: window.innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      viewportHeight: viewport.height,
+      unusedHeightBelowViewport:
+        window.innerHeight -
+        mainPaddingBottom -
+        attributionBlockHeight -
+        viewport.bottom,
+    }
+  })
+}
+
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+]) {
+  for (const { model, attributionCount } of [
+    { model: 'box', attributionCount: 0 },
+    { model: 'opengrid', attributionCount: 1 },
+  ]) {
+    test(`${model} CAD workspace fills a ${size.width}x${size.height} window without a footer`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size)
+      await page.goto(`/zh-Hant/cad/${model}`)
+      await expect(page.getByTestId('cad-workspace-panel')).toBeVisible()
+
+      await expect(page.locator('footer')).toHaveCount(0)
+      await expect(page.locator('[data-site-nav]')).toBeVisible()
+      await expect(
+        page.locator('main').getByTestId('cad-attribution'),
+      ).toHaveCount(attributionCount)
+
+      const fill = await readDesktopFill(page)
+      expect(fill.viewportHeight).toBeGreaterThan(520)
+      expect(fill.documentHeight).toBeLessThanOrEqual(fill.windowHeight)
+      expect(fill.unusedHeightBelowViewport).toBeCloseTo(0, 0)
+    })
+  }
+}
+
+test('a wrapped CAD title shrinks the desktop workspace instead of overflowing', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 800 })
+  await page.goto('/zh-Hant/cad/opengrid')
+  await expect(page.getByTestId('cad-workspace-panel')).toBeVisible()
+
+  const header = page.getByTestId('cad-header')
+  const viewport = page.getByTestId('cad-viewport')
+  const readHeight = (locator: Locator) =>
+    locator.evaluate((element) => element.getBoundingClientRect().height)
+  const headerBefore = await readHeight(header)
+  const viewportBefore = await readHeight(viewport)
+
+  await page.locator('#cad-title').evaluate((title) => {
+    title.textContent = `${title.textContent} ${title.textContent} ${title.textContent}`
+  })
+
+  await expect.poll(() => readHeight(header)).toBeGreaterThan(headerBefore)
+  const headerGrowth = (await readHeight(header)) - headerBefore
+  await expect
+    .poll(() => readHeight(viewport))
+    .toBeCloseTo(viewportBefore - headerGrowth, 0)
+  const fill = await readDesktopFill(page)
+  expect(fill.documentHeight).toBeLessThanOrEqual(fill.windowHeight)
+})
+
+test('stacked CAD page omits the footer and keeps its mobile controls', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/zh-Hant/cad/opengrid')
+
+  await expect(page.getByTestId('cad-viewport')).toBeVisible()
+  await expect(page.locator('[data-site-nav]')).toBeVisible()
+  await expect(page.getByTestId('cad-params-pill')).toBeVisible()
+  await expect(page.getByTestId('cad-actions-cluster')).toBeVisible()
+  await expect(page.locator('main').getByTestId('cad-attribution')).toHaveCount(
+    1,
+  )
+  await expect(page.locator('footer')).toHaveCount(0)
+})
+
+for (const fixture of [
+  { size: { width: 1440, height: 900 }, model: 'box' },
+  { size: { width: 844, height: 390 }, model: 'opengrid' },
+]) {
+  test(`static loading preview reserves the ${fixture.model} desktop viewport height at ${fixture.size.width}x${fixture.size.height}`, async ({
+    browser,
+  }) => {
+    const route = `/zh-Hant/cad/${fixture.model}`
+    const staticContext = await browser.newContext({
+      viewport: fixture.size,
+      javaScriptEnabled: false,
+    })
+    const staticPage = await staticContext.newPage()
+    await staticPage.goto(route)
+    const preview = staticPage.getByTestId('cad-loading-preview')
+    await expect(preview).toBeVisible()
+    const fallback = await staticPage.evaluate(() => ({
+      previewHeight: document
+        .querySelector('[data-testid="cad-loading-preview"]')!
+        .getBoundingClientRect().height,
+      documentHeight: document.documentElement.scrollHeight,
+      windowHeight: window.innerHeight,
+    }))
+    await staticContext.close()
+
+    const hydratedContext = await browser.newContext({ viewport: fixture.size })
+    const hydratedPage = await hydratedContext.newPage()
+    await hydratedPage.goto(route)
+    await expect(hydratedPage.getByTestId('cad-workspace-panel')).toBeVisible()
+    const viewportHeight = await hydratedPage
+      .getByTestId('cad-viewport')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    await hydratedContext.close()
+
+    expect(fallback.documentHeight).toBeLessThanOrEqual(fallback.windowHeight)
+    expect(fallback.previewHeight).toBeCloseTo(viewportHeight, 0)
+  })
+}
+
+test('catalog preview capture keeps one viewport frame regardless of page chrome', async ({
+  page,
+}) => {
+  const readThumbnailFrame = async (
+    route: string,
+    size: { width: number; height: number },
+  ) => {
+    await page.setViewportSize(size)
+    await page.goto(`${route}?preview=thumbnail`)
+    const viewport = page.getByTestId('cad-viewport')
+    await expect(viewport).toHaveAttribute('data-presentation', 'thumbnail')
+    return viewport.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return { width: rect.width, height: rect.height }
+    })
+  }
+
+  const withoutAttribution = await readThumbnailFrame('/zh-Hant/cad/box', {
+    width: 1440,
+    height: 900,
+  })
+  const withAttribution = await readThumbnailFrame('/zh-Hant/cad/opengrid', {
+    width: 1440,
+    height: 900,
+  })
+  const tallerWindow = await readThumbnailFrame('/zh-Hant/cad/opengrid', {
+    width: 1440,
+    height: 1080,
+  })
+
+  expect(withAttribution).toEqual(withoutAttribution)
+  expect(tallerWindow).toEqual(withoutAttribution)
 })

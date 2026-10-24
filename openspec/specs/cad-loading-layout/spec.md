@@ -55,7 +55,7 @@ The system MUST keep the CAD viewport as a stable layout region while adjacent l
 
 ### Requirement: Desktop CAD workspace contains parameter scrolling
 
-The two-column CAD workspace above the existing `760px` breakpoint MUST keep the document within the visible viewport when a parameter panel is taller than the available desktop height. The parameter panel MUST own vertical overflow, and the CAD viewport MUST retain an independent explicit height and top alignment rather than stretching to the panel's intrinsic content height. At or below `760px`, the closed-panel page MUST remain normally scrollable wherever content exceeds available height. When a mobile panel is open, its selected legacy-overlay or guarded candidate-split scroll behavior MUST govern; the parameter region MUST own its internal overflow and all controls MUST remain reachable. These mobile exceptions MUST NOT change the desktop height cap or independent scrolling contract.
+The two-column CAD workspace above the existing `760px` breakpoint MUST keep the document within the visible viewport when a parameter panel is taller than the available desktop height. The desktop height budget MUST be the window height remaining after the site header, the CAD title row at its rendered height, the main content padding and, when present, the attribution region; it MUST NOT have a fixed upper cap and MUST NOT fall below 96 px. The catalog preview-capture thumbnail presentation is not an interactive workspace and is excluded from this budget: its viewport MUST keep one canonical frame that does not depend on the title row, the attribution region or the window height. The parameter panel MUST own vertical overflow within that budget, and the CAD viewport MUST retain an independent explicit height equal to that budget and top alignment rather than stretching to the panel's intrinsic content height. At or below `760px`, the closed-panel page MUST remain normally scrollable wherever content exceeds available height. When a mobile panel is open, its selected legacy-overlay or guarded candidate-split scroll behavior MUST govern; the parameter region MUST own its internal overflow and all controls MUST remain reachable. These mobile exceptions MUST NOT change the desktop height budget or independent scrolling contract.
 
 #### Scenario: Wide OpenGrid page has no outer vertical overflow
 
@@ -75,14 +75,45 @@ The two-column CAD workspace above the existing `760px` breakpoint MUST keep the
 
 - **WHEN** the desktop workspace is rendered with a long or short parameter panel
 - **THEN** the viewport's top position MUST remain aligned to the workspace row's top
-- **AND** the viewport height MUST remain bounded by the desktop height budget and the existing 520 px cap
+- **AND** the viewport height MUST equal the desktop height budget, without a fixed 520 px or other upper cap
 - **AND** the viewport MUST NOT stretch to match the panel's full content height
+
+#### Scenario: Desktop workspace fills the window height
+
+- **WHEN** a user opens a localized CAD model route at a desktop window of 1440 × 900 or 1920 × 1080
+- **THEN** the viewport's bottom edge MUST be separated from the window's bottom edge only by the main content padding and, when present, the attribution region
+- **AND** the viewport MUST be taller than 520 px
+- **AND** the document's scroll height MUST be no greater than its client height
+
+#### Scenario: Wrapped CAD title row stays within the window
+
+- **WHEN** the CAD title row wraps onto additional lines at a desktop width above `760px`
+- **THEN** the desktop height budget MUST shrink by the additional title height
+- **AND** the document's scroll height MUST remain no greater than its client height
+
+#### Scenario: Short desktop keeps a usable lower bound
+
+- **WHEN** a user opens a CAD route with OpenGrid attribution at a desktop window of 844 × 390
+- **THEN** the viewport MUST be at least 96 px tall
+- **AND** the document's scroll height MUST be no greater than its client height
+- **AND** the parameter panel and attribution region MUST remain reachable through their own vertical scrolling
+
+#### Scenario: Desktop loading fallback reserves the filled height
+
+- **WHEN** the initial loading fallback is displayed above `760px`, including when JavaScript is unavailable
+- **THEN** its preview region MUST use the same desktop height budget as the hydrated viewport
+- **AND** its summary region MUST scroll within that budget instead of extending the document
+
+#### Scenario: Preview capture keeps a canonical frame
+
+- **WHEN** the thumbnail preview-capture presentation is rendered above `760px` for models with and without an attribution region, or in windows of different heights
+- **THEN** the viewport MUST have the same width and height in each case
 
 #### Scenario: Stacked layout retains normal document scrolling
 
 - **WHEN** a user opens a CAD route at or below the existing 760 px breakpoint with the mobile panel closed and page content taller than the viewport
 - **THEN** the document MUST remain scrollable so all controls and the viewport can be reached
-- **AND** the desktop panel height cap MUST NOT hide or clip the stacked parameter content
+- **AND** the desktop height budget MUST NOT hide or clip the stacked parameter content
 
 #### Scenario: Open mobile panel retains its own scroll contract
 

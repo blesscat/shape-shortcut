@@ -966,6 +966,47 @@ The workspace MUST present a stable, localized status location distinguishing a 
 - **AND** pending, stale, invalid and failed-state readiness MUST continue to govern the actions
 - **AND** downloaded geometry, material colors, filenames, settings schema and dev-only STEP visibility MUST remain unchanged
 
+### Requirement: CAD model pages omit the site footer
+
+Localized CAD model pages MUST NOT render the site footer, including its copyright line and footer links, at any window width. Content that belongs to the model page, including the OpenGrid attribution and license notice, MUST remain in the page's main content. The site header navigation MUST remain available, and pages that are not CAD workspace pages MUST keep rendering the site footer.
+
+#### Scenario: Desktop model page has no footer
+
+- **WHEN** a user opens a localized CAD model route above the existing `760px` breakpoint
+- **THEN** the page MUST NOT contain the site footer or its copyright line
+- **AND** the site header navigation MUST remain visible
+
+#### Scenario: Stacked model page has no footer
+
+- **WHEN** a user opens a localized CAD model route at or below the existing `760px` breakpoint
+- **THEN** the page MUST NOT contain the site footer or its copyright line
+- **AND** the stacked workspace, actions and floating parameter control MUST keep their existing layout
+
+#### Scenario: Attribution stays with the model
+
+- **WHEN** a user opens a localized CAD model route whose model has OpenGrid attribution
+- **THEN** the attribution and license notice MUST be rendered inside the page's main content and remain reachable
+
+#### Scenario: Other pages keep the footer
+
+- **WHEN** a user opens a page that is not a CAD workspace page, such as the home page
+- **THEN** the site footer and its links MUST still be rendered
+
+### Requirement: CAD viewport rendering resolution is bounded
+
+The CAD viewport canvas MUST render at the display's device pixel ratio up to a maximum of 2 device pixels per CSS pixel, while its displayed size MUST continue to fill the viewport frame.
+
+#### Scenario: High-density display is capped
+
+- **WHEN** the CAD viewport renders a model on a display whose device pixel ratio is 3
+- **THEN** the canvas drawing buffer MUST be no more than 2 times its displayed CSS width and height
+- **AND** the canvas MUST still fill the viewport frame
+
+#### Scenario: Standard display keeps native resolution
+
+- **WHEN** the CAD viewport renders a model on a display whose device pixel ratio is 1
+- **THEN** the canvas drawing buffer MUST match its displayed CSS width and height
+
 ## 可追溯性
 
 - 變更動機、Prototype 範圍與後續演進：../../proposal.md

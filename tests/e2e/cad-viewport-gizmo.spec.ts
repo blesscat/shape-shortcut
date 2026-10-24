@@ -87,8 +87,57 @@ test('CAD viewport uses the available desktop width and height', async ({
 
   expect((await readRect(page.locator('main'))).width).toBeGreaterThan(1200)
   const viewportRect = await readRect(page.getByTestId('cad-viewport'))
-  expect(viewportRect.height).toBeLessThanOrEqual(520)
+  expect(viewportRect.height).toBeGreaterThan(520)
   expect(viewportRect.y + viewportRect.height).toBeLessThanOrEqual(900)
+})
+
+async function readCanvasPixelRatio(page: Page) {
+  return page
+    .getByTestId('cad-viewport')
+    .locator('canvas')
+    .evaluate((canvas: HTMLCanvasElement) => ({
+      width: canvas.width / canvas.clientWidth,
+      height: canvas.height / canvas.clientHeight,
+    }))
+}
+
+test('CAD canvas renders at native resolution on a standard display', async ({
+  page,
+  browserName,
+}) => {
+  skipHeadlessFirefoxWithoutWebGL(browserName)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/cad/box')
+  await waitForCadReady(page)
+
+  const ratio = await readCanvasPixelRatio(page)
+  expect(ratio.width).toBeCloseTo(1, 2)
+  expect(ratio.height).toBeCloseTo(1, 2)
+})
+
+test.describe('on a high-density display', () => {
+  test.use({ deviceScaleFactor: 3 })
+
+  test('CAD canvas caps its drawing buffer at twice its CSS size', async ({
+    page,
+    browserName,
+  }) => {
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/cad/box')
+    await waitForCadReady(page)
+
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBe(3)
+    const viewportRect = await readRect(page.getByTestId('cad-viewport'))
+    const canvasRect = await readRect(
+      page.getByTestId('cad-viewport').locator('canvas'),
+    )
+    expectRectInside(canvasRect, viewportRect)
+    expect(canvasRect.height).toBeGreaterThan(viewportRect.height - 4)
+    const ratio = await readCanvasPixelRatio(page)
+    expect(ratio.width).toBeCloseTo(2, 2)
+    expect(ratio.height).toBeCloseTo(2, 2)
+  })
 })
 
 test('XYZ orientation gizmo follows orbit and stays anchored through model updates', async ({
