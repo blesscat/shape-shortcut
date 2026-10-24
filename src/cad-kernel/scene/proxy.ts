@@ -1,13 +1,15 @@
 import {
+  cast,
   getOC,
   isShape3D,
   makeBox,
   makePolygon,
   Sketch,
-  cast,
   type Shape3D,
 } from 'replicad'
 import {
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
   validateModelParameters,
@@ -116,8 +118,8 @@ function hexagonalColumnProxy(parameters: HexagonalColumnParameters): Shape3D {
 function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
   const c = CARD_BOX_CONFIGURATION
   const t = c.wallThickness
-  const outerWidth = parameters.cardWidth + 2 * t
-  const outerDepth = parameters.storageDepth + 2 * t - 1.8
+  const outerWidth = cardBoxOuterWidth(parameters.cardWidth)
+  const outerDepth = cardBoxOuterDepth(parameters.storageDepth)
   const height = parameters.cardHeight + 2
   const halfW = outerWidth / 2
   const halfD = outerDepth / 2

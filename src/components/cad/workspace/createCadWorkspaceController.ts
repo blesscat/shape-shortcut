@@ -23,7 +23,6 @@ import {
   createCadWorkerRuntime,
   type CadWorkerRuntime,
 } from './createCadWorkerRuntime'
-import { isCardBoxParameters } from '../../../cad-contract/units/card-box'
 import { rawFromParameters } from './validation'
 import type { FieldErrors } from './runtime/types'
 import type { RawParameters } from './types'
@@ -37,7 +36,7 @@ export type CadWorkspaceControllerSnapshot = {
   canExport: boolean
   supportsThreeMf: boolean
   canExportThreeMf: boolean
-  /** Present when downloads are disabled with a pick-a-part hint (card-box assembly). */
+  /** Present when downloads are disabled with a hint (definition-provided). */
   downloadHintKey: string | null
 }
 
@@ -76,15 +75,14 @@ function createSnapshot(
   fieldErrors: FieldErrors,
   progress: CadProgress | null,
 ): CadWorkspaceControllerSnapshot {
-  const cardBoxAssembly =
-    state.modelId === 'card-box' &&
-    isCardBoxParameters(state.input) &&
-    state.input.part === 'assembly'
+  const downloadHintKey =
+    getModelDefinition(state.modelId)?.exportBlockedHintKey?.(state.input) ??
+    null
   const canExport =
     state.status === 'ready' &&
     state.exportStatus === 'idle' &&
     !state.stale &&
-    !cardBoxAssembly
+    downloadHintKey === null
   const supportsThreeMf =
     getModelDefinition(state.modelId)?.threeMfFileName?.(state.input) != null
 
@@ -97,9 +95,7 @@ function createSnapshot(
     canExport,
     supportsThreeMf,
     canExportThreeMf: canExport && supportsThreeMf,
-    downloadHintKey: cardBoxAssembly
-      ? 'panel.cardBox.pickPartToDownload'
-      : null,
+    downloadHintKey,
   }
 }
 

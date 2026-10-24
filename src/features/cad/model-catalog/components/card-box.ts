@@ -153,4 +153,12 @@ export const cardBoxDefinition: ModelDefinition = {
     }
     return cardBoxThreeMfFileName(parameters)
   },
+  exportBlockedHintKey: (parameters) => {
+    if (!isCardBoxParameters(parameters)) {
+      throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
+    }
+    return parameters.part === 'assembly'
+      ? 'panel.cardBox.pickPartToDownload'
+      : null
+  },
 }

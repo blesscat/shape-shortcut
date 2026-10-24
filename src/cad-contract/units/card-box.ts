@@ -72,6 +72,8 @@ export const CARD_BOX_CONFIGURATION = {
   interiorWidthAllowance: 0.5,
   floorThickness: 2,
   coverPlateThickness: 0.6,
+  /** Sliding-lid roof thickness (z 127.2..129 at defaults). */
+  lidRoofThickness: 1.8,
   accentDepth: 0.4,
   dividerPlateThickness: 0.85,
   dividerSlotWidth: 1,
@@ -124,6 +126,18 @@ export const CARD_BOX_CONFIGURATION = {
 /** Interior width: the card width plus the fixed 0.5 mm sheet allowance. */
 export function cardBoxInteriorWidth(cardWidth: number): number {
   return cardWidth + CARD_BOX_CONFIGURATION.interiorWidthAllowance
+}
+
+/** Outer width of the box body: interior width plus two wall thicknesses. */
+export function cardBoxOuterWidth(cardWidth: number): number {
+  return (
+    cardBoxInteriorWidth(cardWidth) + 2 * CARD_BOX_CONFIGURATION.wallThickness
+  )
+}
+
+/** Outer depth of the box body: D + 2t minus the front channel allowance. */
+export function cardBoxOuterDepth(storageDepth: number): number {
+  return storageDepth + 2 * CARD_BOX_CONFIGURATION.wallThickness - 1.8
 }
 
 /**
@@ -475,10 +489,9 @@ export function boundsForCardBox(parameters: CardBoxParameters): {
   min: [number, number, number]
   max: [number, number, number]
 } {
-  const { cardWidth, cardHeight, storageDepth } = parameters
-  const t = CARD_BOX_CONFIGURATION.wallThickness
-  const halfWidth = (cardBoxInteriorWidth(cardWidth) + 2 * t) / 2
-  const halfDepth = (storageDepth + 2 * t) / 2
+  const { cardHeight, storageDepth } = parameters
+  const halfWidth = cardBoxOuterWidth(parameters.cardWidth) / 2
+  const halfDepth = (cardBoxOuterDepth(storageDepth) + 1.8) / 2
 
   switch (parameters.part) {
     case 'lid':

@@ -422,6 +422,8 @@ export {
   cardBoxFileName,
   cardBoxHasAccentArt,
   cardBoxInteriorWidth,
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
   cardBoxStlFileName,
   cardBoxThreeMfFileName,
   cardBoxToken,

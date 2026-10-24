@@ -13,6 +13,8 @@ import {
 } from '../../../cad-contract/units/hsw-cell'
 import { HEXAGONAL_COLUMN_CONFIGURATION } from '../../../cad-contract/units/hexagonal-column'
 import {
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   isCardBoxParameters,
 } from '../../../cad-contract/units/card-box'
@@ -171,8 +173,8 @@ export function cardBoxPreview(
   const p = parameters
   // Recognizable proportions only: a hollow rectangular tube with a floor, a
   // lid plate riding above the assembled box, and the interior divider.
-  const outerWidth = p.cardWidth + 2 * c.wallThickness
-  const outerDepth = p.storageDepth + 2 * c.wallThickness - 1.8
+  const outerWidth = cardBoxOuterWidth(p.cardWidth)
+  const outerDepth = cardBoxOuterDepth(p.storageDepth)
   const height = p.cardHeight + 2
   const assembled = p.part === 'assembly'
   const solids: PreviewSolid[] = []
@@ -194,7 +196,7 @@ export function cardBoxPreview(
       slab(
         outerWidth,
         outerDepth + 1.8,
-        c.dividerSlotWidth * 1.8,
+        c.lidRoofThickness,
         0,
         0,
         assembled ? p.cardHeight + 7.2 : 0,

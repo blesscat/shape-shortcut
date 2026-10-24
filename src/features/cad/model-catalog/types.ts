@@ -167,6 +167,12 @@ export type ModelDefinition<
   exportFileName: (parameters: ModelParameterValues) => string
   stlFileName: (parameters: ModelParameterValues) => string
   threeMfFileName?: (parameters: ModelParameterValues) => string | null
+  /**
+   * Stable translation key; a non-null key disables all downloads for the
+   * current parameters and the key is rendered as the download hint (used
+   * by card-box's assembly, which is preview-only).
+   */
+  exportBlockedHintKey?: (parameters: ModelParameterValues) => string | null
   fixedStepDownload?: (
     parameters: ModelParameterValues,
   ) => FixedStepDownload | null
