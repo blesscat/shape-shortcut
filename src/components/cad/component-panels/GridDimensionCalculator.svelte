@@ -151,7 +151,7 @@
     </ParameterField>
     <div class="min-w-0 pt-[1.8rem]">
       <button
-        class="h-[2.725rem] shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-0 bg-primary px-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-disabled"
+        class="h-[2.725rem] shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-0 bg-primary px-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:bg-disabled disabled:text-disabled-foreground"
         type="button"
         onclick={handleCalculate}
       >

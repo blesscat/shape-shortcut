@@ -1,0 +1,43 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 319ms using pnpm v11.20.0
+
+Running 7 tests using 1 worker
+
+(node:1703714) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › tests/e2e/box.spec.ts:155:1 › CAD workspace preserves responsive columns within the viewport (950ms)
+(node:1703953) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [chromium] › tests/e2e/cad-progressive-preview.spec.ts:198:1 › mobile simplified status remains readable above the progress panel (629ms)
+  ✓  3 [chromium] › tests/e2e/mobile-parameter-drawer.spec.ts:14:1 › narrow workspace uses a translucent bottom drawer with external actions (688ms)
+  ✓  4 [chromium] › tests/e2e/workspace-layout.spec.ts:3:1 › desktop parameter menu scrolls independently from the model viewport (546ms)
+  ✓  5 [chromium] › tests/e2e/workspace-layout.spec.ts:58:1 › wide OpenGrid workspace keeps document scrolling inside the parameter panel (553ms)
+  ✓  6 [chromium] › tests/e2e/workspace-layout.spec.ts:107:1 › narrow CAD workspace collapses parameters into a bottom drawer (553ms)
+  ✓  7 [chromium] › tests/e2e/workspace-layout.spec.ts:159:1 › short desktop keeps the preview, scrollable controls and attribution reachable (472ms)
+
+
+  1) [chromium] › tests/e2e/box.spec.ts:155:1 › CAD workspace preserves responsive columns within the viewport
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+      201 |     )
+      202 |   const hasVerticalOverflow = () =>
+    > 203 |     page.evaluate(
+          |          ^
+      204 |       () =>
+      205 |         document.documentElement.scrollHeight <=
+      206 |         document.documentElement.clientHeight,
+        at hasVerticalOverflow (/home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/box.spec.ts:203:10)
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/box.spec.ts:214:3
+
+    Error Context: ../../../../../../tmp/cad-height-verified/box-CAD-workspace-preserve-522a0-columns-within-the-viewport-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/e2e/box.spec.ts:155:1 › CAD workspace preserves responsive columns within the viewport
+  6 passed (5.4s)

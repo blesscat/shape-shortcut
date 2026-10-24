@@ -1,0 +1,45 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 430ms using pnpm v11.20.0
+
+Running 1 test using 1 worker
+
+(node:1719228) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link (5.9s)
+
+
+  1) [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByRole('link', { name: '返回模型選擇' })
+    Expected: "/models"
+    Received: "/zh-Hant/models"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for getByRole('link', { name: '返回模型選擇' })
+        14 × locator resolved to <a href="/zh-Hant/models" class="rounded-lg border border-border-card bg-panel px-[0.8rem] py-[0.6rem] text-base text-ink no-underline hover:bg-page focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus">返回模型選擇</a>
+           - unexpected value "/zh-Hant/models"
+
+
+      23 |   const returnLink = page.getByRole('link', { name: '返回模型選擇' })
+      24 |   await expect(returnLink).toBeVisible()
+    > 25 |   await expect(returnLink).toHaveAttribute('href', '/models')
+         |                            ^
+      26 |   await returnLink.click()
+      27 |   await expect(page).toHaveURL('/models')
+      28 | })
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/workspace-header.spec.ts:25:28
+
+    Error Context: ../../../../../../tmp/cad-base-header/workspace-header-CAD-heade-4cb6c-ent-model-and-a-return-link-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/e2e/workspace-header.spec.ts:3:1 › CAD header shows the current model and a return link

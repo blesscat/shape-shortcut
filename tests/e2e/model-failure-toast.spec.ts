@@ -23,7 +23,10 @@ test('model generation failure shows its reason in a toast and keeps export disa
   const toast = page.getByTestId('cad-error-toast')
   await expect(toast).toBeVisible({ timeout: 30_000 })
   await expect(toast).toHaveAttribute('role', 'alert')
-  await expect(toast).toContainText('CAD 操作失敗：')
+  await expect(toast).toHaveAttribute('data-error-code', 'MODEL_ASSET_INVALID')
+  await expect(toast.getByTestId('cad-error-toast-message')).toHaveText(
+    '原因：模型建立失敗，請調整參數後重試。',
+  )
   await toast.getByRole('button', { name: '關閉錯誤通知' }).click()
   await expect(toast).toBeHidden()
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeDisabled()

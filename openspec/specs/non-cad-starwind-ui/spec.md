@@ -10,51 +10,26 @@ Svelte CAD experience, routes, content, and interaction contracts.
 
 ### Requirement: Non-CAD pages share a consistent UI foundation
 
-The localized homepage, model-selection page, documentation page, and About
-page MUST use the appearance defined by the Human 親和系 warm design system
-of the active color scheme: white/warm surfaces with coral primary actions
-in light appearance, and warm dark grounds with bright coral links in dark
-appearance. The shared treatment MUST cover page surfaces, interactive
-actions, status labels, and content groupings, including the system's
-signature treatments: a capsule pill navigation whose active page
-(`aria-current`) renders on the coral soft tint with deep coral text,
-fully-pill primary buttons that lift on hover (rise with a deeper soft
-shadow, never gray or faded), cards with 20px radius and soft shadow that
-lift on hover, system tags tinted by system (Desk on coral soft tint, Wall
-on mint soft tint, HSW on neutral), spec tables on rounded soft surfaces
-with hairline separators, and popovers/dialogs at 24px radius. The homepage
-MUST follow the warm system's layout composition: a friendly hero with
-headline, lede, dual actions, and a starting note; a where-it-runs summary
-card; an icon-led four-card feature band; a four-step desk-system workflow
-band; a desk-or-wall routes band; an about teaser; and a support banner.
-The model-selection and About pages MUST apply the same centered
-page-header vocabulary; the documentation page MUST keep its left-aligned
-reading layout while sharing the same container and card vocabulary.
-Typography MUST follow the warm system (Nunito + Noto Sans TC UI text with
-JetBrains Mono technical labels in both appearances). The shared treatment
-MUST expose readable hover, disabled, and keyboard-focus states without
-requiring a client-side CAD runtime.
+Localized homepage, chooser, documentation and About pages MUST share the paper/indigo/graphite color system, typography roles, focus treatment and 10px control/16px card/20px large-container shape vocabulary. Current navigation and selected controls MUST use restrained indigo emphasis; categories MUST remain understandable through text and structure. Static reading surfaces MUST NOT lift on hover. Interactive controls MUST expose clear hover, disabled and focus states.
+
+The homepage MUST keep a friendly headline, explanation, primary model entry, secondary guide entry, model imagery, Desk/Wall routes, workflow guidance and author/support context. The chooser MUST use a compact left-aligned heading and bounded content width consistent with the homepage. About MUST use a readable author introduction with side-by-side portrait/text when space allows and stacked content when narrow. Documentation MUST use a left-aligned reading measure with wider diagrams/tables and containers reserved for checklists, illustrations and notices rather than every paragraph. Nunito/Noto Sans TC MUST serve UI/navigation, with JetBrains Mono for technical values. Public pages MUST remain readable without starting a CAD generation runtime.
 
 #### Scenario: Localized non-CAD page renders its shared UI treatment
 
 - **WHEN** a user opens a supported localized homepage, model-selection page, documentation page, or About page
-- **THEN** the page MUST render its page-local buttons, cards, labels, dialogs, and separators with the warm design-system treatment of the active color scheme
-- **AND** the navigation MUST render as a capsule with the active page on the coral soft tint in both appearances
-- **AND** the page MUST remain renderable without initializing a CAD Worker, WebAssembly CAD kernel, WebGL renderer, or Svelte CAD workspace
+- **THEN** the page MUST render its page-local buttons, cards, labels, dialogs, and separators with the paper/indigo/graphite design-system treatment of the active color scheme
+- **AND** the navigation MUST use the shared stable shell with theme-appropriate indigo current-page indication
+- **AND** the page MUST remain renderable without initializing a CAD generation Worker, WebAssembly CAD kernel, or Svelte CAD workspace; optional prebuilt documentation-scene enhancement MUST preserve a static accessible fallback
 
 #### Scenario: Non-CAD controls expose usable interaction states
 
 - **WHEN** a user hovers, focuses, disables, or activates a page-local control on a supported non-CAD page
-- **THEN** the control MUST expose a visually distinguishable state, with hover lifting rather than fading or graying
+- **THEN** the control MUST expose a visually distinguishable state, without making non-interactive reading content appear clickable
 - **AND** its accessible name, destination, and existing action semantics MUST remain understandable
 
 ### Requirement: Existing non-CAD content and routing remain compatible
 
-The UI foundation MUST preserve the existing localized page content, translated
-strings, metadata, route paths, model links, static preview fallbacks, and
-external support-provider boundary. Visual component adoption MUST NOT require
-React or change the public model IDs, locale route structure, or navigation
-destinations.
+The refresh MUST preserve content meaning, metadata, routes, model identities and destinations, static preview fallbacks, localized accessible names and external support-provider boundaries. Model-entry actions MUST use consistent localized wording (調整模型 / Customize model), with a secondary details action where applicable. Approved action-label and hierarchy changes MUST NOT remove model descriptions, parameter information, guide instructions or alternative text. The refresh MUST NOT require React or alter catalog visibility, public model IDs or locale routing.
 
 #### Scenario: Localized model selection remains behaviorally equivalent
 
@@ -65,17 +40,12 @@ destinations.
 #### Scenario: Localized static pages retain their public contract
 
 - **WHEN** a user opens the localized homepage, documentation page, or About page after the UI adoption
-- **THEN** the existing headings, translated copy, links, metadata, image alternative text, and support actions MUST remain available in the selected locale
+- **THEN** existing information, guide instructions, links, metadata, image alternative text and support actions MUST remain available in the selected locale, with approved action-label and layout changes
 - **AND** external support choices MUST continue to open on the configured provider pages without collecting payment data in Shape Shortcut
 
 ### Requirement: Non-CAD theme, user preference, and localization remain complete
 
-The non-CAD UI treatment MUST work with the light or dark appearance selected by
-the system preference or the shared header theme control and MUST preserve the
-existing responsive layout behavior. Every
-new visible label, accessible name, state message, and component text
-introduced by the UI treatment MUST be available in Traditional Chinese and
-English through the existing localization contract.
+The non-CAD UI MUST work with system or explicit appearance preferences and preserve responsive access to all content. New visible labels, accessible names, menu actions and state messages MUST be available in Traditional Chinese and English. Long names and descriptions MUST wrap without removing distinguishing information, shrinking text to fit, or producing horizontal page overflow. Theme switching MUST preserve current navigation and content state.
 
 #### Scenario: Non-CAD pages remain readable in both color schemes
 
@@ -88,7 +58,7 @@ English through the existing localization contract.
 - **WHEN** a user selects light or dark mode from the shared header on a supported non-CAD page
 - **THEN** the page MUST update its surfaces, text, controls, borders, and focus indicators to the selected mode
 - **AND** the selected mode MUST remain active after navigating between `/en/` and `/zh-Hant/` routes or reloading the page
-- **AND** the page MUST remain renderable without initializing a CAD Worker, WebAssembly CAD kernel, WebGL renderer, or Svelte CAD workspace
+- **AND** the page MUST remain renderable without initializing a CAD generation Worker, WebAssembly CAD kernel, or Svelte CAD workspace; optional prebuilt documentation-scene enhancement MUST preserve a static accessible fallback
 
 #### Scenario: English and Traditional Chinese render equivalent UI states
 
@@ -98,11 +68,7 @@ English through the existing localization contract.
 
 ### Requirement: CAD workspace remains isolated from the non-CAD adoption
 
-The CAD route MUST retain its existing Svelte island boundary, CAD workspace
-layout, parameter editing, worker lifecycle, viewport behavior, persistence,
-validation, and export behavior. The non-CAD UI adoption MUST NOT introduce a
-React integration or require Starwind components to render inside the Svelte
-CAD component tree.
+The CAD route MUST retain its Svelte island boundary, parameter semantics, worker lifecycle, persistence, validation and export behavior. Shared visual tokens MUST apply consistently, while separately specified CAD workspace/Playground layout and presentation changes remain permitted. Non-CAD component adoption MUST NOT introduce React or require Starwind components inside the Svelte CAD tree.
 
 #### Scenario: CAD route continues to load the existing workspace
 

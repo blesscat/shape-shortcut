@@ -8,36 +8,19 @@
 
 ### Requirement: Site appearance follows the system or user color scheme
 
-The site MUST use an explicit light or dark choice made through the shared
-navigation when one exists; otherwise it MUST select its appearance from the
-user's active system or browser color-scheme preference. The light appearance
-MUST follow the **Human 親和系** warm design system (white `#FFFFFF` page with
-warm `#FFF7F2`/`#F6F1ED` panel surfaces, coral `#CF4429` primary with
-`#FFE9E2` soft tint, warm ink text ramp, Nunito + Noto Sans TC UI text with
-JetBrains Mono technical labels). The dark appearance MUST follow the warm
-dark variant of the same system (warm dark brown `#201A16` grounds with
-`#2A231E`/`#332A24` panels, bright coral `#FF8A70` links and text accents,
-coral `#CF4429` CTAs with white labels, depth conveyed by panel brightness
-steps and warm-white low-alpha borders rather than glow effects). The
-selected appearance MUST apply consistently to the shared navigation, static
-Astro pages, CAD workspace panels, form controls, status messages, and
-viewport container, and the page layout MUST follow the active design
-system's layout vocabulary (section order and alignment), without changing
-any existing interaction behavior, content, routes, or model catalog. An
-explicit user choice MUST persist across localized route navigation and page
-reloads until the user chooses the other mode.
+The site MUST honor an explicit shared-navigation light/dark choice, otherwise following the system/browser preference. All shared navigation, static pages, CAD panels, controls, statuses and viewport containers MUST consistently use the paper/indigo/graphite visual system: paper/white light surfaces with indigo actions and graphite text; graphite dark surfaces with light-indigo actions and dark action labels. Both appearances MUST share the same content and interaction hierarchy. Theme changes themselves MUST NOT alter routes, catalog, content, user parameters or layout. An explicit choice MUST persist across localized navigation and reloads until changed.
 
-#### Scenario: Light appearance applies the warm system
+#### Scenario: Light appearance applies the paper system
 
 - **WHEN** a user opens the site with a light system preference or an explicit light choice
-- **THEN** shared navigation, static pages, CAD panels, form controls, status messages, and the viewport container MUST render the warm light palette with coral primary actions
-- **AND** no interaction behavior, content, route, or model catalog change is introduced
+- **THEN** shared navigation, static pages, CAD panels, form controls, status messages, and the viewport container MUST render the paper light palette with indigo primary actions
+- **AND** selecting or switching appearance itself MUST NOT alter interaction behavior, content, routes, or the model catalog
 
-#### Scenario: Dark appearance applies the warm dark system
+#### Scenario: Dark appearance applies the graphite system
 
 - **WHEN** a user opens the site with a dark system preference or an explicit dark choice
-- **THEN** the same surfaces MUST render the warm dark palette with bright coral links and coral CTAs with white labels
-- **AND** depth MUST come from panel brightness steps and warm-white borders rather than glow accents
+- **THEN** the same surfaces MUST render the graphite dark palette with light-indigo links and light-indigo CTAs with graphite labels
+- **AND** depth MUST come from panel brightness steps and neutral borders rather than glow accents
 
 #### Scenario: Explicit choice persists
 
@@ -46,7 +29,7 @@ reloads until the user chooses the other mode.
 
 ### Requirement: Dark controls and states remain readable
 
-The site MUST expose sufficient visual contrast for body text, muted text, borders, fields, buttons, links, focus indicators, validation errors, stale-preview indicators, disabled controls, and native form-control UI in both color schemes. Neon-tinted and gradient controls in the dark appearance MUST meet the same contrast thresholds as solid controls. The dark appearance MUST use the same semantic control states as the light appearance rather than requiring a separate interaction model. Decorative glow, grid, and glass effects MUST NOT reduce the contrast of text or control boundaries below these thresholds.
+The site MUST expose sufficient visual contrast for body text, muted text, borders, fields, buttons, links, focus indicators, validation errors, stale-preview indicators, disabled controls, and native form-control UI in both color schemes. Body, muted and action text MUST meet at least 4.5:1 contrast on their actual surfaces. Required control boundaries and focus indicators MUST meet at least 3:1 against adjacent surfaces. The dark appearance MUST use the same semantic control states as the light appearance rather than requiring a separate interaction model. Decorative glow, grid, and glass effects MUST NOT reduce the contrast of text or control boundaries below these thresholds.
 
 #### Scenario: Theme control remains operable
 
@@ -70,27 +53,18 @@ The site MUST expose sufficient visual contrast for body text, muted text, borde
 #### Scenario: Static homepage CTA remains readable in dark appearance
 
 - **WHEN** a user views a localized homepage while the browser reports a dark color scheme
-- **THEN** the final call-to-action label MUST have at least 4.5:1 contrast against its surface, including any neon or gradient button fill
+- **THEN** the final call-to-action label MUST have at least 4.5:1 contrast against its surface, including resting and pressed button fills
 - **AND** the CTA's hover state MUST preserve at least 4.5:1 contrast between its label and surface
 - **AND** the CTA MUST remain visible, keyboard-focusable, and linked to the localized model-selection page
 
 ### Requirement: CAD viewport follows the selected appearance
 
-The CAD viewport MUST adapt its rendered background, grid, orientation
-gizmo, model edge overlay, dimension annotations, and lighting to the
-selected system or user color scheme. In the dark appearance the viewport
-scene MUST use the warm dark treatment: a dark warm non-distracting surface
-with warm-white-tinted grid lines, a warm model edge overlay, and a gizmo
-whose axes keep the site-wide hue semantics (X coral, Y success green, Z
-info blue) in brighter variants, consistent with the Human 親和系 palette.
-Theme adaptation MUST NOT change the committed model geometry, dimension
-values, camera framing, orbit controls, model revision, stale state, or
-export behavior.
+The CAD viewport MUST adapt background, grid, gizmo, edges, measurement annotations and lighting to the active appearance. The dark scene MUST use neutral graphite surfaces with restrained light grid lines and visible edges. Gizmo axes MUST keep X red/coral, Y green and Z blue semantics with brighter dark variants. Brand changes MUST NOT overwrite user model colors. Theme adaptation MUST NOT change committed geometry, dimensions, camera framing, orbit controls, model revision, stale state or export behavior.
 
 #### Scenario: Viewport scene adapts per appearance
 
 - **WHEN** the CAD viewport renders in the light or dark appearance
-- **THEN** background, grids, gizmo, edge overlay, annotations, and lighting MUST resolve from the warm viewport tokens of that appearance
+- **THEN** background, grids, gizmo, edge overlay, annotations, and lighting MUST resolve from the neutral viewport tokens of that appearance
 
 #### Scenario: Theme adaptation leaves the model untouched
 

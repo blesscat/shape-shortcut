@@ -1,13 +1,7 @@
 @import 'tailwindcss';
 
-/* Site tokens live here only. The design system is the Human 親和系 warm
-   system (design-spec-4.0.0 - 4.2.3-viewport): white and warm surfaces with a
-   coral #CF4429 primary in light appearance; warm dark brown #201A16 grounds
-   with bright coral #FF8A70 links and unchanged coral CTAs in dark
-   appearance; Nunito + Noto Sans TC UI text with JetBrains Mono technical
-   labels in both appearances.
-   starwind.css maps its shadcn-style variables onto these tokens; it must not
-   redefine any --color-* name declared here (custom-property cycles). */
+/* Shared paper/indigo/graphite tokens. Starwind maps semantic aliases onto
+   these values without redeclaring --color-* names (avoid property cycles). */
 @theme static {
   --breakpoint-cad: 760px;
   --font-sans:
@@ -19,59 +13,64 @@
      the same element, so the --font-sans above flows through. */
   --font-heading: var(--font-sans);
 
-  --color-ink: #362a24;
+  --color-ink: #252833;
   /* Muted is the de-emphasised SURFACE token (bg-muted hovers/footers/panels);
      muted TEXT is --color-muted-foreground. */
-  --color-muted: #fff7f2;
-  --color-muted-foreground: #6e5f57;
-  --color-ink-faint: #7d6e65;
-  --color-page: #ffffff;
-  --color-panel: #fff7f2;
-  --color-background: #ffffff;
+  --color-muted: #f0f0ed;
+  --color-muted-foreground: #626775;
+  --color-ink-faint: #626775;
+  --color-page: #f8f7f4;
+  --color-panel: #ffffff;
+  --color-background: #f8f7f4;
   --color-card: #ffffff;
-  --color-foreground: #362a24;
-  --color-card-foreground: #362a24;
-  --color-border-card: #e8ded6;
-  --color-border: #e8ded6;
-  --color-border-field: #d9ccc2;
+  --color-foreground: #252833;
+  --color-card-foreground: #252833;
+  --color-border-card: #d9dce3;
+  --color-border: #d9dce3;
+  --color-border-field: #7d8493;
   --color-error: #a32828;
   --color-error-border: #c44747;
   --color-stale: #d69a34;
   --color-stale-background: #fff4d6;
   --color-stale-text: #69470d;
-  /* The coral CTA face (#cf4429, white labels >=4.6:1 in both appearances)
-     hovers to #B93A23 in light; dark hover keeps the face and lifts instead. */
-  --color-primary: #cf4429;
-  --color-primary-strong: #cf4429;
-  --color-primary-hover: #b93a23;
-  --color-primary-soft: #ffe9e2;
+  /* Action surfaces and their foregrounds are a paired theme contract. */
+  --color-primary: #4659cf;
+  --color-primary-strong: #4659cf;
+  --color-primary-hover: #3748b5;
+  --color-primary-soft: #eceffc;
   --color-primary-foreground: #ffffff;
   --color-success: #1f7a3a;
   --color-success-soft: #eaf6ee;
-  /* accent-bright is the link/text coral: the CTA color in light, the bright
-     variant #FF8A70 in dark. */
-  --color-accent-bright: #cf4429;
-  --color-focus: #cf4429;
-  --color-outline: #cf4429;
-  --color-disabled: #c9bbb1;
-  --color-status: #5f534b;
-  --color-progress-track: #f0e9e3;
-  --color-progress-fill: #cf4429;
-  --color-nav: rgb(255 255 255 / 72%);
-  --color-nav-foreground: #362a24;
-  --color-banner: #fff7f2;
-  --color-banner-foreground: #362a24;
-  --color-viewport: #f7f3ef;
+  /* Text accent follows the readable link color per theme. */
+  --color-accent-bright: #4659cf;
+  --color-focus: #4659cf;
+  --color-outline: #4659cf;
+  --color-disabled: #e5e7eb;
+  --color-disabled-background: #e5e7eb;
+  --color-disabled-foreground: #626775;
+  --color-primary-pressed: #2e3d9f;
+  --color-secondary-surface: #f0f0ed;
+  --color-status: #626775;
+  --color-progress-track: #e5e7eb;
+  --color-progress-fill: #4659cf;
+  --color-nav: #ffffff;
+  --color-nav-foreground: #252833;
+  --color-banner: #f0f0ed;
+  --color-banner-foreground: #252833;
+  --color-viewport: #f0f1f4;
 
-  /* Warm shape vocabulary: 12px images, 20px cards, 24px containers and
-     popovers; buttons, tags, and navigation are pills (rounded-full). */
-  --radius-img: 12px;
-  --radius-card: 20px;
-  --radius-container: 24px;
+  /* Controls 10px, cards 16px, containers 20px. */
+  --radius-img: 10px;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-container: 20px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 
-  --shadow-soft: 0 8px 24px rgb(59 43 36 / 10%);
-  --shadow-lift: 0 14px 34px rgb(59 43 36 / 14%);
-  --shadow-card: 0 8px 24px rgb(59 43 36 / 10%);
+  --shadow-soft: 0 2px 8px rgb(37 40 51 / 5%);
+  --shadow-lift: 0 12px 32px rgb(37 40 51 / 14%);
+  --shadow-card: 0 2px 8px rgb(37 40 51 / 5%);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -80,32 +79,31 @@
 
 :root {
   color-scheme: light;
-  /* 4.2.3: review found the translucent warm grid too faint — light-mode
-     lines are now neutral dark gray: major solid, minor 85% so the whole
-     mesh reads dark, not just the every-5th majors. */
-  --cad-viewport-grid-major: #52525b;
-  --cad-viewport-grid-minor: rgba(82, 82, 91, 0.85);
-  --cad-viewport-gizmo-background: #fff7f2;
+  --site-header-height: 80px;
+  /* Quiet grids distinguish major and minor spacing without masking contours. */
+  --cad-viewport-grid-major: #9ca3b0;
+  --cad-viewport-grid-minor: rgba(156, 163, 176, 0.42);
+  --cad-viewport-gizmo-background: #ffffff;
   --cad-viewport-gizmo-x: #c8401f;
   --cad-viewport-gizmo-y: #1f7a3a;
   --cad-viewport-gizmo-z: #0284c7;
-  --cad-viewport-gizmo-label: #362a24;
+  --cad-viewport-gizmo-label: #252833;
   --cad-viewport-hover: #ffb454;
   --cad-viewport-selection: #0284c7;
   --cad-viewport-selection-fill: rgba(2, 132, 199, 0.14);
   --cad-viewport-error: #d6452b;
   --cad-viewport-error-fill: rgba(214, 69, 43, 0.16);
-  --cad-viewport-board-face: #efe6dc;
-  --cad-viewport-board-edge: #3a2e27;
+  --cad-viewport-board-face: #e4e7ec;
+  --cad-viewport-board-edge: #454b58;
   --cad-viewport-contact-shadow: rgba(59, 43, 36, 0.2);
-  --cad-viewport-edge: #3a2e27;
+  --cad-viewport-edge: #454b58;
   --cad-viewport-annotation: #0284c7;
-  --cad-viewport-annotation-label: #6e5f57;
+  --cad-viewport-annotation-label: #626775;
   --cad-viewport-face-highlight: rgba(255, 180, 84, 0.35);
   --cad-viewport-light-sky: #ffffff;
-  --cad-viewport-light-ground: #c9bcb2;
+  --cad-viewport-light-ground: #b8bfcb;
   --cad-viewport-light-key: #ffffff;
-  --cad-viewport-light-fill: #f3eae2;
+  --cad-viewport-light-fill: #eef1f6;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -113,137 +111,145 @@
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
     color-scheme: dark;
-    --color-ink: #f4ede7;
-    --color-muted: #2a231e;
-    --color-muted-foreground: #b8a99f;
-    --color-ink-faint: #94867c;
-    --color-page: #201a16;
-    --color-panel: #2a231e;
-    --color-background: #201a16;
-    --color-card: #2a231e;
-    --color-foreground: #f4ede7;
-    --color-card-foreground: #f4ede7;
-    --color-border-card: #443b34;
-    --color-border: #443b34;
-    --color-border-field: #94867c;
+    --color-ink: #f1f2f6;
+    --color-muted: #2c303a;
+    --color-muted-foreground: #adb3c2;
+    --color-ink-faint: #adb3c2;
+    --color-page: #181a20;
+    --color-panel: #22252d;
+    --color-background: #181a20;
+    --color-card: #22252d;
+    --color-foreground: #f1f2f6;
+    --color-card-foreground: #f1f2f6;
+    --color-border-card: #424957;
+    --color-border: #424957;
+    --color-border-field: #828b9e;
     --color-error: #ff9d9d;
     --color-error-border: #e16b73;
     --color-stale: #f5c96b;
     --color-stale-background: #493812;
     --color-stale-text: #ffe4a4;
-    --color-primary: #ff8a70;
-    --color-primary-strong: #cf4429;
-    --color-primary-hover: #cf4429;
-    --color-primary-soft: rgb(214 69 43 / 16%);
-    --color-primary-foreground: #ffffff;
+    --color-primary: #a8b5ff;
+    --color-primary-strong: #a8b5ff;
+    --color-primary-hover: #bbc5ff;
+    --color-primary-soft: #2b3352;
+    --color-primary-foreground: #181a20;
     --color-success: #5cd68a;
     --color-success-soft: #23392b;
-    --color-accent-bright: #ff8a70;
-    --color-focus: #ff8a70;
-    --color-outline: #ff8a70;
-    --color-disabled: #5e534b;
-    --color-status: #c9bcb2;
-    --color-progress-track: #332a24;
-    --color-progress-fill: #ff8a70;
-    --color-nav: rgb(32 26 22 / 72%);
-    --color-nav-foreground: #f4ede7;
-    --color-banner: #2a231e;
-    --color-banner-foreground: #f4ede7;
-    --color-viewport: #201a16;
-    --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
+    --color-accent-bright: #a8b5ff;
+    --color-focus: #a8b5ff;
+    --color-outline: #a8b5ff;
+    --color-disabled: #303540;
+    --color-disabled-background: #303540;
+    --color-disabled-foreground: #adb3c2;
+    --color-primary-pressed: #95a5f4;
+    --color-secondary-surface: #2c303a;
+    --color-status: #adb3c2;
+    --color-progress-track: #303540;
+    --color-progress-fill: #a8b5ff;
+    --color-nav: #22252d;
+    --color-nav-foreground: #f1f2f6;
+    --color-banner: #22252d;
+    --color-banner-foreground: #f1f2f6;
+    --color-viewport: #181a20;
+    --shadow-soft: 0 2px 8px rgb(0 0 0 / 16%);
     --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
-    --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
-    --cad-viewport-grid-major: rgba(244, 237, 231, 0.24);
-    --cad-viewport-grid-minor: rgba(244, 237, 231, 0.1);
-    --cad-viewport-gizmo-background: #2a231e;
+    --shadow-card: 0 2px 8px rgb(0 0 0 / 16%);
+    --cad-viewport-grid-major: rgba(173, 179, 194, 0.3);
+    --cad-viewport-grid-minor: rgba(173, 179, 194, 0.12);
+    --cad-viewport-gizmo-background: #22252d;
     --cad-viewport-gizmo-x: #ff8a70;
     --cad-viewport-gizmo-y: #5cd68a;
     --cad-viewport-gizmo-z: #6fc7f2;
-    --cad-viewport-gizmo-label: #f4ede7;
+    --cad-viewport-gizmo-label: #f1f2f6;
     --cad-viewport-hover: #ffc57e;
     --cad-viewport-selection: #6fc7f2;
     --cad-viewport-selection-fill: rgba(111, 199, 242, 0.16);
     --cad-viewport-error: #ff8a70;
     --cad-viewport-error-fill: rgba(255, 138, 112, 0.18);
-    --cad-viewport-board-face: #262019;
-    --cad-viewport-board-edge: #cbbfb4;
+    --cad-viewport-board-face: #242832;
+    --cad-viewport-board-edge: #c1c8d6;
     --cad-viewport-contact-shadow: rgba(0, 0, 0, 0.45);
-    --cad-viewport-edge: #cbbfb4;
+    --cad-viewport-edge: #c1c8d6;
     --cad-viewport-annotation: #6fc7f2;
-    --cad-viewport-annotation-label: #b8a99f;
+    --cad-viewport-annotation-label: #adb3c2;
     --cad-viewport-face-highlight: rgba(255, 197, 126, 0.3);
-    --cad-viewport-light-sky: #e8ddd3;
-    --cad-viewport-light-ground: #4a3e36;
-    --cad-viewport-light-key: #fff6ef;
-    --cad-viewport-light-fill: #ead9cd;
+    --cad-viewport-light-sky: #e8edf5;
+    --cad-viewport-light-ground: #454c5c;
+    --cad-viewport-light-key: #f4f7fc;
+    --cad-viewport-light-fill: #dce4f0;
   }
 }
 
 :root.dark {
   color-scheme: dark;
-  --color-ink: #f4ede7;
-  --color-muted: #2a231e;
-  --color-muted-foreground: #b8a99f;
-  --color-ink-faint: #94867c;
-  --color-page: #201a16;
-  --color-panel: #2a231e;
-  --color-background: #201a16;
-  --color-card: #2a231e;
-  --color-foreground: #f4ede7;
-  --color-card-foreground: #f4ede7;
-  --color-border-card: #443b34;
-  --color-border: #443b34;
-  --color-border-field: #94867c;
+  --color-ink: #f1f2f6;
+  --color-muted: #2c303a;
+  --color-muted-foreground: #adb3c2;
+  --color-ink-faint: #adb3c2;
+  --color-page: #181a20;
+  --color-panel: #22252d;
+  --color-background: #181a20;
+  --color-card: #22252d;
+  --color-foreground: #f1f2f6;
+  --color-card-foreground: #f1f2f6;
+  --color-border-card: #424957;
+  --color-border: #424957;
+  --color-border-field: #828b9e;
   --color-error: #ff9d9d;
   --color-error-border: #e16b73;
   --color-stale: #f5c96b;
   --color-stale-background: #493812;
   --color-stale-text: #ffe4a4;
-  --color-primary: #ff8a70;
-  --color-primary-strong: #cf4429;
-  --color-primary-hover: #cf4429;
-  --color-primary-soft: rgb(214 69 43 / 16%);
-  --color-primary-foreground: #ffffff;
+  --color-primary: #a8b5ff;
+  --color-primary-strong: #a8b5ff;
+  --color-primary-hover: #bbc5ff;
+  --color-primary-soft: #2b3352;
+  --color-primary-foreground: #181a20;
   --color-success: #5cd68a;
   --color-success-soft: #23392b;
-  --color-accent-bright: #ff8a70;
-  --color-focus: #ff8a70;
-  --color-outline: #ff8a70;
-  --color-disabled: #5e534b;
-  --color-status: #c9bcb2;
-  --color-progress-track: #332a24;
-  --color-progress-fill: #ff8a70;
-  --color-nav: rgb(32 26 22 / 72%);
-  --color-nav-foreground: #f4ede7;
-  --color-banner: #2a231e;
-  --color-banner-foreground: #f4ede7;
-  --color-viewport: #201a16;
-  --shadow-soft: 0 8px 24px rgb(0 0 0 / 35%);
+  --color-accent-bright: #a8b5ff;
+  --color-focus: #a8b5ff;
+  --color-outline: #a8b5ff;
+  --color-disabled: #303540;
+  --color-disabled-background: #303540;
+  --color-disabled-foreground: #adb3c2;
+  --color-primary-pressed: #95a5f4;
+  --color-secondary-surface: #2c303a;
+  --color-status: #adb3c2;
+  --color-progress-track: #303540;
+  --color-progress-fill: #a8b5ff;
+  --color-nav: #22252d;
+  --color-nav-foreground: #f1f2f6;
+  --color-banner: #22252d;
+  --color-banner-foreground: #f1f2f6;
+  --color-viewport: #181a20;
+  --shadow-soft: 0 2px 8px rgb(0 0 0 / 16%);
   --shadow-lift: 0 14px 34px rgb(0 0 0 / 45%);
-  --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
-  --cad-viewport-grid-major: rgba(244, 237, 231, 0.24);
-  --cad-viewport-grid-minor: rgba(244, 237, 231, 0.1);
-  --cad-viewport-gizmo-background: #2a231e;
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 16%);
+  --cad-viewport-grid-major: rgba(173, 179, 194, 0.3);
+  --cad-viewport-grid-minor: rgba(173, 179, 194, 0.12);
+  --cad-viewport-gizmo-background: #22252d;
   --cad-viewport-gizmo-x: #ff8a70;
   --cad-viewport-gizmo-y: #5cd68a;
   --cad-viewport-gizmo-z: #6fc7f2;
-  --cad-viewport-gizmo-label: #f4ede7;
+  --cad-viewport-gizmo-label: #f1f2f6;
   --cad-viewport-hover: #ffc57e;
   --cad-viewport-selection: #6fc7f2;
   --cad-viewport-selection-fill: rgba(111, 199, 242, 0.16);
   --cad-viewport-error: #ff8a70;
   --cad-viewport-error-fill: rgba(255, 138, 112, 0.18);
-  --cad-viewport-board-face: #262019;
-  --cad-viewport-board-edge: #cbbfb4;
+  --cad-viewport-board-face: #242832;
+  --cad-viewport-board-edge: #c1c8d6;
   --cad-viewport-contact-shadow: rgba(0, 0, 0, 0.45);
-  --cad-viewport-edge: #cbbfb4;
+  --cad-viewport-edge: #c1c8d6;
   --cad-viewport-annotation: #6fc7f2;
-  --cad-viewport-annotation-label: #b8a99f;
+  --cad-viewport-annotation-label: #adb3c2;
   --cad-viewport-face-highlight: rgba(255, 197, 126, 0.3);
-  --cad-viewport-light-sky: #e8ddd3;
-  --cad-viewport-light-ground: #4a3e36;
-  --cad-viewport-light-key: #fff6ef;
-  --cad-viewport-light-fill: #ead9cd;
+  --cad-viewport-light-sky: #e8edf5;
+  --cad-viewport-light-ground: #454c5c;
+  --cad-viewport-light-key: #f4f7fc;
+  --cad-viewport-light-fill: #dce4f0;
 }
 
 * {
@@ -268,7 +274,20 @@ body {
   }
 }
 
-/* Anchor targets clear the floating capsule nav in both themes. */
+/* Keep keyboard focus consistent for native controls and shared components.
+   An unlayered rule also replaces browser/Tailwind default focus resets. */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Anchor targets clear the reserved navigation in both themes. */
 [id] {
-  scroll-margin-top: 6.5rem;
+  scroll-margin-top: calc(var(--site-header-height) + 1rem);
+}
+
+@media (max-width: 760px) {
+  :root {
+    --site-header-height: 128px;
+  }
 }

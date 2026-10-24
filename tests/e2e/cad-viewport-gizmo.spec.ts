@@ -86,9 +86,9 @@ test('CAD viewport uses the available desktop width and height', async ({
   await waitForCadReady(page)
 
   expect((await readRect(page.locator('main'))).width).toBeGreaterThan(1200)
-  expect(
-    (await readRect(page.getByTestId('cad-viewport'))).height,
-  ).toBeGreaterThan(520)
+  const viewportRect = await readRect(page.getByTestId('cad-viewport'))
+  expect(viewportRect.height).toBeLessThanOrEqual(520)
+  expect(viewportRect.y + viewportRect.height).toBeLessThanOrEqual(900)
 })
 
 test('XYZ orientation gizmo follows orbit and stays anchored through model updates', async ({
@@ -120,7 +120,10 @@ test('XYZ orientation gizmo follows orbit and stays anchored through model updat
   expectRectToBeStable(initialRect, await readRect(gizmo))
 
   await width.fill('25.5')
-  await expect(page.getByRole('alert')).toContainText('必須是有限的整數。')
+  await expect(width).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByRole('alert')).toHaveText(
+    '寬度 輸入無效，請檢查參數後重試。',
+  )
   await expect(page.getByText('預覽與目前輸入不同步')).toBeVisible()
   expectRectToBeStable(initialRect, await readRect(gizmo))
 
@@ -158,8 +161,17 @@ test('XYZ orientation gizmo stays readable inside a narrow viewport', async ({
     await viewport.evaluate((element) => element.clientWidth),
   )
 
+  const parameterPill = page.getByTestId('cad-params-pill')
+  const parameterDrawer = page.getByTestId('cad-params-drawer')
+  await parameterPill.click()
+  await expect(parameterDrawer).toBeVisible()
   const width = page.getByRole('textbox', { name: /寬度/ })
   await width.fill('25.5')
+  await expect(width).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByRole('alert')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(parameterDrawer).toBeHidden()
+  await expect(parameterPill).toBeFocused()
   const staleBadge = page.getByText('預覽與目前輸入不同步')
   await expect(staleBadge).toBeVisible()
   const staleRect = await readRect(staleBadge)

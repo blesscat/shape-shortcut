@@ -32,7 +32,7 @@ const docsPath = publicPathFor(locale, 'docs')
 const aboutPath = publicPathFor(locale, 'about')
 
 const inlineLinkClass =
-  'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline/50'
+  'font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-outline'
 
 const heroBadges = [
   { key: 'home.badge.noInstall', testid: 'home-badge-no-install' },
@@ -70,10 +70,10 @@ const steps = [
             heroBadges.map((badge) => (
               <li>
                 <Badge
-                  tone="primary"
+                  tone="neutral"
                   appearance="soft"
                   size="sm"
-                  class="font-semibold text-primary-hover dark:text-primary"
+                  class="font-semibold text-muted-foreground"
                   data-testid={badge.testid}
                 >
                   {t(badge.key)}

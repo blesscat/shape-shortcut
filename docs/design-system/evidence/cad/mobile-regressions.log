@@ -1,0 +1,21 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 347ms using pnpm v11.20.0
+
+Running 6 tests using 1 worker
+
+(node:1654264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › tests/e2e/box.spec.ts:124:1 › CAD workspace shows the compact ready status after clearing progress (1.2s)
+  ✓  2 [chromium] › tests/e2e/cad-progressive-preview.spec.ts:198:1 › mobile simplified status remains readable above the progress panel (530ms)
+  ✓  3 [chromium] › tests/e2e/mobile-parameter-drawer.spec.ts:14:1 › narrow workspace uses a translucent bottom drawer with external actions (753ms)
+  ✓  4 [chromium] › tests/e2e/mobile-parameter-drawer.spec.ts:94:1 › invalid input shows the pill status dot and keeps exports disabled (754ms)
+  ✓  5 [chromium] › tests/e2e/mobile-parameter-drawer.spec.ts:121:1 › a valid input change marks the pill stale until the new build commits (1.9s)
+  ✓  6 [chromium] › tests/e2e/mobile-parameter-drawer.spec.ts:139:1 › desktop keeps the drawer, pill and action cluster out of the DOM (649ms)
+
+  6 passed (6.3s)

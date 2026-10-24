@@ -3,9 +3,9 @@ export const messages = {
   'home.metaDescription':
     'Shape Shortcut is a no-install, browser-based CAD tool: pick an OpenGrid storage model, dial in the size, preview it live, and download the STL — no software to install, no cost.',
   'home.explore.desk.categorySummary':
-    'Board and Snap are your base. Pick the containers you like first — tools are tucked away below.',
+    'Pick a container first, then add Board and Snap. Expand tools and accessories when you need them.',
   'home.explore.wall.categorySummary':
-    'The wall board and Snap are your base. Shelves, organizers, and the tissue box are containers; tools stay tucked below.',
+    'Pick a shelf, organizer, or tissue box first, then add Board and Snap. Tools and accessories are available below.',
   'home.maker.eyebrow': 'About the project',
   'home.maker.title': 'Keeping good 3D-printing tools in one drawer',
   'home.maker.body':

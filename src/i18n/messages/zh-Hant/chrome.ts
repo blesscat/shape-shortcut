@@ -2,6 +2,8 @@
 // Domain: chrome
 
 export const messages = {
+  'navigation.menu': '選單',
+  'navigation.closeMenu': '關閉選單',
   'navigation.primary': '主要導覽',
   'navigation.docs': '文件',
   'navigation.models': '選擇模型',

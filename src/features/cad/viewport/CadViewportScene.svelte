@@ -20,6 +20,7 @@
   } from '../../../cad-contract/messages'
   import type { ModelParameterValues } from '../../../cad-contract/units'
   import ModelMesh from './ModelMesh.svelte'
+  import { initialWorkspacePadding } from './initial-fit'
   import DimensionAnnotations from './DimensionAnnotations.svelte'
   import {
     CAD_VIEWPORT_GIZMO,
@@ -53,11 +54,6 @@
     onFaceHover?: (hover: FaceHoverState | null) => void
   }
 
-  function boundsMarginFor(presentation: CadViewportPresentation): number {
-    if (presentation === 'thumbnail') return 20
-    return 1.25
-  }
-
   type ViewportGizmoHandle = NonNullable<ComponentProps<typeof Gizmo>['ref']>
 
   let {
@@ -74,6 +70,10 @@
     onPreparationTiming,
     onFaceHover,
   }: Props = $props()
+
+  const initialBoundsPadding = untrack(() =>
+    presentation === 'thumbnail' ? 20 : initialWorkspacePadding(mesh.bounds),
+  )
 
   let enableFaceHover = $derived(
     presentation === 'workspace' && !simplified && onFaceHover !== undefined,
@@ -159,7 +159,7 @@
   />
 {/if}
 {#key preserveCamera ? 'persistent-camera' : modelRevision}
-  <Bounds margin={boundsMarginFor(presentation)} animate={false}>
+  <Bounds margin={initialBoundsPadding} animate={false}>
     {#key modelRevision}
       {#if partMeshes && partMeshes.length > 0}
         {#each partMeshes as part (part.name)}

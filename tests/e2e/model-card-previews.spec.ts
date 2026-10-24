@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
-  cadPathForModel,
   groupModelDefinitions,
   modelSelectionLabelFor,
 } from '../../src/features/cad/model-catalog'
@@ -20,7 +19,7 @@ const WEBP_QUALITY = 0.9
  * loudly if the CSS token drifts from the value the previews were built on.
  */
 /* Must match the dark --color-viewport token in src/styles/global.css. */
-const DARK_PREVIEW_BACKGROUND = '#201a16'
+const DARK_PREVIEW_BACKGROUND = '#181a20'
 const CAPTURE_MODEL_PREVIEWS = process.env.CAPTURE_MODEL_PREVIEWS === '1'
 const MODEL_PREVIEW_ID = process.env.MODEL_PREVIEW_ID
 const PREVIEW_DIRECTORY = path.resolve(process.cwd(), 'public/model-previews')
@@ -47,7 +46,11 @@ function previewRoute(
   definition: (typeof VISIBLE_MODEL_DEFINITIONS)[number],
   appearance: AppearanceKey,
 ): string {
-  const route = cadPathForModel(definition.id, definition.systemContext)
+  const route = localizedCadPathFor(
+    'zh-Hant',
+    definition.id,
+    definition.systemContext,
+  )
   const appearanceQuery = appearance === 'dark' ? '&appearance=dark' : ''
   return `${route}${route.includes('?') ? '&' : '?'}preview=thumbnail${appearanceQuery}`
 }
@@ -248,7 +251,7 @@ test('visible model previews are captured from ready generators', async ({
       await page.emulateMedia({
         colorScheme: appearance.key === 'dark' ? 'dark' : 'light',
       })
-      await page.goto('/models')
+      await page.goto('/zh-Hant/models')
       await page.evaluate(() => localStorage.clear())
       await page.goto(previewRoute(definition, appearance.key))
 
@@ -279,7 +282,7 @@ test('model cards expose static previews and preserve selection on image failure
   await page.route('**/model-previews/opengrid-desk.webp', (route) =>
     route.abort(),
   )
-  await page.goto('/models')
+  await page.goto('/zh-Hant/models')
 
   const locale = 'zh-Hant' as const
 
@@ -315,7 +318,7 @@ test('model cards expose static previews and preserve selection on image failure
     await expect(darkImage).toHaveAttribute('alt', '')
     await expect(
       card.getByRole('link', {
-        name: `編輯 ${translate(locale, modelSelectionLabelFor(definition))}`,
+        name: `調整模型 ${translate(locale, modelSelectionLabelFor(definition))}`,
       }),
     ).toHaveAttribute(
       'href',

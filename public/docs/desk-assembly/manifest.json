@@ -26,7 +26,7 @@
     "scripts/desk-assembly/native.mjs": "f326a0814f780aee19dbd5697f70a4dc43cfda35adb19468debd880b13216a9e",
     "scripts/desk-assembly/produce.ts": "d097c9c8c6cd63af6693627ef3ad55a9c532fc29be2d42d4b6bd31adb42ae9dc",
     "scripts/desk-assembly/provenance.mjs": "00fde5de9c00b2ea1f61acfa903265106770a8b4c3a48f44afdf993f6417896f",
-    "scripts/desk-assembly/renderer.mjs": "8b38716183c8329252fe645028544ebae230294548f4d493ef3a9fef7d1838c5",
+    "scripts/desk-assembly/renderer.mjs": "542c1eed323420de63b447f31824c2502380517f0beb8d40e8188d5001092e27",
     "scripts/desk-assembly/scenes.mjs": "dc8423cd59bfbfe5b675c159c1698d5168eb428befb1d3377bec34eb03eed02f",
     "scripts/desk-assembly/verify.mjs": "e9f35a3feb83197d283bb9e8fe960146d9a564aa8a6319bf840af4bf00499cd3",
     "src/cad-contract/diagnostics.ts": "509d49262270461a08f5425f1490dcff9c045477c339752347fb73a93f3c96f6",
@@ -34,7 +34,7 @@
     "src/cad-contract/messages/index.ts": "ee35a3c91506ee2198167d457bf391b0362551e8815ba3eb94a5551a9e2124b8",
     "src/cad-contract/model-colors.ts": "25ac960bcc1a362de55d028c66381e307585b26b9a30d4c3a7135ace03464049",
     "src/cad-contract/preview-timing.ts": "847616337e54ef0ee602b650d8008ddbbaaf824895064ec2d69c87ee369ab6e3",
-    "src/cad-contract/scene.ts": "d92220b1d7bc902303183b312118161de6006e47f9b82f94dffb3a810973373a",
+    "src/cad-contract/scene.ts": "923a2d6e7b1eedbed87108d8a8080bcd0ffdadbde1105cac19ab4d1dfbee2a75",
     "src/cad-contract/three-mf.ts": "a9f7c9d70bd537788cd253cb94d9bd114014c04bd8fe170ea34da549e5566c47",
     "src/cad-contract/units/box.ts": "3949f83d84473f48985182a7e98bf82b48af81277838e374e97f213839010c88",
     "src/cad-contract/units/half-cell.ts": "5aa70708c1d9ad4552807d620b104007a483688f347e7397986d4eff5ecfbeb2",
@@ -173,7 +173,7 @@
     "vendor/replicad-opencascadejs/src/replicad_single.d.ts": "62ceca4ccc15446575d89f8e26f1397eea3073c5b2beefddd19ef162fed9e277",
     "vendor/replicad-opencascadejs/src/replicad_single.wasm": "14a0ce8cf22ed97e749fb436ee72bfd47099556e9e8af012b6dd9f51a201b80e"
   },
-  "sourceHash": "cf8824f4c0feb3333d3b68b76a9867d6b31af3cc7cc8f15fc0c768d8a212de2f",
+  "sourceHash": "47f054d4fbd55a37842bba8a069102eadafd27ce3da72cd4b7ba54c105158236",
   "settings": {
     "board": {
       "variant": "Lite",
@@ -448,76 +448,76 @@
   },
   "assets": {
     "direct-placement.light.mp4": {
-      "bytes": 95405,
-      "sha256": "6b470b85ab806ab943c0d4a9343db23e6e181c505ee1a25f208089812c389825"
+      "bytes": 94750,
+      "sha256": "dc3a730438663fa3f6795c58fbf79ed12716a09272a89370458aaa35432bb21a"
     },
     "direct-placement.light.webm": {
-      "bytes": 70367,
-      "sha256": "4e606a91f43ad2245975e144f996a302b2dd3623d70e2548617cd806575875e0"
+      "bytes": 69225,
+      "sha256": "d169b552814184c8f54270f4eb0c2cfb3c4cc8c3b80f28c0fe9fa0d3c2d69745"
     },
     "direct-placement.light.webp": {
-      "bytes": 11762,
-      "sha256": "bc6c03db9304d4610bca6593261219b22ec3be4192a8cc332a86cebd60b08087"
+      "bytes": 11504,
+      "sha256": "96e87345ede3215042c62c6a1da577536051d898fae6529a38a0122e3bcae226"
     },
     "direct-placement.dark.mp4": {
-      "bytes": 101700,
-      "sha256": "17fce37fbbc61ad414802edc75b7d31dca4965e036bac7fe0f623f27f024caf6"
+      "bytes": 103320,
+      "sha256": "4030954cf498654763aaeca1b4a4f9ec2afb769559593244fde86627a92afc89"
     },
     "direct-placement.dark.webm": {
-      "bytes": 70532,
-      "sha256": "98766ffa24ec60a56285529852a1d437909af0daeff0223c725af913a8ed3683"
+      "bytes": 72870,
+      "sha256": "eba409c0b8615b561b9e6dd8b549d455dccc6807406e413b5f19888db465022f"
     },
     "direct-placement.dark.webp": {
-      "bytes": 12310,
-      "sha256": "498b6595e3d0d49d79ac1ce717bab0dd972ff187c17ad06680a3529b61f5795a"
+      "bytes": 12722,
+      "sha256": "0aa7af9f734315c5a2acc2ad8a5069739c7ca5243aecef9bd01dfc584f9909ba"
     },
     "snap-fixing.light.mp4": {
-      "bytes": 102493,
-      "sha256": "ccfc0311b689c63755e1e478035a3ce484fbbf9e59044c7697a16ffab4cf819f"
+      "bytes": 102641,
+      "sha256": "5ae5d5cb4f8e5c4e9b9384a8f3e0fce59af4f43ebee7f14f20b097f1caad246d"
     },
     "snap-fixing.light.webm": {
-      "bytes": 78993,
-      "sha256": "fa2561932022a4512488482c7f8790da1381ecbeeec619ed3cd7e2207f1ab4ad"
+      "bytes": 78821,
+      "sha256": "ff6df93a13ddbc7a8bfd44ec5194828f077c5a191d443d7534d0ced7cd0e601c"
     },
     "snap-fixing.light.webp": {
-      "bytes": 14222,
-      "sha256": "bd6a665635e687001c949ed14a637f493e20983e0d7a758d3e311c284eeae8ee"
+      "bytes": 14100,
+      "sha256": "fc324d224af19ab9c6558c0cbfc322706cf07e281e771cb576ca0f1cbe15c4f0"
     },
     "snap-fixing.dark.mp4": {
-      "bytes": 110022,
-      "sha256": "c4667766c04f7acb148e5a2dcbcc65b801aa2a68e9569f30a4b0f5040a1b537c"
+      "bytes": 111269,
+      "sha256": "8fbdc552321e683154a8e7a8d8ff443539000bceef7dae829a4a5dace4412a37"
     },
     "snap-fixing.dark.webm": {
-      "bytes": 88130,
-      "sha256": "fae19ca84ea5a859b776aec5babf1c9f4c0118318b2edd9e00f700daf41f5ac0"
+      "bytes": 90150,
+      "sha256": "6d43ed65a0473ebac215d13c2b5bb50ef6ae69eb7190f57a4f5f663177d342a5"
     },
     "snap-fixing.dark.webp": {
-      "bytes": 14712,
-      "sha256": "014694a1716bb552adbb8480b01d10ffe6b8ebd19f2075b0f6dd93a978696174"
+      "bytes": 15012,
+      "sha256": "3659df0d59397bdc6c462a94f38b1ccbd98b8f86c34e934a5583280b91f85014"
     },
     "locating-seats.light.mp4": {
-      "bytes": 149570,
-      "sha256": "e7994bd6c8b5fcd938c35e014b74cd108e07c15d963c05f2f9cca18cdea604f3"
+      "bytes": 148759,
+      "sha256": "aaad6734db8bc20c158d9ae360daf4afd50eb9e002c12994974fc3806240695a"
     },
     "locating-seats.light.webm": {
-      "bytes": 103187,
-      "sha256": "bebf533d46223fc842a72a1fe95b756aa55fccf0d69ecba79f23d1d3eae310b3"
+      "bytes": 102993,
+      "sha256": "050fac400709a9e021bca77fad0c4032eb2c0c9f5cbdb3222e8ad2a7f7568207"
     },
     "locating-seats.light.webp": {
-      "bytes": 9848,
-      "sha256": "8dd83a276583e0e7c78fff89fc26411678a3a27cff675bff1fdc51525978197b"
+      "bytes": 9816,
+      "sha256": "75e846f605d506468f78abeb05adcb829da98103c55b61c2e52f205ef5faf84b"
     },
     "locating-seats.dark.mp4": {
-      "bytes": 151993,
-      "sha256": "8963ba9c76d5f96d1b4dfeac91d53f362201d3103c989bac9f263ed48dbbd087"
+      "bytes": 151591,
+      "sha256": "1f0463892ea4eb145a702f4789bdcef43e3aa5964daf1211559d1add9a9519da"
     },
     "locating-seats.dark.webm": {
-      "bytes": 107723,
-      "sha256": "d2086f0ef708c2730e2aed7f440f0d0c63486bb432fd9335051aff66cf828222"
+      "bytes": 109105,
+      "sha256": "7331b48da6eabfb885b6b6545d0cc7f8bb84bbc2cc7fadcd1569763914db9fad"
     },
     "locating-seats.dark.webp": {
-      "bytes": 9440,
-      "sha256": "c0a299663f8dc10f8fd142750dfee0b2813d1c1324bd0a47e7913bc24d5fcbe5"
+      "bytes": 9366,
+      "sha256": "b706e57b21e846cb01ee00e43a77dcf2d48d225d134525c97c24fd4f36d953d1"
     }
   }
 }

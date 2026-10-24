@@ -255,6 +255,42 @@
   class="m-0 grid gap-3 border-0 p-0"
   aria-label={translate(locale, 'panel.boxMode')}
 >
+  <legend class="mb-3 text-sm font-semibold text-muted-foreground"
+    >{translate(locale, 'cad.presentation.dimensions')}</legend
+  >
+  {#each opengridStackableCylinderDefinition.parameterSchema.slice(0, 2) as field (field.key)}
+    {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
+    <ParameterField
+      {locale}
+      label={displayParameterLabel(field, locale)}
+      unit={unitLabelFor(locale, field.unit)}
+      changed={value !== String(field.defaultValue)}
+      error={fieldErrors[field.key]}
+      errorId={`${field.key}-error`}
+      onRestore={() => onInputChange(field.key, String(field.defaultValue))}
+    >
+      <ParameterControl
+        {locale}
+        {field}
+        {value}
+        error={fieldErrors[field.key]}
+        onChange={(nextValue) => onInputChange(field.key, nextValue)}
+      />
+      {#if field.key === 'innerDiameter'}
+        <span
+          class="text-sm text-muted-foreground"
+          data-testid="opengrid-cylinder-outer-diameter"
+        >
+          {derivedOuterDiameterText()}
+        </span>
+      {/if}
+    </ParameterField>
+  {/each}
+  <h3
+    class="mb-0 mt-3 border-t border-border pt-4 text-sm font-semibold text-muted-foreground"
+  >
+    {translate(locale, 'cad.presentation.structure')}
+  </h3>
   <fieldset
     class="grid gap-2 border-0 p-0"
     aria-describedby={fieldErrors.bottomSeatMode
@@ -316,34 +352,7 @@
       <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
     {/if}
   {/if}
-  {#each opengridStackableCylinderDefinition.parameterSchema.slice(0, 2) as field (field.key)}
-    {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
-    <ParameterField
-      {locale}
-      label={displayParameterLabel(field, locale)}
-      unit={unitLabelFor(locale, field.unit)}
-      changed={value !== String(field.defaultValue)}
-      error={fieldErrors[field.key]}
-      errorId={`${field.key}-error`}
-      onRestore={() => onInputChange(field.key, String(field.defaultValue))}
-    >
-      <ParameterControl
-        {locale}
-        {field}
-        {value}
-        error={fieldErrors[field.key]}
-        onChange={(nextValue) => onInputChange(field.key, nextValue)}
-      />
-      {#if field.key === 'innerDiameter'}
-        <span
-          class="text-sm text-muted"
-          data-testid="opengrid-cylinder-outer-diameter"
-        >
-          {derivedOuterDiameterText()}
-        </span>
-      {/if}
-    </ParameterField>
-  {/each}
+
   <label class="flex items-start gap-2 text-sm">
     <input
       class="mt-0.5"

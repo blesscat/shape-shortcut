@@ -54,12 +54,6 @@
 
 <div class="grid gap-4" data-testid="cad-panel-parameters">
   {#if showParameters}
-    <PresetButtonRow
-      {locale}
-      {presets}
-      onRestore={onRestoreDefaults}
-      {onApplyPreset}
-    />
     {#key resetVersion}
       <ComponentParameterPanel
         {locale}
@@ -74,5 +68,11 @@
         {onOpenGridDimensionCalculationInvalid}
       />
     {/key}
+    <PresetButtonRow
+      {locale}
+      {presets}
+      onRestore={onRestoreDefaults}
+      {onApplyPreset}
+    />
   {/if}
 </div>

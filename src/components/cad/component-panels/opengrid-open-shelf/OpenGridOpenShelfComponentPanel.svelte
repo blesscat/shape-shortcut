@@ -76,6 +76,36 @@
 </script>
 
 <div class="grid gap-3">
+  <fieldset class="m-0 grid gap-3 border-0 p-0">
+    <legend class="mb-3 text-sm font-semibold text-muted-foreground"
+      >{translate(locale, 'cad.presentation.dimensions')}</legend
+    >
+    {#each opengridOpenShelfDefinition.parameterSchema as field (field.key)}
+      {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
+      <ParameterField
+        {locale}
+        label={displayParameterLabel(field, locale)}
+        unit={unitLabelFor(locale, field.unit)}
+        changed={value !== String(field.defaultValue)}
+        error={fieldErrors[field.key]}
+        errorId={`${field.key}-error`}
+        onRestore={() => onInputChange(field.key, String(field.defaultValue))}
+      >
+        <ParameterControl
+          {locale}
+          {field}
+          {value}
+          error={fieldErrors[field.key]}
+          onChange={(nextValue) => onInputChange(field.key, nextValue)}
+        />
+      </ParameterField>
+    {/each}
+  </fieldset>
+  <h3
+    class="m-0 border-t border-border pt-4 text-sm font-semibold text-muted-foreground"
+  >
+    {translate(locale, 'cad.presentation.structure')}
+  </h3>
   <p
     class="m-0 text-sm leading-6 text-muted-foreground"
     data-testid="opengrid-open-shelf-help"
@@ -139,26 +169,4 @@
       <HoneycombCellCountEstimate count={honeycombCellCount} {locale} />
     {/if}
   {/if}
-  <fieldset class="m-0 grid gap-3 border-0 p-0">
-    {#each opengridOpenShelfDefinition.parameterSchema as field (field.key)}
-      {@const value = rawParameters[field.key] ?? String(field.defaultValue)}
-      <ParameterField
-        {locale}
-        label={displayParameterLabel(field, locale)}
-        unit={unitLabelFor(locale, field.unit)}
-        changed={value !== String(field.defaultValue)}
-        error={fieldErrors[field.key]}
-        errorId={`${field.key}-error`}
-        onRestore={() => onInputChange(field.key, String(field.defaultValue))}
-      >
-        <ParameterControl
-          {locale}
-          {field}
-          {value}
-          error={fieldErrors[field.key]}
-          onChange={(nextValue) => onInputChange(field.key, nextValue)}
-        />
-      </ParameterField>
-    {/each}
-  </fieldset>
 </div>

@@ -14,7 +14,7 @@ Colors are illustrative print colors, not additional geometry or export options.
 
 The capture writes four 1200×800 WebP files and a settings/source/checksum manifest
 to `public/home/`. The browser renderer only runs in this capture process, never
-on the homepage. Both appearances use the warm site background family.
+on the homepage. Both appearances use the neutral viewport background family.
 
 Run `node scripts/home-visuals/verify.mjs` to check source freshness, output hashes,
 and decodable dimensions. Inspect the rendered images after regenerating.

@@ -1,0 +1,142 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 301ms using pnpm v11.20.0
+
+Running 5 tests using 1 worker
+
+(node:1652679) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › tests/e2e/box.spec.ts:51:1 › CAD route shows the current loading stage (5.2s)
+(node:1652963) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › tests/e2e/box.spec.ts:154:1 › CAD workspace preserves responsive columns within the viewport (5.6s)
+(node:1653268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › tests/e2e/model-failure-toast.spec.ts:4:1 › model generation failure shows its reason in a toast and keeps export disabled (6.2s)
+(node:1653561) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › tests/e2e/workspace-layout.spec.ts:3:1 › desktop parameter menu scrolls independently from the model viewport (617ms)
+(node:1654051) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  5 [chromium] › tests/e2e/workspace-layout.spec.ts:58:1 › wide OpenGrid workspace keeps document scrolling inside the parameter panel (629ms)
+
+
+  1) [chromium] › tests/e2e/box.spec.ts:51:1 › CAD route shows the current loading stage ───────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('尚未有可預覽的模型。')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText('尚未有可預覽的模型。')
+
+
+      70 |     expect(progress).toHaveAttribute('aria-valuenow', '1'),
+      71 |     expect(page.getByTestId('cad-progress')).toContainText('載入 CAD engine'),
+    > 72 |     expect(fallback).toBeVisible(),
+         |                      ^
+      73 |   ])
+      74 |
+      75 |   const viewportRect = () =>
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/box.spec.ts:72:22
+
+    Error Context: ../../../../../../tmp/shape-cad-baseline-tests/box-CAD-route-shows-the-current-loading-stage-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/box.spec.ts:154:1 › CAD workspace preserves responsive columns within the viewport
+
+    Error: expect(received).toBeTruthy()
+
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      211 |   await expect(page.getByTestId('cad-progress')).toBeVisible()
+      212 |   await expect.poll(hasHorizontalOverflow).toBeTruthy()
+    > 213 |   await expect.poll(hasVerticalOverflow).toBeTruthy()
+          |                                          ^
+      214 |   await expect
+      215 |     .poll(() =>
+      216 |       viewport.evaluate((element) => element.getBoundingClientRect().height),
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/box.spec.ts:213:42
+
+    Error Context: ../../../../../../tmp/shape-cad-baseline-tests/box-CAD-workspace-preserve-522a0-columns-within-the-viewport-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/model-failure-toast.spec.ts:4:1 › model generation failure shows its reason in a toast and keeps export disabled
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('cad-error-toast')
+    Expected substring: "CAD 操作失敗："
+    Received string:    "模型建立失敗 × 原因：模型建立失敗，請調整參數後重試。"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for getByTestId('cad-error-toast')
+        14 × locator resolved to <section role="alert" aria-atomic="true" aria-live="assertive" data-testid="cad-error-toast" data-error-code="MODEL_ASSET_INVALID" class="fixed right-4 top-4 z-50 grid w-[min(28rem,calc(100vw-2rem))] gap-2 rounded-2xl border border-error-border bg-panel p-4 text-ink shadow-card">…</section>
+           - unexpected value "模型建立失敗 × 原因：模型建立失敗，請調整參數後重試。"
+
+
+      24 |   await expect(toast).toBeVisible({ timeout: 30_000 })
+      25 |   await expect(toast).toHaveAttribute('role', 'alert')
+    > 26 |   await expect(toast).toContainText('CAD 操作失敗：')
+         |                       ^
+      27 |   await toast.getByRole('button', { name: '關閉錯誤通知' }).click()
+      28 |   await expect(toast).toBeHidden()
+      29 |   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeDisabled()
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/model-failure-toast.spec.ts:26:23
+
+    Error Context: ../../../../../../tmp/shape-cad-baseline-tests/model-failure-toast-model--4669b-t-and-keeps-export-disabled-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/workspace-layout.spec.ts:3:1 › desktop parameter menu scrolls independently from the model viewport
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 720
+    Received:    1151
+
+      36 |     scrollHeight: document.documentElement.scrollHeight,
+      37 |   }))
+    > 38 |   expect(documentMetrics.scrollHeight).toBeLessThanOrEqual(
+         |                                        ^
+      39 |     documentMetrics.clientHeight,
+      40 |   )
+      41 |
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/workspace-layout.spec.ts:38:40
+
+    Error Context: ../../../../../../tmp/shape-cad-baseline-tests/workspace-layout-desktop-p-bbd84-tly-from-the-model-viewport-chromium/error-context.md
+
+  5) [chromium] › tests/e2e/workspace-layout.spec.ts:58:1 › wide OpenGrid workspace keeps document scrolling inside the parameter panel
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1394
+    Received:    1850
+
+      71 |     scrollHeight: document.documentElement.scrollHeight,
+      72 |   }))
+    > 73 |   expect(documentMetrics.scrollHeight).toBeLessThanOrEqual(
+         |                                        ^
+      74 |     documentMetrics.clientHeight,
+      75 |   )
+      76 |
+        at /home/blesscat/.codex/worktrees/ae0b/menhaden/tests/e2e/workspace-layout.spec.ts:73:40
+
+    Error Context: ../../../../../../tmp/shape-cad-baseline-tests/workspace-layout-wide-Open-32cfd--inside-the-parameter-panel-chromium/error-context.md
+
+  5 failed
+    [chromium] › tests/e2e/box.spec.ts:51:1 › CAD route shows the current loading stage ────────────
+    [chromium] › tests/e2e/box.spec.ts:154:1 › CAD workspace preserves responsive columns within the viewport
+    [chromium] › tests/e2e/model-failure-toast.spec.ts:4:1 › model generation failure shows its reason in a toast and keeps export disabled
+    [chromium] › tests/e2e/workspace-layout.spec.ts:3:1 › desktop parameter menu scrolls independently from the model viewport
+    [chromium] › tests/e2e/workspace-layout.spec.ts:58:1 › wide OpenGrid workspace keeps document scrolling inside the parameter panel

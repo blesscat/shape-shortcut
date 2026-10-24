@@ -29,9 +29,16 @@ interface Props {
   title: string
   description?: string
   fullWidth?: boolean
+  cadWorkspace?: boolean
 }
 
-const { locale, title, description, fullWidth = false } = Astro.props
+const {
+  locale,
+  title,
+  description,
+  fullWidth = false,
+  cadWorkspace = false,
+} = Astro.props
 const currentPath = Astro.url.pathname
 const currentSearch = new URL(Astro.request.url).search
 const routePath = unlocalizedPathFor(currentPath)
@@ -70,7 +77,14 @@ const supportCopyById: Record<
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" href="/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+    <link
+      rel="icon"
+      href="/favicon.ico"
+      type="image/x-icon"
+      sizes="16x16 32x32 48x48"
+    />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={absoluteUrlFor(canonicalPath)} />
@@ -188,107 +202,124 @@ const supportCopyById: Record<
     </script>
   </head>
   <body>
-    {
-      /* The nav is a floating capsule in both themes; identical geometry keeps
-        theme switches from shifting the page layout (CAD annotation boxes and
-        viewport anchors must stay put). The scroll-collapsed compact state is
-        driven by scroll position only, so both themes collapse in lockstep. */
-    }
-    <div class="min-h-screen pt-6">
-      <nav
-        class="group sticky top-0 z-40 mx-auto flex w-[90%] max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-border bg-nav px-[clamp(1rem,4vw,4rem)] py-4 text-nav-foreground shadow-soft backdrop-blur-md transition-[padding-block,top] duration-200 ease-out motion-reduce:transition-none data-compact:py-1.5"
-        aria-label={t('navigation.primary')}
-        data-site-nav
-      >
-        <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+    <div class="min-h-screen" data-cad-shell={cadWorkspace || undefined}>
+      <header class="site-header">
+        <nav
+          class="site-navigation"
+          aria-label={t('navigation.primary')}
+          data-site-nav
+        >
           <a
-            class="font-mono font-semibold tracking-wide no-underline"
+            class="site-brand"
             href={publicPathFor(locale, 'home')}
-            aria-current={isHomePage ? 'page' : undefined}>Shape Shortcut</a
+            aria-current={isHomePage ? 'page' : undefined}
           >
-          <a
-            class="font-mono text-sm tracking-wide no-underline group-data-compact:hidden"
-            href={publicPathFor(locale, 'docs')}
-            aria-current={isDocsPage ? 'page' : undefined}
-            >{t('navigation.docs')}</a
-          >
-          <a
-            class="font-mono text-sm tracking-wide no-underline group-data-compact:hidden"
-            href={publicPathFor(locale, 'models')}
-            aria-current={isModelSelectionPage ? 'page' : undefined}
-            >{t('navigation.models')}</a
-          >
-          <a
-            class="font-mono text-sm tracking-wide no-underline group-data-compact:hidden"
-            href={publicPathFor(locale, 'about')}
-            aria-current={isAboutPage ? 'page' : undefined}
-            >{t('navigation.about')}</a
-          >
-        </div>
-        <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          <button
-            type="button"
-            class="inline-flex size-11 items-center justify-center rounded-full border border-nav-foreground/40 bg-transparent no-underline transition-colors duration-200 hover:bg-nav-foreground/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            data-theme-toggle
-            data-theme-switch-to-light={t('navigation.switchToLight')}
-            data-theme-switch-to-dark={t('navigation.switchToDark')}
-            data-theme-light-label={t('navigation.light')}
-            data-theme-dark-label={t('navigation.dark')}
-            aria-label={t('navigation.theme')}
-            aria-pressed="false"
-          >
-            <Sun class="size-4" data-theme-icon="light" aria-hidden="true" />
-            <Moon
-              class="size-4"
-              data-theme-icon="dark"
-              aria-hidden="true"
-              hidden
-            />
-          </button>
-          {
-            alternateLocale && (
+            <img src="/favicon.svg" width="28" height="28" alt="" />
+            <span>Shape Shortcut</span>
+          </a>
+          <div class="site-desktop-links">
+            <a
+              href={publicPathFor(locale, 'models')}
+              aria-current={isModelSelectionPage ? 'page' : undefined}
+              >{t('navigation.models')}</a
+            >
+            <a
+              href={publicPathFor(locale, 'docs')}
+              aria-current={isDocsPage ? 'page' : undefined}
+              >{t('navigation.docs')}</a
+            >
+            <a
+              href={publicPathFor(locale, 'about')}
+              aria-current={isAboutPage ? 'page' : undefined}
+              >{t('navigation.about')}</a
+            >
+          </div>
+          <details class="site-mobile-menu" data-navigation-menu>
+            <summary>{t('navigation.menu')}</summary>
+            <div class="site-menu-links">
               <a
-                class="no-underline"
-                href={switchLocalePath(
-                  currentPath,
-                  currentSearch,
-                  alternateLocale.locale,
-                )}
-                data-locale-switch
-                aria-label={t('navigation.language')}
+                href={publicPathFor(locale, 'models')}
+                aria-current={isModelSelectionPage ? 'page' : undefined}
+                >{t('navigation.models')}</a
               >
-                {translate(
-                  locale,
-                  alternateLocale.locale === 'en'
-                    ? 'navigation.switchToEnglish'
-                    : 'navigation.switchToZhHant',
-                )}
-              </a>
-            )
-          }
-          {
-            supportProviders.length > 0 && (
-              <button
-                type="button"
-                class="inline-flex min-h-11 cursor-pointer items-center whitespace-nowrap rounded-full bg-primary-strong px-5 py-2 text-sm font-semibold text-white no-underline transition-[background-color,transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                data-support-dialog-open
-                data-testid="support-trigger"
-                aria-controls="support-dialog"
-                aria-haspopup="dialog"
+              <a
+                href={publicPathFor(locale, 'docs')}
+                aria-current={isDocsPage ? 'page' : undefined}
+                >{t('navigation.docs')}</a
               >
-                {t('navigation.support')}
-              </button>
-            )
-          }
-        </div>
-      </nav>
+              <a
+                href={publicPathFor(locale, 'about')}
+                aria-current={isAboutPage ? 'page' : undefined}
+                >{t('navigation.about')}</a
+              >
+              <button type="button" data-navigation-close hidden
+                >{t('navigation.closeMenu')}</button
+              >
+            </div>
+          </details>
+          <div class="site-navigation-actions">
+            <button
+              type="button"
+              class="inline-flex size-11 items-center justify-center rounded-control border border-nav-foreground/40 bg-transparent no-underline transition-colors duration-200 hover:bg-nav-foreground/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              data-theme-toggle
+              data-theme-switch-to-light={t('navigation.switchToLight')}
+              data-theme-switch-to-dark={t('navigation.switchToDark')}
+              data-theme-light-label={t('navigation.light')}
+              data-theme-dark-label={t('navigation.dark')}
+              aria-label={t('navigation.theme')}
+              aria-pressed="false"
+            >
+              <Sun class="size-4" data-theme-icon="light" aria-hidden="true" />
+              <Moon
+                class="size-4"
+                data-theme-icon="dark"
+                aria-hidden="true"
+                hidden
+              />
+            </button>
+            {
+              alternateLocale && (
+                <a
+                  class="no-underline"
+                  href={switchLocalePath(
+                    currentPath,
+                    currentSearch,
+                    alternateLocale.locale,
+                  )}
+                  data-locale-switch
+                  aria-label={t('navigation.language')}
+                >
+                  {translate(
+                    locale,
+                    alternateLocale.locale === 'en'
+                      ? 'navigation.switchToEnglish'
+                      : 'navigation.switchToZhHant',
+                  )}
+                </a>
+              )
+            }
+            {
+              supportProviders.length > 0 && (
+                <button
+                  type="button"
+                  class="inline-flex min-h-11 cursor-pointer items-center whitespace-nowrap rounded-control border border-border-field bg-transparent px-3 py-2 text-sm font-semibold text-foreground no-underline transition-colors duration-200 hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  data-support-dialog-open
+                  data-testid="support-trigger"
+                  aria-controls="support-dialog"
+                  aria-haspopup="dialog"
+                >
+                  {t('navigation.support')}
+                </button>
+              )
+            }
+          </div>
+        </nav>
+      </header>
       <script is:inline>
         ;(() => {
           const nav = document.querySelector('[data-site-nav]')
           if (!(nav instanceof HTMLElement)) return
-          // Compact past 48px, relax only below 32px. The compact state
-          // shrinks the capsule's padding and folds the secondary links,
-          // so content below follows the capsule's height change.
+          // Reserve header height independently from compact chrome.
           const syncCompactNav = () => {
             const isCompact = nav.hasAttribute('data-compact')
             const nextCompact =
@@ -300,6 +331,29 @@ const supportCopyById: Record<
 
           syncCompactNav()
           window.addEventListener('scroll', syncCompactNav, { passive: true })
+          const menu = nav.querySelector('[data-navigation-menu]')
+          const trigger = menu?.querySelector('summary')
+          const close = menu?.querySelector('[data-navigation-close]')
+          const closeMenu = () => {
+            if (!(menu instanceof HTMLDetailsElement)) return
+            menu.open = false
+            trigger?.focus()
+          }
+          if (close instanceof HTMLElement) close.hidden = false
+          close?.addEventListener('click', closeMenu)
+          menu?.addEventListener('focusout', (event) => {
+            if (!(menu instanceof HTMLDetailsElement)) return
+            const destination = event.relatedTarget
+            if (destination instanceof Node && menu.contains(destination))
+              return
+            // Let Tab continue naturally instead of returning to the trigger.
+            menu.open = false
+          })
+          menu?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return
+            event.preventDefault()
+            closeMenu()
+          })
         })()
       </script>
       {
@@ -329,7 +383,7 @@ const supportCopyById: Record<
                 </div>
                 <button
                   type="button"
-                  class="inline-flex min-h-11 shrink-0 items-center rounded-full border border-border bg-background px-4 py-2 font-semibold text-foreground shadow-sm hover:bg-foreground/5 focus-visible:ring-3 focus-visible:ring-outline"
+                  class="inline-flex min-h-11 shrink-0 items-center rounded-control border border-border-field bg-background px-4 py-2 font-semibold text-foreground shadow-sm hover:bg-foreground/5 focus-visible:ring-3 focus-visible:ring-outline"
                   data-support-dialog-close
                   aria-label={t('support.close')}
                 >
@@ -389,24 +443,24 @@ const supportCopyById: Record<
           class="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-x-6 gap-y-4"
         >
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="font-mono font-semibold tracking-wide text-foreground"
+            <span class="font-semibold tracking-wide text-foreground"
               >Shape Shortcut</span
             >
             <span>© {buildYear} Blesscat. All rights reserved.</span>
           </div>
-          <div class="flex flex-wrap gap-x-4 gap-y-2">
+          <div class="site-footer-links flex flex-wrap gap-x-4 gap-y-2">
             <a href={publicPathFor(locale, 'models')}
               >{t('navigation.models')}</a
             >
             <a href={publicPathFor(locale, 'docs')}>{t('navigation.docs')}</a>
             <a href={publicPathFor(locale, 'about')}>{t('navigation.about')}</a>
             <a
-              class="font-mono"
+              class="font-sans"
               href="https://github.com/blesscat"
               target="_blank"
               rel="noopener noreferrer">{t('navigation.github')}</a
             >
-            <a class="font-mono" href="mailto:blesscat@gmail.com"
+            <a class="font-sans" href="mailto:blesscat@gmail.com"
               >{t('navigation.email')}</a
             >
           </div>
@@ -479,32 +533,172 @@ const supportCopyById: Record<
         }
       </script>
       <style is:global>
-        /* Warm capsule nav: the current page renders on the coral soft tint
-           with deep coral text, in both appearances. */
-        /* 44px hit areas on nav links in BOTH states; the compact fold is
-           re-asserted here because this unlayered rule outranks the layered
-           utility. */
-        [data-site-nav] a {
+        .site-footer-links a {
+          display: inline-flex;
+          min-width: 44px;
+          min-height: 44px;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-control);
+        }
+        .site-footer-links a:focus-visible {
+          outline: 3px solid var(--color-focus);
+          outline-offset: 2px;
+        }
+        @media (min-width: 761px) {
+          [data-cad-shell] > main {
+            padding: 16px;
+          }
+          [data-cad-shell] > footer {
+            padding-block: 12px;
+          }
+        }
+        @media (min-width: 761px) and (max-height: 600px) {
+          [data-cad-shell] > main {
+            padding: 8px 16px;
+          }
+          [data-cad-shell] > footer {
+            padding-block: 8px;
+          }
+        }
+
+        .site-header {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: var(--site-header-height);
+        }
+        .site-navigation {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          max-width: 1200px;
+          margin-inline: auto;
+          padding: 12px 24px;
+          border-bottom: 1px solid var(--color-border);
+          background: var(--color-nav);
+          color: var(--color-nav-foreground);
+          transition: padding-block 180ms ease-out;
+        }
+        .site-navigation[data-compact] {
+          padding-block: 8px;
+        }
+        [data-site-nav] a,
+        [data-site-nav] summary,
+        [data-navigation-close] {
           display: inline-flex;
           align-items: center;
           min-height: 44px;
+          text-decoration: none;
+          border-radius: var(--radius-control);
         }
-        [data-site-nav][data-compact] a.group-data-compact\:hidden {
-          display: none;
+        [data-site-nav] a:focus-visible,
+        [data-site-nav] summary:focus-visible,
+        [data-navigation-close]:focus-visible {
+          outline: 3px solid var(--color-focus);
+          outline-offset: 2px;
         }
-        [data-site-nav] a[aria-current='page'] {
-          background-color: var(--color-primary-soft);
-          color: var(--color-primary-hover);
-          border-radius: 999px;
-          padding-inline: 0.75rem;
-          padding-block: 0.25rem;
+        .site-brand {
+          gap: 8px;
+          flex-shrink: 0;
+          font-weight: 800;
         }
-        :root.dark [data-site-nav] a[aria-current='page'] {
+        .site-desktop-links {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .site-desktop-links a,
+        .site-menu-links a {
+          padding-inline: 12px;
+        }
+        .site-desktop-links a:hover,
+        .site-menu-links a:hover {
+          background: var(--color-muted);
+        }
+        [data-site-nav] a[aria-current='page']:not(.site-brand) {
+          background: var(--color-primary-soft);
           color: var(--color-primary);
         }
-        @media (prefers-color-scheme: dark) {
-          :root:not(.light):not(.dark) [data-site-nav] a[aria-current='page'] {
-            color: var(--color-primary);
+        .site-navigation-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-left: auto;
+          font-size: 14px;
+        }
+        .site-mobile-menu {
+          display: none;
+        }
+        .site-menu-links {
+          position: absolute;
+          top: 56px;
+          inset-inline: 12px;
+          padding: 12px;
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          background: var(--color-card);
+          box-shadow: var(--shadow-lift);
+          z-index: 1;
+        }
+        .site-mobile-menu:not([open]) .site-menu-links {
+          display: none;
+        }
+        .site-menu-links a,
+        [data-navigation-close] {
+          display: flex;
+          width: 100%;
+        }
+        [data-navigation-close] {
+          justify-content: center;
+          border: 1px solid var(--color-border-field);
+          background: var(--color-card);
+          color: var(--color-ink);
+          cursor: pointer;
+        }
+        @media (min-width: 761px) and (max-width: 1023px) {
+          .site-desktop-links {
+            display: none;
+          }
+          .site-mobile-menu {
+            display: block;
+          }
+          .site-mobile-menu summary {
+            padding-inline: 12px;
+            cursor: pointer;
+          }
+        }
+        @media (max-width: 760px) {
+          .site-navigation {
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+          }
+          .site-desktop-links {
+            display: none;
+          }
+          .site-mobile-menu {
+            display: block;
+            margin-left: auto;
+          }
+          .site-mobile-menu summary {
+            padding-inline: 12px;
+            cursor: pointer;
+            list-style: none;
+          }
+          .site-mobile-menu summary::-webkit-details-marker {
+            display: none;
+          }
+          .site-navigation-actions {
+            width: 100%;
+            gap: 12px;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .site-navigation {
+            transition: none;
           }
         }
       </style>

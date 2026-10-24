@@ -215,3 +215,50 @@ The page MUST show assembly illustrations comparing direct placement and Snap fi
 - **WHEN** a user reads the settings clarification
 - **THEN** the page MUST explain that 無角座 removes locating-seat geometry whereas 盒底 set to 無 removes the floor
 - **AND** the starter MUST explicitly use the stacking bottom
+
+### Requirement: Persistent and accessible documentation chapter navigation
+
+The localized documentation MUST provide persistent chapter navigation on wide screens and a compact keyboard-operable expandable chapter list on narrow screens. Links MUST preserve existing fragment identities and reach Desk, Wall, model reference and common reference content. After enhancement, the current chapter MUST be indicated by text or accessible state as well as visual styling. Chapter navigation MUST remain usable without JavaScript, MUST NOT intercept native page scrolling, and MUST NOT cover the current explanation or assembly viewer.
+
+#### Scenario: A desktop reader changes chapters
+
+- **WHEN** a reader follows a chapter link or opens an existing chapter fragment directly
+- **THEN** the target heading MUST remain visible below the site header and chapter navigation
+- **AND** the enhanced chapter navigation MUST identify the current chapter
+- **AND** any assembly step reached MUST retain the documented reading-position-driven pose and subsequent native-scroll behavior
+
+#### Scenario: A phone reader opens the chapter list
+
+- **WHEN** a reader uses a narrow viewport in either locale or appearance
+- **THEN** the chapter list MUST be expandable and collapsible using pointer and keyboard without horizontal page overflow
+- **AND** collapsed navigation MUST leave reading and assembly space visible
+- **AND** every chapter link MUST remain reachable when JavaScript is unavailable
+
+#### Scenario: Chapter navigation does not take over assembly control
+
+- **WHEN** a reader scrolls, follows an assembly step link, rotates a demonstration or changes appearance
+- **THEN** forward and backward native scrolling MUST continue to control assembly progress, stopping MUST hold the pose, and manual rotation MUST NOT change progress
+- **AND** the current explanation and its model MUST remain usable together, and viewers MUST stop sticking outside their own sections
+
+### Requirement: Documentation reading hierarchy preserves instructions
+
+Documentation MUST use plain readable prose for ordinary explanations and distinct static containers for checklists, cautions and illustrations. Reading containers MUST NOT lift or imply whole-card activation merely on hover. The first instructional path MUST remain the two-piece 2×2 Desk trial, followed by optional Snap fixing and advanced references. All existing settings, quantities, localized captions, model identities and Desk/Wall CAD contexts MUST remain accurate; opening a tutorial link MUST NOT silently replace saved CAD parameters. Terminology MUST match the corresponding controls, including the difference between no locating seats and no floor.
+
+#### Scenario: A beginner follows the first print
+
+- **WHEN** a user reads the first Desk trial in either locale
+- **THEN** the Board and seat-free stacking Grid Box settings and quantities MUST remain visible beside their corresponding CAD links
+- **AND** the instructions MUST explain that saved parameters can persist and must be checked against the checklist
+- **AND** no advanced Snap or slicer requirement MUST be introduced into the direct-placement path
+
+#### Scenario: Instructions remain useful without media
+
+- **WHEN** JavaScript or assembly media is unavailable on a narrow or wide screen
+- **THEN** localized headings, settings, print lists, locating-method distinctions, captions and links MUST remain readable static content
+- **AND** the optional enhanced viewer MUST NOT be required to understand the assembly order
+
+#### Scenario: Posters and live illustrations share the appearance
+
+- **WHEN** a reader changes the site's effective appearance
+- **THEN** static posters, enhanced assembly backgrounds and their surrounding surfaces MUST use the same neutral appearance treatment
+- **AND** part-identification colors, geometric relationships and the current assembly step MUST remain understandable and unchanged in meaning

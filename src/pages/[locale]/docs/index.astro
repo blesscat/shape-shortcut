@@ -4,7 +4,7 @@ import '../../../styles/starwind.css'
 import { Badge } from '../../../components/starwind/badge'
 import { Button } from '../../../components/starwind/button'
 import { Card } from '../../../components/starwind/card'
-import { Separator } from '../../../components/starwind/separator'
+import DocsChapterNav from '../../../components/docs/DocsChapterNav.astro'
 import ModelPreviewPicture from '../../../components/ModelPreviewPicture.astro'
 import DeskSystemGuide from '../../../components/docs/DeskSystemGuide.astro'
 import {
@@ -43,8 +43,10 @@ const openConnectOrganizerPath = localizedCadPathFor(
   title={t('docs.metaTitle')}
   description={t('docs.description')}
 >
-  <article class="grid gap-6 sm:gap-8">
-    <header class="grid gap-3">
+  <article
+    class="grid min-w-0 gap-8 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-x-8"
+  >
+    <header class="grid gap-3 lg:col-span-2">
       <Badge
         tone="primary"
         appearance="soft"
@@ -62,279 +64,275 @@ const openConnectOrganizerPath = localizedCadPathFor(
       </p>
     </header>
 
-    <Card
-      as="nav"
-      size="sm"
-      class="grid gap-3 bg-muted p-4"
-      aria-label={t('docs.sectionNav')}
-      data-testid="docs-section-nav"
-    >
-      <p class="m-0 font-semibold text-foreground">{t('docs.tocHeading')}</p>
-      <div class="flex flex-wrap gap-x-5 gap-y-2">
-        <a
-          class="text-foreground underline underline-offset-4"
-          href="#desk-quick-start-title">{t('docs.sectionNav.desk')}</a
-        >
-        <a
-          class="text-foreground underline underline-offset-4"
-          href="#docs-wall-system-title">{t('docs.sectionNav.wall')}</a
-        >
-        <a
-          class="text-foreground underline underline-offset-4"
-          href="#docs-model-reference-title">{t('docs.sectionNav.models')}</a
-        >
-        <a
-          class="text-foreground underline underline-offset-4"
-          href="#docs-reference-title">{t('docs.sectionNav.common')}</a
-        >
-      </div>
-    </Card>
-    <Separator class="bg-border" />
+    <DocsChapterNav {locale} />
+    <div class="docs-body grid min-w-0 gap-10">
+      <DeskSystemGuide {locale} />
 
-    <DeskSystemGuide {locale} />
-
-    <section
-      class="grid gap-6"
-      aria-labelledby="docs-wall-system-title"
-      data-testid="docs-wall-system"
-    >
-      <header class="grid gap-3">
-        <h2
-          class="text-3xl font-semibold leading-tight"
-          id="docs-wall-system-title"
-        >
-          {t('docs.wall.title')}
-        </h2>
-        <p class="max-w-3xl leading-normal">{t('docs.wall.intro')}</p>
-      </header>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-wall.webp"
-            darkSrc="/model-previews/opengrid-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('docs.wall.board.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.wall.board.title')}
-          </h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.board.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={wallBoardPath}>{t('docs.wall.board.cta')}</a
-          >
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-snap-wall.webp"
-            darkSrc="/model-previews/opengrid-snap-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('docs.wall.snap.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">{t('docs.wall.snap.title')}</h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.snap.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={wallSnapPath}>{t('docs.wall.snap.cta')}</a
-          >
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-wall-cover-wall.webp"
-            darkSrc="/model-previews/opengrid-wall-cover-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('docs.wall.cover.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.wall.cover.title')}
-          </h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.cover.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={wallCoverPath}>{t('docs.wall.cover.cta')}</a
-          >
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-openconnect-shelf-wall.webp"
-            darkSrc="/model-previews/opengrid-openconnect-shelf-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('docs.wall.shelf.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.wall.shelf.title')}
-          </h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.shelf.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={openConnectShelfPath}>{t('docs.wall.shelf.cta')}</a
-          >
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-openconnect-organizer-wall.webp"
-            darkSrc="/model-previews/opengrid-openconnect-organizer-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('docs.wall.organizer.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.wall.organizer.title')}
-          </h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.organizer.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={openConnectOrganizerPath}>{t('docs.wall.organizer.cta')}</a
-          >
-        </Card>
-        <Card as="article" size="sm" class="grid gap-3 p-4">
-          <ModelPreviewPicture
-            class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
-            src="/model-previews/opengrid-openconnect-tissue-box-wall.webp"
-            darkSrc="/model-previews/opengrid-openconnect-tissue-box-wall-dark.webp"
-            width="640"
-            height="400"
-            loading="lazy"
-            alt={t('models.model.opengrid-openconnect-tissue-box.alt')}
-          />
-          <h3 class="m-0 text-xl font-semibold">
-            {t('models.model.opengrid-openconnect-tissue-box.name')}
-          </h3>
-          <p class="m-0 leading-normal text-muted-foreground">
-            {t('docs.wall.tissue.body')}
-          </p>
-          <a
-            class="text-foreground underline underline-offset-4"
-            href={`/${locale}/cad/opengrid-openconnect-tissue-box?system=wall`}
-            >{t('docs.wall.tissue.cta')}</a
-          >
-        </Card>
-      </div>
-    </section>
-
-    <section
-      class="grid gap-5"
-      aria-labelledby="docs-model-reference-title"
-      data-testid="docs-model-reference"
-    >
-      <header class="grid gap-3">
-        <h2
-          class="text-3xl font-semibold leading-tight"
-          id="docs-model-reference-title"
-        >
-          {t('docs.modelReference.title')}
-        </h2>
-        <p class="max-w-3xl leading-normal">{t('docs.modelReference.body')}</p>
-      </header>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card as="article" size="sm" class="grid gap-2 p-4">
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.modelReference.desk.title')}
-          </h3>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('docs.modelReference.desk.body')}
-          </p>
-        </Card>
-        <Card as="article" size="sm" class="grid gap-2 p-4">
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.modelReference.wall.title')}
-          </h3>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('docs.modelReference.wall.body')}
-          </p>
-        </Card>
-        <Card as="article" size="sm" class="grid gap-2 p-4">
-          <h3 class="m-0 text-xl font-semibold">
-            {t('docs.modelReference.other.title')}
-          </h3>
-          <p class="m-0 text-sm leading-normal text-muted-foreground">
-            {t('docs.modelReference.other.body')}
-          </p>
-        </Card>
-      </div>
-      <Button
-        as="a"
-        href={publicPathFor(locale, 'models')}
-        variant="outline"
-        size="sm"
-        class="justify-self-start no-underline"
-        >{t('docs.modelReference.cta')}</Button
+      <section
+        class="grid gap-6"
+        aria-labelledby="docs-wall-system-title"
+        data-testid="docs-wall-system"
       >
-    </section>
+        <header class="grid gap-3">
+          <h2
+            class="text-3xl font-semibold leading-tight"
+            id="docs-wall-system-title"
+          >
+            {t('docs.wall.title')}
+          </h2>
+          <p class="max-w-3xl leading-normal">{t('docs.wall.intro')}</p>
+        </header>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-wall.webp"
+              darkSrc="/model-previews/opengrid-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('docs.wall.board.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.wall.board.title')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.board.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={wallBoardPath}>{t('docs.wall.board.cta')}</a
+            >
+          </Card>
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-snap-wall.webp"
+              darkSrc="/model-previews/opengrid-snap-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('docs.wall.snap.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.wall.snap.title')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.snap.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={wallSnapPath}>{t('docs.wall.snap.cta')}</a
+            >
+          </Card>
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-wall-cover-wall.webp"
+              darkSrc="/model-previews/opengrid-wall-cover-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('docs.wall.cover.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.wall.cover.title')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.cover.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={wallCoverPath}>{t('docs.wall.cover.cta')}</a
+            >
+          </Card>
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-openconnect-shelf-wall.webp"
+              darkSrc="/model-previews/opengrid-openconnect-shelf-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('docs.wall.shelf.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.wall.shelf.title')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.shelf.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={openConnectShelfPath}>{t('docs.wall.shelf.cta')}</a
+            >
+          </Card>
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-openconnect-organizer-wall.webp"
+              darkSrc="/model-previews/opengrid-openconnect-organizer-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('docs.wall.organizer.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.wall.organizer.title')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.organizer.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={openConnectOrganizerPath}>{t('docs.wall.organizer.cta')}</a
+            >
+          </Card>
+          <Card as="article" size="sm" class="grid gap-3 p-4">
+            <ModelPreviewPicture
+              class="aspect-[16/10] w-full rounded-img border border-border bg-muted object-cover"
+              src="/model-previews/opengrid-openconnect-tissue-box-wall.webp"
+              darkSrc="/model-previews/opengrid-openconnect-tissue-box-wall-dark.webp"
+              width="640"
+              height="400"
+              loading="lazy"
+              alt={t('models.model.opengrid-openconnect-tissue-box.alt')}
+            />
+            <h3 class="m-0 text-xl font-semibold">
+              {t('models.model.opengrid-openconnect-tissue-box.name')}
+            </h3>
+            <p class="m-0 leading-normal text-muted-foreground">
+              {t('docs.wall.tissue.body')}
+            </p>
+            <a
+              class="inline-flex min-h-11 items-center text-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-outline"
+              href={`/${locale}/cad/opengrid-openconnect-tissue-box?system=wall`}
+              >{t('docs.wall.tissue.cta')}</a
+            >
+          </Card>
+        </div>
+      </section>
 
-    <section
-      class="grid gap-3"
-      aria-labelledby="docs-reference-title"
-      data-testid="docs-advanced-reference"
-    >
-      <h2
-        class="text-2xl font-semibold leading-tight"
-        id="docs-reference-title"
+      <section
+        class="grid gap-5"
+        aria-labelledby="docs-model-reference-title"
+        data-testid="docs-model-reference"
       >
-        {t('docs.referenceHeading')}
-      </h2>
-      <p class="leading-normal">{t('docs.referenceBody')}</p>
-      <p class="m-0">
+        <header class="grid gap-3">
+          <h2
+            class="text-3xl font-semibold leading-tight"
+            id="docs-model-reference-title"
+          >
+            {t('docs.modelReference.title')}
+          </h2>
+          <p class="max-w-3xl leading-normal">
+            {t('docs.modelReference.body')}
+          </p>
+        </header>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card as="article" size="sm" class="grid gap-2 p-4">
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.modelReference.desk.title')}
+            </h3>
+            <p class="m-0 text-sm leading-normal text-muted-foreground">
+              {t('docs.modelReference.desk.body')}
+            </p>
+          </Card>
+          <Card as="article" size="sm" class="grid gap-2 p-4">
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.modelReference.wall.title')}
+            </h3>
+            <p class="m-0 text-sm leading-normal text-muted-foreground">
+              {t('docs.modelReference.wall.body')}
+            </p>
+          </Card>
+          <Card as="article" size="sm" class="grid gap-2 p-4">
+            <h3 class="m-0 text-xl font-semibold">
+              {t('docs.modelReference.other.title')}
+            </h3>
+            <p class="m-0 text-sm leading-normal text-muted-foreground">
+              {t('docs.modelReference.other.body')}
+            </p>
+          </Card>
+        </div>
         <Button
           as="a"
           href={publicPathFor(locale, 'models')}
-          variant="ghost"
+          variant="outline"
           size="sm"
-          class="px-0 text-foreground underline underline-offset-4"
-          >{t('common.backToModelsArrow')}</Button
+          class="justify-self-start no-underline"
+          >{t('docs.modelReference.cta')}</Button
         >
-      </p>
-    </section>
-    <section class="grid gap-3" aria-labelledby="docs-parameters-title">
-      <h2
-        class="text-2xl font-semibold leading-tight"
-        id="docs-parameters-title"
+      </section>
+
+      <section
+        class="grid gap-3"
+        aria-labelledby="docs-reference-title"
+        data-testid="docs-advanced-reference"
       >
-        {t('docs.parametersHeading')}
-      </h2>
-      <p class="leading-normal">{t('docs.parametersBody')}</p>
-    </section>
-    <section class="grid gap-3" aria-labelledby="docs-units-title">
-      <h2 class="text-2xl font-semibold leading-tight" id="docs-units-title">
-        {t('docs.unitsHeading')}
-      </h2>
-      <p class="leading-normal">{t('docs.unitsBody')}</p>
-    </section>
-    <section class="grid gap-3" aria-labelledby="docs-exports-title">
-      <h2 class="text-2xl font-semibold leading-tight" id="docs-exports-title">
-        {t('docs.exportsHeading')}
-      </h2>
-      <p class="leading-normal">{t('docs.exportsBody')}</p>
-    </section>
-    <section class="grid gap-3" aria-labelledby="docs-browser-title">
-      <h2 class="text-2xl font-semibold leading-tight" id="docs-browser-title">
-        {t('docs.browserHeading')}
-      </h2>
-      <p class="leading-normal">{t('docs.browserBody')}</p>
-    </section>
+        <h2
+          class="text-2xl font-semibold leading-tight"
+          id="docs-reference-title"
+        >
+          {t('docs.referenceHeading')}
+        </h2>
+        <p class="leading-normal">{t('docs.referenceBody')}</p>
+        <p class="m-0">
+          <Button
+            as="a"
+            href={publicPathFor(locale, 'models')}
+            variant="ghost"
+            size="sm"
+            class="px-0 text-foreground underline underline-offset-4"
+            >{t('common.backToModelsArrow')}</Button
+          >
+        </p>
+      </section>
+      <section class="grid gap-3" aria-labelledby="docs-parameters-title">
+        <h2
+          class="text-2xl font-semibold leading-tight"
+          id="docs-parameters-title"
+        >
+          {t('docs.parametersHeading')}
+        </h2>
+        <p class="leading-normal">{t('docs.parametersBody')}</p>
+      </section>
+      <section class="grid gap-3" aria-labelledby="docs-units-title">
+        <h2 class="text-2xl font-semibold leading-tight" id="docs-units-title">
+          {t('docs.unitsHeading')}
+        </h2>
+        <p class="leading-normal">{t('docs.unitsBody')}</p>
+      </section>
+      <section class="grid gap-3" aria-labelledby="docs-exports-title">
+        <h2
+          class="text-2xl font-semibold leading-tight"
+          id="docs-exports-title"
+        >
+          {t('docs.exportsHeading')}
+        </h2>
+        <p class="leading-normal">{t('docs.exportsBody')}</p>
+      </section>
+      <section class="grid gap-3" aria-labelledby="docs-browser-title">
+        <h2
+          class="text-2xl font-semibold leading-tight"
+          id="docs-browser-title"
+        >
+          {t('docs.browserHeading')}
+        </h2>
+        <p class="leading-normal">{t('docs.browserBody')}</p>
+      </section>
+    </div>
   </article>
 </SiteLayout>
+
+<style>
+  .docs-body :global(p) {
+    max-width: 47.5rem;
+    line-height: 1.7;
+  }
+  .docs-body :global(h2),
+  .docs-body :global(h3),
+  .docs-body :global(h4) {
+    overflow-wrap: anywhere;
+  }
+</style>

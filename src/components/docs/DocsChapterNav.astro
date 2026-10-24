@@ -1,0 +1,108 @@
+---
+import { translate, type Locale } from '../../i18n'
+interface Props {
+  locale: Locale
+}
+const { locale } = Astro.props
+const t = (key: string) => translate(locale, key)
+const chapters = [
+  { id: 'desk-quick-start-title', label: 'docs.sectionNav.desk' },
+  { id: 'docs-wall-system-title', label: 'docs.sectionNav.wall' },
+  { id: 'docs-model-reference-title', label: 'docs.sectionNav.models' },
+  { id: 'docs-reference-title', label: 'docs.sectionNav.common' },
+]
+---
+
+<nav
+  aria-label={t('docs.sectionNav')}
+  data-testid="docs-section-nav"
+  class="docs-chapters"
+>
+  <details
+    class="rounded-card border border-border bg-card p-3 lg:border-0 lg:bg-transparent lg:p-0"
+  >
+    <summary class="min-h-11 cursor-pointer py-2 font-semibold lg:hidden"
+      >{t('docs.tocHeading')}</summary
+    >
+    <p class="m-0 mb-3 hidden text-sm font-semibold lg:block">
+      {t('docs.tocHeading')}
+    </p>
+    <div class="chapter-links grid gap-1">
+      {
+        chapters.map(({ id, label }) => (
+          <a
+            href={`#${id}`}
+            class="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-muted-foreground no-underline hover:bg-muted hover:text-foreground focus-visible:outline-3 focus-visible:outline-focus aria-[current=location]:bg-primary-soft aria-[current=location]:font-bold aria-[current=location]:text-primary"
+          >
+            {t(label)}
+          </a>
+        ))
+      }
+    </div>
+  </details>
+</nav>
+<style>
+  .docs-chapters {
+    min-width: 0;
+  }
+  @media (min-width: 1024px) {
+    .docs-chapters {
+      position: sticky;
+      top: calc(var(--site-header-height, 80px) + 1rem);
+      align-self: start;
+    }
+    .docs-chapters details > :not(summary) {
+      display: block;
+    }
+    .docs-chapters details > .chapter-links {
+      display: grid;
+    }
+    .docs-chapters details::details-content {
+      display: contents;
+      content-visibility: visible;
+    }
+  }
+</style>
+<script>
+  const nav = document.querySelector<HTMLElement>(
+    '[data-testid="docs-section-nav"]',
+  )
+  if (nav) {
+    const links = Array.from(
+      nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'),
+    )
+    const sections = links.map((link) =>
+      document.getElementById(link.hash.slice(1)),
+    )
+    const update = () => {
+      const header =
+        Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            '--site-header-height',
+          ),
+        ) || 80
+      let current = 0
+      sections.forEach((section, index) => {
+        if (section && section.getBoundingClientRect().top <= header + 32)
+          current = index
+      })
+      links.forEach((link, index) => {
+        if (index === current) link.setAttribute('aria-current', 'location')
+        else link.removeAttribute('aria-current')
+      })
+    }
+    nav.addEventListener('click', (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('a') &&
+        matchMedia('(max-width: 1023px)').matches
+      ) {
+        nav.querySelector('details')?.removeAttribute('open')
+      }
+    })
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    window.addEventListener('hashchange', update)
+    update()
+  }
+</script>

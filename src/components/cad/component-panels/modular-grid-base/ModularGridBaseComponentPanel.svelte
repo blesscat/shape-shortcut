@@ -28,6 +28,9 @@
 </script>
 
 <fieldset class="m-0 grid gap-3 border-0 p-0">
+  <legend class="mb-3 text-sm font-semibold text-muted-foreground"
+    >{translate(locale, 'cad.presentation.dimensions')}</legend
+  >
   <p class="m-0 text-sm text-muted-foreground">
     {translate(locale, 'panel.modularGridBase.description')}
   </p>

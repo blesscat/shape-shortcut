@@ -160,3 +160,30 @@ test('desktop keeps the drawer, pill and action cluster out of the DOM', async (
     await expect(page.getByTestId(testId)).toHaveCount(0)
   }
 })
+
+test('320px English DEV exports fit above the tissue-box viewport', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.goto('/en/cad/opengrid-openconnect-tissue-box')
+  const actions = page.getByTestId('cad-actions-cluster')
+  await expect(actions.getByRole('button', { name: /STEP/ })).toBeVisible()
+  const viewport = page.getByTestId('cad-viewport')
+  const actionsBox = await actions.boundingBox()
+  const viewportBox = await viewport.boundingBox()
+  expect(actionsBox).not.toBeNull()
+  expect(viewportBox).not.toBeNull()
+  expect(actionsBox!.y + actionsBox!.height).toBeLessThanOrEqual(viewportBox!.y)
+  const reservation = await page.evaluate(() => ({
+    hydrated: getComputedStyle(
+      document.querySelector('[data-testid="cad-workspace"]')!,
+    ).paddingTop,
+    fallback: getComputedStyle(
+      document.querySelector('[data-testid="cad-loading-preview"]')!,
+    ).marginTop,
+  }))
+  expect(reservation.hydrated).toBe(reservation.fallback)
+  await page.getByTestId('cad-params-pill').click()
+  await expect(page.getByTestId('cad-params-drawer')).toBeVisible()
+  expect(await viewport.boundingBox()).toEqual(viewportBox)
+})

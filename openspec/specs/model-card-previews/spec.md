@@ -28,6 +28,19 @@ The project MUST provide one static light preview image and one static dark prev
 - **THEN** the generator MUST render with the dark appearance viewport theme
 - **AND** the captured canvas background MUST match the dark viewport color of the selected appearance
 
+#### Scenario: Preview presentation is consistent across the catalog
+
+- **WHEN** a visitor compares visible model previews in one appearance
+- **THEN** previews MUST use consistent neutral background, lighting and framing conventions that keep each model recognizable
+- **AND** model-specific canonical angles MUST reveal distinguishing features without clipping the model
+- **AND** framing MUST NOT imply a shared physical scale between different models or change actual dimensions, default model colors, saved user colors or exports
+
+#### Scenario: Refreshed images match their surrounding plate
+
+- **WHEN** the effective appearance changes on a static model page
+- **THEN** the selected preview background and surrounding image plate MUST follow the same neutral appearance treatment without a leftover warm-brown rectangle
+- **AND** the existing single accessible alternative text, reserved image dimensions and active-image failure fallback MUST remain intact
+
 ### Requirement: Repeatable preview capture and verification workflow
 
 The project MUST provide a repeatable Chromium/Playwright workflow that derives its targets from the complete visible catalog entry set, including duplicated context entries. For each target it MUST visit the model route with its system query when present, clear or isolate browser storage, wait for the corresponding generator to reach a ready state, write the entry's production light and dark static assets in WebP format, and fail verification when an expected asset is missing, empty, or invalid. Verification MUST validate each asset as a decodable WebP image with the canonical 640×400 dimensions, and MUST assert each rendered canvas background against the expected color of its appearance.

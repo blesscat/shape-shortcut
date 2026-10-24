@@ -1,10 +1,9 @@
 import { tv } from 'tailwind-variants'
 
 const cardBase = [
-  'bg-card text-card-foreground group/card ring-border flex flex-col gap-(--card-spacing) rounded-xl py-(--card-spacing) ring-1 shadow-soft',
-  'transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lift',
+  'bg-card text-card-foreground group/card ring-border flex flex-col gap-(--card-spacing) rounded-card py-(--card-spacing) ring-1',
   'has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0',
-  '*:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
+  '*:[img:first-child]:rounded-t-card *:[img:last-child]:rounded-b-card',
 ]
 
 const cardSizeStyles = {
@@ -43,7 +42,7 @@ export const cardDescription = tv({
 })
 
 const cardFooterBase =
-  'bg-muted/50 flex items-center rounded-b-xl border-t p-(--card-spacing)'
+  'bg-muted/50 flex items-center rounded-b-card border-t p-(--card-spacing)'
 
 export const cardFooter = tv({
   base: cardFooterBase,

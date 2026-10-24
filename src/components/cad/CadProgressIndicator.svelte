@@ -153,14 +153,15 @@
     progressStage: CadProgress['stage'],
     currentStage: CadProgress['stage'],
   ): string {
-    if (progressStage === currentStage) return 'bg-primary text-white'
+    if (progressStage === currentStage)
+      return 'bg-primary text-primary-foreground'
     return 'bg-border-card text-ink'
   }
 </script>
 
 <section
   aria-label={translate(locale, 'cad.progress.aria')}
-  class="fixed bottom-4 right-4 z-40 grid w-[min(24rem,calc(100vw-2rem))] gap-3 rounded-2xl border border-border-card bg-panel p-4 shadow-card"
+  class="fixed bottom-4 right-4 z-40 grid w-[min(24rem,calc(100vw-2rem))] gap-2 rounded-2xl border border-border-card bg-panel p-4 shadow-card"
   data-testid="cad-progress"
 >
   <div class="flex items-center justify-between gap-4 text-sm">
@@ -170,12 +171,18 @@
     >
   </div>
   {#if booleanLabel !== null}
-    <p class="text-sm text-muted-foreground" data-testid="cad-progress-boolean">
+    <p
+      class="m-0 text-sm text-muted-foreground"
+      data-testid="cad-progress-boolean"
+    >
       {booleanLabel}
     </p>
   {/if}
   {#if stageElapsedDescriptionText !== null}
-    <p class="text-sm text-muted-foreground" data-testid="cad-progress-elapsed">
+    <p
+      class="m-0 text-sm text-muted-foreground"
+      data-testid="cad-progress-elapsed"
+    >
       {stageElapsedDescriptionText}
     </p>
   {/if}
@@ -217,4 +224,13 @@
       </li>
     {/each}
   </ol>
+  <details class="text-xs text-muted-foreground">
+    <summary
+      class="flex min-h-11 cursor-pointer items-center py-1 focus-visible:outline-3 focus-visible:outline-focus"
+      >{translate(locale, 'cad.presentation.progressHelp')}</summary
+    >
+    <p class="mb-0 mt-2 leading-relaxed">
+      {translate(locale, 'cad.presentation.progressExplanation')}
+    </p>
+  </details>
 </section>

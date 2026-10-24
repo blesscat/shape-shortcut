@@ -64,12 +64,16 @@ test('CAD route shows the current loading stage', async ({
     name: '載入 CAD engine',
   })
   const viewport = page.getByTestId('cad-viewport')
-  const fallback = page.getByText('尚未有可預覽的模型。')
+  const provisionalStatus = page.getByTestId('cad-simplified-status')
   await Promise.all([
     expect(progress).toBeVisible(),
     expect(progress).toHaveAttribute('aria-valuenow', '1'),
     expect(page.getByTestId('cad-progress')).toContainText('載入 CAD engine'),
-    expect(fallback).toBeVisible(),
+    expect(provisionalStatus).toBeVisible(),
+    expect(viewport).toHaveAttribute('data-preview-kind', 'simplified'),
+    expect(
+      page.getByTestId('cad-progress').locator('[data-stage]'),
+    ).toHaveCount(4),
   ])
 
   const viewportRect = () =>
@@ -78,13 +82,6 @@ test('CAD route shows the current loading stage', async ({
       return { height: rect.height, top: rect.top }
     })
   const loadingViewport = await viewportRect()
-  const viewportContentHeight = await viewport.evaluate(
-    (element) => element.clientHeight,
-  )
-  const fallbackHeight = await fallback.evaluate(
-    (element) => element.getBoundingClientRect().height,
-  )
-  expect(fallbackHeight).toBe(viewportContentHeight)
 
   await waitForCadReady(page)
   const readyViewport = await viewportRect()
@@ -121,7 +118,7 @@ test('CAD progress floats above the workspace while loading', async ({
   expect(layout.bottom).toBeGreaterThanOrEqual(0)
 })
 
-test('CAD workspace does not show a redundant status panel after loading', async ({
+test('CAD workspace shows the compact ready status after clearing progress', async ({
   page,
   browserName,
 }) => {
@@ -131,7 +128,8 @@ test('CAD workspace does not show a redundant status panel after loading', async
   await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled({
     timeout: 30_000,
   })
-  await expect(page.getByRole('status')).toHaveCount(0)
+  await expect(page.getByTestId('cad-current-status')).toHaveText('模型已更新')
+  await expect(page.getByTestId('cad-progress')).toHaveCount(0)
 })
 
 test('CAD route keeps a readable static fallback when JavaScript is unavailable', async ({

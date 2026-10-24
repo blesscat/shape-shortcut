@@ -257,8 +257,8 @@
 
 {#if snapshot}
   <div
-    class="mt-6 min-w-0 {isNarrow
-      ? 'relative'
+    class="mt-3 min-w-0 {isNarrow
+      ? 'relative pt-[var(--cad-mobile-action-height)]'
       : 'grid items-start grid-cols-[minmax(220px,320px)_minmax(0,1fr)] gap-4'}"
     data-testid="cad-workspace"
   >
@@ -313,10 +313,11 @@
     {/if}
     {#if isNarrow}
       <div
-        class="absolute top-3 end-3 z-20 flex max-w-[calc(100%-1.5rem)] justify-end"
+        class="absolute top-0 end-0 z-20 flex max-w-full justify-end"
         data-testid="cad-actions-cluster"
       >
         <CadPanelActions
+          compact
           {locale}
           state={snapshot.state}
           modelId={snapshot.modelId}
@@ -378,6 +379,18 @@
             {resetVersion}
             onRestoreDefaults={handleRestoreDefaults}
             onApplyPreset={handleApplyPreset}
+          />
+          <CadPanelActions
+            detailsOnly
+            {locale}
+            state={snapshot.state}
+            modelId={snapshot.modelId}
+            canExport={snapshot.canExport}
+            supportsThreeMf={snapshot.supportsThreeMf}
+            canExportThreeMf={snapshot.canExportThreeMf}
+            onExport={handleExport}
+            onRetry={handleRetry}
+            onDownloadSettings={handleDownloadSettings}
           />
           <CadPanelNotes {locale} modelId={snapshot.modelId} />
         </BottomParameterDrawer>

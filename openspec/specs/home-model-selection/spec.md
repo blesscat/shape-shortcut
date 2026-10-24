@@ -296,7 +296,7 @@ MUST be:
 - `其他模型` 群組: `六角蜂巢`
 
 Base and tool/accessory/test cards MUST keep the full selection label as
-their heading. Container cards MAY present the v2 palette split—heading shows
+their heading. Container cards MAY present the localized name split—heading shows
 the localized primary name with the secondary original-name line rendered
 adjacent（例：`方盒`＋`Grid Box`）—provided the pair reproduces the selection
 label, and the full selection label remains the accessible name of the edit
@@ -315,10 +315,10 @@ chooser, the current catalog display names MUST remain `opengrid board
   `divider (分隔牆)`、`Snap Remover` 等）
 - **AND** 容器卡 MUST 以在地化主名搭配次要原文行呈現（`方盒`＋`Grid Box`），
   且主名＋次要行 MUST 對應其 selection label
-- **AND** 編輯入口的 accessible name MUST 分別使用 `編輯 Board (底版)`、
-  `編輯 Snap (咔咔)`、`編輯 Locating Post (定位柱)`、`編輯 divider (分隔牆)`、
-  `編輯 Grid Box (方盒)`、`編輯 Round Box (圓盒)`、`編輯 Snap Remover`、
-  `編輯 Open Shelf (斜開格櫃)` 與 `編輯 六角蜂巢`
+- **AND** 調整模型入口的 accessible name MUST 分別使用 `調整模型 Board (底版)`、
+  `調整模型 Snap (咔咔)`、`調整模型 Locating Post (定位柱)`、`調整模型 divider (分隔牆)`、
+  `調整模型 Grid Box (方盒)`、`調整模型 Round Box (圓盒)`、`調整模型 Snap Remover`、
+  `調整模型 Open Shelf (斜開格櫃)` 與 `調整模型 六角蜂巢`
 - **AND** `OpenGrid 系列` 標題 MUST 仍存在，面板 MUST 以 `Desk System`、
   `Wall System`、`其他` 標題區分
 
@@ -331,10 +331,16 @@ chooser, the current catalog display names MUST remain `opengrid board
   `divider (分隔牆)`、`Grid Box (方盒)`、`Round Box (圓盒)`、
   `OpenGrid Open Shelf (斜開格櫃)` 與 `HSW 六角蜂巢`
 
+#### Scenario: Localized actions retain complete identity
+
+- **WHEN** a chooser card appears in either supported locale
+- **THEN** its primary action MUST read `調整模型` in Traditional Chinese or `Customize model` in English, and its accessible name MUST include the full catalog selection label
+- **AND** the secondary details action MUST be localized and long names MUST wrap without losing distinguishing text or causing horizontal overflow
+
 ### Requirement: OpenGrid Snap 選擇入口順序
 
 The `/models` chooser MUST render each system panel's entries in three
-part-category zones in this order: the 基礎 zone first, then the 容器 zone,
+part-category zones in this order: the 容器 zone first, then the compact 基礎 zone,
 then the collapsed 工具與配件 zone. Within the 基礎 zone the order MUST be
 `opengrid`（Board）then `opengrid-snap` in both system panels. The Desk 容器
 zone MUST render `opengrid-stackable-box`, `opengrid-stackable-cylinder`,
@@ -345,14 +351,15 @@ order. The Desk 工具與配件 zone MUST render `opengrid-snap-remover`,
 `opengrid-pillar`, `opengrid-divider`, `opengrid-label-card` in this order.
 The Wall 工具與配件 zone MUST render `opengrid-wall-cover`,
 `opengrid-label-card`, `opengrid-label-slot-test` in this order. The 基礎
-hero rows MUST render Board（底版）first and Snap（咔咔）second, stacked
+compact rows MUST render Board（底版）first and Snap（咔咔）second, stacked
 vertically in this order at every viewport width. Every entry MUST retain its
 existing model-specific route.
 
 #### Scenario: Desk 子分組分區順序
 
 - **WHEN** 使用者檢視 `/models` 的 Desk System 面板
-- **THEN** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
+- **THEN** 容器區 MUST 位於基礎區之前，工具與配件區 MUST 位於基礎區之後
+- **AND** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
 - **AND** 容器區 MUST 依序顯示 `Grid Box (方盒)`、`Round Box (圓盒)`、
   Organizer Box、`Open Shelf (斜開格櫃)`
 - **AND** 工具與配件區展開後 MUST 依序顯示 Snap Remover、
@@ -361,7 +368,7 @@ existing model-specific route.
 #### Scenario: Snap 與底板在寬版相鄰
 
 - **WHEN** 使用者以支援至少雙欄卡片排列的視窗開啟 `/models`
-- **THEN** 基礎區的第一列 hero 橫條 MUST 是 `Board (底版)`
+- **THEN** 基礎區的第一列 緊湊橫條 MUST 是 `Board (底版)`
 - **AND** 第二列 MUST 是 `Snap (咔咔)`，兩列以垂直堆疊呈現
 - **AND** `Board (底版)` 的入口 MUST 導向 `/cad/opengrid`
 - **AND** `Snap (咔咔)` 的入口 MUST 導向 `/cad/opengrid-snap`
@@ -375,7 +382,8 @@ existing model-specific route.
 #### Scenario: Wall 子分組分區順序
 
 - **WHEN** 使用者檢視 `/models` 的 Wall System 面板
-- **THEN** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
+- **THEN** 容器區 MUST 位於基礎區之前，工具與配件區 MUST 位於基礎區之後
+- **AND** 基礎區 MUST 依序顯示 `Board (底版)`、`Snap (咔咔)`
 - **AND** 容器區 MUST 依序顯示 OpenConnect Shelf、OpenConnect Organizer、
   OpenConnect 面紙盒
 - **AND** 工具與配件區展開後 MUST 依序顯示 Wall Cover、Label Card、
@@ -561,19 +569,17 @@ Every chooser-visible model definition MUST declare exactly one part category
 from `base | container | accessory | tool | test`（基礎／容器／配件／工具／
 測試件）. Zone membership, zone ordering, and badge labels MUST derive from
 catalog metadata rather than a second hardcoded model-id list. Each system
-panel MUST render a pinned 基礎 zone, a visually dominant 容器 card grid, and
+panel MUST render a visually dominant 容器 card grid first, a compact 基礎 zone second, and
 a 工具與配件 section collapsed by default that expands in place; the collapsed
 section MUST NOT display model counts and MUST use native disclosure semantics
 so it stays keyboard operable. Every visible card MUST show a localized
-category badge that pairs text with color（容器＝珊瑚弱底、基礎＝薄荷弱底、
-配件／工具／測試件＝中性）and MUST NOT rely on color alone. The zone structure
+category badge on a readable neutral surface and MUST NOT rely on color alone. Category regions MUST NOT use large success-colored or brand-colored fills; brand emphasis MUST identify actions and selection. The zone structure
 MUST NOT remove chooser entries, change model routes, or change selection
 labels. Chooser-hidden legacy models without a part category（`box`、
 `modular-grid-base`、`hexagonal-column`）MUST NOT appear in the chooser.
 
-The zones MUST follow the ratified v2 palette presentation: the 基礎 zone
-renders mint-tinted hero rows（thumbnail, heading, one-line friendly
-description, 基礎 stamp）; the 容器 zone renders image-top cards with the
+The zones MUST follow the studio presentation: the 基礎 zone
+renders compact neutral rows（thumbnail, heading, concise purpose description that can wrap, 基礎 stamp）; the 容器 zone renders image-top cards with the
 badge overlaid on the image and a localized primary name paired with its
 secondary original name; the collapsed 工具與配件 section renders a panel head
 with a friendly hint, a visible teaser line while collapsed, and an
@@ -582,8 +588,7 @@ with a friendly hint, a visible teaser line while collapsed, and an
 #### Scenario: 分區呈現與預設收合
 
 - **WHEN** 使用者檢視 `/models` 任一系統面板
-- **THEN** 基礎區 MUST 排在面板最前、容器區 MUST 以較大的卡片網格作為主
-  視覺、工具與配件區 MUST 預設收合
+- **THEN** 容器區 MUST 排在面板最前並以較大的卡片網格作為主視覺、基礎區 MUST 位於其後、工具與配件區 MUST 預設收合
 - **AND** 使用者 MUST 能以鍵盤展開工具與配件區，展開後該區所有卡片與既有
   路由 MUST 原地可見
 - **AND** 收合狀態下這些入口 MUST 留在 DOM 中，且收合標題 MUST NOT 顯示模型
@@ -594,7 +599,7 @@ with a friendly hint, a visible teaser line while collapsed, and an
 - **WHEN** 使用者檢視任一 chooser 卡片
 - **THEN** 卡片 MUST 顯示在地化分類文字徽章（zh-Hant：基礎／容器／配件／
   工具／測試件；en：Base／Container／Accessory／Tool／Test piece）
-- **AND** 徽章 MUST 以文字搭配顏色呈現，MUST NOT 僅靠顏色區分
+- **AND** 徽章 MUST 以可讀文字呈現，MUST NOT 僅靠顏色區分
 
 #### Scenario: 未分類模型不得出現在 chooser
 
@@ -602,11 +607,11 @@ with a friendly hint, a visible teaser line while collapsed, and an
 - **THEN** `box`、`modular-grid-base`、`hexagonal-column` MUST NOT 出現
 - **AND** 每個出現的模型 MUST 帶有分類徽章
 
-#### Scenario: v2 palette 版型
+#### Scenario: Studio 版型
 
 - **WHEN** 使用者檢視任一系統面板
-- **THEN** 基礎區 MUST 以薄荷弱底橫條呈現（縮圖、selection label 標題、
-  一句話描述、基礎章）
+- **THEN** 基礎區 MUST 以中性底緊湊橫條呈現（縮圖、selection label 標題、
+  可自然換行的簡短用途描述、基礎章）
 - **AND** 容器區 MUST 以圖在上方的卡片網格呈現主視覺，徽章疊於圖上，名稱以
   在地化主名搭配次要原文呈現
 - **AND** 工具與配件區收合時 MUST 顯示提示語與預覽文案，MUST NOT 顯示模型
@@ -618,7 +623,7 @@ Each `/models` system panel MUST present visible top separation between the
 先挑容器 head's bottom hairline and the first zone rendered in the panel body
 so the divider never rests directly on panel content. The separation MUST be
 present in both light and dark color schemes and on every system panel
-（Desk／Wall／HSW）.
+（Desk／Wall／其他）.
 
 #### Scenario: 面板本體與標頭分隔線保留上緣間距
 
@@ -626,13 +631,12 @@ present in both light and dark color schemes and on every system panel
 - **THEN** 面板本體第一個分區的頂緣與標頭底部分隔線之間 MUST 有可見間距，
   且間距量測 MUST 大於零
 - **AND** 淺色與深色主題、三個系統面板皆 MUST 成立
-- **AND** 標頭、分隔線、分區順序與既有卡片版型 MUST 維持不變
+- **AND** 標頭與分隔線 MUST 保留可辨識層級，Desk／Wall MUST 採用容器、基礎、工具與配件的分區順序，其他 MUST 保持獨立模型的呈現
 
 ### Requirement: 首頁系統卡分類摘要
 
 The localized homepage Desk System and Wall System starting cards MUST each
-include one localized line that summarizes the part-category structure（基礎
-→ 容器 → 工具與配件）in the site's friendly tone. The summary line MUST NOT
+include one localized line that summarizes the part-category structure（容器、基礎、工具與配件）in the site's friendly tone. The summary line MUST NOT
 include model counts or the 28 mm grid pitch, MUST NOT remove or replace the
 card's existing preview, title, description, or entry link, and MUST be
 provided for both supported locales.
@@ -647,7 +651,7 @@ provided for both supported locales.
 #### Scenario: 摘要不改變既有入口
 
 - **WHEN** 首頁渲染系統起始卡
-- **THEN** 既有預覽、標題、說明與入口連結 MUST 維持不變
+- **THEN** 既有預覽、標題、用途說明與入口連結 MUST 保留；分類摘要 MUST 與容器優先的選擇流程一致
 - **AND** 卡片連結 MUST 維持既有 route 與 `system=desk|wall` query
 
 ### Requirement: 模型選擇頁
@@ -655,7 +659,7 @@ provided for both supported locales.
 The system MUST provide a static model-selection page at `/models` driven by
 the registered model catalog. Every model rendered in the chooser MUST have
 an understandable display name, a catalog-provided static preview image, a
-concise model description, and a link to its model-specific CAD route. The
+visible concise localized purpose description, and a link to its model-specific CAD route. The
 chooser MUST NOT require a visible capability summary, adjustable-settings
 label, or fixed-geometry label on each model card. Detailed parameter names,
 ranges, constraints, units, and export formats MUST remain available in
@@ -677,9 +681,7 @@ a page-level selection heading. The series and the panels MUST remain
 distinguishable by the `OpenGrid 系列` heading and the segmented switcher's
 panel headings（`Desk System`、`Wall System`、`其他`）with spacing or
 separators, without requiring redundant family badges or an outer visual
-panel around the entire chooser. Container cards MAY omit the on-card
-description line（v2 palette cards present the name pair instead）provided
-the description remains available in the card's details presentation. Model
+panel around the entire chooser. Every card, including a container card, MUST show a concise purpose description and retain its full description in the details presentation. Purpose descriptions MUST NOT invent parameter counts or replace complete parameter details. Model
 cards MUST use an adaptive layout that uses more than two columns when a wide
 viewport has enough room and collapses to one column on a narrow viewport.
 
@@ -701,7 +703,7 @@ viewport has enough room and collapses to one column on a narrow viewport.
   `opengrid-snap`、`opengrid-snap-remover` 與 `opengrid-open-shelf`
 - **AND** `其他模型` 群組 MUST 顯示 `hsw-cell`
 - **AND** 每個可見模型 MUST 顯示其 catalog-provided static preview image、
-  可理解模型名稱與 `編輯 →` 入口
+  可理解模型名稱與 localized `調整模型` / `Customize model` 入口
 - **AND** 每個 preview image MUST expose alternative text that identifies the
   model it represents
 - **AND** `box`、`box-normal`、`modular-grid-base` 與 `hexagonal-column` MUST
@@ -718,8 +720,7 @@ viewport has enough room and collapses to one column on a narrow viewport.
 #### Scenario: 模型卡片保留按需參數詳情
 
 - **WHEN** 使用者開啟 `/models`
-- **THEN** 每個模型卡片 MUST 顯示預覽、模型名稱與編輯入口；基礎與工具卡
-  MUST 於卡面顯示一句話簡介，容器卡的簡介 MUST 於詳情呈現
+- **THEN** 每個模型卡片 MUST 顯示預覽、完整可辨識的模型名稱、調整模型入口與一句話用途簡介；完整說明 MUST 同時保留於詳情
 - **AND** 卡片 MUST NOT 在詳情開啟前顯示可調整設定或固定幾何 capability
   summary
 - **AND** 卡片的詳情入口 MUST 仍能提供完整參數名稱、範圍、限制、單位與匯出
@@ -730,7 +731,7 @@ viewport has enough room and collapses to one column on a narrow viewport.
 - **GIVEN** 可見模型的 preview image 無法載入
 - **WHEN** 使用者開啟 `/models`
 - **THEN** 該卡片 MUST 顯示可理解的預覽 placeholder 或 fallback
-- **AND** 該卡片 MUST 仍顯示模型名稱與 `編輯 →` 入口
+- **AND** 該卡片 MUST 仍顯示模型名稱與 localized `調整模型` / `Customize model` 入口
 - **AND** fallback MUST NOT prevent navigation to the model-specific CAD
   route
 
@@ -745,6 +746,13 @@ viewport has enough room and collapses to one column on a narrow viewport.
 - **WHEN** 使用者在 `/models` 選擇 `opengrid`
 - **THEN** 選擇入口 MUST 導向 `/cad/opengrid`
 - **AND** CAD workspace MUST 以 `modelId=opengrid` 初始化
+
+#### Scenario: Bounded chooser remains readable
+
+- **WHEN** the localized chooser renders on a wide screen or a 320px narrow screen
+- **THEN** its content MUST use the shared bounded static-page width on wide screens and fit the narrow viewport without horizontal page overflow
+- **AND** model names, purpose descriptions and primary actions MUST remain readable without truncating distinguishing text
+- **AND** the segmented control MUST size to its options rather than filling unused page width
 
 ### Requirement: 六角蜂巢 model selection entry
 
@@ -777,4 +785,3 @@ otherwise with its default rows and columns after route resolution.
 - **AND** it MUST NOT silently substitute `box` or `modular-grid-base`
 - **AND** the initial generation MUST use valid saved rows and columns when
   available, otherwise the `hsw-cell` defaults
-

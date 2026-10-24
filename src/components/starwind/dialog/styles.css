@@ -2,3 +2,11 @@
   --nested-offset: 1rem;
   --nested-scale: 0.05;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sw-dialog-content],
+  [data-sw-dialog-backdrop] {
+    animation: none !important;
+    transition: none !important;
+  }
+}

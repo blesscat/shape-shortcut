@@ -2,6 +2,8 @@
 // Domain: chrome
 
 export const messages = {
+  'navigation.menu': 'Menu',
+  'navigation.closeMenu': 'Close menu',
   'navigation.primary': 'Primary navigation',
   'navigation.docs': 'Docs',
   'navigation.models': 'Pick a model',

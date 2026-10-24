@@ -55,9 +55,9 @@
   --radius-xs: calc(var(--radius) - 0.375rem);
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 0.25rem);
-  --radius-2xl: calc(var(--radius) + 0.5rem);
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-card);
+  --radius-2xl: var(--radius-container);
   --radius-3xl: calc(var(--radius) + 1rem);
 
   /* sidebar variables */
@@ -80,19 +80,18 @@
   --card-foreground: var(--color-card-foreground);
   --popover: var(--color-card);
   --popover-foreground: var(--color-card-foreground);
-  /* Solid primary faces use the strong variant so white labels keep 4.5:1
-     (coral #cf4429 in both appearances; hover uses --color-primary-hover). */
+  /* Foregrounds resolve alongside the active action surface. */
   --primary: var(--color-primary-strong);
   --primary-foreground: var(--color-primary-foreground);
   --primary-accent: var(--color-primary);
-  --secondary: #f6f1ed;
+  --secondary: var(--color-secondary-surface);
   --secondary-foreground: var(--color-foreground);
   --secondary-accent: var(--color-foreground);
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
   --accent: var(--color-muted);
   --accent-foreground: var(--color-foreground);
-  --info: #0284c7;
+  --info: #0369a1;
   --info-foreground: #ffffff;
   --success-surface: #1f7a3a;
   --success-surface-foreground: #ffffff;
@@ -103,8 +102,8 @@
   --border: var(--color-border);
   --input: var(--color-border-field);
   --outline: var(--color-focus);
-  /* Warm shape vocabulary: rounded-lg = 16px, xl = 20px, 2xl = 24px. */
-  --radius: 1rem;
+  /* Base controls use 10px; component cards/containers use explicit tokens. */
+  --radius: 0.625rem;
 
   /* sidebar variables */
   --sidebar-background: var(--color-muted);
@@ -119,7 +118,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
-    --secondary: #332a24;
+    --secondary: var(--color-secondary-surface);
     --secondary-foreground: var(--color-foreground);
     --secondary-accent: var(--color-foreground);
     --accent: var(--color-muted);
@@ -135,7 +134,7 @@
 }
 
 .dark {
-  --secondary: #332a24;
+  --secondary: var(--color-secondary-surface);
   --secondary-foreground: var(--color-foreground);
   --secondary-accent: var(--color-foreground);
   --accent: var(--color-muted);

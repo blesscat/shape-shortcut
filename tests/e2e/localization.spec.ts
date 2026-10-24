@@ -63,20 +63,27 @@ test('localized pages expose branded titles and a shared favicon', async ({
   for (const entry of pages) {
     await page.goto(entry.path)
     await expect(page).toHaveTitle(entry.title)
-    await expect(page.locator('head link[rel="icon"]')).toHaveAttribute(
-      'href',
-      '/favicon.png',
-    )
-    await expect(page.locator('head link[rel="icon"]')).toHaveAttribute(
-      'type',
-      'image/png',
-    )
+    await expect(
+      page.locator('head link[rel="icon"][type="image/svg+xml"]'),
+    ).toHaveAttribute('href', '/favicon.svg')
+    await expect(
+      page.locator('head link[rel="icon"][type="image/svg+xml"]'),
+    ).toHaveAttribute('type', 'image/svg+xml')
   }
 
-  const faviconResponse = await page.request.get('/favicon.png')
-  expect(faviconResponse.ok()).toBe(true)
-  expect(faviconResponse.headers()['content-type']).toContain('image/png')
-  expect((await faviconResponse.body()).byteLength).toBeGreaterThan(0)
+  for (const [asset, mime] of [
+    ['/favicon.svg', 'image/svg+xml'],
+    ['/favicon.ico', 'image/'],
+    ['/apple-touch-icon.png', 'image/png'],
+  ]) {
+    const response = await page.request.get(asset)
+    expect(response.ok()).toBe(true)
+    expect(response.headers()['content-type']).toContain(mime)
+    expect((await response.body()).byteLength).toBeGreaterThan(0)
+  }
+  await expect(
+    page.locator('head link[rel="apple-touch-icon"]'),
+  ).toHaveAttribute('sizes', '180x180')
 })
 
 test('localized model chooser exposes localized shell and search metadata', async ({
@@ -525,10 +532,10 @@ test('model chooser badges and home summaries expose localized part categories',
   await page.goto('/en/')
   await expect(
     page.getByTestId('home-explore-desk-category-summary'),
-  ).toContainText('Board and Snap are your base')
+  ).toContainText('Pick a container first, then add Board and Snap')
   await expect(
     page.getByTestId('home-explore-wall-category-summary'),
-  ).toContainText('Shelves, organizers, and the tissue box are containers')
+  ).toContainText('Pick a shelf, organizer, or tissue box first')
 
   await page.goto('/zh-Hant/models')
   await expect(deskBaseBadge()).toHaveText('基礎')
@@ -544,8 +551,8 @@ test('model chooser badges and home summaries expose localized part categories',
   await page.goto('/zh-Hant/')
   await expect(
     page.getByTestId('home-explore-desk-category-summary'),
-  ).toContainText('底版跟 Snap 是基礎')
+  ).toContainText('先挑喜歡的容器，再搭配底板與 Snap')
   await expect(
     page.getByTestId('home-explore-wall-category-summary'),
-  ).toContainText('層架、方格、面紙盒都是容器')
+  ).toContainText('先挑層架、方格或面紙盒，再搭配底板與 Snap')
 })

@@ -17,7 +17,7 @@ document.body.append(renderer.domElement)
 window.renderHome = (kind, theme) => {
   const dark = theme === 'dark'
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(dark ? '#2a231e' : '#f6f1ed')
+  scene.background = new THREE.Color(dark ? '#181a20' : '#f0f1f4')
   scene.add(new THREE.AmbientLight(0xffffff, 1.6))
   const light = new THREE.DirectionalLight(0xfff3e4, 3)
   light.position.set(-100, -160, 250)

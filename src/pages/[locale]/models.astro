@@ -48,7 +48,6 @@ const systemTabs = [
 
 <SiteLayout
   {locale}
-  fullWidth
   title={`${t('models.title')} | Shape Shortcut`}
   description={t('models.description')}
 >
@@ -57,7 +56,7 @@ const systemTabs = [
     aria-labelledby="model-selection-title"
     data-testid="model-selection"
   >
-    <header class="grid justify-items-center gap-3 text-center">
+    <header class="grid justify-items-start gap-3">
       <Badge variant="outline" eyebrow size="sm">
         {t('models.series')}
       </Badge>
@@ -71,7 +70,7 @@ const systemTabs = [
         {t('models.lede')}
       </p>
       <a
-        class="inline-flex min-h-11 w-fit items-center rounded-full border border-border bg-background px-5 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
+        class="inline-flex min-h-11 w-fit items-center rounded-lg border border-border bg-background px-5 py-2 font-semibold text-foreground no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-outline"
         data-testid="playground-entry"
         href={localizedPathFor(locale, '/cad/playground')}
       >
@@ -84,11 +83,11 @@ const systemTabs = [
     </h2>
 
     {
-      /* v2 palette: segmented system switcher above a single panel
+      /* Segmented system switcher above a single panel
         (progressive enhancement — without JS all panels stack). */
     }
     <div
-      class="flex flex-wrap items-center gap-1 rounded-full border border-border bg-card p-1 shadow-soft"
+      class="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-full border border-border bg-card p-1"
       role="group"
       aria-label={t('models.switcher.label')}
       data-testid="model-system-switcher"
@@ -99,7 +98,7 @@ const systemTabs = [
             type="button"
             data-system-tab={tab.key}
             aria-pressed={tab.key === 'desk' ? 'true' : 'false'}
-            class="min-h-9 rounded-full px-4 py-1.5 text-sm font-extrabold text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-outline aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:shadow-soft aria-pressed:hover:bg-primary"
+            class="min-h-11 rounded-full px-4 py-1.5 text-sm font-semibold text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-outline aria-pressed:bg-primary-soft aria-pressed:text-primary aria-pressed:hover:bg-primary-soft"
           >
             {tab.label}
           </button>
@@ -131,26 +130,48 @@ const systemTabs = [
         ].map((panel) =>
           panel.zones ? (
             <section
-              class="overflow-hidden rounded-[20px] border border-border bg-muted shadow-soft"
+              class="min-w-0 overflow-hidden rounded-card border border-border bg-muted"
               aria-labelledby={panel.labelledBy}
               data-testid={`model-subgroup-${panel.key}`}
               data-system-panel={panel.key}
             >
               <div class="flex items-baseline gap-2 border-b border-border px-4 py-4">
                 <h3
-                  class="m-0 text-[15px] font-black leading-snug"
+                  class="m-0 text-base font-semibold leading-snug"
                   id={panel.labelledBy}
                 >
                   {t('models.panel.title')}
                   <span class="sr-only">（{panel.title}）</span>
                 </h3>
                 {panel.zones.tools.length > 0 && (
-                  <span class="text-[12.5px] font-bold text-muted-foreground">
+                  <span class="text-sm font-bold text-muted-foreground">
                     {t('models.panel.hint')}
                   </span>
                 )}
               </div>
               <div class="grid gap-4 px-4 pt-4 pb-4">
+                {panel.zones.containers.length > 0 && (
+                  <div class="grid gap-2">
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-sm font-semibold tracking-wide">
+                        {t('models.zone.containers')}
+                      </span>
+                      <span class="text-xs font-bold text-muted-foreground">
+                        {t('models.zone.containersHint')}
+                      </span>
+                    </div>
+                    <div
+                      role="group"
+                      aria-label={t('models.zone.containers')}
+                      data-testid={`model-zone-containers-${panel.key}`}
+                      class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    >
+                      {panel.zones.containers.map((definition) => (
+                        <ModelCard {definition} {locale} />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {panel.zones.base.length > 0 && (
                   <div
                     role="group"
@@ -163,42 +184,20 @@ const systemTabs = [
                     ))}
                   </div>
                 )}
-                {panel.zones.containers.length > 0 && (
-                  <div class="grid gap-2">
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-[13px] font-black tracking-wide">
-                        {t('models.zone.containers')}
-                      </span>
-                      <span class="text-xs font-bold text-muted-foreground">
-                        {t('models.zone.containersHint')}
-                      </span>
-                    </div>
-                    <div
-                      role="group"
-                      aria-label={t('models.zone.containers')}
-                      data-testid={`model-zone-containers-${panel.key}`}
-                      class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
-                    >
-                      {panel.zones.containers.map((definition) => (
-                        <ModelCard {definition} {locale} />
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {panel.zones.tools.length > 0 && (
                   <details
                     class="group"
                     data-testid={`model-zone-tools-${panel.key}`}
                   >
-                    <summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-2 [&::-webkit-details-marker]:hidden">
-                      <span class="text-[15px] font-black">
+                    <summary class="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-2 [&::-webkit-details-marker]:hidden">
+                      <span class="text-base font-semibold">
                         {t('models.zone.tools')}
                       </span>
-                      <span class="text-[12.5px] font-bold text-muted-foreground">
+                      <span class="text-sm font-bold text-muted-foreground">
                         {t('models.zone.toolsHint')}
                       </span>
                       <span
-                        class="ms-auto flex items-center gap-1 text-[13px] font-extrabold text-primary"
+                        class="ms-auto flex items-center gap-1 text-sm font-semibold text-primary"
                         aria-hidden="true"
                       >
                         <span class="group-open:hidden">
@@ -208,7 +207,7 @@ const systemTabs = [
                           ▾ {t('models.zone.collapse')}
                         </span>
                       </span>
-                      <span class="mt-2 block w-full rounded-[12px] bg-[#f6f1ed] px-3.5 py-2.5 text-[13px] font-bold leading-normal text-muted-foreground dark:bg-[#332a24]">
+                      <span class="mt-2 block w-full rounded-[12px] bg-card px-3.5 py-2.5 text-sm font-bold leading-normal text-muted-foreground">
                         {t('models.zone.toolsTeaser')}
                       </span>
                     </summary>

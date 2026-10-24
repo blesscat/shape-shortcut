@@ -293,3 +293,35 @@ test('dark mobile CAD workspace keeps the parameter drawer usable without horizo
     await expect(pill).toBeFocused()
   }
 })
+
+test('derived cylinder outer diameter remains readable in both appearances', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    await page.goto('/en/cad/opengrid-stackable-cylinder')
+    const hint = page.getByTestId('opengrid-cylinder-outer-diameter')
+    await expect(hint).toBeVisible()
+    await expect(hint).toContainText('mm')
+    const colors = await hint.evaluate((element) => {
+      let surface: Element | null = element
+      while (
+        surface &&
+        getComputedStyle(surface).backgroundColor === 'rgba(0, 0, 0, 0)'
+      )
+        surface = surface.parentElement
+      if (!surface)
+        throw new Error(
+          'Expected a visible background behind the diameter hint',
+        )
+      return {
+        text: getComputedStyle(element).color,
+        background: getComputedStyle(surface).backgroundColor,
+      }
+    })
+    expect(
+      contrastRatio(colors.text, colors.background),
+    ).toBeGreaterThanOrEqual(4.5)
+  }
+})

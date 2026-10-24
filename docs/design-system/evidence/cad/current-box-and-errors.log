@@ -1,0 +1,28 @@
+✓ Lockfile passes supply-chain policies (verified 8d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+Done in 319ms using pnpm v11.20.0
+
+Running 13 tests using 1 worker
+
+(node:1726063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › tests/e2e/box.spec.ts:12:1 › box CAD route exposes fallback and locked parameter controls (605ms)
+  ✓   2 [chromium] › tests/e2e/box.spec.ts:33:1 › changed parameter controls expose a restore button (653ms)
+  ✓   3 [chromium] › tests/e2e/box.spec.ts:51:1 › CAD route shows the current loading stage (2.5s)
+  ✓   4 [chromium] › tests/e2e/box.spec.ts:92:1 › CAD progress floats above the workspace while loading (599ms)
+  ✓   5 [chromium] › tests/e2e/box.spec.ts:121:1 › CAD workspace shows the compact ready status after clearing progress (1.1s)
+  ✓   6 [chromium] › tests/e2e/box.spec.ts:135:1 › CAD route keeps a readable static fallback when JavaScript is unavailable (73ms)
+  ✓   7 [chromium] › tests/e2e/box.spec.ts:152:1 › CAD workspace preserves responsive columns within the viewport (781ms)
+  ✓   8 [chromium] › tests/e2e/box.spec.ts:220:1 › CAD Worker builds the default box in a WebGL-enabled browser (1.3s)
+  ✓   9 [chromium] › tests/e2e/box.spec.ts:246:1 › CAD Worker exports one non-empty STEP download for the committed revision (1.4s)
+  ✓  10 [chromium] › tests/e2e/box.spec.ts:265:1 › CAD Worker exports one non-empty STL download for the committed revision (1.3s)
+  ✓  11 [chromium] › tests/e2e/box.spec.ts:280:1 › parameter updates use the latest valid generation and preserve stale preview on invalid input (2.9s)
+  ✓  12 [chromium] › tests/e2e/box.spec.ts:307:1 › dimension annotations remain attached through viewport resize and orbit interaction (1.2s)
+  ✓  13 [chromium] › tests/e2e/model-failure-toast.spec.ts:4:1 › model generation failure shows its reason in a toast and keeps export disabled (1.2s)
+
+  13 passed (16.2s)

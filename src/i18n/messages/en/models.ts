@@ -29,8 +29,8 @@ export const messages = {
   'models.exportFormatLine.threeMfOnly':
     'dual-color 3MF (no STL for this model)',
   'models.previewUnavailable': 'Preview image is temporarily unavailable',
-  'models.edit': 'Tweak it →',
-  'models.editAria': 'Edit {name}',
+  'models.edit': 'Customize model',
+  'models.editAria': 'Customize model {name}',
   'models.family.opengrid': 'OpenGrid series',
   'models.family.other': 'Other models',
   'models.context.desk': 'Desk System',

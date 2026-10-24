@@ -832,7 +832,9 @@ Each component workspace MUST offer a download-settings action that saves the co
 
 ### Requirement: 窄版參數 bottom drawer
 
-在 cad breakpoint（`max-cad`，≤760px）以下，CAD workspace MUST 以底部 drawer
+The legacy-overlay mode defined below MUST remain the production behavior until the candidate-split mode passes the mobile comparison gate. The original overlay behavior and its scenarios in this requirement apply whenever legacy-overlay is selected; the candidate-specific clauses below govern candidate-split. Both modes MUST retain the existing 760px breakpoint and desktop sticky sidebar. A failed or incomplete comparison MUST retain legacy-overlay; an opaque overlay alone MUST NOT replace it.
+
+在 legacy-overlay mode 的 cad breakpoint（`max-cad`，≤760px）以下，CAD workspace MUST 以底部 drawer
 呈現參數調整介面，MUST NOT 再將參數面板整體堆疊在 viewport 上方。Drawer MUST
 預設收合，並以常駐的「參數」pill 開啟；pill MUST 以 `aria-expanded` 與
 `aria-controls` 反映開合狀態，並以狀態點呈現目前預覽的 stale 或欄位驗證錯誤
@@ -892,6 +894,77 @@ drawer 內容中，並符合「穩定且響應式的參數復原控制」的既�
 - **WHEN** viewport 寬度大於 760px
 - **THEN** workspace MUST 維持既有雙欄 sticky 面板版面
 - **AND** MUST NOT 渲染 drawer、參數 pill 或浮動匯出按鈕群
+
+#### Scenario: Candidate split keeps the preview visible while editing
+
+- **WHEN** a user opens candidate-split parameters at or below 760px
+- **THEN** the interface MUST provide a non-modal opaque parameter region below a separate, unobscured model viewport rather than covering that viewport
+- **AND** the panel MUST default to collapsed on entry, expose its open state through a named control with `aria-expanded` and `aria-controls`, and retain visible invalid/stale status with an equivalent text announcement
+- **AND** the user MUST be able to collapse the panel, drag its height within usable limits, and adjust its height with a keyboard-accessible control exposing its name and value
+- **AND** parameter content MUST scroll independently, respect bottom safe areas, and keep the focused control, its validation message and the collapse control reachable
+- **AND** exports, retries and settings download MUST remain reachable in a reserved action region without covering editable fields or the visible preview, with unchanged readiness and format rules
+
+#### Scenario: Candidate panel resize leaves model state and camera untouched
+
+- **WHEN** the candidate panel opens, closes or changes height, including by divider drag
+- **THEN** the viewport's layout dimensions MUST adapt to its allocated region while camera direction, target and user zoom remain unchanged
+- **AND** divider movement MUST NOT trigger camera fitting, orbit, geometry generation or committed revision changes
+- **AND** parameter input MUST NOT resize the viewport or change the camera; simplified-to-committed transitions MUST retain the existing camera preservation contract
+- **AND** the orientation indicator, current-revision dimensions and status MUST remain clipped to and readable within the visible viewport without overlapping its controls
+
+#### Scenario: Candidate touch and keyboard interactions remain separate
+
+- **WHEN** a user resizes the candidate panel, scrolls parameters, or touches the visible preview
+- **THEN** each gesture MUST affect only its intended region, with existing continuous orbit and multi-touch behavior preserved in the preview
+- **AND** opening the panel MUST focus a reachable panel control, Escape MUST collapse it and restore focus to the opener, and closing MUST restore any page-scroll lock
+- **AND** resizing MUST preserve raw input, accepted parameters, validation errors, persistence, model colors and export availability
+
+#### Scenario: Candidate promotion requires a successful mobile comparison
+
+- **WHEN** candidate-split is considered for replacing legacy-overlay
+- **THEN** comparison evidence MUST cover 360×640 and 390×844 portrait, 844×390 landscape, and the 760/761px breakpoint boundary in both appearances and both supported locales
+- **AND** real mobile software-keyboard and orientation-change checks MUST demonstrate simultaneous model visibility and active-field/error/collapse access while editing a box and a tall shelf model
+- **AND** loading, simplified preview, committed preview, stale, invalid, retry and export states MUST retain their existing semantics without new horizontal overflow or camera jumps
+- **AND** a failed, missing or inconclusive check MUST keep legacy-overlay as the shipped mode; the comparison outcome and selected mode MUST be recorded before implementation acceptance
+
+### Requirement: Parameter presentation follows editing intent
+
+Shared parameter presentation MUST make size, structure and advanced options distinguishable, using model-appropriate grouping without changing any parameter value, valid range, raw-input handling, default, preset or persistence identity. Common settings MUST remain directly reachable; advanced groups MUST retain all existing controls. Field help MUST explain the relevant setting in the active locale, link to a relevant existing guide when needed, and distinguish settings with different geometric meanings. Reset actions MUST remain available but visually secondary to editing. The existing individual-versus-component reset rules MUST remain unchanged.
+
+#### Scenario: A user edits a common size
+
+- **WHEN** a user opens a component with size and structural parameters
+- **THEN** the size controls MUST be identifiable before advanced details and remain operable with their current validation and units
+- **AND** reorganizing the controls MUST NOT silently apply a preset, reset a field or overwrite saved parameters
+
+#### Scenario: An invalid setting belongs to a collapsed group
+
+- **WHEN** a validation error applies to a control in a collapsed advanced group
+- **THEN** the group MUST expose a localized error indication and a way to reveal the affected field
+- **AND** the visible field MUST retain its specific error message and the user's raw input according to the existing validation contract
+
+### Requirement: Preview status and output actions have consistent meaning
+
+The workspace MUST present a stable, localized status location distinguishing a pending simplified display, a retained stale committed preview, a ready committed model and errors. Status MUST use text in addition to color. Mandatory live progress MUST remain visible: all four stages, current stage and counts, known mesh face counts, and boolean operation kind, available count/remaining/unit and elapsed timer according to their existing contracts. Unknown totals MUST NOT produce fabricated percentages. Only supplementary explanations MAY be placed in a clearly named expandable control. Terminal handling MUST clear active indicators and old counts/timers according to the existing lifecycle. Error toasts, retries and export gating MUST retain their existing behavior. Output actions MUST explain their format and supported purpose using the model's actual capabilities; settings download MUST be described as a Playground-compatible parameter-and-palette snapshot rather than an unimplemented workspace restore feature.
+
+#### Scenario: The user edits while an older model remains visible
+
+- **WHEN** generation is pending and the viewport retains an older committed model or shows a simplified display
+- **THEN** status MUST identify the visible display as pending rather than current exact output
+- **AND** dimensions MUST retain the existing revision association, and provisional geometry MUST NOT enable exact measurements or exports
+
+#### Scenario: Supplementary progress explanation is collapsed
+
+- **WHEN** a user collapses supplementary explanation during generation
+- **THEN** all mandatory current-operation stage, count and elapsed information MUST remain visible and supplementary explanation MUST remain accessible
+- **AND** ready, failed and cancelled terminal handling MUST clear active progress and stale operation counts/timers, with truthful ready/error/stale status and recovery controls available according to the existing lifecycle
+
+#### Scenario: A user chooses an output format
+
+- **WHEN** the workspace presents downloads for the active model
+- **THEN** only its currently supported formats MUST be offered with concise localized purpose explanations
+- **AND** pending, stale, invalid and failed-state readiness MUST continue to govern the actions
+- **AND** downloaded geometry, material colors, filenames, settings schema and dev-only STEP visibility MUST remain unchanged
 
 ## 可追溯性
 

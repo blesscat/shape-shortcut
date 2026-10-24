@@ -32,9 +32,9 @@ const docsPath = publicPathFor(locale, 'docs')
   title={t('about.metaTitle')}
   description={t('about.description')}
 >
-  <article class="grid gap-10" data-testid="about-page">
-    <Card as="header" class="p-5 sm:p-8">
-      <div class="flex flex-col items-center gap-6">
+  <article class="mx-auto grid max-w-4xl gap-12" data-testid="about-page">
+    <header class="border-b border-border pb-10">
+      <div class="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
         <img
           class="aspect-square w-28 shrink-0 rounded-img border border-border bg-muted object-cover sm:w-36"
           src="/about/blesscat.png"
@@ -43,7 +43,7 @@ const docsPath = publicPathFor(locale, 'docs')
           loading="eager"
           alt={t('about.portraitAlt')}
         />
-        <div class="grid gap-4 text-center">
+        <div class="grid min-w-0 gap-4">
           <Badge
             tone="primary"
             appearance="soft"
@@ -52,7 +52,7 @@ const docsPath = publicPathFor(locale, 'docs')
           >
             {t('about.eyebrow')}
           </Badge>
-          <h1 class="m-0 text-4xl font-semibold leading-tight sm:text-5xl">
+          <h1 class="m-0 text-3xl font-semibold leading-tight sm:text-4xl">
             {t('about.title')}
           </h1>
           <p class="m-0 text-lg font-semibold text-foreground">
@@ -70,11 +70,10 @@ const docsPath = publicPathFor(locale, 'docs')
           </Badge>
         </div>
       </div>
-    </Card>
+    </header>
 
-    <Card
-      as="section"
-      class="grid gap-3 p-5 sm:p-8"
+    <section
+      class="grid gap-3"
       aria-labelledby="about-story-title"
       data-testid="about-story"
     >
@@ -87,11 +86,10 @@ const docsPath = publicPathFor(locale, 'docs')
       <p class="m-0 max-w-3xl leading-relaxed text-muted-foreground">
         {t('about.storyBody')}
       </p>
-    </Card>
+    </section>
 
-    <Card
-      as="section"
-      class="grid gap-3 p-5 sm:p-8"
+    <section
+      class="grid gap-3"
       aria-labelledby="about-project-title"
       data-testid="about-project"
     >
@@ -104,7 +102,7 @@ const docsPath = publicPathFor(locale, 'docs')
       <p class="m-0 max-w-3xl leading-relaxed text-muted-foreground">
         {t('about.projectBody')}
       </p>
-    </Card>
+    </section>
 
     <Card
       as="section"
@@ -140,7 +138,7 @@ const docsPath = publicPathFor(locale, 'docs')
           href="mailto:blesscat@gmail.com"
           variant="outline"
           size="lg"
-          class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50"
+          class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline"
         >
           {t('about.email')}
         </Button>
@@ -150,7 +148,7 @@ const docsPath = publicPathFor(locale, 'docs')
               type="button"
               variant="outline"
               size="lg"
-              class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline/50"
+              class="!border-border-field !bg-transparent !text-foreground no-underline hover:!bg-foreground/5 focus-visible:ring-outline"
               data-support-dialog-open
               data-testid="about-support-trigger"
               aria-controls="support-dialog"

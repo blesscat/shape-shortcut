@@ -9,10 +9,7 @@ Shortcut site through a recognizable favicon and clear localized document titles
 
 ### Requirement: Shared Shape Shortcut favicon
 
-Every localized public page MUST expose the same static Shape Shortcut favicon
-through its document head. The favicon MUST be a compact, model-agnostic
-geometric mark that remains recognizable at favicon sizes and MUST NOT depend on
-rendering a CAD preview image or reading text.
+Every localized public page MUST expose the same static, model-independent Shape Shortcut identity through its document head. The favicon MUST use a flat white geometric joining-S mark on an indigo rounded-square ground, without glow or gradients. Its silhouette and internal gap MUST remain recognizable at 16px and 32px; small-size variants MUST preserve the same identity. The site MUST provide an SVG icon, ICO fallback and touch icon with correct declared asset types/sizes. The navigation MUST use the same geometric mark beside the Shape Shortcut name. Identity MUST NOT depend on a CAD rendering or reading small lettering.
 
 #### Scenario: Localized pages expose the shared favicon
 
@@ -30,6 +27,18 @@ rendering a CAD preview image or reading text.
 - **THEN** the page MUST expose the same Shape Shortcut favicon
 - **AND** the favicon MUST NOT change to a model-specific preview or model-only
   icon
+
+#### Scenario: Small icons remain recognizable
+
+- **WHEN** the favicon is inspected at actual 16px and 32px tab sizes against light and dark browser chrome
+- **THEN** the S silhouette and internal negative space MUST remain distinguishable without glow or fine-detail dependence
+- **AND** SVG, fallback and touch assets MUST retain the same brand identity
+
+#### Scenario: Navigation and browser identity agree
+
+- **WHEN** a user opens any localized public route
+- **THEN** the header mark and favicon MUST use the same geometric S identity
+- **AND** the brand link MUST retain the accessible name Shape Shortcut
 
 ### Requirement: Localized Shape Shortcut document titles
 

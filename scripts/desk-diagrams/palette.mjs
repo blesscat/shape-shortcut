@@ -4,17 +4,17 @@
  * Every slot maps to a light and a dark hex value. Light values are the exact
  * colors of the original hand-authored SVGs (byte-stability depends on this).
  * Dark values keep each step's hue identity with deep tints; the neutral slots
- * (background, text ramp) match the site's warm dark tokens
- * (#201a16 page, #f4ede7 ink, #b8a99f muted — see src/styles/global.css).
+ * (background, text ramp) match the site's neutral dark tokens
+ * (#181a20 page, #f1f2f6 ink, #adb3c2 muted — see src/styles/global.css).
  * `white` stays a literal in the diagram templates — it is only
  * used for text/rings on saturated accent circles.
  */
 export const PALETTE = {
-  background: { light: '#f8fafc', dark: '#201a16' },
-  heading: { light: '#0f172a', dark: '#f4ede7' },
-  body: { light: '#1e293b', dark: '#d9cec5' },
-  muted: { light: '#475569', dark: '#b8a99f' },
-  arrow: { light: '#64748b', dark: '#b8a99f' },
+  background: { light: '#f0f1f4', dark: '#181a20' },
+  heading: { light: '#0f172a', dark: '#f1f2f6' },
+  body: { light: '#1e293b', dark: '#d8dce6' },
+  muted: { light: '#475569', dark: '#adb3c2' },
+  arrow: { light: '#64748b', dark: '#adb3c2' },
   shadow: { light: '#0f172a', dark: '#000000' },
   cardBlueFill: { light: '#eaf2ff', dark: '#172554' },
   accentBlue: { light: '#2563eb', dark: '#3b82f6' },
