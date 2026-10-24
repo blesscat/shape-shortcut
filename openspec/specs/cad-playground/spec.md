@@ -844,3 +844,63 @@ Playground MUST use the shared semantic appearance, readable parameter controls 
 - **THEN** the editor MUST visibly identify the selected instance and show its own parameters, validation and lifecycle state
 - **AND** primary/secondary action styling MUST NOT change the meaning of duplicate, delete, retry or export
 - **AND** the previously selected instance's accepted values and valid accumulated edits MUST follow the existing scene editing contract
+
+### Requirement: Playground page fills the screen without the site footer
+
+The playground page MUST present as an app-like tool page. It MUST NOT render
+the site footer — neither the footer's links nor its copyright line — at any
+viewport width; site navigation MUST remain available through the site header.
+
+At viewport widths greater than 760px, the playground MUST fill the window
+height that remains below the sticky site header. The back link, the scene
+toolbar and any visible scene notices MUST keep their natural height, and the
+row holding the sidebar and the scene viewport MUST take the remaining height,
+so that the document has no vertical overflow. The scene viewport MUST extend
+to the bottom of that row, and the sidebar MUST stay within the row height and
+scroll internally when its content is taller. The layout MUST follow window
+resizes, toolbar wrapping and scene notices appearing or clearing without a
+page reload.
+
+When the remaining height is too small for a usable workspace, the sidebar
+and scene viewport row MUST keep a minimum height instead of shrinking further,
+whatever the toolbar wrapping and visible scene notices. That minimum MUST fit
+whole within the window area below the sticky site header together with the
+page's bottom padding, and the page MUST scroll vertically so the user can
+bring the whole row into view.
+
+At viewport widths of 760px and below, the fill-height and minimum-height rules
+above MUST NOT apply: the scene viewport, the narrow sidebar presentation and
+page scrolling MUST follow the "窄版場景 sidebar bottom drawer" requirement,
+and the site footer MUST NOT be rendered.
+
+#### Scenario: No footer at any width
+
+- **WHEN** a user opens the playground in either locale at a desktop width or on a phone-sized viewport
+- **THEN** the page MUST NOT render the site footer or its copyright line
+- **AND** the site header navigation MUST remain available
+
+#### Scenario: Desktop playground fills the remaining height
+
+- **WHEN** a user opens the playground in a desktop window such as 1280x720 or 1920x1080
+- **THEN** the document MUST NOT scroll vertically
+- **AND** the scene viewport MUST end at the bottom of the playground area, separated from the window bottom only by the page's bottom padding
+- **AND** the sidebar MUST NOT extend below the scene viewport row
+
+#### Scenario: Notices and resizes keep the screen filled
+
+- **WHEN** a scene notice such as the overlap warning appears or clears, or the desktop window is resized, while the remaining height stays above the workspace minimum
+- **THEN** the sidebar and scene viewport row MUST shrink or grow so the document still has no vertical overflow
+- **AND** the scene MUST stay interactive at the new viewport size
+
+#### Scenario: Short desktop keeps a usable minimum
+
+- **WHEN** a user opens the playground in either locale in a short desktop window such as 844x390 or 1280x390, with or without a scene notice visible
+- **THEN** the sidebar and scene viewport row MUST be at least 240px tall
+- **AND** the document MUST scroll vertically
+- **AND** after scrolling to the end of the page the whole row MUST be visible below the sticky site header
+
+#### Scenario: Mobile layout is unchanged
+
+- **WHEN** a user opens the playground at a width of 760px or less
+- **THEN** the scene viewport, the narrow sidebar presentation and page scrolling MUST behave as the "窄版場景 sidebar bottom drawer" requirement describes
+- **AND** the site footer MUST NOT be rendered below the playground

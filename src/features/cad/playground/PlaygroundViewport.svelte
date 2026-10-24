@@ -1215,7 +1215,7 @@
 
 <div
   bind:this={container}
-  class="playground-viewport relative h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-2xl border border-border-card bg-viewport"
+  class="playground-viewport relative h-full w-full max-cad:h-[calc(100dvh-16rem)] overflow-hidden rounded-2xl border border-border-card bg-viewport"
   data-testid="playground-viewport"
   data-view-mode={viewMode}
   data-grid-size={String(gridSize.x) + 'x' + String(gridSize.y)}
