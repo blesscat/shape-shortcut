@@ -19,11 +19,15 @@ const LID_DESIGN = {
   plateTopAllowance: 9,
   /** Skirt inner face sits 0.2 outside the upper side walls (W/2+1.2). */
   skirtInnerAllowance: 1.2,
-  /** Rail groove trapezoid: z H−5.08 .. H−0.92 at the skirt inner face,
-   * 1 mm deep, 45° flanks, 0.2 x-clearance to the rail face. */
-  grooveBaseAllowance: 5.08,
-  grooveTopAllowance: 0.92,
+  /** Rail groove: the box V rail (z H−5 .. H−1 at the wall, 45° flanks)
+   * offset by the 0.2 clearance, so the flanks sit 0.2·√2 below the rail
+   * flanks (z H−5.0828 .. H−0.9172 at the skirt inner face), 1 mm deep. */
+  grooveBaseAllowance: 5 - 0.2 + 0.2 * Math.SQRT2,
+  grooveTopAllowance: 1 + 0.2 - 0.2 * Math.SQRT2,
   grooveDepth: 1.0,
+  /** The groove is closed at the front: it starts 1.65 behind the front
+   * face (the flange thickness plus 0.05). */
+  grooveFrontClosure: 1.65,
   /** Detent recesses: flat, 1 mm deep, z H−0.71 .. H+1.6, 0.1 clearance
    * around each 2 mm bump. */
   recessBottomAllowance: 0.71,
@@ -41,7 +45,7 @@ const LID_DESIGN = {
   pocketDepth: 0.4,
   pocketInnerOffset: 2,
   pocketOuterOffset: 1,
-  topRoundRadius: 0.5,
+  topRoundRadius: 1,
 } as const
 
 interface LidFrame {
@@ -150,7 +154,8 @@ function cutRailGrooves(shape: Shape3D, frame: LidFrame): Shape3D {
   const topZ = frame.h - LID_DESIGN.grooveTopAllowance
   const innerX = frame.skirtInnerX
   const outerX = innerX + LID_DESIGN.grooveDepth
-  const yLength = frame.yBack - frame.yFront
+  const yStart = frame.yFront + LID_DESIGN.grooveFrontClosure
+  const yLength = frame.yBack - yStart
   for (const side of [1, -1] as const) {
     const profile: [number, number][] = [
       [side * (innerX - 0.05), baseZ - 0.05],
@@ -158,10 +163,7 @@ function cutRailGrooves(shape: Shape3D, frame: LidFrame): Shape3D {
       [side * outerX, topZ - LID_DESIGN.grooveDepth],
       [side * (innerX - 0.05), topZ + 0.05],
     ]
-    shape = cutShape(
-      shape,
-      extrudeProfileAlongY(profile, frame.yFront - 0.5, yLength + 1),
-    )
+    shape = cutShape(shape, extrudeProfileAlongY(profile, yStart, yLength + 1))
   }
   return shape
 }
@@ -193,7 +195,7 @@ function cutDetentRecesses(
         makeBox(
           [side * (frame.skirtInnerX - 0.01), center - halfWidth, bottom],
           [
-            side * (frame.skirtInnerX + LID_DESIGN.grooveDepth + 0.01),
+            side * (frame.skirtInnerX + LID_DESIGN.grooveDepth),
             center + halfWidth,
             top,
           ],
@@ -251,7 +253,9 @@ function addFrontFlange(shape: Shape3D, frame: LidFrame): Shape3D {
 
 function cutBackPocket(shape: Shape3D, frame: LidFrame): Shape3D {
   // Pocket in the plate underside for the box back bead: 0.4 deep, W wide,
-  // y (yB−2)..(yB−1) where yB is the box back face.
+  // y (yB−2)..(yB−1) where yB is the box back face. The reference pocket is
+  // 0.595 narrower per side than the bead, which makes the reference lid
+  // clip the bead by 0.13 mm³; this pocket clears it instead.
   const boxBackY = frame.yBack + 0.05
   return cutShape(
     shape,
@@ -271,12 +275,12 @@ function cutBackPocket(shape: Shape3D, frame: LidFrame): Shape3D {
 }
 
 function roundPlateTop(shape: Shape3D, frame: LidFrame): Shape3D {
-  // 0.5 mm round on the plate's top outer edges, selected by points on the
-  // four perimeter edges (OCCT edge bounding boxes overshoot).
+  // 1 mm round on the plate's top front and side edges (the back edge stays
+  // sharp, as in the reference), selected by points on the edges (OCCT edge
+  // bounding boxes overshoot).
   const midY = (frame.yFront + frame.yBack) / 2
   const points: Array<[number, number, number]> = [
     [0, frame.yFront, frame.plateTop],
-    [0, frame.yBack, frame.plateTop],
     [frame.halfOuterX, midY, frame.plateTop],
     [-frame.halfOuterX, midY, frame.plateTop],
   ]

@@ -13,6 +13,7 @@ import {
 import { buildCardBox } from '../../src/cad-kernel/components/card-box/builder'
 import { buildCardBoxDivider } from '../../src/cad-kernel/components/card-box/divider'
 import { buildCardBoxCover } from '../../src/cad-kernel/components/card-box/cover'
+import { buildCardBoxLid } from '../../src/cad-kernel/components/card-box/lid'
 import { cardBoxDefinition } from '../../src/features/cad/model-catalog/components/card-box'
 import { countSolids } from '../../src/cad-kernel/shape-query/solids'
 import {
@@ -144,6 +145,42 @@ describe('card-box print orientation and assembly', () => {
       expect(bounds[1]![2]!).toBeLessThanOrEqual(expected.max[2]! + 0.05)
     } finally {
       await deleteBuild(build)
+    }
+  })
+})
+
+describe('card-box assembled parts do not overlap the box', () => {
+  it('seats the lid and the cover without touching the box', async () => {
+    const params = parameters({ part: 'assembly' })
+    const box = await buildCardBox(parameters({ part: 'box' }))
+    const lid = buildCardBoxLid(params)
+    const coverBuild = await buildCardBoxCover(params)
+    const halfSketchY = (params.storageDepth + 2 * 3 - 1.8) / 2
+    const standCover = (flat: Shape3D): Shape3D =>
+      flat
+        .rotate(90, [0, 0, 0], [1, 0, 0])
+        .translate(
+          0,
+          -(halfSketchY + 0.85) + CARD_BOX_CONFIGURATION.coverPlateThickness,
+          CARD_BOX_CONFIGURATION.floorThickness,
+        )
+    const coverShapes =
+      coverBuild.kind === 'single'
+        ? [standCover(coverBuild.shape)]
+        : [standCover(coverBuild.body), standCover(coverBuild.accent)]
+    try {
+      for (const part of [lid, ...coverShapes]) {
+        const overlap = part.intersect(box.shape)
+        try {
+          expect(measureVolume(overlap)).toBeLessThan(0.001)
+        } finally {
+          deleteShape(overlap)
+        }
+      }
+    } finally {
+      deleteShape(lid)
+      for (const shape of coverShapes) deleteShape(shape)
+      await deleteBuild(box)
     }
   })
 })

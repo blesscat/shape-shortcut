@@ -56,6 +56,31 @@ function expectClose(
   ).toBeLessThanOrEqual(tolerance)
 }
 
+/** Largest accepted volume (mm³) present in one shape and absent from the other. */
+const SYMMETRIC_DIFFERENCE_LIMIT = 1
+
+function expectSameGeometry(
+  built: Shape3D,
+  reference: Shape3D,
+  limit: number,
+): void {
+  const extra = built.cut(reference)
+  const missing = reference.cut(built)
+  try {
+    expect(
+      measureVolume(extra),
+      'built geometry absent from the reference',
+    ).toBeLessThanOrEqual(limit)
+    expect(
+      measureVolume(missing),
+      'reference geometry absent from the build',
+    ).toBeLessThanOrEqual(limit)
+  } finally {
+    extra.delete()
+    missing.delete()
+  }
+}
+
 describe('card-box default box matches the FreeCAD reference', () => {
   it('matches bbox, volume, and solid count of box-floor-fixed.brep', () => {
     const built = buildCardBoxBox({
@@ -80,14 +105,7 @@ describe('card-box default box matches the FreeCAD reference', () => {
           `bbox max[${axis}]`,
         )
       }
-      const builtVolume = measureVolume(built)
-      const referenceVolume = measureVolume(reference)
-      expectClose(
-        builtVolume,
-        referenceVolume,
-        referenceVolume * 0.005,
-        'volume',
-      )
+      expectSameGeometry(built, reference, SYMMETRIC_DIFFERENCE_LIMIT)
       expect(countSolids(built)).toBe(1)
     } finally {
       built.delete()
@@ -125,6 +143,32 @@ describe('card-box default box matches the FreeCAD reference', () => {
         }
       }
     } finally {
+      built.delete()
+    }
+  })
+
+  it('keeps the floor intact under a front-half slot', () => {
+    const built = buildCardBoxBox({ ...defaultParameters(), part: 'box' })
+    const probe = makeBox([35.3, -33.1, 0], [35.45, -32.9, 2]) as Shape3D
+    const inter = built.intersect(probe)
+    try {
+      expect(measureVolume(inter)).toBeGreaterThan(0.03)
+    } finally {
+      inter.delete()
+      probe.delete()
+      built.delete()
+    }
+  })
+
+  it('keeps the side walls solid beside the cover channel', () => {
+    const built = buildCardBoxBox({ ...defaultParameters(), part: 'box' })
+    const probe = makeBox([36.9, -38.6, 49.9], [37.1, -38.4, 50.1]) as Shape3D
+    const inter = built.intersect(probe)
+    try {
+      expect(measureVolume(inter)).toBeGreaterThan(0.001)
+    } finally {
+      inter.delete()
+      probe.delete()
       built.delete()
     }
   })
@@ -184,14 +228,7 @@ describe('card-box default lid matches the FreeCAD reference', () => {
           `bbox max[${axis}]`,
         )
       }
-      const builtVolume = measureVolume(built)
-      const referenceVolume = measureVolume(reference)
-      expectClose(
-        builtVolume,
-        referenceVolume,
-        referenceVolume * 0.005,
-        'volume',
-      )
+      expectSameGeometry(built, reference, SYMMETRIC_DIFFERENCE_LIMIT)
       expect(countSolids(built)).toBe(1)
     } finally {
       built.delete()

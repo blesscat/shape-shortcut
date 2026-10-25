@@ -136,18 +136,20 @@ function buildShelledPad(frame: BoxFrame): Shape3D {
 }
 
 function addFrontFeatures(shape: Shape3D, frame: BoxFrame): Shape3D {
-  // Cover channel slot, cut from the floor top surface upward.
-  let result = cutShape(
-    shape,
-    makeBox(
-      [
-        -frame.halfOuterX - 1,
-        frame.lipInnerY,
-        CARD_BOX_CONFIGURATION.floorThickness,
-      ],
-      [frame.halfOuterX + 1, -frame.halfSketchY, frame.padTop + 1],
-    ) as Shape3D,
-  )
+  // The cover channel is the open gap between the side walls: the walls
+  // continue through the lip's y span (floor top upward) and only the
+  // interior width stays open. Slabs overlap the floor core and the stubs
+  // so every fuse has a real volume overlap.
+  let result = shape
+  for (const side of [1, -1] as const) {
+    result = fuseShape(
+      result,
+      makeBox(
+        [side * (frame.w / 2), frame.lipInnerY - 0.05, 1.95],
+        [side * frame.halfOuterX, -frame.halfSketchY + 0.05, frame.stubTop],
+      ) as Shape3D,
+    )
+  }
   // Front lip fused in two steps so every fuse has a real volume overlap
   // (face-contact fuses stay separate solids in OCCT): first a core slab
   // sunk into the solid floor strip (z stays below the slot), then the
@@ -290,14 +292,33 @@ function addLidRails(shape: Shape3D, frame: BoxFrame): Shape3D {
   return result
 }
 
+function extrudeProfileAlongZ(
+  profile: readonly (readonly [number, number])[],
+  zStart: number,
+  distance: number,
+): Shape3D {
+  // Profile drawn in the XY plane (world x, world y), extruded toward +Z.
+  const sketcher = new Sketcher('XY', [0, 0, zStart])
+  const first = profile[0]!
+  sketcher.movePointerTo([first[0], first[1]])
+  for (const point of profile.slice(1)) sketcher.lineTo([point[0], point[1]])
+  const sketch = sketcher.close()
+  try {
+    return sketch.extrude(distance) as unknown as Shape3D
+  } finally {
+    deleteShape(sketch)
+    sketcher.delete()
+  }
+}
+
 function addDetents(shape: Shape3D, frame: BoxFrame): Shape3D {
-  // Detent bumps on the rail face: four per side spaced over D−5,
-  // mirrored, with 0.4 chamfers on the outer face corners.
+  // Detent bumps on the rail face: four per side spaced over D−5, mirrored,
+  // with a 0.4 chamfer on the outer face's front (−Y) end edge.
   const span = frame.d - 5
   const innerX = frame.w / 2 + BOX_DESIGN.upperWallThickness
   const outerX = innerX + BOX_DESIGN.detentProtrusion
   const bottom = frame.h - BOX_DESIGN.detentBottomAllowance
-  const top = frame.h + BOX_DESIGN.detentTopAllowance
+  const height = frame.h + BOX_DESIGN.detentTopAllowance - bottom
   const chamfer = BOX_DESIGN.detentChamfer
   const halfWidth = BOX_DESIGN.detentWidth / 2
   let result = shape
@@ -307,62 +328,51 @@ function addDetents(shape: Shape3D, frame: BoxFrame): Shape3D {
       BOX_DESIGN.detentFirstCenterOffset +
       (index * span) / (BOX_DESIGN.detentCount - 1)
     const rightProfile: [number, number][] = [
-      [innerX, bottom],
-      [outerX - chamfer, bottom],
-      [outerX, bottom + chamfer],
-      [outerX, top - chamfer],
-      [outerX - chamfer, top],
-      [innerX, top],
+      [innerX, center - halfWidth],
+      [outerX - chamfer, center - halfWidth],
+      [outerX, center - halfWidth + chamfer],
+      [outerX, center + halfWidth],
+      [innerX, center + halfWidth],
     ]
-    const leftProfile: [number, number][] = rightProfile.map(([x, z]) => [
+    const leftProfile: [number, number][] = rightProfile.map(([x, y]) => [
       -x,
-      z,
+      y,
     ])
     result = fuseShape(
       result,
-      extrudeProfileAlongY(rightProfile, center - halfWidth, 2 * halfWidth),
+      extrudeProfileAlongZ(rightProfile, bottom, height),
     )
     result = fuseShape(
       result,
-      extrudeProfileAlongY(leftProfile, center - halfWidth, 2 * halfWidth),
+      extrudeProfileAlongZ(leftProfile, bottom, height),
     )
-  }
-  return result
-}
-
-function filletEdgesAtPoints(
-  shape: Shape3D,
-  radius: number,
-  points: readonly (readonly [number, number, number])[],
-): Shape3D {
-  let result = shape
-  for (const point of points) {
-    const next = result.fillet(radius, (finder) =>
-      finder.withinDistance(0.3, [point[0], point[1], point[2]]),
-    )
-    if (next !== result) deleteShape(result)
-    result = next
   }
   return result
 }
 
 function filletBoxEdges(shape: Shape3D, frame: BoxFrame): Shape3D {
-  // 1 mm fillets on the two outer bottom edges and the cavity floor
-  // perimeter. The front lip is exactly 1 mm thick, so its bottom fillet
-  // runs at 0.99 to avoid the exact-tangency case OCCT cannot build.
-  // Edges are selected by a point known to lie on them; OCCT edge
-  // bounding boxes overshoot and cannot be used for selection.
-  // Divider slots are cut afterwards so they never interact with the
-  // fillet geometry.
-  let result = filletEdgesAtPoints(shape, 0.99, [[0, frame.lipOuterY, 0]])
-  result = filletEdgesAtPoints(result, BOX_DESIGN.filletRadius, [
+  // 1 mm fillets on the outer bottom perimeter and the four outer vertical
+  // corners, in one operation so the corner blends meet cleanly. Edges are
+  // selected by a point known to lie on them; OCCT edge bounding boxes
+  // overshoot and cannot be used for selection. Divider slots are cut
+  // afterwards so they never interact with the fillet geometry.
+  const x = frame.halfOuterX
+  const midZ = 50
+  const points: [number, number, number][] = [
+    [0, frame.lipOuterY, 0],
     [0, frame.halfSketchY, 0],
-    [frame.w / 2, 0, CARD_BOX_CONFIGURATION.floorThickness],
-    [-frame.w / 2, 0, CARD_BOX_CONFIGURATION.floorThickness],
-    [0, frame.cavityFrontY, CARD_BOX_CONFIGURATION.floorThickness],
-    [0, frame.cavityBackY, CARD_BOX_CONFIGURATION.floorThickness],
-  ])
-  return result
+    [x, 0, 0],
+    [-x, 0, 0],
+    [x, frame.lipOuterY, midZ],
+    [-x, frame.lipOuterY, midZ],
+    [x, frame.halfSketchY, midZ],
+    [-x, frame.halfSketchY, midZ],
+  ]
+  return shape.fillet(BOX_DESIGN.filletRadius, (finder) =>
+    finder.either(
+      points.map((point) => (edge) => edge.withinDistance(0.3, point)),
+    ),
+  )
 }
 
 function addDividerSlots(shape: Shape3D, frame: BoxFrame): Shape3D {
@@ -383,8 +393,7 @@ function addDividerSlots(shape: Shape3D, frame: BoxFrame): Shape3D {
           makeBox(
             [side * (frame.w / 2 - 0.01), y - halfWidth, floor],
             [
-              side *
-                (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth + 0.01),
+              side * (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth),
               y + halfWidth,
               frame.padTop + 1,
             ],
