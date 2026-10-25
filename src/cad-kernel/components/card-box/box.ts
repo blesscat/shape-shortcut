@@ -1,4 +1,10 @@
-import { makeBox, Sketcher, type Edge, type Shape3D } from 'replicad'
+import {
+  makeBox,
+  makeCompound,
+  Sketcher,
+  type Edge,
+  type Shape3D,
+} from 'replicad'
 import {
   CARD_BOX_CONFIGURATION,
   cardBoxInteriorWidth,
@@ -360,32 +366,37 @@ function filletBoxEdges(shape: Shape3D, frame: BoxFrame): Shape3D {
 }
 
 function addDividerSlots(shape: Shape3D, frame: BoxFrame): Shape3D {
-  // 1 mm grooves, every 3 mm, floor(D/2/3) per half mirrored about the
-  // center; 0.25 mm deep into each side wall. Cutters start at the floor
+  // 1 mm grooves, every 3 mm at y = ±k·pitch for k = 0..floor(D/2/3)−1
+  // (y = 0 is shared, so 2·floor(D/2/3)−1 positions along both halves);
+  // 0.25 mm deep into each side wall. Cutters start at the floor
   // TOP surface (z = 2) so the floor stays intact.
   const floor = CARD_BOX_CONFIGURATION.floorThickness
   const pitch = CARD_BOX_CONFIGURATION.dividerSlotPitch
   const halfWidth = CARD_BOX_CONFIGURATION.dividerSlotWidth / 2
-  let result = shape
   const slotCount = Math.floor(frame.d / 2 / pitch)
+  const cutters: Shape3D[] = []
   for (let index = 0; index < slotCount; index += 1) {
-    const y = index * pitch
-    for (const side of [1, -1] as const) {
-      result = cutShape(
-        result,
-        makeBox(
-          [side * (frame.w / 2 - 0.01), y - halfWidth, floor],
-          [
-            side *
-              (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth + 0.01),
-            y + halfWidth,
-            frame.padTop + 1,
-          ],
-        ) as Shape3D,
-      )
+    const offsets = index === 0 ? [0] : [index * pitch, -index * pitch]
+    for (const y of offsets) {
+      for (const side of [1, -1] as const) {
+        cutters.push(
+          makeBox(
+            [side * (frame.w / 2 - 0.01), y - halfWidth, floor],
+            [
+              side *
+                (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth + 0.01),
+              y + halfWidth,
+              frame.padTop + 1,
+            ],
+          ) as Shape3D,
+        )
+      }
     }
   }
-  return result
+  // One boolean for all (disjoint) grooves: far cheaper than a cut per slot.
+  const compound = makeCompound(cutters).asShape3D()
+  for (const cutter of cutters) deleteShape(cutter)
+  return cutShape(shape, compound)
 }
 
 /**

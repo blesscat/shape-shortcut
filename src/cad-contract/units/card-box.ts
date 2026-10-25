@@ -79,7 +79,19 @@ export const CARD_BOX_CONFIGURATION = {
   dividerSlotWidth: 1,
   dividerSlotPitch: 3,
   dividerSlotDepth: 0.25,
-  dividerTabWidth: 30,
+  /** Tab width where the drafted flank meets the body top line. */
+  dividerTabBaseWidth: 30.5,
+  dividerTabHeight: 5,
+  /** Flank lean from vertical; the tab narrows toward its top. */
+  dividerTabDraftDegrees: 20,
+  dividerFlankFilletRadius: 3,
+  dividerCornerFilletRadius: 2.5,
+  /** Text bbox distance from the plate edge it starts at (left/right tab). */
+  dividerTextEdgeInset: 2.25,
+  /** Text bbox top sits this far below the tab top. */
+  dividerTextTopInset: 0.8,
+  /** Minimum gap between the text and the flank at the tab top. */
+  dividerTextFlankMargin: 1,
   dividerTextHeight: 5,
   dividerTextMaxLength: 20,
   coverTextMaxLength: 30,
@@ -126,6 +138,30 @@ export const CARD_BOX_CONFIGURATION = {
 /** Interior width: the card width plus the fixed 0.5 mm sheet allowance. */
 export function cardBoxInteriorWidth(cardWidth: number): number {
   return cardWidth + CARD_BOX_CONFIGURATION.interiorWidthAllowance
+}
+
+/**
+ * Divider plate width: it spans the interior plus both side-wall slot depths,
+ * less the slot-to-plate thickness difference, so it enters both slots.
+ */
+export function cardBoxDividerWidth(cardWidth: number): number {
+  return (
+    cardBoxInteriorWidth(cardWidth) +
+    2 * CARD_BOX_CONFIGURATION.dividerSlotDepth -
+    (CARD_BOX_CONFIGURATION.dividerSlotWidth -
+      CARD_BOX_CONFIGURATION.dividerPlateThickness)
+  )
+}
+
+/** Tab center X on a divider plate centered on the origin. */
+export function cardBoxDividerTabCenterX(
+  position: CardBoxTabPosition,
+  plateWidth: number,
+): number {
+  const offset = plateWidth / 2 - CARD_BOX_CONFIGURATION.dividerTabBaseWidth / 2
+  if (position === 'left') return -offset
+  if (position === 'right') return offset
+  return 0
 }
 
 /** Outer width of the box body: interior width plus two wall thicknesses. */

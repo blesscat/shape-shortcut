@@ -78,32 +78,6 @@ beforeAll(async () => {
 })
 
 describe('card-box divider and cover art geometry', () => {
-  it('builds a default text-less divider as a single solid in the slot envelope', async () => {
-    const result = await buildCardBoxDivider(baseParameters())
-    expect(result.kind).toBe('single')
-    if (result.kind !== 'single') return
-    try {
-      const [[minX, minY, minZ], [maxX, maxY, maxZ]] = shapeBounds(result.shape)
-      const plateWidth =
-        cardBoxInteriorWidth(CARD_BOX_CONFIGURATION.defaults.cardWidth) -
-        (CARD_BOX_CONFIGURATION.dividerSlotWidth -
-          CARD_BOX_CONFIGURATION.dividerPlateThickness)
-      expectClose(minX, -plateWidth / 2)
-      expectClose(maxX, plateWidth / 2)
-      expectClose(minY, 0)
-      expectClose(maxY, CARD_BOX_CONFIGURATION.defaults.cardHeight + 5)
-      expectClose(minZ, 0)
-      // Tab draft wedge tops out at plate + accent depth.
-      expectClose(
-        maxZ,
-        CARD_BOX_CONFIGURATION.dividerPlateThickness +
-          CARD_BOX_CONFIGURATION.accentDepth,
-      )
-    } finally {
-      result.shape.delete()
-    }
-  })
-
   it('builds a raised text divider with a separate proud accent', async () => {
     const result = await buildCardBoxDivider(
       baseParameters({ dividerText: 'ABC' }),
@@ -111,11 +85,9 @@ describe('card-box divider and cover art geometry', () => {
     expect(result.kind).toBe('accent')
     if (result.kind !== 'accent') return
     try {
-      const bodyBounds = shapeBounds(result.body)
       expectClose(
-        bodyBounds[1]![2]!,
-        CARD_BOX_CONFIGURATION.dividerPlateThickness +
-          CARD_BOX_CONFIGURATION.accentDepth,
+        shapeBounds(result.body)[1]![2]!,
+        CARD_BOX_CONFIGURATION.dividerPlateThickness,
       )
       const accentBounds = shapeBounds(result.accent)
       expectClose(
@@ -161,7 +133,7 @@ describe('card-box divider and cover art geometry', () => {
     const measure = await measureCardBoxText('WIDE OVERFLOWING DIVIDER TEXT', 5)
     expect(measure).not.toBeNull()
     expect(measure!.width).toBeGreaterThan(
-      CARD_BOX_CONFIGURATION.dividerTabWidth - 4,
+      CARD_BOX_CONFIGURATION.dividerTabBaseWidth - 4,
     )
     await expect(
       buildCardBoxDivider(

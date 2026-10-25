@@ -14,6 +14,8 @@ import {
 import { HEXAGONAL_COLUMN_CONFIGURATION } from '../../../cad-contract/units/hexagonal-column'
 import {
   cardBoxOuterDepth,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
   cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   isCardBoxParameters,
@@ -206,23 +208,37 @@ export function cardBoxPreview(
   if (p.part === 'divider' || assembled) {
     // Assembly: standing in the center slot. Single part: flat on the bed
     // (print orientation), matching the contract bounds.
+    const width = cardBoxDividerWidth(p.cardWidth)
+    const tabX = cardBoxDividerTabCenterX(p.dividerTabPosition, width)
     if (assembled) {
       solids.push(
+        slab(width, c.dividerPlateThickness, p.cardHeight, 0, 0, 2),
         slab(
-          outerWidth - 2 * c.wallThickness,
+          c.dividerTabBaseWidth,
           c.dividerPlateThickness,
-          p.cardHeight + 5,
+          c.dividerTabHeight,
+          tabX,
           0,
-          0,
-          2,
+          2 + p.cardHeight,
         ),
       )
     } else {
+      // Centered on the full divider height (body + tab) like the contract
+      // bounds: body y-center sits half a tab below the origin.
       solids.push(
         slab(
-          outerWidth - 2 * c.wallThickness,
-          p.cardHeight + 5,
+          width,
+          p.cardHeight,
           c.dividerPlateThickness,
+          0,
+          -c.dividerTabHeight / 2,
+        ),
+        slab(
+          c.dividerTabBaseWidth,
+          c.dividerTabHeight,
+          c.dividerPlateThickness,
+          tabX,
+          p.cardHeight / 2,
         ),
       )
     }

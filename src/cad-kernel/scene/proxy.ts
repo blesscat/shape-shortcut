@@ -9,6 +9,8 @@ import {
 } from 'replicad'
 import {
   cardBoxOuterDepth,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
   cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
@@ -156,22 +158,37 @@ function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
   if (parameters.part === 'assembly' || parameters.part === 'divider') {
     // Assembly: the divider stands in the center slot. Single-part scene
     // preview: flat on the bed, matching the print-orientation bounds.
+    const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
+    const tabX = cardBoxDividerTabCenterX(
+      parameters.dividerTabPosition,
+      halfPlate * 2,
+    )
+    const tabMin = tabX - c.dividerTabBaseWidth / 2
+    const tabMax = tabX + c.dividerTabBaseWidth / 2
+    const bodyHeight = parameters.cardHeight
+    const tabHeight = c.dividerTabHeight
     if (parameters.part === 'assembly') {
+      const floor = c.floorThickness
+      const halfThickness = c.dividerPlateThickness / 2
       shapes.push(
         makeBox(
-          [-halfW + t, -c.dividerPlateThickness / 2, c.floorThickness],
-          [
-            halfW - t,
-            c.dividerPlateThickness / 2,
-            c.floorThickness + parameters.cardHeight + 5,
-          ],
+          [-halfPlate, -halfThickness, floor],
+          [halfPlate, halfThickness, floor + bodyHeight],
+        ) as Shape3D,
+        makeBox(
+          [tabMin, -halfThickness, floor + bodyHeight],
+          [tabMax, halfThickness, floor + bodyHeight + tabHeight],
         ) as Shape3D,
       )
     } else {
       shapes.push(
         makeBox(
-          [-halfW + t, 0, 0],
-          [halfW - t, parameters.cardHeight + 5, c.dividerPlateThickness],
+          [-halfPlate, 0, 0],
+          [halfPlate, bodyHeight, c.dividerPlateThickness],
+        ) as Shape3D,
+        makeBox(
+          [tabMin, bodyHeight, 0],
+          [tabMax, bodyHeight + tabHeight, c.dividerPlateThickness],
         ) as Shape3D,
       )
     }

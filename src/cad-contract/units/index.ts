@@ -419,6 +419,8 @@ export {
   CARD_BOX_STYLES,
   CARD_BOX_TAB_POSITIONS,
   boundsForCardBox,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
   cardBoxFileName,
   cardBoxHasAccentArt,
   cardBoxInteriorWidth,

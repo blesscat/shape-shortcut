@@ -95,6 +95,40 @@ describe('card-box default box matches the FreeCAD reference', () => {
     }
   })
 
+  it('cuts divider grooves along the whole box on both side walls', () => {
+    const built = buildCardBoxBox({
+      ...defaultParameters(),
+      part: 'box',
+    })
+    // Slot band of one side wall (x 35.25..35.5), above the floor top.
+    const materialAt = (side: 1 | -1, y: number): number => {
+      const probe = makeBox(
+        [side * 35.3 - 0.05, y - 0.1, 3],
+        [side * 35.3 + 0.05, y + 0.1, 100],
+      ) as Shape3D
+      const intersection = built.intersect(probe)
+      try {
+        return measureVolume(intersection)
+      } finally {
+        intersection.delete()
+        probe.delete()
+      }
+    }
+    try {
+      for (const side of [1, -1] as const) {
+        for (const y of [-33, -3, 0, 3, 33]) {
+          expect(materialAt(side, y)).toBeLessThan(0.001)
+        }
+        // Between and beyond the grooves the wall stays solid.
+        for (const y of [-34.5, -1.5, 1.5, 34.5]) {
+          expect(materialAt(side, y)).toBeGreaterThan(0.1)
+        }
+      }
+    } finally {
+      built.delete()
+    }
+  })
+
   it('keeps divider slots above the floor top surface', () => {
     const built = buildCardBoxBox({
       ...defaultParameters(),
