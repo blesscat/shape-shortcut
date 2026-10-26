@@ -5,6 +5,7 @@ import {
   type CardBoxParameters,
 } from '../../../cad-contract/units'
 import { deleteShape } from '../../lifetime/dispose'
+import { CARD_BOX_CHANNEL_SLOT_DEPTH } from './box'
 
 /**
  * Fixed feature dimensions of the original FreeCAD lid design that do not
@@ -53,6 +54,8 @@ interface LidFrame {
   h: number
   halfOuterX: number
   yFront: number
+  /** Box lip inner face: the thinned flange's back face. */
+  yLipInner: number
   yBack: number
   zBottom: number
   plateInner: number
@@ -71,6 +74,7 @@ function lidFrame(parameters: CardBoxParameters): LidFrame {
     h,
     halfOuterX: w / 2 + t,
     yFront: -(halfSketchY + 1.85),
+    yLipInner: -(halfSketchY + CARD_BOX_CHANNEL_SLOT_DEPTH),
     yBack: halfSketchY - 0.05,
     zBottom: h - LID_DESIGN.bottomAllowance,
     plateInner: h + LID_DESIGN.plateInnerAllowance,
@@ -251,6 +255,21 @@ function addFrontFlange(shape: Shape3D, frame: LidFrame): Shape3D {
   return result
 }
 
+function thinFrontFlange(shape: Shape3D, frame: LidFrame): Shape3D {
+  // Deliberate deviation from the original lid: over the cover width the
+  // flange back face moves from yFront+1.6 to the box lip inner face, so the
+  // 0.85 channel gap continues up to the deep part (H+2.2) and the 0.6 cover
+  // fits under the lid. The deep part and the strips beyond ±W/2 stay.
+  const deepBottom = frame.h + LID_DESIGN.flangeDeepBottomAllowance
+  return cutShape(
+    shape,
+    makeBox(
+      [-frame.w / 2, frame.yLipInner, frame.zBottom - 0.05],
+      [frame.w / 2, frame.yFront + LID_DESIGN.flangeThickness, deepBottom],
+    ) as Shape3D,
+  )
+}
+
 function cutBackPocket(shape: Shape3D, frame: LidFrame): Shape3D {
   // Pocket in the plate underside for the box back bead: 0.4 deep, W wide,
   // y (yB−2)..(yB−1) where yB is the box back face. The reference pocket is
@@ -313,6 +332,7 @@ export function lidStageBuild(
   stage?.('plate+skirts')
   try {
     shape = addFrontFlange(shape, frame)
+    shape = thinFrontFlange(shape, frame)
     stage?.('flange')
     shape = cutRailGrooves(shape, frame)
     stage?.('grooves')

@@ -149,40 +149,67 @@ describe('card-box print orientation and assembly', () => {
   })
 })
 
-describe('card-box assembled parts do not overlap the box', () => {
-  it('seats the lid and the cover without touching the box', async () => {
-    const params = parameters({ part: 'assembly' })
-    const box = await buildCardBox(parameters({ part: 'box' }))
-    const lid = buildCardBoxLid(params)
-    const coverBuild = await buildCardBoxCover(params)
-    const halfSketchY = (params.storageDepth + 2 * 3 - 1.8) / 2
-    const standCover = (flat: Shape3D): Shape3D =>
-      flat
-        .rotate(90, [0, 0, 0], [1, 0, 0])
-        .translate(
-          0,
-          -(halfSketchY + 0.85) + CARD_BOX_CONFIGURATION.coverPlateThickness,
-          CARD_BOX_CONFIGURATION.floorThickness,
-        )
-    const coverShapes =
-      coverBuild.kind === 'single'
-        ? [standCover(coverBuild.shape)]
-        : [standCover(coverBuild.body), standCover(coverBuild.accent)]
-    try {
-      for (const part of [lid, ...coverShapes]) {
-        const overlap = part.intersect(box.shape)
+function volumeOf(shape: Shape3D, other: Shape3D): number {
+  const overlap = shape.intersect(other)
+  try {
+    return measureVolume(overlap)
+  } finally {
+    deleteShape(overlap)
+  }
+}
+
+const ASSEMBLY_SIZES = [
+  ['default', 70, 120, 72],
+  ['min', 40, 60, 20],
+  ['max', 100, 150, 150],
+  ['Mini American 41x63', 41, 63, 72],
+] as const
+
+describe('card-box assembled parts do not overlap each other', () => {
+  for (const [label, cardWidth, cardHeight, storageDepth] of ASSEMBLY_SIZES) {
+    for (const coverStyle of ['raised', 'flat'] as const) {
+      it(`seats lid and cover clear of the box and the cover clear of the lid (${label}, ${coverStyle})`, async () => {
+        const params = parameters({
+          part: 'assembly',
+          cardWidth,
+          cardHeight,
+          storageDepth,
+          coverStyle,
+        })
+        const box = await buildCardBox(parameters({ ...params, part: 'box' }))
+        const lid = buildCardBoxLid(params)
+        const coverBuild = await buildCardBoxCover(params)
+        const halfSketchY = (params.storageDepth + 2 * 3 - 1.8) / 2
+        const standCover = (flat: Shape3D): Shape3D =>
+          flat
+            .rotate(90, [0, 0, 0], [1, 0, 0])
+            .translate(
+              0,
+              -(halfSketchY + 0.85) +
+                CARD_BOX_CONFIGURATION.coverPlateThickness,
+              CARD_BOX_CONFIGURATION.floorThickness,
+            )
+        const coverShapes =
+          coverBuild.kind === 'single'
+            ? [standCover(coverBuild.shape)]
+            : [standCover(coverBuild.body), standCover(coverBuild.accent)]
         try {
-          expect(measureVolume(overlap)).toBeLessThan(0.001)
+          if (coverStyle === 'flat') expect(coverShapes).toHaveLength(2)
+          for (const part of [lid, ...coverShapes]) {
+            expect(volumeOf(part, box.shape)).toBeLessThan(0.001)
+          }
+          for (const cover of coverShapes) {
+            expect(volumeOf(cover, lid), 'cover ∩ lid').toBeLessThan(0.001)
+          }
         } finally {
-          deleteShape(overlap)
+          deleteShape(lid)
+          for (const shape of coverShapes) deleteShape(shape)
+          await deleteBuild(coverBuild)
+          await deleteBuild(box)
         }
-      }
-    } finally {
-      deleteShape(lid)
-      for (const shape of coverShapes) deleteShape(shape)
-      await deleteBuild(box)
+      })
     }
-  })
+  }
 })
 
 describe('card-box two-color 3MF', () => {

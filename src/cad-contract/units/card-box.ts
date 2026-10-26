@@ -102,6 +102,9 @@ export const CARD_BOX_CONFIGURATION = {
   coverSafeAreaMargin: 2,
   hiddenLipWidth: 5,
   hiddenBottomHeight: 5,
+  /** Cover top hidden behind the thinned lid flange: the flange notch top,
+   * H−3 above the floor top (the cover reaches H). */
+  hiddenTopHeight: 5,
   defaults: {
     cardWidth: 70,
     cardHeight: 120,

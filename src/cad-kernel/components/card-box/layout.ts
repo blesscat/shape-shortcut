@@ -31,8 +31,9 @@ export type CardBoxCoverStackLayout = {
 }
 
 /**
- * Visible window is `(W−10) × (H−5)` — 5 mm hidden left/right/bottom, top
- * edge exposed — shrunk by the safe margin on every side.
+ * Visible window is `(W−10) × (H−10)` — 5 mm hidden left/right/bottom by the
+ * box lips and 5 mm at the top by the lid front flange — shrunk by the safe
+ * margin on every side.
  */
 export function cardBoxCoverSafeArea(
   parameters: CardBoxParameters,
@@ -44,7 +45,8 @@ export function cardBoxCoverSafeArea(
     minX: hiddenLip + margin,
     maxX: width - hiddenLip - margin,
     minY: CARD_BOX_CONFIGURATION.hiddenBottomHeight + margin,
-    maxY: parameters.cardHeight - margin,
+    maxY:
+      parameters.cardHeight - CARD_BOX_CONFIGURATION.hiddenTopHeight - margin,
   }
 }
 

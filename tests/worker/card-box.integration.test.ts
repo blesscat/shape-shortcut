@@ -204,35 +204,91 @@ describe('card-box default box matches the FreeCAD reference', () => {
   })
 })
 
-describe('card-box default lid matches the FreeCAD reference', () => {
-  it('matches bbox, volume, and solid count of lid.brep in the assembled frame', () => {
+/**
+ * The lid deliberately differs from lid.brep by one trim: the front flange
+ * is thinned from 1.6 to 1 mm over the cover width (x ±W/2, y back face
+ * -38.95 → -38.35, z flange bottom → deep part at H+2.2) so the 0.6 mm
+ * cover fits under it. Box in the assembled frame at default parameters.
+ */
+const FLANGE_TRIM_MIN: [number, number, number] = [-35.25, -38.95, 112.2]
+const FLANGE_TRIM_MAX: [number, number, number] = [35.25, -38.35, 122.2]
+const EXPECTED_TRIM_VOLUME = 0.6 * ((70.5 - 10) * 5.2 + 2 * 5 * 10)
+
+describe('card-box default lid matches the FreeCAD reference less the flange trim', () => {
+  it('matches the reference minus the documented trim box and keeps one solid', () => {
     const built = buildCardBoxLid({
       ...defaultParameters(),
       part: 'lid',
     })
     const reference = loadBrepFixture('lid.brep')
+    const trimBox = makeBox(FLANGE_TRIM_MIN, FLANGE_TRIM_MAX) as Shape3D
+    const trimmedAway = reference.intersect(trimBox)
+    const expected = reference.cut(trimBox)
     try {
+      expectClose(
+        measureVolume(trimmedAway),
+        EXPECTED_TRIM_VOLUME,
+        0.5,
+        'trimmed volume',
+      )
       const builtBounds = boundsOf(built)
-      const referenceBounds = boundsOf(reference)
+      const expectedBounds = boundsOf(expected)
       for (const axis of [0, 1, 2]) {
         expectClose(
           builtBounds.min[axis]!,
-          referenceBounds.min[axis]!,
+          expectedBounds.min[axis]!,
           0.05,
           `bbox min[${axis}]`,
         )
         expectClose(
           builtBounds.max[axis]!,
-          referenceBounds.max[axis]!,
+          expectedBounds.max[axis]!,
           0.05,
           `bbox max[${axis}]`,
         )
       }
-      expectSameGeometry(built, reference, SYMMETRIC_DIFFERENCE_LIMIT)
+      expectSameGeometry(built, expected, SYMMETRIC_DIFFERENCE_LIMIT)
       expect(countSolids(built)).toBe(1)
     } finally {
       built.delete()
       reference.delete()
+      trimBox.delete()
+      trimmedAway.delete()
+      expected.delete()
+    }
+  })
+
+  it('leaves the cover channel open under the thinned flange', () => {
+    const built = buildCardBoxLid({ ...defaultParameters(), part: 'lid' })
+    const materialIn = (x: number, z: number, y0: number, y1: number) => {
+      const probe = makeBox(
+        [x - 0.1, y0 + 0.01, z - 0.1],
+        [x + 0.1, y1 - 0.01, z + 0.1],
+      ) as Shape3D
+      const intersection = built.intersect(probe)
+      try {
+        return measureVolume(intersection)
+      } finally {
+        intersection.delete()
+        probe.delete()
+      }
+    }
+    try {
+      const coverHalfWidth = 70.5 / 2
+      for (const x of [0, coverHalfWidth - 2]) {
+        for (const z of [118, 121]) {
+          expect(
+            materialIn(x, z, -38.95, -38.35),
+            `channel x=${x} z=${z}`,
+          ).toBeLessThan(0.0001)
+          expect(
+            materialIn(x, z, -39.95, -38.95),
+            `flange x=${x} z=${z}`,
+          ).toBeGreaterThan(0.001)
+        }
+      }
+    } finally {
+      built.delete()
     }
   })
 })
