@@ -215,6 +215,16 @@ export const messages = {
     '文字超出卡片可用寬度，請縮短文字或增加格數。',
   'validation.labelCardScrewTooWide':
     '螺絲側視圖與規格文字超出卡片可用寬度，請增加卡片寬度或縮短螺絲長度。',
+  'validation.labelWallTooNarrow':
+    '這面牆太窄，放不下至少 {minimum} 格的標籤。請改選其他牆面或加大盒子。',
+  'validation.labelUnitsDoNotFit':
+    '這面牆的標籤格數需為 {minimum} 至 {maximum}。請減少格數、改選其他牆面或加大盒子。',
+  'validation.labelWallHasOpening':
+    '這面牆已有開口。請移除開口，或改選其他牆面放置標籤。',
+  'validation.labelBoxTooShort':
+    '標籤斜台需要至少 {minimum} mm 的內高。請增加高度或關閉標籤。',
+  'validation.labelBlocksBottomHole':
+    '此高度下標籤斜台會蓋住底部孔位。請增加高度、改選其他牆面或關閉標籤。',
   'validation.labelSlotDoesNotFit':
     '卡槽超出正面可用寬度或高度，請減少標籤格數、增加本體尺寸或關閉卡槽。',
   'validation.labelCardWidthTierInvalid': '{field} 必須是 {values} 之一。',

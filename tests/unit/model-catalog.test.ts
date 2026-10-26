@@ -49,6 +49,7 @@ describe('CAD component catalog', () => {
       'opengrid-pillar',
       'opengrid-divider',
       'opengrid-label-card',
+      'opengrid-label-ledge-test',
       'opengrid',
       'opengrid-snap',
       'opengrid-openconnect-shelf',
@@ -114,6 +115,7 @@ describe('CAD component catalog', () => {
       'opengrid-pillar',
       'opengrid-divider',
       'opengrid-label-card',
+      'opengrid-label-ledge-test',
       'opengrid',
       'opengrid-snap',
       'opengrid-openconnect-shelf',
@@ -202,6 +204,7 @@ describe('CAD component catalog', () => {
       'opengrid-wall-cover',
       'opengrid-label-card',
       'opengrid-label-slot-test',
+      'opengrid-label-ledge-test',
     ])
 
     const grid = getModelDefinition('modular-grid-base')
@@ -1065,6 +1068,9 @@ describe('CAD component catalog', () => {
     expect(getModelDefinition('opengrid-label-slot-test')?.partCategory).toBe(
       'test',
     )
+    expect(getModelDefinition('opengrid-label-ledge-test')?.partCategory).toBe(
+      'test',
+    )
     expect(getModelDefinition('box')?.partCategory).toBeUndefined()
     expect(
       getModelDefinition('modular-grid-base')?.partCategory,
@@ -1098,6 +1104,7 @@ describe('CAD component catalog', () => {
       'opengrid-pillar',
       'opengrid-divider',
       'opengrid-label-card',
+      'opengrid-label-ledge-test',
     ])
 
     const wallZones = partitionByPartZone(wall.definitions)

@@ -9,6 +9,27 @@ export const messages = {
   'panel.labelSlotTest.summary': 'Label slot test coupon',
   'panel.labelSlotTest.details':
     'A thin back wall with the organizer’s integrated slot, without clips or wall connectors. Each unit is 10 mm; insert a matching card from above. Print upright in the supplied orientation to test the rails and bottom slope; add a brim if needed for adhesion.',
+  'panel.labelLedgeTest.summary': 'Label ledge test coupon',
+  'panel.labelLedgeTest.details':
+    'A short back wall with the same inside label ledge the stackable box uses. Each unit is 10 mm; slide a matching-unit card up the 45° slope from the low edge until it clicks behind the snap bumps, and lift its lower edge through the notch to remove it. Print upright in the supplied orientation. After testing, set the same tightness on the box.',
+  'panel.labelLedgeTest.width':
+    '{width} mm · 10 mm per unit · {min}–{max} units',
+  'panel.boxLabel.title': 'Inside label ledge',
+  'panel.boxLabel.enable': 'Add a label ledge inside one wall',
+  'panel.boxLabel.help':
+    'A 45° ledge near the top of the selected wall holds a label card readable from above. It stays below the rim, so the box outline and stacking are unchanged; stacking hides the lower box’s label.',
+  'panel.boxLabel.wall': 'Label wall',
+  'panel.boxLabel.units': 'Label units · {units}',
+  'panel.boxLabel.width':
+    '{width} mm card · 10 mm per unit · this wall fits up to {max} units',
+  'panel.boxLabel.unavailable':
+    'This wall cannot carry a label: it fits fewer than {minimum} units.',
+  'panel.boxLabel.fit': 'Snap tightness',
+  'panel.boxLabel.fit.loose': 'Loose 0.5 mm',
+  'panel.boxLabel.fit.normal': 'Normal 0.6 mm',
+  'panel.boxLabel.fit.tight': 'Tight 0.7 mm',
+  'panel.boxLabel.fitHelp':
+    'The number is the snap bump height. Tune it with the OpenGrid Label Ledge Test, then set the same tightness here.',
   'panel.topRim': 'Two-color accent rim',
   'panel.innerDiameterOuterHint': 'Outer diameter {value} mm',
   'panel.labelCard.unitWidth': '{width} mm · 10 mm per unit · 1–{max} units',

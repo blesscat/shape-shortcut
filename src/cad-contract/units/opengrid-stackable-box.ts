@@ -5,6 +5,16 @@ import {
   normalizeOpenGridLocatingSeatMode,
   type OpenGridLocatingSeatMode,
 } from './opengrid-locating-assembly'
+import {
+  isOpenGridLabelSnapFit,
+  OPENGRID_LABEL_DEFAULT_SNAP_FIT,
+  OPENGRID_LABEL_LEDGE,
+  openGridLabelLedgeFloorContactDepth,
+  openGridLabelLedgeLayoutFor,
+  openGridLabelLedgeMaxUnitsFor,
+  type OpenGridLabelSnapFit,
+} from './opengrid-label-ledge'
+import { OPENGRID_LABEL_GRID } from './opengrid-label-shared'
 
 export type OpenGridStackableBoxParameterKey =
   | 'x'
@@ -17,6 +27,7 @@ export type OpenGridStackableBoxParameterKey =
   | 'honeycombMode'
   | 'topRimEnabled'
   | 'topRimHeight'
+  | OpenGridStackableBoxLabelParameterKey
   | 'openingPlusXDepth'
   | 'openingPlusXBottomLength'
   | 'openingPlusXAngle'
@@ -29,6 +40,26 @@ export type OpenGridStackableBoxParameterKey =
   | 'openingMinusYDepth'
   | 'openingMinusYBottomLength'
   | 'openingMinusYAngle'
+
+export type OpenGridStackableBoxLabelParameterKey =
+  'labelSlotEnabled' | 'labelGridUnits' | 'labelWall' | 'labelSnapFit'
+
+export const OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS = [
+  'labelSlotEnabled',
+  'labelGridUnits',
+  'labelWall',
+  'labelSnapFit',
+] as const satisfies readonly OpenGridStackableBoxLabelParameterKey[]
+
+export const OPENGRID_STACKABLE_BOX_LABEL_WALLS = [
+  'front',
+  'back',
+  'left',
+  'right',
+] as const
+
+export type OpenGridStackableBoxLabelWall =
+  (typeof OPENGRID_STACKABLE_BOX_LABEL_WALLS)[number]
 
 export type OpenGridStackableBoxOpeningDirection = '+X' | '-X' | '+Y' | '-Y'
 
@@ -83,6 +114,10 @@ export type OpenGridStackableBoxParameters = {
   honeycombMode: boolean
   topRimEnabled: boolean
   topRimHeight: number
+  labelSlotEnabled: boolean
+  labelGridUnits: number
+  labelWall: OpenGridStackableBoxLabelWall
+  labelSnapFit: OpenGridLabelSnapFit
 } & Record<OpenGridStackableBoxOpeningParameterKey, number>
 
 export type OpenGridStackableBoxDerivedOpening = {
@@ -120,6 +155,7 @@ export type OpenGridStackableBoxDerivedGeometry = {
 export type OpenGridStackableBoxValidationIssue = {
   field: OpenGridStackableBoxParameterKey | 'parameters'
   messageId: string
+  params?: Readonly<Record<string, number>>
 }
 
 export type OpenGridStackableBoxValidation =
@@ -220,6 +256,10 @@ export const OPENGRID_STACKABLE_BOX_CONFIGURATION = {
   defaultOpeningBottomLength: 1,
   defaultOpeningAngle: 90,
   openingCornerBridge: 2,
+  defaultLabelSlotEnabled: false,
+  defaultLabelGridUnits: OPENGRID_LABEL_LEDGE.defaultUnits,
+  defaultLabelWall: 'back' as OpenGridStackableBoxLabelWall,
+  defaultLabelSnapFit: OPENGRID_LABEL_DEFAULT_SNAP_FIT,
 } as const
 
 export const OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS = {
@@ -234,6 +274,11 @@ export const OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS = {
   honeycombMode: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultHoneycombMode,
   topRimEnabled: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimEnabled,
   topRimHeight: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
+  labelSlotEnabled:
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelSlotEnabled,
+  labelGridUnits: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelGridUnits,
+  labelWall: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelWall,
+  labelSnapFit: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelSnapFit,
   openingPlusXDepth: OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultOpeningDepth,
   openingPlusXBottomLength:
     OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultOpeningBottomLength,
@@ -311,6 +356,7 @@ const CURRENT_BASE_PARAMETER_KEYS = [
 const ALL_SUPPORTED_PARAMETER_KEYS = new Set<string>([
   ...LEGACY_BASE_PARAMETER_KEYS,
   ...CURRENT_BASE_PARAMETER_KEYS,
+  ...OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS,
   ...OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
 ])
 
@@ -811,6 +857,216 @@ function openingValidationIssuesFor(
   return issues
 }
 
+/** Extra clearance between the merged wedge block and an open bottom hole. */
+const labelHoleKeepOutMargin = 0.5
+
+const LABEL_WALL_OPENING_DIRECTION: Record<
+  OpenGridStackableBoxLabelWall,
+  OpenGridStackableBoxOpeningDirection
+> = { front: '-Y', back: '+Y', left: '-X', right: '+X' }
+
+function labelWallSpanFor(
+  parameters: Pick<OpenGridStackableBoxParameters, 'x' | 'y'>,
+  wall: OpenGridStackableBoxLabelWall,
+): number {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const axisGrids =
+    wall === 'front' || wall === 'back' ? parameters.x : parameters.y
+  return axisGrids * configuration.gridPitch - configuration.clearanceTotal
+}
+
+/** Label units the wall's interior flat can carry; 0 when it cannot carry any. */
+export function openGridStackableBoxLabelMaxUnitsFor(
+  parameters: Pick<OpenGridStackableBoxParameters, 'x' | 'y'>,
+  wall: OpenGridStackableBoxLabelWall,
+): number {
+  return openGridLabelLedgeMaxUnitsFor(
+    labelWallSpanFor(parameters, wall) -
+      2 * OPENGRID_STACKABLE_BOX_CONFIGURATION.outerCornerRadius,
+  )
+}
+
+/** Smallest clear height that holds the ledge; an open bottom has no floor to merge into. */
+export function openGridStackableBoxLabelMinHeightFor(
+  bottomMode: OpenGridStackableBoxBottomMode,
+): number {
+  const layout = openGridLabelLedgeLayoutFor(
+    OPENGRID_LABEL_LEDGE.minUnits,
+    OPENGRID_LABEL_DEFAULT_SNAP_FIT,
+  )
+  return bottomMode === 'none'
+    ? layout.freeHangingHeight
+    : layout.minClearHeight
+}
+
+/** Where the wall frame (`v` inward, `z` from the rim datum) sits in the box frame. */
+export function openGridStackableBoxLabelPlacementFor(
+  parameters: OpenGridStackableBoxParameters,
+) {
+  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
+  const wall = OPENGRID_STACKABLE_BOX_CONFIGURATION.wallThickness
+  const wallFrames: Record<
+    OpenGridStackableBoxLabelWall,
+    { rotationDegrees: number; origin: [number, number] }
+  > = {
+    front: { rotationDegrees: 0, origin: [0, -(depth / 2 - wall)] },
+    back: { rotationDegrees: 180, origin: [0, depth / 2 - wall] },
+    left: { rotationDegrees: -90, origin: [-(width / 2 - wall), 0] },
+    right: { rotationDegrees: 90, origin: [width / 2 - wall, 0] },
+  }
+  return {
+    ...wallFrames[parameters.labelWall],
+    rimZ: openGridStackableBoxActiveUpperInnerRimZFor(parameters),
+  }
+}
+
+function validateLabelFields(
+  value: Record<string, unknown>,
+  issues: OpenGridStackableBoxValidationIssue[],
+): void {
+  if (
+    hasOwn(value, 'labelSlotEnabled') &&
+    typeof value.labelSlotEnabled !== 'boolean'
+  ) {
+    issues.push({ field: 'labelSlotEnabled', messageId: 'validation.invalid' })
+  }
+  if (
+    hasOwn(value, 'labelGridUnits') &&
+    !(
+      typeof value.labelGridUnits === 'number' &&
+      Number.isSafeInteger(value.labelGridUnits) &&
+      value.labelGridUnits >= OPENGRID_LABEL_GRID.minUnits &&
+      value.labelGridUnits <= OPENGRID_LABEL_GRID.maxUnits
+    )
+  ) {
+    issues.push({ field: 'labelGridUnits', messageId: 'validation.invalid' })
+  }
+  if (
+    hasOwn(value, 'labelWall') &&
+    !(OPENGRID_STACKABLE_BOX_LABEL_WALLS as readonly unknown[]).includes(
+      value.labelWall,
+    )
+  ) {
+    issues.push({ field: 'labelWall', messageId: 'validation.invalid' })
+  }
+  if (
+    hasOwn(value, 'labelSnapFit') &&
+    !isOpenGridLabelSnapFit(value.labelSnapFit)
+  ) {
+    issues.push({ field: 'labelSnapFit', messageId: 'validation.invalid' })
+  }
+}
+
+function labelValuesFor(
+  value: Record<string, unknown>,
+): Pick<OpenGridStackableBoxParameters, OpenGridStackableBoxLabelParameterKey> {
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  return {
+    labelSlotEnabled:
+      typeof value.labelSlotEnabled === 'boolean'
+        ? value.labelSlotEnabled
+        : configuration.defaultLabelSlotEnabled,
+    labelGridUnits:
+      typeof value.labelGridUnits === 'number'
+        ? value.labelGridUnits
+        : configuration.defaultLabelGridUnits,
+    labelWall: OPENGRID_STACKABLE_BOX_LABEL_WALLS.includes(
+      value.labelWall as OpenGridStackableBoxLabelWall,
+    )
+      ? (value.labelWall as OpenGridStackableBoxLabelWall)
+      : configuration.defaultLabelWall,
+    labelSnapFit: isOpenGridLabelSnapFit(value.labelSnapFit)
+      ? value.labelSnapFit
+      : configuration.defaultLabelSnapFit,
+  }
+}
+
+/** True when the wedge block merged into the floor would cover an open bottom hole. */
+function labelFloorBlockCoversHole(
+  parameters: OpenGridStackableBoxParameters,
+): boolean {
+  if (parameters.bottomMode === 'none') return false
+  const configuration = OPENGRID_STACKABLE_BOX_CONFIGURATION
+  const layout = openGridLabelLedgeLayoutFor(
+    parameters.labelGridUnits,
+    parameters.labelSnapFit,
+  )
+  const contact = openGridLabelLedgeFloorContactDepth(layout, parameters.height)
+  if (contact <= 0) return false
+  const [width, depth] = nominalOpenGridStackableBoxFootprintFor(parameters)
+  const wallFaceX = width / 2 - configuration.wallThickness
+  const wallFaceY = depth / 2 - configuration.wallThickness
+  const radius =
+    configuration.bottomGridHoleDiameter / 2 + labelHoleKeepOutMargin
+  return openGridStackableBoxOrdinaryBottomHoleCentersFor(parameters).some(
+    ([x, y]) => {
+      const [along, distance] = {
+        front: [x, y + wallFaceY],
+        back: [x, wallFaceY - y],
+        left: [y, x + wallFaceX],
+        right: [y, wallFaceX - x],
+      }[parameters.labelWall]
+      const alongGap = Math.max(0, Math.abs(along) - layout.outerHalfWidth)
+      const depthGap = Math.max(0, distance - contact, -distance)
+      return Math.hypot(alongGap, depthGap) < radius
+    },
+  )
+}
+
+/** Range and fit checks that only apply while the label ledge is enabled. */
+function labelConstraintIssuesFor(
+  parameters: OpenGridStackableBoxParameters,
+): OpenGridStackableBoxValidationIssue[] {
+  if (!parameters.labelSlotEnabled) return []
+  const issues: OpenGridStackableBoxValidationIssue[] = []
+  const maxUnits = openGridStackableBoxLabelMaxUnitsFor(
+    parameters,
+    parameters.labelWall,
+  )
+  if (maxUnits < OPENGRID_LABEL_LEDGE.minUnits) {
+    issues.push({
+      field: 'labelSlotEnabled',
+      messageId: 'validation.labelWallTooNarrow',
+      params: { minimum: OPENGRID_LABEL_LEDGE.minUnits },
+    })
+  } else if (
+    parameters.labelGridUnits < OPENGRID_LABEL_LEDGE.minUnits ||
+    parameters.labelGridUnits > maxUnits
+  ) {
+    issues.push({
+      field: 'labelGridUnits',
+      messageId: 'validation.labelUnitsDoNotFit',
+      params: { minimum: OPENGRID_LABEL_LEDGE.minUnits, maximum: maxUnits },
+    })
+  }
+  const wallDepthKey =
+    OPENING_KEYS_BY_DIRECTION[
+      LABEL_WALL_OPENING_DIRECTION[parameters.labelWall]
+    ].depth
+  if (parameters[wallDepthKey] > 0) {
+    issues.push({
+      field: 'labelWall',
+      messageId: 'validation.labelWallHasOpening',
+    })
+  }
+  const minimumHeight = openGridStackableBoxLabelMinHeightFor(
+    parameters.bottomMode,
+  )
+  if (parameters.height < minimumHeight) {
+    issues.push({
+      field: 'height',
+      messageId: 'validation.labelBoxTooShort',
+      params: { minimum: minimumHeight },
+    })
+  } else if (labelFloorBlockCoversHole(parameters)) {
+    issues.push({
+      field: 'height',
+      messageId: 'validation.labelBlocksBottomHole',
+    })
+  }
+  return issues
+}
+
 export function validateOpenGridStackableBoxParameters(
   value: unknown,
 ): OpenGridStackableBoxValidation {
@@ -881,6 +1137,7 @@ export function validateOpenGridStackableBoxParameters(
   if (hasOwn(value, 'topRimHeight')) {
     validateTopRimHeight(value.topRimHeight, issues)
   }
+  validateLabelFields(value, issues)
 
   if (hasOpeningParameters) {
     for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
@@ -930,8 +1187,10 @@ export function validateOpenGridStackableBoxParameters(
       Number.isSafeInteger(value.topRimHeight)
         ? (value.topRimHeight as number)
         : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
+    ...labelValuesFor(value),
     ...openingValuesFor(value, hasOpeningParameters),
   }
+  issues.push(...labelConstraintIssuesFor(parameters))
   if (parameters.bottomMode === 'none' && parameters.fullBottomHoleGrid) {
     issues.push({
       field: 'fullBottomHoleGrid',
@@ -1156,6 +1415,11 @@ function seatSuffixFor(parameters: OpenGridStackableBoxParameters): string {
   return `-seats-${parameters.cornerSeatMode}`
 }
 
+function labelSuffixFor(parameters: OpenGridStackableBoxParameters): string {
+  if (!parameters.labelSlotEnabled) return ''
+  return `-label${parameters.labelGridUnits}u-${parameters.labelWall}-fit-${parameters.labelSnapFit}`
+}
+
 function honeycombSuffixFor(
   parameters: OpenGridStackableBoxParameters,
 ): string {
@@ -1168,7 +1432,7 @@ export function openGridStackableBoxFileName(
   const modeSuffix = modeSuffixFor(parameters)
   const seatSuffix = seatSuffixFor(parameters)
   const honeycombSuffix = honeycombSuffixFor(parameters)
-  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${openingFileSuffixFor(parameters)}${modeSuffix}.step`
+  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${labelSuffixFor(parameters)}${openingFileSuffixFor(parameters)}${modeSuffix}.step`
 }
 
 export function openGridStackableBoxStlFileName(
@@ -1177,7 +1441,7 @@ export function openGridStackableBoxStlFileName(
   const modeSuffix = modeSuffixFor(parameters)
   const seatSuffix = seatSuffixFor(parameters)
   const honeycombSuffix = honeycombSuffixFor(parameters)
-  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${openingFileSuffixFor(parameters)}${modeSuffix}.stl`
+  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${labelSuffixFor(parameters)}${openingFileSuffixFor(parameters)}${modeSuffix}.stl`
 }
 
 export function openGridStackableBoxThreeMfFileName(
@@ -1187,5 +1451,5 @@ export function openGridStackableBoxThreeMfFileName(
   const modeSuffix = modeSuffixFor(parameters)
   const seatSuffix = seatSuffixFor(parameters)
   const honeycombSuffix = honeycombSuffixFor(parameters)
-  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${openingFileSuffixFor(parameters)}${modeSuffix}-rim${parameters.topRimHeight}.3mf`
+  return `opengrid-stackable-box-${parameters.x}x${parameters.y}-h${parameters.height}${seatSuffix}${honeycombSuffix}${labelSuffixFor(parameters)}${openingFileSuffixFor(parameters)}${modeSuffix}-rim${parameters.topRimHeight}.3mf`
 }

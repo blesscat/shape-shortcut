@@ -39,6 +39,11 @@ import {
   type OpenGridLabelSlotTestParameters,
 } from '../../../cad-contract/units/opengrid-label-slot-test'
 import {
+  boundsForOpenGridLabelLedgeTest,
+  OPENGRID_LABEL_LEDGE_TEST_CONFIGURATION,
+  type OpenGridLabelLedgeTestParameters,
+} from '../../../cad-contract/units/opengrid-label-ledge-test'
+import {
   pillarBodyDiameterForParameters,
   pillarLengthForParameters,
   boundsForPillar,
@@ -255,6 +260,22 @@ export function labelSlotPreview(
     slab(width, depth, 1, 0, (b.min[1] + b.max[1]) / 2),
     slab(1, depth, height, b.min[0] + 0.5, (b.min[1] + b.max[1]) / 2),
     slab(1, depth, height, b.max[0] - 0.5, (b.min[1] + b.max[1]) / 2),
+  ]
+}
+
+export function labelLedgePreview(
+  p: OpenGridLabelLedgeTestParameters,
+): PreviewDescription {
+  const config = OPENGRID_LABEL_LEDGE_TEST_CONFIGURATION
+  const b = boundsForOpenGridLabelLedgeTest(p)
+  const width = b.max[0] - b.min[0]
+  const depth = b.max[1] - b.min[1]
+  const height = b.max[2]
+  const wedgeDepth = depth * 0.8
+  return [
+    slab(width, config.backThickness, height, 0, b.min[1] + 0.5),
+    slab(width, depth, config.baseThickness, 0, (b.min[1] + b.max[1]) / 2),
+    slab(width, wedgeDepth, 3, 0, wedgeDepth / 2, height - 5),
   ]
 }
 

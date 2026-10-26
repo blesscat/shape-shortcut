@@ -1,7 +1,9 @@
 import { isTissueBoxParameters } from '../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { buildTissueBox } from '../components/opengrid-openconnect-tissue-box/builder'
 import { buildOpenGridLabelSlotTest } from '../components/opengrid-label-slot-test/builder'
+import { buildOpenGridLabelLedgeTest } from '../components/opengrid-label-ledge-test/builder'
 import { isOpenGridLabelSlotTestParameters } from '../../cad-contract/units/opengrid-label-slot-test'
+import { isOpenGridLabelLedgeTestParameters } from '../../cad-contract/units/opengrid-label-ledge-test'
 import type { Shape3D } from 'replicad'
 import type { ProgressUnit } from '../../cad-contract/messages'
 import type { BooleanOperationReporter } from '../boolean-progress'
@@ -618,6 +620,15 @@ export const opengridLabelSlotTestKernelDefinition: KernelModelDefinition = {
   },
 }
 
+export const opengridLabelLedgeTestKernelDefinition: KernelModelDefinition = {
+  id: 'opengrid-label-ledge-test',
+  async build(parameters, context) {
+    if (!isOpenGridLabelLedgeTestParameters(parameters))
+      throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-ledge-test')
+    return buildOpenGridLabelLedgeTest(parameters, context)
+  },
+}
+
 export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   boxKernelDefinition,
   modularGridBaseKernelDefinition,
@@ -650,6 +661,7 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridDividerKernelDefinition,
   opengridLabelCardKernelDefinition,
   opengridLabelSlotTestKernelDefinition,
+  opengridLabelLedgeTestKernelDefinition,
 ]
 
 export function getKernelModelDefinition(

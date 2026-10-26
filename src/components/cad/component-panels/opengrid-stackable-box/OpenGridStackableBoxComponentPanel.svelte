@@ -8,6 +8,7 @@
   import GridDimensionCalculator from '../GridDimensionCalculator.svelte'
   import HoneycombSettings from './HoneycombSettings.svelte'
   import ModeRadioGroup from './ModeRadioGroup.svelte'
+  import LabelLedgeSettings from './LabelLedgeSettings.svelte'
   import OpeningSettings from './OpeningSettings.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import ParameterField from '../ParameterField.svelte'
@@ -171,4 +172,6 @@
   <TopRimSettings {locale} {rawParameters} {fieldErrors} {onInputChange} />
 
   <OpeningSettings {locale} {rawParameters} {fieldErrors} {onInputChange} />
+
+  <LabelLedgeSettings {locale} {rawParameters} {fieldErrors} {onInputChange} />
 </fieldset>

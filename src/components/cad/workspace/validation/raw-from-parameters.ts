@@ -78,6 +78,12 @@ export function rawFromParameters(
     return raw
   }
 
+  if ('gridUnits' in parameters && 'labelSnapFit' in parameters)
+    return {
+      gridUnits: String(parameters.gridUnits),
+      labelSnapFit: String(parameters.labelSnapFit),
+    }
+
   if ('gridUnits' in parameters)
     return { gridUnits: String(parameters.gridUnits) }
 
@@ -269,6 +275,10 @@ export function rawFromParameters(
       topRimMode: 'stacking-rail' | 'flat-top'
       bottomMode: 'stacking' | 'thin-shell' | 'none'
       honeycombMode: boolean
+      labelSlotEnabled: boolean
+      labelGridUnits: number
+      labelWall: string
+      labelSnapFit: string
     }> &
       Partial<
         Record<
@@ -302,6 +312,20 @@ export function rawFromParameters(
           ? stackableParameters.topRimHeight
           : OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.topRimHeight,
       ),
+      labelSlotEnabled: String(
+        stackableParameters.labelSlotEnabled ??
+          OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.labelSlotEnabled,
+      ),
+      labelGridUnits: String(
+        stackableParameters.labelGridUnits ??
+          OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.labelGridUnits,
+      ),
+      labelWall:
+        stackableParameters.labelWall ??
+        OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.labelWall,
+      labelSnapFit:
+        stackableParameters.labelSnapFit ??
+        OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS.labelSnapFit,
     }
     for (const key of OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS) {
       const value =

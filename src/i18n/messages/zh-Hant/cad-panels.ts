@@ -9,6 +9,25 @@ export const messages = {
   'panel.labelSlotTest.summary': '標籤卡槽測試件',
   'panel.labelSlotTest.details':
     '薄背板與收納方格同款卡槽一體列印，不含夾扣或壁掛接頭。每格 10 mm；搭配相同格數的標籤卡從上方插入。請依預設直立方向列印，以測試導軌與底部斜面；必要時加 brim 增加附著。',
+  'panel.labelLedgeTest.summary': '標籤斜台測試件',
+  'panel.labelLedgeTest.details':
+    '短背板搭配與堆疊盒相同的內側標籤斜台。每格 10 mm；將相同格數的標籤卡從低處邊緣沿 45° 斜面往上推，卡進卡扣凸點後方即固定；要取下時，從缺口抬起卡片下緣再滑出。請依預設直立方向列印。測試完成後，請在盒子上設定相同的鬆緊。',
+  'panel.labelLedgeTest.width': '{width} mm · 每格 10 mm · {min}–{max} 格',
+  'panel.boxLabel.title': '內側標籤斜台',
+  'panel.boxLabel.enable': '在一面牆內側加上標籤斜台',
+  'panel.boxLabel.help':
+    '在所選牆面內側靠近頂端加一個 45° 斜台，標籤卡從上方即可閱讀。斜台低於盒口，盒子外形與堆疊不受影響；堆疊後，下方盒子的標籤會被遮住。',
+  'panel.boxLabel.wall': '標籤牆面',
+  'panel.boxLabel.units': '標籤格數 · {units}',
+  'panel.boxLabel.width':
+    '卡片寬 {width} mm · 每格 10 mm · 這面牆最多 {max} 格',
+  'panel.boxLabel.unavailable': '這面牆放不下標籤：可用寬度不足 {minimum} 格。',
+  'panel.boxLabel.fit': '卡扣鬆緊',
+  'panel.boxLabel.fit.loose': '鬆 0.5 mm',
+  'panel.boxLabel.fit.normal': '標準 0.6 mm',
+  'panel.boxLabel.fit.tight': '緊 0.7 mm',
+  'panel.boxLabel.fitHelp':
+    '數字為卡扣凸點高度。請先用 OpenGrid 標籤斜台測試件調整，再在此設定相同的鬆緊。',
   'panel.topRim': '雙色飾圈',
   'panel.innerDiameterOuterHint': '外徑 {value} mm',
   'panel.labelCard.unitWidth': '{width} mm · 每格 10 mm · 1–{max} 格',

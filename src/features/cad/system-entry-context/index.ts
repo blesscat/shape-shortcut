@@ -1,4 +1,5 @@
 import { OPENGRID_LABEL_SLOT_TEST_CONFIGURATION } from '../../../cad-contract/units/opengrid-label-slot-test'
+import { OPENGRID_LABEL_LEDGE_TEST_CONFIGURATION } from '../../../cad-contract/units/opengrid-label-ledge-test'
 import {
   OPENGRID_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
@@ -55,10 +56,14 @@ export function systemContextForModel(
     modelId === 'opengrid-wall-cover' ||
     modelId === 'opengrid-label-card' ||
     modelId === 'opengrid-label-slot-test' ||
+    modelId === 'opengrid-label-ledge-test' ||
     modelId === 'opengrid-openconnect-shelf' ||
     modelId === 'opengrid-openconnect-tissue-box' ||
     modelId === 'opengrid-openconnect-organizer'
   if (!isOpenGridModel) return undefined
+  if (modelId === 'opengrid-label-ledge-test' && context !== 'desk') {
+    return undefined
+  }
   if (
     (modelId === 'opengrid-label-slot-test' ||
       modelId === 'opengrid-wall-cover' ||
@@ -130,6 +135,9 @@ export function getSystemPreset(
   }
   if (modelId === 'opengrid-label-slot-test')
     return { ...OPENGRID_LABEL_SLOT_TEST_CONFIGURATION.defaultParameters }
+  if (modelId === 'opengrid-label-ledge-test' && context === 'desk') {
+    return { ...OPENGRID_LABEL_LEDGE_TEST_CONFIGURATION.defaultParameters }
+  }
   if (modelId === 'opengrid-pillar' && context === 'desk') {
     return { ...PILLAR_CONFIGURATION.defaultParameters }
   }

@@ -2,6 +2,7 @@
   import { revealInvalidFields } from './reveal-invalid-fields'
   import TissueBoxComponentPanel from './opengrid-openconnect-tissue-box/TissueBoxComponentPanel.svelte'
   import OpenGridLabelSlotTestComponentPanel from './opengrid-label-slot-test/OpenGridLabelSlotTestComponentPanel.svelte'
+  import OpenGridLabelLedgeTestComponentPanel from './opengrid-label-ledge-test/OpenGridLabelLedgeTestComponentPanel.svelte'
   import type {
     ModelId,
     ModelParameterValues,
@@ -172,6 +173,13 @@
     />
   {:else if modelId === 'opengrid-label-slot-test'}
     <OpenGridLabelSlotTestComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+    />
+  {:else if modelId === 'opengrid-label-ledge-test'}
+    <OpenGridLabelLedgeTestComponentPanel
       {locale}
       {rawParameters}
       {fieldErrors}

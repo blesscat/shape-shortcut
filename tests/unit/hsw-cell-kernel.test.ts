@@ -133,6 +133,7 @@ describe('HSW kernel model registration', () => {
       'opengrid-divider',
       'opengrid-label-card',
       'opengrid-label-slot-test',
+      'opengrid-label-ledge-test',
     ])
     expect(getKernelModelDefinition('hsw-cell')?.id).toBe('hsw-cell')
     expect(getKernelModelDefinition('hexagonal-column')?.id).toBe(

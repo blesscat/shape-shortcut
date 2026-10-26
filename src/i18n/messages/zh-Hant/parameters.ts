@@ -81,6 +81,8 @@ export const messages = {
   'parameter.screwLength': '長度',
   'parameter.labelGridUnits': '標籤格數',
   'parameter.labelSlotEnabled': '正面標籤卡槽',
+  'parameter.labelWall': '標籤牆面',
+  'parameter.labelSnapFit': '卡扣鬆緊',
   'parameter.boxMode': '盒體模式',
   'parameter.cornerSeatMode': '角座模式',
   'parameter.holeSpacingMode': 'X/Y 孔距設定',
