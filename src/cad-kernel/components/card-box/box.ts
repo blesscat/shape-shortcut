@@ -357,7 +357,7 @@ function filletBoxEdges(shape: Shape3D, frame: BoxFrame): Shape3D {
   // overshoot and cannot be used for selection. Divider slots are cut
   // afterwards so they never interact with the fillet geometry.
   const x = frame.halfOuterX
-  const midZ = 50
+  const midZ = frame.stubTop / 2
   const points: [number, number, number][] = [
     [0, frame.lipOuterY, 0],
     [0, frame.halfSketchY, 0],

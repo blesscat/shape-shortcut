@@ -8,7 +8,11 @@ import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
 import { buildCardBoxBox } from '../../src/cad-kernel/components/card-box/box'
 import { buildCardBoxLid } from '../../src/cad-kernel/components/card-box/lid'
 import { countSolids } from '../../src/cad-kernel/shape-query/solids'
-import { CARD_BOX_CONFIGURATION } from '../../src/cad-contract/units'
+import {
+  CARD_BOX_CONFIGURATION,
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
+} from '../../src/cad-contract/units'
 
 ;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
   fileURLToPath(import.meta.url),
@@ -146,6 +150,53 @@ describe('card-box default box matches the FreeCAD reference', () => {
       built.delete()
     }
   })
+
+  it.each([
+    { label: 'minimum', cardWidth: 40, cardHeight: 60, storageDepth: 20 },
+    { label: 'maximum', cardWidth: 100, cardHeight: 150, storageDepth: 150 },
+  ])(
+    'rounds the four outer vertical corners at the $label size',
+    ({ cardWidth, cardHeight, storageDepth }) => {
+      const built = buildCardBoxBox({
+        ...defaultParameters(),
+        cardWidth,
+        cardHeight,
+        storageDepth,
+        part: 'box',
+      })
+      const halfX = cardBoxOuterWidth(cardWidth) / 2
+      const halfY = cardBoxOuterDepth(storageDepth) / 2
+      // The back corners sit at the sketch depth; the front corners sit
+      // lipExtension (1.85 mm) ahead of it on the front lip.
+      const cornerYs = [halfY, -(halfY + 1.85)]
+      try {
+        for (const cornerX of [halfX, -halfX]) {
+          for (const cornerY of cornerYs) {
+            const inwardX = -Math.sign(cornerX) * 0.25
+            const inwardY = -Math.sign(cornerY) * 0.25
+            // A 0.25 mm square at the corner, in a z band well inside the
+            // edge: a 1 mm fillet clears it, a sharp corner fills it.
+            const probe = makeBox(
+              [cornerX, cornerY, 10],
+              [cornerX + inwardX, cornerY + inwardY, 20],
+            ) as Shape3D
+            const inter = built.intersect(probe)
+            try {
+              expect(
+                measureVolume(inter),
+                `corner (${cornerX}, ${cornerY})`,
+              ).toBeLessThan(0.001)
+            } finally {
+              inter.delete()
+              probe.delete()
+            }
+          }
+        }
+      } finally {
+        built.delete()
+      }
+    },
+  )
 
   it('keeps the floor intact under a front-half slot', () => {
     const built = buildCardBoxBox({ ...defaultParameters(), part: 'box' })
