@@ -1,4 +1,6 @@
 import { assertOpenGridLabelSlotTestQuality } from '../cad-kernel/components/opengrid-label-slot-test/builder'
+import { assertOpenGridLabelLedgeTestQuality } from '../cad-kernel/components/opengrid-label-ledge-test/builder'
+import { isOpenGridLabelLedgeTestParameters } from '../cad-contract/units/opengrid-label-ledge-test'
 import { isOpenGridLabelSlotTestParameters } from '../cad-contract/units/opengrid-label-slot-test'
 import type { Shape3D } from 'replicad'
 import { PreviewTimingRecorder } from '../cad-contract/preview-timing'
@@ -459,6 +461,14 @@ export async function generateCadCandidate(
         throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-slot-test')
       timing.measureSync('quality', () =>
         assertOpenGridLabelSlotTestQuality(shape, generationParameters),
+      )
+    }
+
+    if (command.modelId === 'opengrid-label-ledge-test') {
+      if (!isOpenGridLabelLedgeTestParameters(generationParameters))
+        throw new Error('MODEL_PARAMETERS_MISMATCH:opengrid-label-ledge-test')
+      timing.measureSync('quality', () =>
+        assertOpenGridLabelLedgeTestQuality(shape, generationParameters),
       )
     }
 

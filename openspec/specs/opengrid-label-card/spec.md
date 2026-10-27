@@ -64,7 +64,7 @@ The label card MUST expose width in integer `gridUnits` from 1 through 10, with 
 
 ### Requirement: Label Card geometry is a flat plate compatible with the holder pocket
 
-The card MUST be a flat plate whose insertion thickness is nominally 0.6 mm in both styles and whose visible face carries the accent. The X extent MUST equal the selected unit count multiplied by 10 mm and the Y extent MUST equal the shared 12 mm card height. In `flat` style the accent MUST be seated flush with the outward face for a 0.6 mm total thickness; in `raised` style the accent MUST protrude 0.4 mm beyond the outward face for a 1.0 mm total thickness. The insertion thickness MUST be identical in both styles so one holder pocket serves both. The integrated organizer front slot and the label-slot-test coupon MUST derive their pocket geometry from the same 12 mm card height so cards and slots regenerate consistently. The generated bounds MUST be reported before generation.
+The card MUST be a flat plate whose insertion thickness is nominally 0.6 mm in both styles and whose visible face carries the accent. The X extent MUST equal the selected unit count multiplied by 10 mm and the Y extent MUST equal the shared 12 mm card height. In `flat` style the accent MUST be seated flush with the outward face for a 0.6 mm total thickness; in `raised` style the accent MUST protrude 0.4 mm beyond the outward face for a 1.0 mm total thickness. The insertion thickness MUST be identical in both styles so one holder pocket serves both. The integrated organizer front slot, the label-slot-test coupon, the stackable box inside label ledge and the label-ledge-test coupon MUST derive their pocket geometry from the same 12 mm card height so cards and slots regenerate consistently. The generated bounds MUST be reported before generation.
 
 #### Scenario: Flat style keeps the card at pocket thickness
 
@@ -89,7 +89,12 @@ The card MUST be a flat plate whose insertion thickness is nominally 0.6 mm in b
 - **WHEN** any card revision is generated
 - **THEN** its Y extent MUST equal 12 mm within the documented CAD tolerance
 - **AND** the integrated organizer slot pocket for the same parameters MUST be cut from the same 12 mm height
+- **AND** the stackable box ledge slot and the label-ledge-test coupon for matching units MUST also use the same 12 mm height
 
+#### Scenario: One card serves wall slot and ledge
+
+- **WHEN** a flat or raised card of N units is used
+- **THEN** it MUST fit both the organizer wall slot and the stackable box ledge of N units without any card model change
 
 ### Requirement: Built-in icon set and optional text share the accent part
 

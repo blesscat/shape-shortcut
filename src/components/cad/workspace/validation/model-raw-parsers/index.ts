@@ -4,6 +4,8 @@ import { TISSUE_BOX_ALIGNMENT_DEFAULTS } from '../../../../../cad-contract/units
 import {
   HEXAGONAL_COLUMN_CONFIGURATION,
   legacyInnerDiameterFor,
+  OPENGRID_LABEL_DEFAULT_SNAP_FIT,
+  OPENGRID_STACKABLE_BOX_CONFIGURATION,
   parseDimensionInput,
   parseFiniteDecimalInput,
   parseHalfStepInput,
@@ -42,6 +44,12 @@ export type RawParameterParseResult =
       field?: ModelParameterKey
       params?: DiagnosticParams
     }
+
+function labelEnumDefaultFor(key: 'labelWall' | 'labelSnapFit'): string {
+  if (key === 'labelWall')
+    return OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelWall
+  return OPENGRID_LABEL_DEFAULT_SNAP_FIT
+}
 
 export function parseRawParameters(
   raw: RawParameters,
@@ -166,13 +174,27 @@ export function parseRawParameters(
       parsed[key] = rawValue
       continue
     }
+    if (key === 'labelWall' || key === 'labelSnapFit') {
+      // Snapshots saved before the label ledge omit these keys.
+      parsed[key] = raw[key] ?? labelEnumDefaultFor(key)
+      continue
+    }
+    if (key === 'labelGridUnits' && raw[key] === undefined) {
+      parsed[key] = OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelGridUnits
+      continue
+    }
     if (
       key === 'fullBottomHoleGrid' ||
       key === 'bottomPlateMode' ||
       key === 'honeycombMode' ||
-      key === 'topRimEnabled'
+      key === 'topRimEnabled' ||
+      key === 'labelSlotEnabled'
     ) {
-      const rawValue = raw[key] ?? legacyParameterDefault(modelId, key)
+      const rawValue =
+        raw[key] ??
+        (key === 'labelSlotEnabled'
+          ? String(OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelSlotEnabled)
+          : legacyParameterDefault(modelId, key))
       if (rawValue !== 'true' && rawValue !== 'false') {
         return {
           valid: false,

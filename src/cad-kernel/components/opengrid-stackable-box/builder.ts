@@ -4,6 +4,10 @@ import {
   validateOpenGridStackableBoxParameters,
   type OpenGridStackableBoxParameters,
 } from '../../../cad-contract/units'
+import {
+  addLabelLedge,
+  assertOpenGridStackableBoxLabelLedge,
+} from './label-ledge'
 import { topRimPartsFor } from '../shared/top-rim-partition'
 import {
   addMountingSockets,
@@ -127,6 +131,10 @@ export function buildOpenGridStackableBox(
       context,
       honeycombBaseline,
     )
+    if (normalizedParameters.labelSlotEnabled) {
+      shape = addLabelLedge(shape, normalizedParameters, context)
+      assertOpenGridStackableBoxLabelLedge(shape, normalizedParameters)
+    }
     return shape
   } catch (error) {
     deleteShape(shape)
@@ -186,6 +194,10 @@ export async function buildOpenGridStackableBoxAsync(
       context,
       honeycombBaseline,
     )
+    if (normalizedParameters.labelSlotEnabled) {
+      shape = addLabelLedge(shape, normalizedParameters, context)
+      assertOpenGridStackableBoxLabelLedge(shape, normalizedParameters)
+    }
     return shape
   } catch (error) {
     deleteShape(shape)

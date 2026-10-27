@@ -348,7 +348,8 @@ zone MUST render `opengrid-stackable-box`, `opengrid-stackable-cylinder`,
 zone MUST render `opengrid-openconnect-shelf`,
 `opengrid-openconnect-organizer`, `opengrid-openconnect-tissue-box` in this
 order. The Desk 工具與配件 zone MUST render `opengrid-snap-remover`,
-`opengrid-pillar`, `opengrid-divider`, `opengrid-label-card` in this order.
+`opengrid-pillar`, `opengrid-divider`, `opengrid-label-card`,
+`opengrid-label-ledge-test` in this order.
 The Wall 工具與配件 zone MUST render `opengrid-wall-cover`,
 `opengrid-label-card`, `opengrid-label-slot-test` in this order. The 基礎
 compact rows MUST render Board（底版）first and Snap（咔咔）second, stacked
@@ -363,7 +364,7 @@ existing model-specific route.
 - **AND** 容器區 MUST 依序顯示 `Grid Box (方盒)`、`Round Box (圓盒)`、
   Organizer Box、`Open Shelf (斜開格櫃)`
 - **AND** 工具與配件區展開後 MUST 依序顯示 Snap Remover、
-  `Locating Post (定位柱)`、`divider (分隔牆)`、Label Card
+  `Locating Post (定位柱)`、`divider (分隔牆)`、Label Card、Label Ledge Test
 
 #### Scenario: Snap 與底板在寬版相鄰
 
@@ -396,8 +397,8 @@ in a single system panel selected by a segmented control with three options:
 `Desk`（Desk System）, `Wall`（Wall System）, and `其他`（`其他模型`）. The
 Desk panel MUST contain `opengrid`, `opengrid-snap`, `opengrid-pillar`,
 `opengrid-divider`, `opengrid-stackable-box`, `opengrid-stackable-cylinder`,
-`opengrid-organizer-box`, `opengrid-snap-remover`, `opengrid-open-shelf`, and
-`opengrid-label-card`. The Wall panel MUST contain `opengrid`,
+`opengrid-organizer-box`, `opengrid-snap-remover`, `opengrid-open-shelf`,
+`opengrid-label-card`, and `opengrid-label-ledge-test`. The Wall panel MUST contain `opengrid`,
 `opengrid-snap`, `opengrid-wall-cover`, `opengrid-label-card`,
 `opengrid-openconnect-shelf`, `opengrid-openconnect-organizer`,
 `opengrid-openconnect-tissue-box`, and `opengrid-label-slot-test`. The
@@ -413,7 +414,7 @@ route.
 - **WHEN** 使用者在可用腳本的瀏覽器開啟 `/models`
 - **THEN** 分段切換 MUST 提供 `Desk`、`Wall`、`其他` 三個選項且預設選
   `Desk`
-- **AND** Desk 面板 MUST 顯示上列十個 Desk 入口
+- **AND** Desk 面板 MUST 顯示上列十一個 Desk 入口
 - **AND** 切換到 Wall 後 MUST 顯示上列八個 Wall 入口
 - **AND** 切換到其他後 MUST 顯示 `hsw-cell`
 

@@ -123,11 +123,16 @@ export {
   openGridStackableBoxFileName,
   openGridStackableBoxOpeningBottomLengthMaximumFor,
   openGridStackableBoxOrdinaryBottomHoleCentersFor,
+  openGridStackableBoxLabelMaxUnitsFor,
+  openGridStackableBoxLabelMinHeightFor,
+  openGridStackableBoxLabelPlacementFor,
   openGridStackableBoxSocketCentersFor,
   openGridStackableBoxStlFileName,
   openGridStackableBoxThreeMfFileName,
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+  OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS,
+  OPENGRID_STACKABLE_BOX_LABEL_WALLS,
   OPENGRID_STACKABLE_BOX_OPENING_DIRECTIONS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
   validateOpenGridStackableBoxParameters,
@@ -244,6 +249,8 @@ export type {
   OpenGridStackableBoxParameters,
   OpenGridStackableBoxDerivedGeometry,
   OpenGridStackableBoxDerivedOpening,
+  OpenGridStackableBoxLabelParameterKey,
+  OpenGridStackableBoxLabelWall,
   OpenGridStackableBoxOpeningDirection,
   OpenGridStackableBoxOpeningParameterKey,
   OpenGridStackableBoxPoint2D,
@@ -451,6 +458,7 @@ export {
   isOpenGridOpenConnectOrganizerModelParameters,
   isOpenGridLabelCardModelParameters,
   isOpenGridLabelSlotTestModelParameters,
+  isOpenGridLabelLedgeTestModelParameters,
   isOpenGridOpenConnectShelfModelParameters,
   isOpenGridOpenShelfModelParameters,
   isOpenGridOrganizerBoxModelParameters,
@@ -518,6 +526,8 @@ export {
   type OpenGridLabelWidthTier,
 } from './opengrid-label-shared'
 export * from './opengrid-label-slot-test'
+export * from './opengrid-label-ledge'
+export * from './opengrid-label-ledge-test'
 
 export type {
   OpenGridLabelCardParameterKey,

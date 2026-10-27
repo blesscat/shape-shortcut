@@ -81,6 +81,8 @@ export const messages = {
   'parameter.screwLength': 'Length',
   'parameter.labelGridUnits': 'Label units',
   'parameter.labelSlotEnabled': 'Front label slot',
+  'parameter.labelWall': 'Label wall',
+  'parameter.labelSnapFit': 'Snap tightness',
   'parameter.boxMode': 'Box mode',
   'parameter.cornerSeatMode': 'Seat mode',
   'parameter.holeSpacingMode': 'X/Y hole spacing',

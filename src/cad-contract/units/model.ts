@@ -8,6 +8,13 @@ import {
   type OpenGridLabelCardParameters,
 } from './opengrid-label-card'
 import {
+  boundsForOpenGridLabelLedgeTest,
+  openGridLabelLedgeTestFileName,
+  openGridLabelLedgeTestStlFileName,
+  validateOpenGridLabelLedgeTestParameters,
+  type OpenGridLabelLedgeTestParameters,
+} from './opengrid-label-ledge-test'
+import {
   boundsForOpenGridLabelSlotTest,
   openGridLabelSlotTestFileName,
   openGridLabelSlotTestStlFileName,
@@ -203,6 +210,7 @@ export type ModelId =
   | 'opengrid-openconnect-organizer'
   | 'opengrid-label-card'
   | 'opengrid-label-slot-test'
+  | 'opengrid-label-ledge-test'
 
 export type ModelParameters =
   | {
@@ -262,6 +270,10 @@ export type ModelParameters =
   | {
       modelId: 'opengrid-label-slot-test'
       parameters: OpenGridLabelSlotTestParameters
+    }
+  | {
+      modelId: 'opengrid-label-ledge-test'
+      parameters: OpenGridLabelLedgeTestParameters
     }
 
 export type ModelParameterValues = ModelParameters['parameters']
@@ -383,6 +395,7 @@ export function validateModelParameters(
         issues: validation.issues.map((issue) => ({
           field: issue.field,
           messageId: issue.messageId,
+          ...(issue.params ? { params: issue.params } : {}),
         })),
       }
     }
@@ -530,6 +543,12 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'opengrid-label-ledge-test') {
+    const validation = validateOpenGridLabelLedgeTestParameters(value)
+    if (!validation.valid) return validation
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   return {
     valid: false,
     issues: [{ field: 'parameters', messageId: 'validation.invalid' }],
@@ -614,6 +633,12 @@ export function isOpenGridLabelSlotTestModelParameters(
   return validateOpenGridLabelSlotTestParameters(value).valid
 }
 
+export function isOpenGridLabelLedgeTestModelParameters(
+  value: unknown,
+): value is OpenGridLabelLedgeTestParameters {
+  return validateOpenGridLabelLedgeTestParameters(value).valid
+}
+
 export function isModelParameters(value: unknown): value is ModelParameters {
   if (!value || typeof value !== 'object') return false
   const model = value as { modelId?: unknown; parameters?: unknown }
@@ -660,6 +685,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForOpenGridLabelCard(model.parameters)
     case 'opengrid-label-slot-test':
       return boundsForOpenGridLabelSlotTest(model.parameters)
+    case 'opengrid-label-ledge-test':
+      return boundsForOpenGridLabelLedgeTest(model.parameters)
   }
 }
 
@@ -703,6 +730,8 @@ export function modelFileName(model: ModelParameters): string {
       return openGridLabelCardFileName(model.parameters)
     case 'opengrid-label-slot-test':
       return openGridLabelSlotTestFileName(model.parameters)
+    case 'opengrid-label-ledge-test':
+      return openGridLabelLedgeTestFileName(model.parameters)
   }
 }
 
@@ -746,5 +775,7 @@ export function modelStlFileName(model: ModelParameters): string {
       return openGridLabelCardStlFileName(model.parameters)
     case 'opengrid-label-slot-test':
       return openGridLabelSlotTestStlFileName(model.parameters)
+    case 'opengrid-label-ledge-test':
+      return openGridLabelLedgeTestStlFileName(model.parameters)
   }
 }

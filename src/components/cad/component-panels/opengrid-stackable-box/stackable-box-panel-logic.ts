@@ -2,6 +2,9 @@ import {
   OPENGRID_STACKABLE_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
+  isOpenGridLabelSnapFit,
+  OPENGRID_STACKABLE_BOX_LABEL_WALLS,
+  type OpenGridStackableBoxLabelWall,
   type OpenGridStackableBoxOpeningDirection,
   type OpenGridStackableBoxOpeningParameterKey,
   type OpenGridStackableBoxParameters,
@@ -135,6 +138,26 @@ export const openingGroups = [
   },
 ] as const
 
+export const labelWallOptions: ReadonlyArray<{
+  value: OpenGridStackableBoxLabelWall
+  labelKey: string
+}> = [
+  { value: 'front', labelKey: 'panel.opening.direction.front' },
+  { value: 'back', labelKey: 'panel.opening.direction.back' },
+  { value: 'left', labelKey: 'panel.opening.direction.left' },
+  { value: 'right', labelKey: 'panel.opening.direction.right' },
+]
+
+export function labelWallForRawParameters(
+  rawParameters: ComponentPanelProps['rawParameters'],
+): OpenGridStackableBoxLabelWall {
+  const value = rawParameters.labelWall
+  return (
+    OPENGRID_STACKABLE_BOX_LABEL_WALLS.find((wall) => wall === value) ??
+    OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelWall
+  )
+}
+
 export function rawNumberFor(
   rawParameters: ComponentPanelProps['rawParameters'],
   key: string,
@@ -205,6 +228,14 @@ export function parametersForRange(
     topRimHeight:
       rawNumberFor(rawParameters, 'topRimHeight') ??
       OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultTopRimHeight,
+    labelSlotEnabled: rawParameters.labelSlotEnabled === 'true',
+    labelGridUnits:
+      rawNumberFor(rawParameters, 'labelGridUnits') ??
+      OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelGridUnits,
+    labelWall: labelWallForRawParameters(rawParameters),
+    labelSnapFit: isOpenGridLabelSnapFit(rawParameters.labelSnapFit)
+      ? rawParameters.labelSnapFit
+      : OPENGRID_STACKABLE_BOX_CONFIGURATION.defaultLabelSnapFit,
     ...openingValues,
   }
 }

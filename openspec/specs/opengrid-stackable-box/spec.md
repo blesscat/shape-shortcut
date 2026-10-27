@@ -8,8 +8,10 @@ The system MUST expose an independently validated OpenGrid stackable-box model
 with stable `modelId=opengrid-stackable-box`. Its normalized parameters MUST
 include `x`, `y`, `height`, the enum `cornerSeatMode`, the boolean
 `fullBottomHoleGrid`, the enum `topRimMode`, the enum `bottomMode`,
-and the existing three typed opening fields for each of `+X`, `-X`, `+Y`, and
-`-Y`. `cornerSeatMode` MUST be exactly one of `none`,
+the existing three typed opening fields for each of `+X`, `-X`, `+Y`, and
+`-Y`, and the label ledge fields `labelSlotEnabled`, `labelGridUnits`,
+`labelWall` and `labelSnapFit` (optional on input, normalized with label off
+when absent). `cornerSeatMode` MUST be exactly one of `none`,
 `detachable-corner-seat`, or `integrated`. The user-facing labels MUST be
 `無角座`, `鎖定角座`, and `內建角座` respectively. `topRimMode` MUST be
 exactly one of `stacking-rail` or `flat-top`, and `bottomMode` MUST be
@@ -24,7 +26,8 @@ mm and MUST represent clear internal box height. Height semantics MUST remain
 unchanged within every top-rim and bottom-structure combination. The default snapshot
 MUST be `x=2`, `y=2`, `height=20`,
 `cornerSeatMode='detachable-corner-seat'`, `fullBottomHoleGrid=false`,
-`topRimMode='stacking-rail'`, and `bottomMode='stacking'`.
+`topRimMode='stacking-rail'`, `bottomMode='stacking'` and
+`labelSlotEnabled=false`.
 `bottomMode='none'` and `fullBottomHoleGrid=true` MUST NOT be combined;
 validation MUST reject that snapshot with a field-specific error.
 
@@ -511,7 +514,8 @@ part (`stacking-rail` → empty, `flat-top` → `-flat-top`), so the six
 combinations produce six distinct identities and the default `stacking-rail`
 + `stacking` combination keeps the existing unsuffixed name. Filenames MUST
 NOT depend on raw input formatting, and opening fingerprints MUST retain their
-existing behavior.
+existing behavior. An enabled label ledge MUST add the label token defined by
+the label ledge export identity requirement and nothing else MAY change.
 
 #### Scenario: Mode suffixes distinguish every combination
 
@@ -903,3 +907,108 @@ assigned to `body` and `rim`.
 - **AND** when `topRimEnabled` is `false`, the model definition MUST report no
   3MF filename and the STL filename MUST remain unchanged from its current
   fingerprint
+
+### Requirement: Optional inside label ledge parameters
+
+The box MUST accept optional parameters `labelSlotEnabled` (boolean, model default false), `labelGridUnits` (integer, 10 mm of card width per unit, minimum 2), `labelWall` (`front`, `back`, `left` or `right`, default `back`; `front`=-Y, `back`=+Y, `left`=-X, `right`=+X) and `labelSnapFit` (`loose`, `normal` or `tight`, default `normal`). The Desk preset MUST NOT enable the label. Snapshots, saved parameters and imported playground scenes missing these keys MUST load as label off, with byte-for-byte the same geometry behavior and export filenames as before. Unknown extra keys MUST still be rejected. `labelGridUnits` MUST NOT exceed the number of 10 mm units the selected wall can fit, and a wall that fits fewer than 2 units MUST NOT carry a label. When the label is first enabled, `labelGridUnits` MUST default to 4, or to the wall's maximum if 4 does not fit. If a later change of wall or box size makes the chosen units no longer fit, validation MUST report a `labelGridUnits` field error; the system MUST NOT silently shrink the units. An enabled label on a wall that also has an enabled opening MUST be a `labelWall` validation error. An enabled label on a box whose clear interior height is below the label minimum MUST be a `height` validation error (13 mm, or 23 mm with `bottomMode='none'` because there is no floor to merge into), and a merged wedge block that would cover an open bottom hole MUST also be a `height` validation error. When the label is disabled, the other label values MUST still be well-formed (valid type and enum), but the width, wall, opening and height checks MUST NOT apply and the values MUST NOT affect geometry or filenames.
+
+#### Scenario: Legacy snapshot loads with label off
+
+- **WHEN** a saved snapshot or playground scene without any label key is loaded
+- **THEN** it MUST validate with `labelSlotEnabled=false`
+- **AND** its geometry and export filenames MUST equal those produced before this change
+
+#### Scenario: Unavailable wall
+
+- **WHEN** the selected wall fits fewer than 2 label units (for example a 1x1 box or a half-cell wall)
+- **THEN** the panel MUST show the label as unavailable with the reason
+- **AND** validation MUST reject enabling it with a field error
+
+#### Scenario: Width no longer fits
+
+- **WHEN** a box with an enabled 6-unit label is shrunk so the wall fits only 4 units
+- **THEN** validation MUST report a `labelGridUnits` error and MUST keep the stored 6
+
+#### Scenario: Opening conflicts with label wall
+
+- **WHEN** the label wall has an opening depth above zero
+- **THEN** validation MUST report a `labelWall` error
+
+#### Scenario: Box too short
+
+- **WHEN** the label is enabled and the clear interior height is below the documented minimum
+- **THEN** validation MUST report a `height` error
+
+### Requirement: Inside label ledge geometry
+
+With the label enabled, the box MUST include a wedge on the interior face of the selected wall, centered on the wall, spanning only card width plus side rails. Its top face MUST be a 45-degree surface facing up and inward, its underside MUST also be 45 degrees so it prints without supports, and the whole feature MUST stay at or below the inner rim datum, so it works with every top rim mode and never collides with a stacked upper box. The outer box envelope, footprint and external height MUST be unchanged. The card slot MUST use the organizer slot's side clearance, depth clearance, side rail, lip thickness and lip overlap constants and the shared 12 mm card height. The card MUST enter at the inner (low) edge, slide up the slope, and stop against the wall. Where the wedge underside would reach the floor, the wedge MUST merge into the floor as a solid block. Two rigid snap bumps, one on each side of a central fingernail notch about 3 mm wide at the inner edge, MUST be on the ledge surface, each about 2 mm wide, with a 30-degree lead-in, a 90-degree catch face, and a height set by `labelSnapFit` (loose 0.5, normal 0.6, tight 0.7 mm). With a seated card, the card's lower edge MUST sit behind the catch faces and be removable by lifting it through the notch. Honeycomb mode MUST keep the wedge and the wall band it attaches to solid. The two-color rim split MAY cut through the wedge.
+
+#### Scenario: Label on a flat-top box
+
+- **WHEN** a box with an enabled label and `topRimMode='flat-top'` is generated
+- **THEN** no part of the ledge MUST rise above the inner rim datum
+- **AND** the generated outer bounds MUST equal those of the same box with the label off
+
+#### Scenario: Label on a stacking-rail box
+
+- **WHEN** a box with an enabled label and `topRimMode='stacking-rail'` is generated
+- **THEN** the stacking interface MUST remain unchanged and an identical upper box MUST still seat without ledge collision
+
+#### Scenario: Short box merges the wedge into the floor
+
+- **WHEN** the clear height is at or above the minimum but below the free-hanging wedge height
+- **THEN** the wedge MUST be fused to the floor as one solid block
+- **AND** the box MUST remain a single valid solid
+
+#### Scenario: Honeycomb keeps the ledge solid
+
+- **WHEN** honeycomb mode is on with an enabled label
+- **THEN** the wedge and its wall band MUST contain no honeycomb cells
+
+### Requirement: Label ledge quality validation
+
+Generation of a box with an enabled label MUST reject invalid B-Rep, multiple solids, missing rail, lip or bump material, and an obstructed card seat or channel. Both flat and raised cards of the matching width MUST insert along the slope, seat behind the bump and have a clear removal path through the notch.
+
+#### Scenario: Ledge material is present
+
+- **WHEN** a valid label box is generated
+- **THEN** probes MUST find rail, lip and bump material and an empty card seat and channel
+
+### Requirement: Label ledge workspace controls
+
+The stackable-box panel MUST expose the label ledge as one section with an enable checkbox, a wall radio group, a width slider and a snap tightness radio group. The wall options MUST reuse the opening settings wording: zh-Hant `前方`, `後方`, `左方`, `右方` and English `Front`, `Back`, `Left`, `Right`, mapped to `front` (-Y), `back` (+Y), `left` (-X) and `right` (+X). The tightness options MUST show both the word and the snap bump height: zh-Hant `鬆 0.5 mm`, `標準 0.6 mm`, `緊 0.7 mm` and English `Loose 0.5 mm`, `Normal 0.6 mm`, `Tight 0.7 mm`, mapped to `loose`, `normal` and `tight`. The width slider MUST range from 2 units to the selected wall's maximum, and a wall that fits fewer than 2 units MUST show the label as unavailable with the reason. Enabling the label MUST set the width to 4 units, or to the wall's maximum when 4 does not fit. Box and coupon tightness values MUST persist independently.
+
+#### Scenario: Tightness labels show bump heights
+
+- **WHEN** the box panel is shown in `zh-Hant` or `en` with the label enabled
+- **THEN** the tightness options MUST read `鬆 0.5 mm` / `標準 0.6 mm` / `緊 0.7 mm` or `Loose 0.5 mm` / `Normal 0.6 mm` / `Tight 0.7 mm`
+
+#### Scenario: Wall options use the opening wording
+
+- **WHEN** the label wall radio group is shown
+- **THEN** its options MUST read `前方` / `後方` / `左方` / `右方` in `zh-Hant` and `Front` / `Back` / `Left` / `Right` in `en`
+
+#### Scenario: Enabling picks a fitting width
+
+- **WHEN** the user enables the label on a wall that fits 3 units
+- **THEN** the width MUST become 3
+- **AND** on a wall that fits 4 or more units it MUST become 4
+
+#### Scenario: Box and coupon tightness are independent
+
+- **WHEN** the user sets `tight` on the box and `loose` on the coupon and reloads
+- **THEN** each model MUST keep its own value
+
+### Requirement: Label ledge export identity and user note
+
+Export filenames (STEP, STL and 3MF when applicable) MUST gain the token `-label<units>u-<wall>-fit-<fit>`, for example `-label4u-back-fit-normal`, only when the label is enabled, placed after the honeycomb suffix and before the opening fingerprint. Filenames with the label disabled MUST be unchanged. User-facing instructions MUST state that stacking hides the lower box's label.
+
+#### Scenario: Label filename token
+
+- **WHEN** a box with an enabled 4-unit back label at normal fit is exported
+- **THEN** its STEP and STL filenames MUST contain `-label4u-back-fit-normal`
+
+#### Scenario: Unlabeled filename unchanged
+
+- **WHEN** the label is disabled
+- **THEN** the filenames MUST contain no label token

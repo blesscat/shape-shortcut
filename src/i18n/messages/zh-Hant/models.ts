@@ -148,6 +148,13 @@ export const messages = {
   'models.model.opengrid-label-slot-test.description':
     '先印一小片卡槽，試試標籤卡鬆緊合不合，省材料。',
   'models.model.opengrid-label-slot-test.alt': 'OpenGrid 標籤卡槽測試件預覽',
+  'models.model.opengrid-label-ledge-test.name':
+    'OpenGrid Label Ledge Test (標籤斜台測試件)',
+  'models.model.opengrid-label-ledge-test.selection':
+    'Label Ledge Test (斜台測試件)',
+  'models.model.opengrid-label-ledge-test.description':
+    '先印一小片標籤斜台，調好卡片格數與卡扣鬆緊，再用在盒子上。',
+  'models.model.opengrid-label-ledge-test.alt': 'OpenGrid 標籤斜台測試件預覽',
   'models.model.opengrid-label-card.name': 'OpenGrid Label Card (標籤卡)',
   'models.model.opengrid-label-card.selection': 'Label Card (標籤卡)',
   'models.model.opengrid-label-card.description':

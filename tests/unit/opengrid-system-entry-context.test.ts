@@ -156,6 +156,7 @@ describe('OpenGrid system entry context', () => {
       'opengrid-pillar',
       'opengrid-divider',
       'opengrid-label-card',
+      'opengrid-label-ledge-test',
     ])
     expect(
       openGrid?.subgroups

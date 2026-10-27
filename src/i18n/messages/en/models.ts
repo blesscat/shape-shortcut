@@ -147,6 +147,12 @@ export const messages = {
     'Print one small slot first and check the label fit — saves filament.',
   'models.model.opengrid-label-slot-test.alt':
     'OpenGrid Label Slot Test preview',
+  'models.model.opengrid-label-ledge-test.name': 'OpenGrid Label Ledge Test',
+  'models.model.opengrid-label-ledge-test.selection': 'Label Ledge Test',
+  'models.model.opengrid-label-ledge-test.description':
+    'Print one small ledge first to tune card width and snap tightness for the box label.',
+  'models.model.opengrid-label-ledge-test.alt':
+    'OpenGrid Label Ledge Test preview',
   'models.model.opengrid-label-card.name': 'OpenGrid Label Card',
   'models.model.opengrid-label-card.selection': 'Label Card',
   'models.model.opengrid-label-card.description':

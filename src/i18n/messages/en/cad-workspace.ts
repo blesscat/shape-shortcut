@@ -240,6 +240,16 @@ export const messages = {
     'The real-scale screw side view and designation exceed the usable card width. Increase the card width or shorten the screw length.',
   'validation.labelSlotDoesNotFit':
     'The slot exceeds the flat front width or height. Reduce label units, enlarge the organizer, or disable the slot.',
+  'validation.labelWallTooNarrow':
+    'This wall is too narrow for a label of at least {minimum} units. Choose another wall or a wider box.',
+  'validation.labelUnitsDoNotFit':
+    'Label units must be {minimum} to {maximum} for this wall. Reduce the units, choose another wall, or enlarge the box.',
+  'validation.labelWallHasOpening':
+    'This wall has an opening. Remove the opening or choose another wall for the label.',
+  'validation.labelBoxTooShort':
+    'The label ledge needs a clear height of at least {minimum} mm. Increase the height or disable the label.',
+  'validation.labelBlocksBottomHole':
+    'The label ledge would cover a bottom hole at this height. Increase the height, choose another wall, or disable the label.',
   'validation.labelCardWidthTierInvalid': '{field} must be one of {values}.',
   'validation.labelCardStyleInvalid': '{field} must be flat or raised.',
   'validation.labelCardIconUnknown':

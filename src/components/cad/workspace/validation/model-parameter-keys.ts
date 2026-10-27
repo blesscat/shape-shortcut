@@ -3,6 +3,7 @@ import { OPENCONNECT_ALIGNMENT_KEYS } from '../../../../cad-contract/units/openc
 import {
   HEXAGONAL_COLUMN_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
+  OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_CYLINDER_OPENING_PARAMETER_KEYS,
@@ -24,6 +25,7 @@ const OPENGRID_STACKABLE_BOX_PARAMETER_KEYS: ModelParameterKey[] = [
   'honeycombMode',
   'topRimEnabled',
   'topRimHeight',
+  ...OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS,
   ...OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
 ]
 const OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS: ModelParameterKey[] = [
@@ -156,6 +158,9 @@ export function parameterKeysForModel(
     ]
   }
   if (modelId === 'opengrid-label-slot-test') return ['gridUnits']
+  if (modelId === 'opengrid-label-ledge-test') {
+    return ['gridUnits', 'labelSnapFit']
+  }
   if (modelId === 'opengrid-stackable-cylinder') {
     return OPENGRID_STACKABLE_CYLINDER_PARAMETER_KEYS
   }
