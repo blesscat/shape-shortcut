@@ -699,6 +699,16 @@ stale or unrelated operation progress.
 - **THEN** it MUST ignore the event
 - **AND** it MUST keep displaying G2 progress or its current status
 
+#### Scenario: Counter-less progress keeps the latest counts within one stage
+
+- **GIVEN** the UI shows counts for operation O in stage S
+- **WHEN** a progress event for the same operation O and stage S arrives without `completed`, `total` and `unit` (for example boolean-operation progress)
+- **THEN** the UI MUST keep the latest `completed`, `total` and `unit` as the determinate value
+- **AND** it MUST show the new boolean-operation detail
+- **AND** an event that carries counts MUST replace the kept counts
+- **WHEN** the stage changes, the operation changes, or progress is cleared
+- **THEN** the UI MUST drop the kept counts
+
 ### Requirement: Progress terminal lifecycle
 
 The UI MUST clear the active progress indicator when the associated operation reaches model.ready, operation.error, operation.superseded, timeout, recovery, or invalidation. A terminal event for an older operation MUST NOT clear progress belonging to a newer current operation.
