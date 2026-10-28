@@ -107,6 +107,7 @@ function setup() {
     height: 40,
   })
   const states: CadState[] = []
+  const setProgress = vi.fn()
   const runtime = createCadWorkerRuntime({
     initialState: state,
     initialRawParameters: rawFromParameters(state.input),
@@ -117,9 +118,9 @@ function setup() {
     setRawParameters: vi.fn(),
     setPersistedParameters: vi.fn(),
     setFieldErrors: vi.fn(),
-    setProgress: vi.fn(),
+    setProgress,
   })
-  return { runtime, states, state: () => state }
+  return { runtime, states, setProgress, state: () => state }
 }
 function settle() {
   vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
@@ -514,6 +515,128 @@ describe('workspace Worker sessions', () => {
     vi.advanceTimersByTime(1)
     expect(fixture.clients).toHaveLength(2)
     runtime.dispose()
+  })
+
+  describe('building progress counters', () => {
+    const fuse = {
+      kind: 'fuse',
+      state: 'running',
+      elapsedMs: 40,
+    } as const
+
+    function progressFor(
+      currentResult: ReturnType<typeof result>,
+      fields: Record<string, unknown>,
+    ): WorkerEvent {
+      return {
+        version: 2,
+        requestId: 'progress',
+        kind: 'operation.progress',
+        operationId: currentResult.operationId,
+        generation: currentResult.generation,
+        stage: 'building',
+        ...fields,
+      } as WorkerEvent
+    }
+
+    function started() {
+      const harness = setup()
+      latest().ready()
+      return { ...harness, current: result(latest()) }
+    }
+
+    it('keeps the latest cell counts when a counter-less boolean event arrives in the same stage', () => {
+      const { runtime, setProgress, current } = started()
+      latest().event(
+        progressFor(current, { completed: 3, total: 10, unit: 'cells' }),
+      )
+      latest().event(progressFor(current, { booleanOperation: fuse }))
+      expect(setProgress).toHaveBeenLastCalledWith({
+        operationId: current.operationId,
+        stage: 'building',
+        completed: 3,
+        total: 10,
+        unit: 'cells',
+        booleanOperation: fuse,
+      })
+      runtime.dispose()
+    })
+
+    it('replaces kept counts with a newer counter event', () => {
+      const { runtime, setProgress, current } = started()
+      latest().event(
+        progressFor(current, { completed: 3, total: 10, unit: 'cells' }),
+      )
+      latest().event(progressFor(current, { booleanOperation: fuse }))
+      latest().event(
+        progressFor(current, { completed: 4, total: 10, unit: 'cells' }),
+      )
+      expect(setProgress).toHaveBeenLastCalledWith({
+        operationId: current.operationId,
+        stage: 'building',
+        completed: 4,
+        total: 10,
+        unit: 'cells',
+      })
+      runtime.dispose()
+    })
+
+    it('drops the counts when the stage changes', () => {
+      const { runtime, setProgress, current } = started()
+      latest().event(
+        progressFor(current, { completed: 3, total: 10, unit: 'cells' }),
+      )
+      latest().event(progressFor(current, { stage: 'meshing' }))
+      expect(setProgress).toHaveBeenLastCalledWith({
+        operationId: current.operationId,
+        stage: 'meshing',
+      })
+      runtime.dispose()
+    })
+
+    it('does not carry counts into a new operation', () => {
+      const { runtime, setProgress, current } = started()
+      latest().event(
+        progressFor(current, { completed: 3, total: 10, unit: 'cells' }),
+      )
+      latest().event({
+        version: 2,
+        requestId: 'superseded',
+        kind: 'operation.superseded',
+        operationId: current.operationId,
+        terminalForRequestId: 'model-request',
+        generation: current.generation,
+        reason: 'STALE_GENERATION',
+      })
+      expect(setProgress).toHaveBeenLastCalledWith(null)
+      runtime.handleInputChange('width', '21')
+      settle()
+      latest().ready()
+      const next = result(latest())
+      latest().event(progressFor(next, { booleanOperation: fuse }))
+      expect(setProgress).toHaveBeenLastCalledWith({
+        operationId: next.operationId,
+        stage: 'building',
+        booleanOperation: fuse,
+      })
+      runtime.dispose()
+    })
+
+    it('ignores progress from an older generation without disturbing the counts', () => {
+      const { runtime, setProgress, current } = started()
+      latest().event(
+        progressFor(current, { completed: 3, total: 10, unit: 'cells' }),
+      )
+      const calls = setProgress.mock.calls.length
+      latest().event(
+        progressFor(
+          { ...current, generation: current.generation - 1 },
+          { booleanOperation: fuse },
+        ),
+      )
+      expect(setProgress).toHaveBeenCalledTimes(calls)
+      runtime.dispose()
+    })
   })
 
   it.each(['commit', 'export'] as const)(

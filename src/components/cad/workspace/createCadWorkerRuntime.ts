@@ -22,7 +22,10 @@ import {
   errorForWorker,
   supportsCadBrowser,
 } from './validation'
-import type { CadProgress } from '../../../features/cad/progress'
+import {
+  mergeCadProgress,
+  type CadProgress,
+} from '../../../features/cad/progress'
 import type { ExportFormat } from '../../../features/cad/download'
 import type { ExportRequest, OperationRecord, RawParameters } from './types'
 import { createExportHandlers } from './runtime/export'
@@ -133,7 +136,9 @@ export function createCadWorkerRuntime(
     options.setFieldErrors(next)
   }
 
+  let currentProgress: CadProgress | null = null
   const setProgress = (next: CadProgress | null) => {
+    currentProgress = next
     options.setProgress(next)
   }
 
@@ -162,7 +167,7 @@ export function createCadWorkerRuntime(
 
   const setOperationProgress = (operationId: string, progress: CadProgress) => {
     activeProgressOperationIdRef.current = operationId
-    setProgress({ ...progress, operationId })
+    setProgress(mergeCadProgress(currentProgress, { ...progress, operationId }))
   }
 
   const clearOperationProgress = (operationId: string) => {

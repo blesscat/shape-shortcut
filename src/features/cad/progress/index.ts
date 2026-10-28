@@ -16,6 +16,29 @@ export type CadProgress = {
   booleanOperation?: BooleanOperationProgress
 }
 
+export function mergeCadProgress(
+  previous: CadProgress | null,
+  next: CadProgress,
+): CadProgress {
+  const hasCounts =
+    next.completed !== undefined ||
+    next.total !== undefined ||
+    next.unit !== undefined
+  if (
+    hasCounts ||
+    !previous ||
+    previous.operationId !== next.operationId ||
+    previous.stage !== next.stage
+  )
+    return next
+  return {
+    ...next,
+    completed: previous.completed,
+    total: previous.total,
+    unit: previous.unit,
+  }
+}
+
 export type CadProgressDetails = {
   stage: CadProgressStage
   labelKey: string
