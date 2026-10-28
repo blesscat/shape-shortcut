@@ -135,7 +135,15 @@ for (const model of modelDefinitions.map((definition) => definition.id)) {
     } finally {
       release()
     }
-    await waitForCadReady(page, 90_000)
+    if (model === 'card-box') {
+      // The assembly disables downloads, so readiness is the committed
+      // preview kind rather than the STEP button.
+      await expect(viewport).toHaveAttribute('data-preview-kind', 'committed', {
+        timeout: 90_000,
+      })
+    } else {
+      await waitForCadReady(page, 90_000)
+    }
     await expect(viewport).toHaveAttribute('data-preview-kind', 'committed')
     await expect(page.getByTestId('cad-simplified-status')).toHaveCount(0)
     await expect(canvas).toHaveAttribute('data-original-canvas', 'true')

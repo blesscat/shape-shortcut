@@ -414,6 +414,36 @@ export type {
   HexagonalColumnValidation,
 } from './hexagonal-column'
 export {
+  CARD_BOX_CONFIGURATION,
+  CARD_BOX_PARTS,
+  CARD_BOX_STYLES,
+  CARD_BOX_TAB_POSITIONS,
+  boundsForCardBox,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
+  cardBoxFileName,
+  cardBoxHasAccentArt,
+  cardBoxInteriorWidth,
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
+  cardBoxStlFileName,
+  cardBoxThreeMfFileName,
+  cardBoxToken,
+  isCardBoxParameters,
+  validateCardBoxParameters,
+} from './card-box'
+export type {
+  CardBoxParameterKey,
+  CardBoxParameters,
+  CardBoxPart,
+  CardBoxStyle,
+  CardBoxSvgOutlineData,
+  CardBoxSvgOutlineGroup,
+  CardBoxSvgPoint,
+  CardBoxTabPosition,
+  CardBoxValidation,
+} from './card-box'
+export {
   boundsForBox,
   boxFileName,
   boxStlFileName,

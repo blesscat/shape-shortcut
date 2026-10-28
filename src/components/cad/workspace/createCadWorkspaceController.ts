@@ -36,6 +36,8 @@ export type CadWorkspaceControllerSnapshot = {
   canExport: boolean
   supportsThreeMf: boolean
   canExportThreeMf: boolean
+  /** Present when downloads are disabled with a hint (definition-provided). */
+  downloadHintKey: string | null
 }
 
 export type CadWorkspaceController = {
@@ -73,8 +75,14 @@ function createSnapshot(
   fieldErrors: FieldErrors,
   progress: CadProgress | null,
 ): CadWorkspaceControllerSnapshot {
+  const downloadHintKey =
+    getModelDefinition(state.modelId)?.exportBlockedHintKey?.(state.input) ??
+    null
   const canExport =
-    state.status === 'ready' && state.exportStatus === 'idle' && !state.stale
+    state.status === 'ready' &&
+    state.exportStatus === 'idle' &&
+    !state.stale &&
+    downloadHintKey === null
   const supportsThreeMf =
     getModelDefinition(state.modelId)?.threeMfFileName?.(state.input) != null
 
@@ -87,6 +95,7 @@ function createSnapshot(
     canExport,
     supportsThreeMf,
     canExportThreeMf: canExport && supportsThreeMf,
+    downloadHintKey,
   }
 }
 

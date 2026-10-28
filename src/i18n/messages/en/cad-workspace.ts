@@ -85,6 +85,15 @@ export const messages = {
   'cad.labelCard.threeMfNote': 'The two-color effect is available only in 3MF.',
   'cad.action.retry': 'Retry',
   'cad.presets.opengrid-stackable-box.3x3-desk-style': '3×3 test style',
+  'cad.presets.card-box.tarot-70x120': 'Tarot 70×120',
+  'cad.presets.card-box.standard-tcg-63x88': 'Standard TCG 63×88',
+  'cad.presets.card-box.standard-tcg-sleeved-66x91':
+    'Standard TCG sleeved 66×91',
+  'cad.presets.card-box.japanese-small-59x86': 'Japanese small 59×86',
+  'cad.presets.card-box.japanese-small-sleeved-62x89':
+    'Japanese small sleeved 62×89',
+  'cad.presets.card-box.mini-american-41x63': 'Mini American 41×63',
+  'cad.presets.card-box.mini-euro-44x68': 'Mini Euro 44×68',
   'cad.drawer.title': 'Parameters',
   'cad.drawer.open': 'Open parameter drawer',
   'cad.drawer.close': 'Close parameter drawer',
@@ -222,6 +231,10 @@ export const messages = {
   'diagnostic.meshInvalid':
     'The preview model data is invalid. The Worker will restart.',
   'diagnostic.staleGeneration': 'This build was superseded by newer input.',
+  'diagnostic.cardBoxCoverArtOutsideSafeArea':
+    'Cover art does not fit the printable safe area. Reduce the title, subtitle or SVG width.',
+  'diagnostic.cardBoxSvgUnsupported':
+    'The imported cover SVG could not be used. Re-import a supported SVG or turn it off.',
   'validation.invalid':
     '{field} is invalid. Check the parameter and try again.',
   'validation.wallCoverTextRequired': '{field} requires at least 1 character.',
@@ -255,6 +268,16 @@ export const messages = {
   'validation.labelCardIconUnknown':
     '{field} is not part of the built-in icon set.',
   'validation.labelCardTextTooLong': '{field} cannot exceed {max} characters.',
+  'validation.cardBoxPartInvalid':
+    '{field} must be a card-box part (assembly, box, lid, divider or cover).',
+  'validation.cardBoxTabPositionInvalid':
+    '{field} must be left, center or right.',
+  'validation.cardBoxStyleInvalid': '{field} must be flat or raised.',
+  'validation.cardBoxTextTooLong': '{field} cannot exceed {max} characters.',
+  'validation.cardBoxSvgFingerprintMissing':
+    'The cover is set to use an imported SVG but its data is missing. Re-import the SVG or turn it off.',
+  'validation.cardBoxDividerTextTooWide':
+    'The divider text does not fit the tab. Shorten the text.',
   'validation.parameter': 'Parameter',
   'validation.invalidNumber': '{field} must be a valid number.',
   'validation.requiredDimension': '{axis} dimension is required.',

@@ -1,0 +1,351 @@
+import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { cast, getOC, makeBox, measureVolume, type Shape3D } from 'replicad'
+import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
+import { buildCardBoxBox } from '../../src/cad-kernel/components/card-box/box'
+import { buildCardBoxLid } from '../../src/cad-kernel/components/card-box/lid'
+import { countSolids } from '../../src/cad-kernel/shape-query/solids'
+import {
+  CARD_BOX_CONFIGURATION,
+  cardBoxOuterDepth,
+  cardBoxOuterWidth,
+} from '../../src/cad-contract/units'
+
+;(globalThis as typeof globalThis & { __dirname?: string }).__dirname = dirname(
+  fileURLToPath(import.meta.url),
+)
+const require = createRequire(import.meta.url)
+;(globalThis as typeof globalThis & { require?: typeof require }).require =
+  require
+const WASM_PATH =
+  require.resolve('replicad-opencascadejs/src/replicad_single.wasm')
+
+beforeAll(async () => {
+  await initialiseCadKernel(WASM_PATH)
+})
+
+const FIXTURES_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../fixtures/card-box',
+)
+
+function loadBrepFixture(fileName: string): Shape3D {
+  const text = readFileSync(resolve(FIXTURES_DIR, fileName), 'utf8')
+  const oc = getOC()
+  return cast(oc.BRepToolsWrapper.Read(text)) as Shape3D
+}
+
+function boundsOf(shape: Shape3D): { min: number[]; max: number[] } {
+  const bounds = shape.boundingBox
+  try {
+    const [min, max] = bounds.bounds as [number[], number[]]
+    return { min: [...min], max: [...max] }
+  } finally {
+    bounds.delete()
+  }
+}
+
+function expectClose(
+  actual: number,
+  expected: number,
+  tolerance: number,
+  label: string,
+): void {
+  expect(
+    Math.abs(actual - expected),
+    `${label}: ${actual.toFixed(4)} vs ${expected.toFixed(4)} (±${tolerance})`,
+  ).toBeLessThanOrEqual(tolerance)
+}
+
+/** Largest accepted volume (mm³) present in one shape and absent from the other. */
+const SYMMETRIC_DIFFERENCE_LIMIT = 1
+
+function expectSameGeometry(
+  built: Shape3D,
+  reference: Shape3D,
+  limit: number,
+): void {
+  const extra = built.cut(reference)
+  const missing = reference.cut(built)
+  try {
+    expect(
+      measureVolume(extra),
+      'built geometry absent from the reference',
+    ).toBeLessThanOrEqual(limit)
+    expect(
+      measureVolume(missing),
+      'reference geometry absent from the build',
+    ).toBeLessThanOrEqual(limit)
+  } finally {
+    extra.delete()
+    missing.delete()
+  }
+}
+
+describe('card-box default box matches the FreeCAD reference', () => {
+  it('matches bbox, volume, and solid count of box-floor-fixed.brep', () => {
+    const built = buildCardBoxBox({
+      ...defaultParameters(),
+      part: 'box',
+    })
+    const reference = loadBrepFixture('box-floor-fixed.brep')
+    try {
+      const builtBounds = boundsOf(built)
+      const referenceBounds = boundsOf(reference)
+      for (const axis of [0, 1, 2]) {
+        expectClose(
+          builtBounds.min[axis]!,
+          referenceBounds.min[axis]!,
+          0.05,
+          `bbox min[${axis}]`,
+        )
+        expectClose(
+          builtBounds.max[axis]!,
+          referenceBounds.max[axis]!,
+          0.05,
+          `bbox max[${axis}]`,
+        )
+      }
+      expectSameGeometry(built, reference, SYMMETRIC_DIFFERENCE_LIMIT)
+      expect(countSolids(built)).toBe(1)
+    } finally {
+      built.delete()
+      reference.delete()
+    }
+  })
+
+  it('cuts divider grooves along the whole box on both side walls', () => {
+    const built = buildCardBoxBox({
+      ...defaultParameters(),
+      part: 'box',
+    })
+    // Slot band of one side wall (x 35.25..35.5), above the floor top.
+    const materialAt = (side: 1 | -1, y: number): number => {
+      const probe = makeBox(
+        [side * 35.3 - 0.05, y - 0.1, 3],
+        [side * 35.3 + 0.05, y + 0.1, 100],
+      ) as Shape3D
+      const intersection = built.intersect(probe)
+      try {
+        return measureVolume(intersection)
+      } finally {
+        intersection.delete()
+        probe.delete()
+      }
+    }
+    try {
+      for (const side of [1, -1] as const) {
+        for (const y of [-33, -3, 0, 3, 33]) {
+          expect(materialAt(side, y)).toBeLessThan(0.001)
+        }
+        // Between and beyond the grooves the wall stays solid.
+        for (const y of [-34.5, -1.5, 1.5, 34.5]) {
+          expect(materialAt(side, y)).toBeGreaterThan(0.1)
+        }
+      }
+    } finally {
+      built.delete()
+    }
+  })
+
+  it.each([
+    { label: 'minimum', cardWidth: 40, cardHeight: 60, storageDepth: 20 },
+    { label: 'maximum', cardWidth: 100, cardHeight: 150, storageDepth: 150 },
+  ])(
+    'rounds the four outer vertical corners at the $label size',
+    ({ cardWidth, cardHeight, storageDepth }) => {
+      const built = buildCardBoxBox({
+        ...defaultParameters(),
+        cardWidth,
+        cardHeight,
+        storageDepth,
+        part: 'box',
+      })
+      const halfX = cardBoxOuterWidth(cardWidth) / 2
+      const halfY = cardBoxOuterDepth(storageDepth) / 2
+      // The back corners sit at the sketch depth; the front corners sit
+      // lipExtension (1.85 mm) ahead of it on the front lip.
+      const cornerYs = [halfY, -(halfY + 1.85)]
+      try {
+        for (const cornerX of [halfX, -halfX]) {
+          for (const cornerY of cornerYs) {
+            const inwardX = -Math.sign(cornerX) * 0.25
+            const inwardY = -Math.sign(cornerY) * 0.25
+            // A 0.25 mm square at the corner, in a z band well inside the
+            // edge: a 1 mm fillet clears it, a sharp corner fills it.
+            const probe = makeBox(
+              [cornerX, cornerY, 10],
+              [cornerX + inwardX, cornerY + inwardY, 20],
+            ) as Shape3D
+            const inter = built.intersect(probe)
+            try {
+              expect(
+                measureVolume(inter),
+                `corner (${cornerX}, ${cornerY})`,
+              ).toBeLessThan(0.001)
+            } finally {
+              inter.delete()
+              probe.delete()
+            }
+          }
+        }
+      } finally {
+        built.delete()
+      }
+    },
+  )
+
+  it('keeps the floor intact under a front-half slot', () => {
+    const built = buildCardBoxBox({ ...defaultParameters(), part: 'box' })
+    const probe = makeBox([35.3, -33.1, 0], [35.45, -32.9, 2]) as Shape3D
+    const inter = built.intersect(probe)
+    try {
+      expect(measureVolume(inter)).toBeGreaterThan(0.03)
+    } finally {
+      inter.delete()
+      probe.delete()
+      built.delete()
+    }
+  })
+
+  it('keeps the side walls solid beside the cover channel', () => {
+    const built = buildCardBoxBox({ ...defaultParameters(), part: 'box' })
+    const probe = makeBox([36.9, -38.6, 49.9], [37.1, -38.4, 50.1]) as Shape3D
+    const inter = built.intersect(probe)
+    try {
+      expect(measureVolume(inter)).toBeGreaterThan(0.001)
+    } finally {
+      inter.delete()
+      probe.delete()
+      built.delete()
+    }
+  })
+
+  it('keeps divider slots above the floor top surface', () => {
+    const built = buildCardBoxBox({
+      ...defaultParameters(),
+      part: 'box',
+    })
+    try {
+      // Probe column at a slot y position (y=33, center of a groove) just
+      // inside the side wall: below the floor top only the 2 mm floor may
+      // be present; above it nothing.
+      const probeBelow = makeBox([35.3, 32.9, 0], [35.45, 33.1, 2]) as Shape3D
+      const probeAbove = makeBox([35.3, 32.9, 2], [35.45, 33.1, 130]) as Shape3D
+      const belowInter = built.intersect(probeBelow)
+      const aboveInter = built.intersect(probeAbove)
+      try {
+        const belowVolume = measureVolume(belowInter)
+        const aboveVolume = measureVolume(aboveInter)
+        // Full floor coverage in the probe column is 0.15 × 0.2 × 2 = 0.06.
+        expect(belowVolume).toBeGreaterThan(0.03)
+        expect(aboveVolume).toBeLessThan(0.01)
+      } finally {
+        belowInter.delete()
+        aboveInter.delete()
+        probeBelow.delete()
+        probeAbove.delete()
+      }
+    } finally {
+      built.delete()
+    }
+  })
+})
+
+/**
+ * The lid deliberately differs from lid.brep by one trim: the front flange
+ * is thinned from 1.6 to 1 mm over the cover width (x ±W/2, y back face
+ * -38.95 → -38.35, z flange bottom → deep part at H+2.2) so the 0.6 mm
+ * cover fits under it. Box in the assembled frame at default parameters.
+ */
+const FLANGE_TRIM_MIN: [number, number, number] = [-35.25, -38.95, 112.2]
+const FLANGE_TRIM_MAX: [number, number, number] = [35.25, -38.35, 122.2]
+const EXPECTED_TRIM_VOLUME = 0.6 * ((70.5 - 10) * 5.2 + 2 * 5 * 10)
+
+describe('card-box default lid matches the FreeCAD reference less the flange trim', () => {
+  it('matches the reference minus the documented trim box and keeps one solid', () => {
+    const built = buildCardBoxLid({
+      ...defaultParameters(),
+      part: 'lid',
+    })
+    const reference = loadBrepFixture('lid.brep')
+    const trimBox = makeBox(FLANGE_TRIM_MIN, FLANGE_TRIM_MAX) as Shape3D
+    const trimmedAway = reference.intersect(trimBox)
+    const expected = reference.cut(trimBox)
+    try {
+      expectClose(
+        measureVolume(trimmedAway),
+        EXPECTED_TRIM_VOLUME,
+        0.5,
+        'trimmed volume',
+      )
+      const builtBounds = boundsOf(built)
+      const expectedBounds = boundsOf(expected)
+      for (const axis of [0, 1, 2]) {
+        expectClose(
+          builtBounds.min[axis]!,
+          expectedBounds.min[axis]!,
+          0.05,
+          `bbox min[${axis}]`,
+        )
+        expectClose(
+          builtBounds.max[axis]!,
+          expectedBounds.max[axis]!,
+          0.05,
+          `bbox max[${axis}]`,
+        )
+      }
+      expectSameGeometry(built, expected, SYMMETRIC_DIFFERENCE_LIMIT)
+      expect(countSolids(built)).toBe(1)
+    } finally {
+      built.delete()
+      reference.delete()
+      trimBox.delete()
+      trimmedAway.delete()
+      expected.delete()
+    }
+  })
+
+  it('leaves the cover channel open under the thinned flange', () => {
+    const built = buildCardBoxLid({ ...defaultParameters(), part: 'lid' })
+    const materialIn = (x: number, z: number, y0: number, y1: number) => {
+      const probe = makeBox(
+        [x - 0.1, y0 + 0.01, z - 0.1],
+        [x + 0.1, y1 - 0.01, z + 0.1],
+      ) as Shape3D
+      const intersection = built.intersect(probe)
+      try {
+        return measureVolume(intersection)
+      } finally {
+        intersection.delete()
+        probe.delete()
+      }
+    }
+    try {
+      const coverHalfWidth = 70.5 / 2
+      for (const x of [0, coverHalfWidth - 2]) {
+        for (const z of [118, 121]) {
+          expect(
+            materialIn(x, z, -38.95, -38.35),
+            `channel x=${x} z=${z}`,
+          ).toBeLessThan(0.0001)
+          expect(
+            materialIn(x, z, -39.95, -38.95),
+            `flange x=${x} z=${z}`,
+          ).toBeGreaterThan(0.001)
+        }
+      }
+    } finally {
+      built.delete()
+    }
+  })
+})
+
+function defaultParameters() {
+  return {
+    ...CARD_BOX_CONFIGURATION.defaultParameters,
+  }
+}

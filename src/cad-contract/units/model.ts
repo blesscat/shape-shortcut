@@ -1,5 +1,13 @@
 import type { FieldDiagnostic } from '../diagnostics'
 import {
+  boundsForCardBox,
+  cardBoxFileName,
+  cardBoxStlFileName,
+  validateCardBoxParameters,
+  type CardBoxParameterKey,
+  type CardBoxParameters,
+} from './card-box'
+import {
   boundsForOpenGridLabelCard,
   openGridLabelCardFileName,
   openGridLabelCardStlFileName,
@@ -184,6 +192,7 @@ export type ModelParameterKey =
   | OpenGridOpenConnectOrganizerParameterKey
   | OpenGridWallCoverParameterKey
   | OpenGridLabelCardParameterKey
+  | CardBoxParameterKey
 export type ScalarModelParameterKey =
   | DimensionKey
   | GridParameterKey
@@ -195,6 +204,7 @@ export type ModelId =
   | 'modular-grid-base'
   | 'hsw-cell'
   | 'hexagonal-column'
+  | 'card-box'
   | 'opengrid'
   | 'opengrid-stackable-box'
   | 'opengrid-organizer-box'
@@ -227,6 +237,7 @@ export type ModelParameters =
       modelId: 'hexagonal-column'
       parameters: HexagonalColumnParameters
     }
+  | { modelId: 'card-box'; parameters: CardBoxParameters }
   | { modelId: 'opengrid'; parameters: OpenGridParameters }
   | {
       modelId: 'opengrid-stackable-box'
@@ -522,6 +533,21 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'card-box') {
+    const validation = validateCardBoxParameters(value)
+    if (!validation.valid) {
+      return {
+        valid: false,
+        issues: validation.issues.map((issue) => ({
+          field: issue.field,
+          messageId: issue.messageId,
+          ...(issue.params ? { params: issue.params } : {}),
+        })),
+      }
+    }
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   if (modelId === 'opengrid-label-card') {
     const validation = validateOpenGridLabelCardParameters(value)
     if (!validation.valid) {
@@ -655,6 +681,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForHswCell(model.parameters)
     case 'hexagonal-column':
       return boundsForHexagonalColumn(model.parameters)
+    case 'card-box':
+      return boundsForCardBox(model.parameters)
     case 'opengrid':
       return boundsForOpenGrid(model.parameters)
     case 'opengrid-stackable-box':
@@ -700,6 +728,8 @@ export function modelFileName(model: ModelParameters): string {
       return hswCellFileName(model.parameters)
     case 'hexagonal-column':
       return hexagonalColumnFileName(model.parameters)
+    case 'card-box':
+      return cardBoxFileName(model.parameters)
     case 'opengrid':
       return openGridFileName(model.parameters)
     case 'opengrid-stackable-box':
@@ -745,6 +775,8 @@ export function modelStlFileName(model: ModelParameters): string {
       return hswCellStlFileName(model.parameters)
     case 'hexagonal-column':
       return hexagonalColumnStlFileName(model.parameters)
+    case 'card-box':
+      return cardBoxStlFileName(model.parameters)
     case 'opengrid':
       return openGridStlFileName(model.parameters)
     case 'opengrid-stackable-box':

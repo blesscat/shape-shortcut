@@ -4,6 +4,7 @@ import type {
   ModularGridBaseParameters,
   HswCellParameters,
   HexagonalColumnParameters,
+  ModelParameterValues,
 } from '../../../cad-contract/units'
 import { PROTOTYPE_CONFIGURATION } from '../../../cad-contract/units/prototype-configuration'
 import {
@@ -11,6 +12,14 @@ import {
   HSW_CELL_CONFIGURATION,
 } from '../../../cad-contract/units/hsw-cell'
 import { HEXAGONAL_COLUMN_CONFIGURATION } from '../../../cad-contract/units/hexagonal-column'
+import {
+  cardBoxOuterDepth,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
+  cardBoxOuterWidth,
+  CARD_BOX_CONFIGURATION,
+  isCardBoxParameters,
+} from '../../../cad-contract/units/card-box'
 import {
   boundsForOpenGrid,
   cellCenterForOpenGrid,
@@ -154,6 +163,105 @@ export function hexagonalPreview(
     solid.origin = [0, offset, 0]
     return solid
   })
+}
+
+export function cardBoxPreview(
+  parameters: ModelParameterValues,
+): PreviewDescription {
+  if (!isCardBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
+  }
+  const c = CARD_BOX_CONFIGURATION
+  const p = parameters
+  // Recognizable proportions only: a hollow rectangular tube with a floor, a
+  // lid plate riding above the assembled box, and the interior divider.
+  const outerWidth = cardBoxOuterWidth(p.cardWidth)
+  const outerDepth = cardBoxOuterDepth(p.storageDepth)
+  const height = p.cardHeight + 2
+  const assembled = p.part === 'assembly'
+  const solids: PreviewSolid[] = []
+  if (p.part === 'box' || assembled) {
+    // Four wall slabs plus the floor slab.
+    const wallY = (outerDepth - c.wallThickness) / 2
+    const wallX = (outerWidth - c.wallThickness) / 2
+    const innerDepth = outerDepth - 2 * c.wallThickness
+    solids.push(
+      slab(outerWidth, c.wallThickness, height, 0, -wallY),
+      slab(outerWidth, c.wallThickness, height, 0, wallY),
+      slab(c.wallThickness, innerDepth, height, -wallX, 0),
+      slab(c.wallThickness, innerDepth, height, wallX, 0),
+      slab(outerWidth, outerDepth, c.floorThickness),
+    )
+  }
+  if (p.part === 'lid' || assembled) {
+    solids.push(
+      slab(
+        outerWidth,
+        outerDepth + 1.8,
+        c.lidRoofThickness,
+        0,
+        0,
+        assembled ? p.cardHeight + 7.2 : 0,
+      ),
+    )
+  }
+  if (p.part === 'divider' || assembled) {
+    // Assembly: standing in the center slot. Single part: flat on the bed
+    // (print orientation), matching the contract bounds.
+    const width = cardBoxDividerWidth(p.cardWidth)
+    const tabX = cardBoxDividerTabCenterX(p.dividerTabPosition, width)
+    if (assembled) {
+      solids.push(
+        slab(width, c.dividerPlateThickness, p.cardHeight, 0, 0, 2),
+        slab(
+          c.dividerTabBaseWidth,
+          c.dividerPlateThickness,
+          c.dividerTabHeight,
+          tabX,
+          0,
+          2 + p.cardHeight,
+        ),
+      )
+    } else {
+      // Centered on the full divider height (body + tab) like the contract
+      // bounds: body y-center sits half a tab below the origin.
+      solids.push(
+        slab(
+          width,
+          p.cardHeight,
+          c.dividerPlateThickness,
+          0,
+          -c.dividerTabHeight / 2,
+        ),
+        slab(
+          c.dividerTabBaseWidth,
+          c.dividerTabHeight,
+          c.dividerPlateThickness,
+          tabX,
+          p.cardHeight / 2,
+        ),
+      )
+    }
+  }
+  if (p.part === 'cover' || assembled) {
+    // Assembly: standing in the front channel. Single part: flat on the
+    // bed (print orientation), matching the contract bounds.
+    if (assembled) {
+      solids.push(
+        slab(
+          outerWidth,
+          c.coverPlateThickness,
+          p.cardHeight,
+          0,
+          -(outerDepth + c.coverPlateThickness) / 2,
+          2,
+        ),
+      )
+    } else {
+      solids.push(slab(outerWidth, p.cardHeight, c.coverPlateThickness))
+    }
+  }
+  return solids
 }
 
 export function boardPreview(p: OpenGridParameters): PreviewDescription {

@@ -10,6 +10,8 @@ import {
   openGridDividerThreeMfFileName,
   openGridOpenConnectOrganizerThreeMfFileName,
   openGridLabelCardThreeMfFileName,
+  cardBoxThreeMfFileName,
+  isCardBoxParameters,
   isOpenGridWallCoverParameters,
   isOpenGridStackableCylinderParameters,
   isOpenGridStackableBoxParameters,
@@ -199,6 +201,14 @@ export async function exportThreeMfCommand(
     ) {
       expectedFileName = openGridLabelCardThreeMfFileName(
         validation.value.parameters,
+      )
+      expectedAccentName = 'accent'
+    } else if (
+      revision.modelId === 'card-box' &&
+      isCardBoxParameters(validation.value.parameters)
+    ) {
+      expectedFileName = containerThreeMfFileNameOrThrow(
+        cardBoxThreeMfFileName(validation.value.parameters),
       )
       expectedAccentName = 'accent'
     } else if (

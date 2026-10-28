@@ -32,6 +32,18 @@ describe('CAD Worker error mapping', () => {
       'model.generate',
       'MODEL_ASSET_INVALID',
     ],
+    ['MODEL_PARAMETERS_MISMATCH:card-box', 'model.generate', 'INVALID_INPUT'],
+    [
+      'CARD_BOX_DIVIDER_TEXT_TOO_WIDE:34>30',
+      'model.generate',
+      'CARD_BOX_GEOMETRY_INVALID',
+    ],
+    [
+      'CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA:title',
+      'model.generate',
+      'CARD_BOX_GEOMETRY_INVALID',
+    ],
+    ['CARD_BOX_SVG_TOO_COMPLEX', 'model.generate', 'CARD_BOX_GEOMETRY_INVALID'],
     [
       'OPENGRID_WALL_COVER_ASSET_LOAD_FAILED',
       'model.generate',
@@ -139,6 +151,18 @@ describe('CAD Worker error mapping', () => {
         'OPENGRID_LABEL_CARD_QUALITY_INVALID:accent-recessed',
       ),
     ).toBe('meshing')
+    expect(
+      cadErrorStageFor('model.generate', 'CARD_BOX_DIVIDER_TEXT_TOO_WIDE'),
+    ).toBe('building')
+    expect(
+      cadErrorStageFor(
+        'model.generate',
+        'CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+      ),
+    ).toBe('building')
+    expect(cadErrorStageFor('model.generate', 'CARD_BOX_SVG_TOO_COMPLEX')).toBe(
+      'building',
+    )
     expect(
       cadErrorStageFor(
         'model.generate',

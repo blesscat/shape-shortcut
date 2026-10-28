@@ -28,6 +28,7 @@
       Record<ModelParameterKey | 'parameters', ValidationIssue>
     >
     canExport: boolean
+    downloadHintKey: string | null
     supportsThreeMf: boolean
     canExportThreeMf: boolean
     onInputChange: (key: ModelParameterKey, value: string) => void
@@ -52,6 +53,7 @@
     rawParameters,
     fieldErrors,
     canExport,
+    downloadHintKey,
     supportsThreeMf,
     canExportThreeMf,
     onInputChange,
@@ -95,6 +97,7 @@
     {state}
     {modelId}
     {canExport}
+    {downloadHintKey}
     {supportsThreeMf}
     {canExportThreeMf}
     {onExport}

@@ -377,4 +377,52 @@ export const messages = {
   'panel.snap.footprintFull': 'Full',
   'panel.snap.footprintHalf': 'Half',
   'panel.snap.footprintQuarter': 'Quarter',
+
+  'panel.cardBox.description':
+    'Parametric card storage box with sliding lid, divider and label cover. Pick a part to build and download it.',
+  'panel.cardBox.part': 'Part',
+  'panel.cardBox.part.assembly': 'Assembly',
+  'panel.cardBox.part.box': 'Box',
+  'panel.cardBox.part.lid': 'Lid',
+  'panel.cardBox.part.divider': 'Divider',
+  'panel.cardBox.part.cover': 'Cover',
+  'panel.cardBox.pickPartToDownload':
+    'Assembly preview only — pick a part to download.',
+  'panel.cardBox.dividerSection': 'Divider',
+  'panel.cardBox.tabPosition': 'Tab position',
+  'panel.cardBox.tab.left': 'Left',
+  'panel.cardBox.tab.center': 'Center',
+  'panel.cardBox.tab.right': 'Right',
+  'panel.cardBox.dividerText': 'Divider text (optional)',
+  'panel.cardBox.style.raised': 'Raised',
+  'panel.cardBox.style.flat': 'Flat',
+  'panel.cardBox.dividerStyle': 'Divider style',
+  'panel.cardBox.coverSection': 'Cover',
+  'panel.cardBox.coverStyle': 'Cover style',
+  'panel.cardBox.coverTitle': 'Title',
+  'panel.cardBox.coverSubtitle': 'Subtitle (optional)',
+  'panel.cardBox.coverTitleTextHeight': 'Title text height',
+  'panel.cardBox.coverSubtitleTextHeight': 'Subtitle text height',
+  'panel.cardBox.coverSvgWidth': 'SVG width',
+  'panel.cardBox.coverVerticalPosition': 'Layout position',
+  'panel.cardBox.svgImport': 'Import cover SVG',
+  'panel.cardBox.svgBeta': 'Beta',
+  'panel.cardBox.svgClear': 'Remove SVG',
+  'panel.cardBox.svgLoaded':
+    'SVG outlines stored; they ride along with the build request.',
+  'panel.cardBox.svgSessionOnly':
+    'SVG is too large to persist — it is kept for this session only.',
+  'panel.cardBox.svgMissingFallback':
+    'Stored SVG data is missing or outdated — the cover falls back to the text-only layout.',
+  'panel.cardBox.svgError.strokeOnly':
+    'This SVG only contains stroke outlines. Fill the shapes and export it again.',
+  'panel.cardBox.svgError.textUnsupported':
+    'This SVG contains text elements. Convert the text to filled paths.',
+  'panel.cardBox.svgError.imageUnsupported':
+    'This SVG contains embedded images, which are not supported.',
+  'panel.cardBox.svgError.unsupportedElement':
+    'This SVG contains unsupported elements. Only filled paths and basic shapes are supported.',
+  'panel.cardBox.svgError.tooComplex':
+    'This SVG has too many points. Simplify it and try again.',
+  'panel.cardBox.svgError.parseFailed': 'This file could not be read as SVG.',
 }

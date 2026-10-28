@@ -9,6 +9,7 @@ import {
   type ModelParameterValues,
   type ModelParameters,
   type BoxBounds,
+  type CardBoxSvgOutlineData,
 } from '../units'
 
 export const PROTOCOL_VERSION = 2 as const
@@ -60,6 +61,12 @@ export type ModelGenerateCommand = Envelope<'model.generate'> &
     operationId: string
     generation: number
     previewConfig: PreviewConfig
+    /**
+     * card-box only: cleaned cover-SVG outlines from the dedicated storage
+     * key. Present only when the stored fingerprint matches the current
+     * `coverSvgFingerprint` parameter.
+     */
+    coverSvg?: CardBoxSvgOutlineData
   }
 
 export type ModelInvalidateCommand = Envelope<'model.invalidate'> & {
@@ -579,6 +586,7 @@ const CAD_ERROR_CODES: readonly CadErrorCode[] = [
   'OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID',
   'OPENGRID_LABEL_CARD_PARTS_INVALID',
   'LABEL_CARD_ACCENT_INVALID',
+  'CARD_BOX_GEOMETRY_INVALID',
   'OPENGRID_DIVIDER_QUALITY_INVALID',
   'MODEL_BUILD_FAILED',
   'MODEL_ASSET_INVALID',

@@ -8,6 +8,7 @@ import {
   type OpenGridSystemContext,
 } from '../system-entry-context'
 import { boxDefinition as rawBoxDefinition } from './components/box'
+import { cardBoxDefinition as rawCardBoxDefinition } from './components/card-box'
 import { hexagonalColumnDefinition as rawHexagonalColumnDefinition } from './components/hexagonal-column'
 import { hswCellDefinition as rawHswCellDefinition } from './components/hsw-cell'
 import { modularGridBaseDefinition as rawModularGridBaseDefinition } from './components/modular-grid-base'
@@ -68,6 +69,8 @@ export type { OpenGridSystemContext } from '../system-entry-context'
  */
 export const boxDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawBoxDefinition)
+export const cardBoxDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawCardBoxDefinition)
 export const hexagonalColumnDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawHexagonalColumnDefinition)
 export const hswCellDefinition: ModelDefinition<ModelPreviewImage> =
@@ -160,6 +163,7 @@ export const modelDefinitions: ReadonlyArray<
   opengridLabelCardDefinition,
   opengridLabelSlotTestDefinition,
   opengridLabelLedgeTestDefinition,
+  cardBoxDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

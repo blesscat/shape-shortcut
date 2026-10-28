@@ -97,4 +97,7 @@ export const messages = {
   'parameter.openConnect': '移除孔',
   'parameter.openConnectHorizontalAlignment': '水平對齊',
   'parameter.openConnectVerticalAlignment': '垂直對齊',
+  'parameters.cardBoxCardWidth': '卡片寬',
+  'parameters.cardBoxCardHeight': '卡片高',
+  'parameters.cardBoxStorageDepth': '收納深度',
 }

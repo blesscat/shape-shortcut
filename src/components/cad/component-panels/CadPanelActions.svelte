@@ -17,6 +17,7 @@
     canExport: boolean
     supportsThreeMf: boolean
     canExportThreeMf: boolean
+    downloadHintKey?: string | null
     onExport: (format: ExportFormat) => void
     onRetry: () => void
     onDownloadSettings?: () => void
@@ -31,6 +32,7 @@
     canExport,
     supportsThreeMf,
     canExportThreeMf,
+    downloadHintKey = null,
     onExport,
     onRetry,
     onDownloadSettings,
@@ -51,6 +53,15 @@
     </p>
   {/if}
   {#if !detailsOnly}
+    {#if downloadHintKey}
+      <p
+        class="m-0 text-sm text-muted-foreground"
+        role="status"
+        data-testid="cad-download-hint"
+      >
+        {t(downloadHintKey)}
+      </p>
+    {/if}
     <div class="flex flex-wrap gap-2">
       {#if import.meta.env.DEV}
         <button

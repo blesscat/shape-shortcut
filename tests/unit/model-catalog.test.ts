@@ -59,6 +59,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-card',
       'opengrid-label-slot-test',
       'hsw-cell',
+      'card-box',
     ])
 
     const previewImages = visibleDefinitions.map(
@@ -131,6 +132,7 @@ describe('CAD component catalog', () => {
     ])
     expect(groups[1]?.definitions.map((definition) => definition.id)).toEqual([
       'hsw-cell',
+      'card-box',
     ])
 
     const groupedIds = groups.flatMap((group) =>
@@ -205,6 +207,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-card',
       'opengrid-label-slot-test',
       'opengrid-label-ledge-test',
+      'card-box',
     ])
 
     const grid = getModelDefinition('modular-grid-base')

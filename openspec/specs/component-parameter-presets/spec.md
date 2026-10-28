@@ -8,7 +8,7 @@
 
 ### Requirement: Component 定義可宣告命名參數預設
 
-Component 定義 MUST 支援選擇性的命名參數預設清單。每個 preset MUST 具備穩定的 `id`、穩定的翻譯 key（不得直接渲染原始字串），以及只描述與 `defaultParameters` 差異的 `overrides` 部分參數集。未宣告 presets 的 component MUST 維持現有行為。本變更僅為 `opengrid-stackable-box` 提供 presets；其他 component 的 modelId、route 與定義內容 MUST 保持不變。
+Component 定義 MUST 支援選擇性的命名參數預設清單。每個 preset MUST 具備穩定的 `id`、穩定的翻譯 key（不得直接渲染原始字串），以及只描述與 `defaultParameters` 差異的 `overrides` 部分參數集。未宣告 presets 的 component MUST 維持現有行為。已宣告 presets 的 component 為 `opengrid-stackable-box`（一組測試 preset）與 `card-box`（七組卡片尺寸 preset，overrides 僅含 cardWidth 與 cardHeight）；其他 component 的 modelId、route 與定義內容 MUST 保持不變。
 
 #### Scenario: 未宣告 presets 的 component 不受影響
 
@@ -20,6 +20,13 @@ Component 定義 MUST 支援選擇性的命名參數預設清單。每個 preset
 - **WHEN** 系統載入 `opengrid-stackable-box` 的 component 定義
 - **THEN** 該定義 MUST 含恰一個測試 preset（`3x3-desk-style`）
 - **AND** 其 overrides MUST 只描述網格與 desk 預設體質的差異欄位（x、y、height、頂緣模式、底部模式）
+
+#### Scenario: card-box 宣告七組卡片尺寸 preset
+
+- **WHEN** 系統載入 `card-box` 的 component 定義
+- **THEN** 該定義 MUST 含恰七組卡片尺寸 preset（tarot-70x120、standard-tcg-63x88、standard-tcg-sleeved-66x91、japanese-small-59x86、japanese-small-sleeved-62x89、mini-american-41x63、mini-euro-44x68）
+- **AND** 每組 preset 的 overrides MUST 只含 cardWidth 與 cardHeight
+- **AND** 其他 component 的 modelId、route 與定義內容 MUST 保持不變
 
 ### Requirement: Preset 參數解析與驗證
 
