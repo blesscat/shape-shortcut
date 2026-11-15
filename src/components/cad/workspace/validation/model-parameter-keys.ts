@@ -1,6 +1,7 @@
 import { TISSUE_BOX_KEYS } from '../../../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { OPENCONNECT_ALIGNMENT_KEYS } from '../../../../cad-contract/units/openconnect-alignment'
 import {
+  GAME_BOX_PARAMETER_KEYS,
   HEXAGONAL_COLUMN_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_LABEL_PARAMETER_KEYS,
@@ -144,6 +145,7 @@ export function parameterKeysForModel(
     ]
   }
   if (modelId === 'box') return DIMENSION_KEYS
+  if (modelId === 'game-box') return GAME_BOX_PARAMETER_KEYS
   if (modelId === 'modular-grid-base') return GRID_PARAMETER_KEYS
   if (modelId === 'hsw-cell') return GRID_PARAMETER_KEYS
   if (modelId === 'hexagonal-column') return HEXAGONAL_COLUMN_PARAMETER_KEYS
@@ -222,6 +224,9 @@ export function usesHalfStepInput(
   modelId: ModelId,
   key: ModelParameterKey,
 ): boolean {
+  if (modelId === 'game-box') {
+    return key.endsWith('DiceSize')
+  }
   if (modelId === 'opengrid-stackable-box') {
     return key === 'x' || key === 'y'
   }

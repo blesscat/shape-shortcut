@@ -4,6 +4,8 @@ import {
 } from '../../../../cad-contract/units/opengrid-openconnect-tissue-box'
 import { normalizedOpenConnectAlignment } from '../../../../cad-contract/units/openconnect-alignment'
 import {
+  GAME_BOX_CONFIGURATION,
+  GAME_BOX_PARAMETER_KEYS,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
   OPENGRID_STACKABLE_BOX_OPENING_PARAMETER_KEYS,
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
@@ -31,6 +33,18 @@ export function rawFromParameters(
   parameters: ModelParameterValues,
 ): RawParameters {
   if (Object.keys(parameters).length === 0) return {}
+
+  if ('module1Type' in parameters) {
+    // The six module groups are written out from the contract key list so
+    // the raw snapshot always carries every group.
+    const values = {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      ...parameters,
+    }
+    return Object.fromEntries(
+      GAME_BOX_PARAMETER_KEYS.map((key) => [key, String(values[key])]),
+    ) as RawParameters
+  }
 
   if ('cardWidth' in parameters) {
     return Object.fromEntries(

@@ -28,20 +28,20 @@
 
 ## 5. 目錄、預覽與文案
 
-- [ ] 5.1 新增 `src/features/cad/model-catalog/components/game-box.ts`（family `other`、無 presets）並在目錄索引註冊；以 `tests/unit/model-catalog.test.ts` 檢查 modelId、buildKey、route slug 一致為 `game-box` 來驗證
-- [ ] 5.2 新增各零件的漸進式簡化預覽形狀；以單元測試檢查簡化預覽與完整幾何 bounds 各軸差異 ≤ 0.5 mm 來驗證
+- [x] 5.1 新增 `src/features/cad/model-catalog/components/game-box.ts`（family `other`、無 presets）並在目錄索引註冊；以 `tests/unit/model-catalog.test.ts` 檢查 modelId、buildKey、route slug 一致為 `game-box` 來驗證
+- [x] 5.2 新增各零件的漸進式簡化預覽形狀；以單元測試檢查簡化預覽與完整幾何 bounds 各軸差異 ≤ 0.5 mm 來驗證
 - [ ] 5.3 新增模型選擇器的淺色與深色預覽圖；以 `tests/e2e/model-card-previews.spec.ts` 涵蓋 `game-box` 並通過來驗證
-- [ ] 5.4 新增 `zh-Hant` 與 `en` 的模型名稱、參數標籤、面板文字、零件名稱、提示與錯誤訊息；以兩種語系開啟面板皆無未翻譯訊息鍵的 e2e 檢查來驗證
+- [x] 5.4 新增 `zh-Hant` 與 `en` 的模型名稱、參數標籤、面板文字、零件名稱、提示與錯誤訊息；以兩種語系開啟面板皆無未翻譯訊息鍵的 e2e 檢查來驗證
 
 ## 6. 面板
 
-- [ ] 6.1 新增 raw parser 與參數鍵清單（以迴圈產生 6 組），並在 `raw-from-parameters.ts` 與 `model-raw-parsers/index.ts` 註冊；以單元測試檢查 raw 值往返轉換正確來驗證
-- [ ] 6.2 新增 `GameBoxComponentPanel.svelte`：卡片尺寸欄位、模組清單（依類型顯示欄位）、新增選單、刪除、前移、後移；清單操作一次寫回完整且連續的快照；以 e2e 覆蓋新增、刪除中間模組、調整順序三個規格情境來驗證
-- [ ] 6.3 實作上限與下限行為：6 個時停用新增並顯示提示、1 個時停用刪除；以 e2e 檢查兩種狀態來驗證
-- [ ] 6.4 顯示唯讀的內部尺寸、外部尺寸與各模組佔用長度，數值取自合約層的計算；以 e2e 檢查變更厚度後數值更新來驗證
-- [ ] 6.5 實作零件選擇器：依模組清單產生選項、`divider` 標示片數、選擇失效時回到 `assembly`、assembly 停用下載並顯示提示；以 e2e 覆蓋規格中零件選擇器與下載限制的情境來驗證
-- [ ] 6.6 模組的驗證錯誤顯示在對應的模組項目內；以 e2e 檢查模組 2 的錯誤只出現在模組 2 來驗證
-- [ ] 6.7 在 `component-panels/index.svelte` 註冊面板並確認參數持久化；以 e2e 檢查重新開啟後還原三個模組、無效的已存資料回到預設來驗證
+- [x] 6.1 新增 raw parser 與參數鍵清單（以迴圈產生 6 組），並在 `raw-from-parameters.ts` 與 `model-raw-parsers/index.ts` 註冊；以單元測試檢查 raw 值往返轉換正確來驗證
+- [x] 6.2 新增 `GameBoxComponentPanel.svelte`：卡片尺寸欄位、模組清單（依類型顯示欄位）、新增選單、刪除、前移、後移；清單操作一次寫回完整且連續的快照；以 e2e 覆蓋新增、刪除中間模組、調整順序三個規格情境來驗證
+- [x] 6.3 實作上限與下限行為：6 個時停用新增並顯示提示、1 個時停用刪除；以 e2e 檢查兩種狀態來驗證
+- [x] 6.4 顯示唯讀的內部尺寸、外部尺寸與各模組佔用長度，數值取自合約層的計算；以 e2e 檢查變更厚度後數值更新來驗證
+- [x] 6.5 實作零件選擇器：依模組清單產生選項、`divider` 標示片數、選擇失效時回到 `assembly`、assembly 停用下載並顯示提示；以 e2e 覆蓋規格中零件選擇器與下載限制的情境來驗證
+- [x] 6.6 模組的驗證錯誤顯示在對應的模組項目內；以 e2e 檢查模組 2 的錯誤只出現在模組 2 來驗證
+- [x] 6.7 在 `component-panels/index.svelte` 註冊面板並確認參數持久化；以 e2e 檢查重新開啟後還原三個模組、無效的已存資料回到預設來驗證
 
 ## 7. 實物與整體驗證
 
