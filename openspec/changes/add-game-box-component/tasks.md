@@ -47,5 +47,5 @@
 
 - [ ] 7.1 匯出預設參數的骰子匣 STL 並試印，確認彈性元件的鬆緊與骰子進出骰槽的順暢度；依結果調整薄片尺寸與間隙常數，並在 design.md 的 Open Questions 記錄定案值
 - [ ] 7.2 量測實際骰子邊長並更新 `diceSize` 與 `diceCount` 的預設值；以單元測試的預設參數案例同步更新並通過來驗證
-- [ ] 7.3 執行 `pnpm test:branch` 與 `game-box`、`card-box` 相關的 e2e spec，全數通過
+- [x] 7.3 執行 `pnpm test:branch` 與 `game-box`、`card-box` 相關的 e2e spec，全數通過
 - [x] 7.4 執行 `openspec validate add-game-box-component --strict` 通過
