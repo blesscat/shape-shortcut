@@ -278,6 +278,22 @@ export const messages = {
     'The cover is set to use an imported SVG but its data is missing. Re-import the SVG or turn it off.',
   'validation.cardBoxDividerTextTooWide':
     'The divider text does not fit the tab. Shorten the text.',
+  'validation.gameBoxPartInvalid':
+    '{field} must be a game-box part (assembly, box, lid, divider or a dice holder).',
+  'validation.gameBoxPartUnavailable':
+    'Module {module} is not a dice module, so it has no dice holder part.',
+  'validation.gameBoxDividerUnavailable':
+    'A divider needs at least two modules. Remove a module or pick another part.',
+  'validation.gameBoxModuleTypeInvalid': '{field} must be none, cards or dice.',
+  'validation.gameBoxModuleRequired':
+    'Module 1 must be enabled; a game box needs at least one module.',
+  'validation.gameBoxModuleNotContiguous':
+    'Module {module} cannot follow a disabled module; the modules must be contiguous.',
+  'validation.gameBoxDiceCountNotInteger': '{field} must be a whole number.',
+  'validation.gameBoxDiceCapacityExceeded':
+    'This dice module can hold at most {max} dice.',
+  'validation.gameBoxStorageDepthOutOfRange':
+    'The modules add up to a storage depth of {depth} mm, outside the supported {min}–{max} mm range.',
   'validation.parameter': 'Parameter',
   'validation.invalidNumber': '{field} must be a valid number.',
   'validation.requiredDimension': '{axis} dimension is required.',

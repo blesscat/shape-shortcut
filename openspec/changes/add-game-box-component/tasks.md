@@ -6,11 +6,11 @@
 
 ## 2. 合約層
 
-- [ ] 2.1 新增 `src/cad-contract/units/game-box.ts`：參數型別、6 組模組鍵的產生、預設參數與範圍常數；以型別檢查通過來驗證
-- [ ] 2.2 實作純計算：`cards` 與 `dice` 模組的佔用槽數、收納深度、槽中心清單、骰子排列與容量；以新增的 `tests/unit/game-box-layout.test.ts` 覆蓋規格中的數值情境（30 → 33、30/16×9/20 → 75、16×9 → 3×3、16×3 → 3×1、40×60 骰子 30 的容量為 1）來驗證
-- [ ] 2.3 實作驗證器（型別與範圍、模組連續、至少一個模組、骰子容量、收納深度 20–150、`part` 有效性）與錯誤歸屬；以新增的 `tests/unit/game-box-contract.test.ts` 覆蓋每一種拒絕情境及其歸屬欄位來驗證
-- [ ] 2.4 實作 bounds 與 STEP/STL 檔名（assembly 不產生檔名、無 3MF）；以單元測試檢查 `game-box-box-70x120x75.step` 與 `game-box-dice-holder-70x120-d16x9.step` 來驗證
-- [ ] 2.5 將 `game-box` 納入 `units/index.ts`、`units/model.ts`、`messages`、`errors`；以 `tests/unit/model-catalog.test.ts` 與型別檢查通過來驗證
+- [x] 2.1 新增 `src/cad-contract/units/game-box.ts`：參數型別、6 組模組鍵的產生、預設參數與範圍常數；以型別檢查通過來驗證
+- [x] 2.2 實作純計算：`cards` 與 `dice` 模組的佔用槽數、收納深度、槽中心清單、骰子排列與容量；以新增的 `tests/unit/game-box-layout.test.ts` 覆蓋規格中的數值情境（30 → 33、30/16×9/20 → 75、16×9 → 3×3、16×3 → 3×1、40×60 骰子 30 的容量為 1）來驗證
+- [x] 2.3 實作驗證器（型別與範圍、模組連續、至少一個模組、骰子容量、收納深度 20–150、`part` 有效性）與錯誤歸屬；以新增的 `tests/unit/game-box-contract.test.ts` 覆蓋每一種拒絕情境及其歸屬欄位來驗證
+- [x] 2.4 實作 bounds 與 STEP/STL 檔名（assembly 不產生檔名、無 3MF）；以單元測試檢查 `game-box-box-70x120x75.step` 與 `game-box-dice-holder-70x120-d16x9.step` 來驗證
+- [x] 2.5 將 `game-box` 納入 `units/index.ts`、`units/model.ts`、`messages`、`errors`；以 `tests/unit/model-catalog.test.ts` 與型別檢查通過來驗證
 
 ## 3. Kernel
 

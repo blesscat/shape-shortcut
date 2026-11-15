@@ -252,6 +252,22 @@ export const messages = {
     '封面設定為使用匯入的 SVG，但資料遺失。請重新匯入 SVG 或關閉使用。',
   'validation.cardBoxDividerTextTooWide':
     '分隔板文字放不進拉 Tab。請縮短文字。',
+  'validation.gameBoxPartInvalid':
+    '{field} 必須是 game-box 零件（assembly、box、lid、divider 或骰子匣）。',
+  'validation.gameBoxPartUnavailable':
+    '模組 {module} 不是骰子模組，沒有對應的骰子匣零件。',
+  'validation.gameBoxDividerUnavailable':
+    '分隔板至少需要兩個模組。請移除一個模組或改選其他零件。',
+  'validation.gameBoxModuleTypeInvalid': '{field} 必須是 none、cards 或 dice。',
+  'validation.gameBoxModuleRequired':
+    '模組 1 必須啟用；收納盒至少需要一個模組。',
+  'validation.gameBoxModuleNotContiguous':
+    '模組 {module} 不能出現在停用的模組之後；模組必須連續。',
+  'validation.gameBoxDiceCountNotInteger': '{field} 必須是整數。',
+  'validation.gameBoxDiceCapacityExceeded':
+    '這個骰子模組最多只能放 {max} 顆骰子。',
+  'validation.gameBoxStorageDepthOutOfRange':
+    '模組加總的收納深度為 {depth} mm，超出支援的 {min}–{max} mm 範圍。',
   'validation.parameter': '參數',
   'validation.invalidNumber': '{field} 必須是有效數字。',
   'validation.requiredDimension': '{axis} 尺寸不可空白。',
