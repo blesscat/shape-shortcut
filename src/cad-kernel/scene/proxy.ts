@@ -8,6 +8,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import {
+  boundsForGameBox,
   cardBoxOuterDepth,
   cardBoxDividerTabCenterX,
   cardBoxDividerWidth,
@@ -19,7 +20,6 @@ import {
   gameBoxDiceHolderThickness,
   gameBoxModuleDiceSizeKey,
   gameBoxPartModuleIndex,
-  gameBoxStorageDepth,
   validateModelParameters,
   type CardBoxParameters,
   type GameBoxModuleIndex,
@@ -238,46 +238,18 @@ function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
  * Simplified game-box silhouette: the hollow wall tube with floor, the lid
  * plate, the dividers on the module boundaries and the dice holders as
  * plain boxes — far cheaper than the full build, and enough for planning
- * previews.
+ * previews. Every shape stays inside the contract envelope of the part it
+ * stands for.
  */
 function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
   const c = CARD_BOX_CONFIGURATION
   const t = c.wallThickness
-  const storageDepth = gameBoxStorageDepth(parameters)
-  const outerWidth = cardBoxOuterWidth(parameters.cardWidth)
-  const outerDepth = cardBoxOuterDepth(storageDepth)
-  const height = parameters.cardHeight + 2
-  const halfW = outerWidth / 2
-  const halfD = outerDepth / 2
-  const showTube = parameters.part === 'assembly' || parameters.part === 'box'
   const shapes: Shape3D[] = []
-  if (showTube) {
-    shapes.push(
-      // Floor
-      makeBox([-halfW, -halfD, 0], [halfW, halfD, c.floorThickness]) as Shape3D,
-      // Front / back walls
-      makeBox([-halfW, -halfD, 0], [halfW, -halfD + t, height]) as Shape3D,
-      makeBox([-halfW, halfD - t, 0], [halfW, halfD, height]) as Shape3D,
-      // Left / right walls
-      makeBox(
-        [-halfW, -halfD + t, 0],
-        [-halfW + t, halfD - t, height],
-      ) as Shape3D,
-      makeBox(
-        [halfW - t, -halfD + t, 0],
-        [halfW, halfD - t, height],
-      ) as Shape3D,
-    )
+  if (parameters.part === 'assembly' || parameters.part === 'box') {
+    shapes.push(...gameBoxProxyTube(parameters))
   }
   if (parameters.part === 'assembly' || parameters.part === 'lid') {
-    const lidZ =
-      parameters.part === 'assembly' ? parameters.cardHeight + 7.2 : 0
-    shapes.push(
-      makeBox(
-        [-halfW, -(halfD + 0.9), lidZ],
-        [halfW, halfD + 0.9, lidZ + c.lidRoofThickness],
-      ) as Shape3D,
-    )
+    shapes.push(...gameBoxProxyLid(parameters))
   }
   if (parameters.part === 'assembly' || parameters.part === 'divider') {
     const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
@@ -321,6 +293,53 @@ function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
     }
   }
   return compoundShapes(shapes)
+}
+
+/**
+ * The wall tube of the box body: a floor and four walls that fill the
+ * contract envelope of the box part.
+ */
+function gameBoxProxyTube(parameters: GameBoxParameters): Shape3D[] {
+  const c = CARD_BOX_CONFIGURATION
+  const t = c.wallThickness
+  const bounds = boundsForGameBox({ ...parameters, part: 'box' })
+  const halfW = (bounds.max[0] - bounds.min[0]) / 2
+  const frontY = bounds.min[1]
+  const backY = bounds.max[1]
+  const height = parameters.cardHeight + 2
+  return [
+    // Floor
+    makeBox([-halfW, frontY, 0], [halfW, backY, c.floorThickness]) as Shape3D,
+    // Front / back walls
+    makeBox([-halfW, frontY, 0], [halfW, frontY + t, height]) as Shape3D,
+    makeBox([-halfW, backY - t, 0], [halfW, backY, height]) as Shape3D,
+    // Left / right walls
+    makeBox(
+      [-halfW, frontY + t, 0],
+      [-halfW + t, backY - t, height],
+    ) as Shape3D,
+    makeBox([halfW - t, frontY + t, 0], [halfW, backY - t, height]) as Shape3D,
+  ]
+}
+
+/**
+ * The lid of the preview: in the assembly it caps the box body, as a single
+ * part it lies on the bed in its print orientation.
+ */
+function gameBoxProxyLid(parameters: GameBoxParameters): Shape3D[] {
+  const c = CARD_BOX_CONFIGURATION
+  const bounds = boundsForGameBox(parameters)
+  const halfW = (bounds.max[0] - bounds.min[0]) / 2
+  const frontY = bounds.min[1]
+  const backY = bounds.max[1]
+  const lidZ =
+    parameters.part === 'assembly' ? parameters.cardHeight + 7.2 : bounds.min[2]
+  return [
+    makeBox(
+      [-halfW, frontY, lidZ],
+      [halfW, backY, lidZ + c.lidRoofThickness],
+    ) as Shape3D,
+  ]
 }
 
 /**

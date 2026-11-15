@@ -1,6 +1,7 @@
 import type { DiagnosticParams } from '../diagnostics'
 import {
   CARD_BOX_CONFIGURATION,
+  cardBoxDividerWidth,
   cardBoxInteriorWidth,
   cardBoxOuterDepth,
   cardBoxOuterWidth,
@@ -718,8 +719,36 @@ export function isGameBoxParameters(
 }
 
 /**
- * Envelope for scene framing. The assembly reports the assembled frame, the
- * single parts report their print orientation with z >= 0.
+ * Offsets of the card-box frame the game box inherits, in millimetres.
+ *
+ * The game box builds the card-box box, lid and divider, so the parts
+ * inherit the card-box frame: the front lip of the box body, the back face
+ * of the lid and the heights of the box body, of the printed lid and of the
+ * assembled lid. The values mirror the card-box kernel design
+ * (`src/cad-kernel/components/card-box/box.ts` and `lid.ts`);
+ * `tests/worker/game-box-bounds.integration.test.ts` pins them to the built
+ * geometry.
+ */
+const CARD_BOX_FRAME = {
+  /** The box front lip reaches this far in front of the sketch face. */
+  frontLipExtension: 1.85,
+  /** The lid back face stops this far short of the sketch back face. */
+  lidBackInset: 0.05,
+  /** The box body reaches this far above the card height. */
+  boxTopAllowance: 7.4,
+  /** The assembled lid reaches this far above the card height. */
+  lidTopAllowance: 9,
+  /** The printed lid is this tall (plate plus skirts). */
+  lidPrintHeight: 16.8,
+} as const
+
+/**
+ * The envelope of the built part.
+ *
+ * Every part reports the bounds of the geometry it builds, so the scene
+ * frame and the progressive preview match the exact model. The assembly
+ * reports the assembled frame, the single parts their print orientation
+ * with z >= 0.
  */
 export function boundsForGameBox(parameters: GameBoxParameters): {
   min: [number, number, number]
@@ -732,23 +761,49 @@ export function boundsForGameBox(parameters: GameBoxParameters): {
 
   const storageDepth = gameBoxStorageDepth(parameters)
   const halfWidth = cardBoxOuterWidth(parameters.cardWidth) / 2
-  const halfDepth = (cardBoxOuterDepth(storageDepth) + 1.8) / 2
+  // The card-box sketch face; the box body extends in front of it.
+  const halfSketchY = cardBoxOuterDepth(storageDepth) / 2
 
   if (parameters.part === 'lid') {
+    // The printed lid lies on its back, so the frame is mirrored in Y.
     return {
-      min: [-halfWidth, -halfDepth, 0],
-      max: [halfWidth, halfDepth, 16.8],
+      min: [-halfWidth, -(halfSketchY - CARD_BOX_FRAME.lidBackInset), 0],
+      max: [
+        halfWidth,
+        halfSketchY + CARD_BOX_FRAME.frontLipExtension,
+        CARD_BOX_FRAME.lidPrintHeight,
+      ],
     }
   }
   if (parameters.part === 'divider') {
+    // The plain divider carries no art, so it is only as thick as the plate.
+    const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
     return {
-      min: [-halfWidth, 0, 0],
-      max: [halfWidth, parameters.cardHeight + 5, 2],
+      min: [-halfPlate, 0, 0],
+      max: [
+        halfPlate,
+        parameters.cardHeight + CARD_BOX_CONFIGURATION.dividerTabHeight,
+        CARD_BOX_CONFIGURATION.dividerPlateThickness,
+      ],
+    }
+  }
+  if (parameters.part === 'box') {
+    return {
+      min: [-halfWidth, -(halfSketchY + CARD_BOX_FRAME.frontLipExtension), 0],
+      max: [
+        halfWidth,
+        halfSketchY,
+        parameters.cardHeight + CARD_BOX_FRAME.boxTopAllowance,
+      ],
     }
   }
   return {
-    min: [-halfWidth, -halfDepth - 1, 0],
-    max: [halfWidth, halfDepth + 0.1, parameters.cardHeight + 9],
+    min: [-halfWidth, -(halfSketchY + CARD_BOX_FRAME.frontLipExtension), 0],
+    max: [
+      halfWidth,
+      halfSketchY,
+      parameters.cardHeight + CARD_BOX_FRAME.lidTopAllowance,
+    ],
   }
 }
 

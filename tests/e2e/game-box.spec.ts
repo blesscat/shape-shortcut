@@ -15,7 +15,12 @@ const DEFAULTS = GAME_BOX_CONFIGURATION.defaultParameters
 const DEFAULT_CARD_WIDTH = GAME_BOX_CONFIGURATION.defaults.cardWidth
 const DEFAULT_CARD_HEIGHT = GAME_BOX_CONFIGURATION.defaults.cardHeight
 const DEFAULT_LAYOUT = gameBoxLayout(DEFAULTS)
-const DEFAULT_BOX_BOUNDS = boundsForGameBox({ ...DEFAULTS, part: 'box' })
+// The outer size describes the whole product: the box body with the
+// sliding lid on top.
+const DEFAULT_PRODUCT_BOUNDS = boundsForGameBox({
+  ...DEFAULTS,
+  part: 'assembly',
+})
 const DICE_LAYOUT = gameBoxLayout({ ...DEFAULTS, module2Type: 'dice' })
 const CARD_DEPTH_20_LAYOUT = gameBoxLayout({
   ...DEFAULTS,
@@ -31,7 +36,7 @@ function interiorSizeText(layout: typeof DEFAULT_LAYOUT): string {
 }
 
 function outerSizeText(layout: typeof DEFAULT_LAYOUT): string {
-  return `${cardBoxOuterWidth(DEFAULT_CARD_WIDTH)} × ${cardBoxOuterDepth(layout.storageDepth)} × ${DEFAULT_BOX_BOUNDS.max[2] - DEFAULT_BOX_BOUNDS.min[2]} mm`
+  return `${cardBoxOuterWidth(DEFAULT_CARD_WIDTH)} × ${cardBoxOuterDepth(layout.storageDepth)} × ${DEFAULT_PRODUCT_BOUNDS.max[2] - DEFAULT_PRODUCT_BOUNDS.min[2]} mm`
 }
 
 async function openGameBox(page: Page): Promise<void> {

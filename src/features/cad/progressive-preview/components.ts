@@ -45,11 +45,8 @@ import {
 } from '../../../cad-contract/units/opengrid-label-card'
 import {
   boundsForGameBox,
-  gameBoxDiceHolderOuterWidth,
-  gameBoxDiceHolderThickness,
+  gameBoxDiceHolderWidth,
   gameBoxLayout,
-  gameBoxModuleDiceSizeKey,
-  gameBoxPartModuleIndex,
   validateGameBoxParameters,
   type GameBoxParameters,
 } from '../../../cad-contract/units/game-box'
@@ -277,10 +274,11 @@ export function cardBoxPreview(
 /**
  * Simplified game-box preview.
  *
- * Every part is built so that the union of its solids matches the contract
- * envelope (`boundsForGameBox`) on every axis: the single parts are drawn in
- * their print orientation (z >= 0) and the assembly shows the box, the lid,
- * one divider per module boundary and one dice holder per dice module.
+ * Every part is drawn so that the union of its solids matches the envelope
+ * of the built part (`boundsForGameBox`) on every axis: the single parts are
+ * drawn in their print orientation (z >= 0) and the assembly shows the box
+ * body, the lid, one divider per module boundary and one dice holder per
+ * dice module.
  */
 export function gameBoxPreview(
   parameters: ModelParameterValues,
@@ -290,143 +288,196 @@ export function gameBoxPreview(
     throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
   }
   const p = validation.value
-  const c = CARD_BOX_CONFIGURATION
   const bounds = boundsForGameBox(p)
-  const width = bounds.max[0] - bounds.min[0]
-  const solids: PreviewSolid[] = []
 
   if (p.part === 'assembly') {
-    solids.push(...gameBoxAssemblySolids(p))
-    return solids
+    return gameBoxAssemblySolids(p, bounds)
   }
-
   if (p.part === 'box') {
-    const depth = bounds.max[1] - bounds.min[1]
-    const height = bounds.max[2] - bounds.min[2]
-    solids.push(...gameBoxBoxSolids(width, depth, height, bounds.min[1]))
-    return solids
+    return gameBoxBodySolids(bounds, bounds.max[2])
   }
-
   if (p.part === 'lid') {
-    const depth = bounds.max[1] - bounds.min[1]
-    solids.push(
-      ...gameBoxLidSolids(
-        width,
-        depth,
-        0,
-        bounds.max[2] - bounds.min[2] - c.lidRoofThickness,
-      ),
-    )
-    return solids
+    return gameBoxLidSolids(bounds)
   }
-
   if (p.part === 'divider') {
-    // The divider lies flat on the bed: its height runs along Y and the
-    // plate thickness along Z.
-    const height = bounds.max[1] - bounds.min[1]
-    solids.push(
-      slab(width, height, bounds.max[2] - bounds.min[2], 0, height / 2),
-    )
-    return solids
+    return gameBoxDividerSolids(bounds)
   }
-
-  const moduleIndex = gameBoxPartModuleIndex(p.part)
-  if (moduleIndex === null) return solids
-  const thickness = gameBoxDiceHolderThickness(
-    p[gameBoxModuleDiceSizeKey(moduleIndex)],
-  )
-  const holderWidth = gameBoxDiceHolderOuterWidth(p.cardWidth)
-  solids.push(slab(holderWidth, thickness, p.cardHeight, 0, thickness / 2, 0))
-  return solids
+  return gameBoxDiceHolderSolids(bounds)
 }
 
-/** Box body: a floor plus four walls spanning the given envelope. */
-function gameBoxBoxSolids(
-  width: number,
-  depth: number,
-  height: number,
-  frontY: number,
-): PreviewSolid[] {
+/**
+ * The box body: a floor and four walls that span the given envelope up to
+ * `topZ`.
+ */
+function gameBoxBodySolids(bounds: ModelBounds, topZ: number): PreviewSolid[] {
   const c = CARD_BOX_CONFIGURATION
   const wall = c.wallThickness
-  const centerY = frontY + depth / 2
+  const width = bounds.max[0] - bounds.min[0]
+  const depth = bounds.max[1] - bounds.min[1]
+  const height = topZ - bounds.min[2]
+  const centerY = (bounds.min[1] + bounds.max[1]) / 2
   const wallHeight = height - c.floorThickness
   return [
-    slab(width, depth, c.floorThickness, 0, centerY, 0),
-    slab(width, wall, wallHeight, 0, frontY + wall / 2, c.floorThickness),
+    slab(width, depth, c.floorThickness, 0, centerY, bounds.min[2]),
     slab(
       width,
       wall,
       wallHeight,
       0,
-      frontY + depth - wall / 2,
-      c.floorThickness,
+      bounds.min[1] + wall / 2,
+      bounds.min[2] + c.floorThickness,
+    ),
+    slab(
+      width,
+      wall,
+      wallHeight,
+      0,
+      bounds.max[1] - wall / 2,
+      bounds.min[2] + c.floorThickness,
     ),
     slab(
       wall,
       depth - 2 * wall,
       wallHeight,
-      -width / 2 + wall / 2,
+      bounds.min[0] + wall / 2,
       centerY,
-      c.floorThickness,
+      bounds.min[2] + c.floorThickness,
     ),
     slab(
       wall,
       depth - 2 * wall,
       wallHeight,
-      width / 2 - wall / 2,
+      bounds.max[0] - wall / 2,
       centerY,
-      c.floorThickness,
+      bounds.min[2] + c.floorThickness,
     ),
   ]
 }
 
-/** Sliding lid: a roof plate with two side walls and a back wall. */
-function gameBoxLidSolids(
-  width: number,
-  depth: number,
-  baseZ: number,
-  wallHeight: number,
-): PreviewSolid[] {
-  const c = CARD_BOX_CONFIGURATION
-  const wall = c.wallThickness
-  const solids: PreviewSolid[] = []
-  if (wallHeight > 0) {
-    solids.push(
-      slab(wall, depth, wallHeight, -width / 2 + wall / 2, 0, baseZ),
-      slab(wall, depth, wallHeight, width / 2 - wall / 2, 0, baseZ),
-      slab(width, wall, wallHeight, 0, depth / 2 - wall / 2, baseZ),
-    )
-  }
-  solids.push(slab(width, depth, c.lidRoofThickness, 0, 0, baseZ + wallHeight))
-  return solids
-}
-
 /**
- * Assembled frame: the box body, the lid riding on top of it, one divider
- * per module boundary and one dice holder per dice module.
+ * The printed lid: its roof plate lies on the bed and the two skirts rise
+ * above it.
  */
-function gameBoxAssemblySolids(p: GameBoxParameters): PreviewSolid[] {
+function gameBoxLidSolids(bounds: ModelBounds): PreviewSolid[] {
   const c = CARD_BOX_CONFIGURATION
-  const bounds = boundsForGameBox(p)
   const width = bounds.max[0] - bounds.min[0]
   const depth = bounds.max[1] - bounds.min[1]
   const height = bounds.max[2] - bounds.min[2]
-  const layout = gameBoxLayout(p)
-  // The lid caps the box body, so the walls stop where the roof starts.
-  const wallHeight = height - c.lidRoofThickness
-  const solids = gameBoxBoxSolids(width, depth, wallHeight, bounds.min[1])
-  const lidBounds = boundsForGameBox({ ...p, part: 'lid' })
-  solids.push(
-    ...gameBoxLidSolids(
-      width,
-      lidBounds.max[1] - lidBounds.min[1],
-      wallHeight,
-      0,
+  const centerY = (bounds.min[1] + bounds.max[1]) / 2
+  const skirtWidth = c.wallThickness
+  const skirtHeight = height - c.lidRoofThickness
+  return [
+    slab(width, depth, c.lidRoofThickness, 0, centerY, bounds.min[2]),
+    slab(
+      skirtWidth,
+      depth,
+      skirtHeight,
+      bounds.min[0] + skirtWidth / 2,
+      centerY,
+      bounds.min[2] + c.lidRoofThickness,
     ),
-  )
+    slab(
+      skirtWidth,
+      depth,
+      skirtHeight,
+      bounds.max[0] - skirtWidth / 2,
+      centerY,
+      bounds.min[2] + c.lidRoofThickness,
+    ),
+  ]
+}
 
-  const frontInnerY = bounds.min[1] + c.wallThickness
+/**
+ * The printed divider: the plate lies flat on the bed with its pull tab
+ * rising above the body.
+ */
+function gameBoxDividerSolids(bounds: ModelBounds): PreviewSolid[] {
+  const c = CARD_BOX_CONFIGURATION
+  const width = bounds.max[0] - bounds.min[0]
+  const height = bounds.max[1] - bounds.min[1]
+  const thickness = bounds.max[2] - bounds.min[2]
+  const bodyHeight = height - c.dividerTabHeight
+  const tabX = cardBoxDividerTabCenterX(c.defaultTabPosition, width)
+  return [
+    slab(width, bodyHeight, thickness, 0, bodyHeight / 2, bounds.min[2]),
+    slab(
+      c.dividerTabBaseWidth,
+      c.dividerTabHeight,
+      thickness,
+      tabX,
+      bodyHeight + c.dividerTabHeight / 2,
+      bounds.min[2],
+    ),
+  ]
+}
+
+/** The dice holder standing on the bed, as wide as its grip tabs. */
+function gameBoxDiceHolderSolids(bounds: ModelBounds): PreviewSolid[] {
+  const width = bounds.max[0] - bounds.min[0]
+  const depth = bounds.max[1] - bounds.min[1]
+  const height = bounds.max[2] - bounds.min[2]
+  return [
+    slab(
+      width,
+      depth,
+      height,
+      0,
+      (bounds.min[1] + bounds.max[1]) / 2,
+      bounds.min[2],
+    ),
+  ]
+}
+
+/**
+ * The assembled frame: the box body, the lid capping it, one divider per
+ * module boundary and one dice holder per dice module.
+ */
+function gameBoxAssemblySolids(
+  p: GameBoxParameters,
+  bounds: ModelBounds,
+): PreviewSolid[] {
+  const c = CARD_BOX_CONFIGURATION
+  const layout = gameBoxLayout(p)
+  const width = bounds.max[0] - bounds.min[0]
+  const depth = bounds.max[1] - bounds.min[1]
+  const centerY = (bounds.min[1] + bounds.max[1]) / 2
+  // The lid caps the box body, so the walls stop where the roof starts.
+  const roofZ = bounds.max[2] - c.lidRoofThickness
+  const solids = gameBoxBodySolids(bounds, roofZ)
+  solids.push(slab(width, depth, c.lidRoofThickness, 0, centerY, roofZ))
+
+  // The dividers stand on the module boundaries, the holders fill the dice
+  // modules between them.
+  const frontWallY = bounds.min[1] + c.wallThickness
+  const halfPlate = c.dividerPlateThickness / 2
+  let boundaryBefore = 0
+  layout.modules.forEach((module, position) => {
+    const boundaryAfter =
+      position === layout.modules.length - 1
+        ? layout.storageDepth
+        : layout.dividerCenters[position]!
+    if (module.type === 'dice') {
+      const start = boundaryBefore === 0 ? 0 : boundaryBefore + halfPlate
+      const end =
+        boundaryAfter === layout.storageDepth
+          ? layout.storageDepth
+          : boundaryAfter - halfPlate
+      const thickness = module.holderThickness
+      solids.push(
+        slab(
+          // The installed holder is pressed into the box, so it is
+          // narrower than the printed part.
+          gameBoxDiceHolderWidth(p.cardWidth),
+          thickness,
+          p.cardHeight,
+          0,
+          frontWallY + (start + end - thickness) / 2,
+          c.floorThickness,
+        ),
+      )
+    }
+    boundaryBefore = boundaryAfter
+  })
   for (const center of layout.dividerCenters) {
     solids.push(
       slab(
@@ -434,28 +485,10 @@ function gameBoxAssemblySolids(p: GameBoxParameters): PreviewSolid[] {
         c.dividerPlateThickness,
         p.cardHeight,
         0,
-        frontInnerY + center,
+        frontWallY + center,
         c.floorThickness,
       ),
     )
-  }
-  let slotsBefore = 0
-  for (const module of layout.modules) {
-    if (module.type === 'dice') {
-      const thickness = module.holderThickness
-      const slack = (module.length - thickness) / 2
-      solids.push(
-        slab(
-          gameBoxDiceHolderOuterWidth(p.cardWidth),
-          thickness,
-          p.cardHeight,
-          0,
-          frontInnerY + slotsBefore + slack + thickness / 2,
-          c.floorThickness,
-        ),
-      )
-    }
-    slotsBefore += module.slots
   }
   return solids
 }

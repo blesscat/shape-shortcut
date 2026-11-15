@@ -76,7 +76,11 @@
   )
   const canDelete = $derived(enabledGroups.length > 1)
 
-  const boxBounds = $derived(boundsForGameBox({ ...snapshot, part: 'box' }))
+  // The outer size describes the whole product: the box body with the
+  // sliding lid on top.
+  const productBounds = $derived(
+    boundsForGameBox({ ...snapshot, part: 'assembly' }),
+  )
 
   const partOptions = $derived(
     availableParts.map((option) => ({
@@ -456,7 +460,7 @@
         {cardBoxOuterWidth(cardWidth)} × {cardBoxOuterDepth(
           layout.storageDepth,
         )}
-        × {boxBounds.max[2] - boxBounds.min[2]} mm
+        × {productBounds.max[2] - productBounds.min[2]} mm
       </dd>
     </div>
     <div class="flex gap-2">
