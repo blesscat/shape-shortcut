@@ -76,21 +76,22 @@ function buildInstalledDiceHolder(
  * The assembly in the assembled frame: the box, the lid, one divider per
  * module boundary and one dice holder per dice module. The holders stand on
  * the floor between the dividers that bound their module.
+ *
+ * Every part is built inside the guarded region, so a failing build frees
+ * the parts it already created.
  */
 function buildAssembly(
   parameters: GameBoxParameters,
   geometry: GameBoxGeometry,
 ): Shape3D {
-  const box = buildCardBoxBoxFromGeometry(
-    geometry.cardBox,
-    geometry.slotCentres,
-  )
-  const lid = buildCardBoxLidFromGeometry(geometry.cardBox)
-  const dividers: Shape3D[] = []
-  const holders: Shape3D[] = []
+  const parts: Shape3D[] = []
   try {
+    parts.push(
+      buildCardBoxBoxFromGeometry(geometry.cardBox, geometry.slotCentres),
+    )
+    parts.push(buildCardBoxLidFromGeometry(geometry.cardBox))
     for (const y of geometry.dividerCentres) {
-      dividers.push(
+      parts.push(
         placeDividerInAssembly(
           buildCardBoxDividerFromGeometry(geometry.cardBox),
           y,
@@ -99,18 +100,14 @@ function buildAssembly(
     }
     for (const placement of gameBoxModulePlacements(parameters)) {
       if (placement.type !== 'dice') continue
-      holders.push(buildInstalledDiceHolder(parameters, placement))
+      parts.push(buildInstalledDiceHolder(parameters, placement))
     }
   } catch (error) {
-    deleteShape(box)
-    deleteShape(lid)
-    for (const part of [...dividers, ...holders]) deleteShape(part)
+    for (const part of parts) deleteShape(part)
     throw error
   }
-  const compound = makeCompound([box, lid, ...dividers, ...holders]).asShape3D()
-  deleteShape(box)
-  deleteShape(lid)
-  for (const part of [...dividers, ...holders]) deleteShape(part)
+  const compound = makeCompound(parts).asShape3D()
+  for (const part of parts) deleteShape(part)
   return compound
 }
 

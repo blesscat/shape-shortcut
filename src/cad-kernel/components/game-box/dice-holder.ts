@@ -34,6 +34,8 @@ export const GAME_BOX_DICE_HOLDER = {
   gripStripLength: 60,
   /** Relief behind the grip strip: the pocket that lets it press in. */
   gripStripRelief: 0.6,
+  /** Air gap between the grip strip and the sides of its relief pocket. */
+  gripStripSideClearance: 0.4,
   /** Distance between the grip strip ends and the holder edges. */
   gripStripEndMargin: 4,
   /** Clearance between the pressed grip strip and the box wall. */
@@ -164,9 +166,12 @@ export function gameBoxDiceHolderSlotWidth(diceSize: number): number {
 
 /** The place the grip strip and its relief pocket occupy. */
 export type GameBoxGripStripFrame = {
-  /** y of the strip (and of the relief pocket behind it). */
+  /** y of the strip. */
   yStart: number
   yEnd: number
+  /** y of the relief pocket behind the strip; it is wider than the strip. */
+  pocketYStart: number
+  pocketYEnd: number
   /** z of the strip. */
   zStart: number
   zEnd: number
@@ -177,7 +182,13 @@ export type GameBoxGripStripFrame = {
   relief: number
 }
 
-/** The grip strip of one side of a holder. */
+/**
+ * The grip strip of one side of a holder.
+ *
+ * The relief pocket is wider than the strip, so the strip touches nothing
+ * but air between `reliefStart` and `reliefEnd`: it stays anchored by its
+ * two embedded ends only and can bow in and out freely.
+ */
 export function gameBoxGripStripFrame(
   frame: GameBoxDiceHolderFrame,
 ): GameBoxGripStripFrame {
@@ -187,11 +198,13 @@ export function gameBoxGripStripFrame(
     frame.height - 2 * constants.gripStripEndMargin,
   )
   const zStart = (frame.height - length) / 2
+  const yStart = (frame.thickness - constants.gripStripWidth) / 2
   return {
-    yStart: (frame.thickness - constants.gripStripWidth) / 2,
-    yEnd:
-      (frame.thickness - constants.gripStripWidth) / 2 +
-      constants.gripStripWidth,
+    yStart,
+    yEnd: yStart + constants.gripStripWidth,
+    pocketYStart: yStart - constants.gripStripSideClearance,
+    pocketYEnd:
+      yStart + constants.gripStripWidth + constants.gripStripSideClearance,
     zStart,
     zEnd: zStart + length,
     reliefStart: zStart + constants.gripStripEndMargin,
@@ -264,7 +277,9 @@ function buildGripStrip(frame: GameBoxDiceHolderFrame, side: 1 | -1): Shape3D {
 
 /**
  * The relief pocket behind a grip strip: without it the pressed strip
- * would have to sink into the side wall.
+ * would have to sink into the side wall. The pocket is wider than the
+ * strip, so the strip is not bonded to the pocket walls and stays a free
+ * leaf between its two embedded ends.
  */
 function cutGripRelief(
   shape: Shape3D,
@@ -278,12 +293,12 @@ function cutGripRelief(
     makeBox(
       [
         side === 1 ? wallX - strip.relief : wallX - 0.01,
-        strip.yStart,
+        strip.pocketYStart,
         strip.reliefStart,
       ],
       [
         side === 1 ? wallX + 0.01 : wallX + strip.relief,
-        strip.yEnd,
+        strip.pocketYEnd,
         strip.reliefEnd,
       ],
     ) as Shape3D,

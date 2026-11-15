@@ -326,6 +326,42 @@ describe('game-box dice holder', () => {
     }
   })
 
+  it('leaves the grip strip free between the walls of its relief pocket', () => {
+    const frame = gameBoxDiceHolderFrame(options)
+    const strip = gameBoxGripStripFrame(frame)
+    const holder = buildGameBoxDiceHolder(options)
+    try {
+      expect(countSolids(holder)).toBe(1)
+      // The pocket is wider than the strip, so the strip does not touch its
+      // walls and stays a free leaf between its two embedded ends.
+      expect(strip.pocketYStart).toBeLessThan(strip.yStart)
+      expect(strip.pocketYEnd).toBeGreaterThan(strip.yEnd)
+      for (const side of [1, -1] as const) {
+        const gaps = [
+          [strip.pocketYStart, strip.yStart],
+          [strip.yEnd, strip.pocketYEnd],
+        ]
+        for (const [gapStart, gapEnd] of gaps) {
+          // The gap between the pocket wall and the side face of the strip
+          // is empty over the whole relief, so the strip is not bonded to
+          // the pocket and can bow in and out.
+          const probe = makeBox(
+            [
+              side * (frame.bodyWidth / 2 - strip.relief),
+              gapStart,
+              strip.reliefStart,
+            ],
+            [side * (frame.bodyWidth / 2), gapEnd, strip.reliefEnd],
+          ) as Shape3D
+          expect(volumeOf(holder, probe)).toBeLessThan(OVERLAP_LIMIT)
+          probe.delete()
+        }
+      }
+    } finally {
+      holder.delete()
+    }
+  })
+
   it('presses the grip strips in to the body width', () => {
     const frame = gameBoxDiceHolderFrame(options)
     const pressed = buildGameBoxDiceHolder({
