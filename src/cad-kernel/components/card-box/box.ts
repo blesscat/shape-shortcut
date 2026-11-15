@@ -11,6 +11,7 @@ import {
   type CardBoxParameters,
 } from '../../../cad-contract/units'
 import { deleteShape } from '../../lifetime/dispose'
+import { cardBoxGeometryOf, type CardBoxGeometry } from './geometry'
 
 /**
  * Fixed feature dimensions of the original FreeCAD design that do not scale
@@ -95,11 +96,11 @@ interface BoxFrame {
   backTop: number
 }
 
-function boxFrame(parameters: CardBoxParameters): BoxFrame {
+function boxFrame(geometry: CardBoxGeometry): BoxFrame {
   const t = CARD_BOX_CONFIGURATION.wallThickness
-  const w = cardBoxInteriorWidth(parameters.cardWidth)
-  const h = parameters.cardHeight
-  const d = parameters.storageDepth
+  const w = cardBoxInteriorWidth(geometry.cardWidth)
+  const h = geometry.cardHeight
+  const d = geometry.storageDepth
   const halfSketchY = (d + 2 * t - BOX_DESIGN.sketchDepthAllowance) / 2
   return {
     w,
@@ -375,31 +376,30 @@ function filletBoxEdges(shape: Shape3D, frame: BoxFrame): Shape3D {
   )
 }
 
-function addDividerSlots(shape: Shape3D, frame: BoxFrame): Shape3D {
-  // 1 mm grooves, every 3 mm at y = ±k·pitch for k = 0..floor(D/2/3)−1
-  // (y = 0 is shared, so 2·floor(D/2/3)−1 positions along both halves);
-  // 0.25 mm deep into each side wall. Cutters start at the floor
-  // TOP surface (z = 2) so the floor stays intact.
+function addDividerSlots(
+  shape: Shape3D,
+  frame: BoxFrame,
+  slotCentres: readonly number[],
+): Shape3D {
+  // 1 mm grooves at the caller-supplied slot centres, 0.25 mm deep into
+  // each side wall. Cutters start at the floor TOP surface (z = 2) so the
+  // floor stays intact.
+  if (slotCentres.length === 0) return shape
   const floor = CARD_BOX_CONFIGURATION.floorThickness
-  const pitch = CARD_BOX_CONFIGURATION.dividerSlotPitch
   const halfWidth = CARD_BOX_CONFIGURATION.dividerSlotWidth / 2
-  const slotCount = Math.floor(frame.d / 2 / pitch)
   const cutters: Shape3D[] = []
-  for (let index = 0; index < slotCount; index += 1) {
-    const offsets = index === 0 ? [0] : [index * pitch, -index * pitch]
-    for (const y of offsets) {
-      for (const side of [1, -1] as const) {
-        cutters.push(
-          makeBox(
-            [side * (frame.w / 2 - 0.01), y - halfWidth, floor],
-            [
-              side * (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth),
-              y + halfWidth,
-              frame.padTop + 1,
-            ],
-          ) as Shape3D,
-        )
-      }
+  for (const y of slotCentres) {
+    for (const side of [1, -1] as const) {
+      cutters.push(
+        makeBox(
+          [side * (frame.w / 2 - 0.01), y - halfWidth, floor],
+          [
+            side * (frame.w / 2 + CARD_BOX_CONFIGURATION.dividerSlotDepth),
+            y + halfWidth,
+            frame.padTop + 1,
+          ],
+        ) as Shape3D,
+      )
     }
   }
   // One boolean for all (disjoint) grooves: far cheaper than a cut per slot.
@@ -409,11 +409,43 @@ function addDividerSlots(shape: Shape3D, frame: BoxFrame): Shape3D {
 }
 
 /**
- * Builds the box part. The box's print orientation (opening up on the bed)
- * is identical to its assembled frame, so no orientation transform applies.
+ * Divider-slot centres of the card-box layout, in the box coordinate frame:
+ * y offsets from the box centre (y = 0 is the centre of the outer footprint
+ * along the depth axis, +Y points at the back wall). The centres are spaced
+ * by the 3 mm slot pitch and symmetric about the centre: `±k·pitch` for
+ * k = 0..count−1, so the centre slot (k = 0) serves both side walls.
  */
-export function buildCardBoxBox(parameters: CardBoxParameters): Shape3D {
-  const frame = boxFrame(parameters)
+export function cardBoxDividerSlotCentres(geometry: CardBoxGeometry): number[] {
+  const pitch = CARD_BOX_CONFIGURATION.dividerSlotPitch
+  const count = Math.floor(geometry.storageDepth / 2 / pitch)
+  const centres: number[] = [0]
+  for (let index = 1; index < count; index += 1) {
+    centres.push(-index * pitch, index * pitch)
+  }
+  return centres.sort((a, b) => a - b)
+}
+
+/**
+ * y of the cavity front wall face (where the stored cards stop) in the box
+ * coordinate frame: a y offset from the box centre, −Y toward the front.
+ * Components that place their own slot grid count from this wall.
+ */
+export function cardBoxInnerFrontY(geometry: CardBoxGeometry): number {
+  return boxFrame(geometry).cavityFrontY
+}
+
+/**
+ * Builds the box part from plain geometry. `slotCentres` are the divider
+ * slot centres as y offsets from the box centre (+Y toward the back wall);
+ * the same slot is cut into both side walls. The box's print orientation
+ * (opening up on the bed) is identical to its assembled frame, so no
+ * orientation transform applies.
+ */
+export function buildCardBoxBoxFromGeometry(
+  geometry: CardBoxGeometry,
+  slotCentres: readonly number[],
+): Shape3D {
+  const frame = boxFrame(geometry)
   let shape = buildShelledPad(frame)
   try {
     shape = addFrontFeatures(shape, frame)
@@ -422,10 +454,22 @@ export function buildCardBoxBox(parameters: CardBoxParameters): Shape3D {
     shape = addLidRails(shape, frame)
     shape = addDetents(shape, frame)
     shape = filletBoxEdges(shape, frame)
-    shape = addDividerSlots(shape, frame)
+    shape = addDividerSlots(shape, frame, slotCentres)
     return shape
   } catch (error) {
     deleteShape(shape)
     throw error
   }
+}
+
+/**
+ * Builds the box part of a card-box snapshot, with the card-box slot grid
+ * (see `cardBoxDividerSlotCentres`).
+ */
+export function buildCardBoxBox(parameters: CardBoxParameters): Shape3D {
+  const geometry = cardBoxGeometryOf(parameters)
+  return buildCardBoxBoxFromGeometry(
+    geometry,
+    cardBoxDividerSlotCentres(geometry),
+  )
 }

@@ -1,8 +1,8 @@
 ## 1. 重構 card-box builder 以供重用
 
-- [ ] 1.1 讓滑蓋與分隔板 builder 接受「卡片寬、卡片高、收納深度」的幾何輸入，`buildCardBox` 改為傳入該輸入；以既有 `tests/worker/card-box*.integration.test.ts` 全數通過且未修改期望值來驗證
-- [ ] 1.2 讓盒體 builder 的分隔板槽位置由呼叫端傳入的槽中心清單決定，`card-box` 傳入現有的對稱排列；以盒體參考幾何回歸測試（對稱差 ≤ 1 mm³）通過來驗證
-- [ ] 1.3 單獨提交此重構，並以 `pnpm test:changed` 通過來驗證 `card-box` 行為未變
+- [x] 1.1 讓滑蓋與分隔板 builder 接受「卡片寬、卡片高、收納深度」的幾何輸入，`buildCardBox` 改為傳入該輸入；以既有 `tests/worker/card-box*.integration.test.ts` 全數通過且未修改期望值來驗證
+- [x] 1.2 讓盒體 builder 的分隔板槽位置由呼叫端傳入的槽中心清單決定，`card-box` 傳入現有的對稱排列；以盒體參考幾何回歸測試（對稱差 ≤ 1 mm³）通過來驗證
+- [x] 1.3 單獨提交此重構，並以 `pnpm test:changed` 通過來驗證 `card-box` 行為未變
 
 ## 2. 合約層
 

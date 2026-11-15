@@ -11,6 +11,7 @@ import {
   type CardBoxTabPosition,
 } from '../../../cad-contract/units'
 import { deleteShape } from '../../lifetime/dispose'
+import { cardBoxGeometryOf, type CardBoxGeometry } from './geometry'
 import { makeCardBoxTextShape } from './text'
 
 /** A part either has no art (`single`) or a separate accent art solid. */
@@ -155,6 +156,42 @@ function shapeBounds(shape: Shape3D): {
 }
 
 /**
+ * Divider plate from plain geometry: 0.85 mm thick and `cardHeight` tall,
+ * wide enough to enter both side-wall slots, with a 5 mm pull tab rising
+ * above the body. The plate carries no text and no art.
+ */
+function dividerPlate(
+  geometry: CardBoxGeometry,
+  position: CardBoxTabPosition,
+): Shape3D {
+  const width = cardBoxDividerWidth(geometry.cardWidth)
+  const bodyHeight = geometry.cardHeight
+  const thickness = CARD_BOX_CONFIGURATION.dividerPlateThickness
+  const blueprint = plateOutline(position, width, bodyHeight)
+  try {
+    const sketch = blueprint.sketchOnPlane('XY', [-width / 2, 0, 0])
+    try {
+      return sketch.extrude(thickness) as Shape3D
+    } finally {
+      deleteShape(sketch)
+    }
+  } finally {
+    deleteShape(blueprint)
+  }
+}
+
+/**
+ * Builds the plain divider plate from plain geometry: no text, no art, and
+ * the card-box default tab position, so the outline matches the text-free
+ * divider of a card-box with the same card size.
+ */
+export function buildCardBoxDividerFromGeometry(
+  geometry: CardBoxGeometry,
+): Shape3D {
+  return dividerPlate(geometry, CARD_BOX_CONFIGURATION.defaultTabPosition)
+}
+
+/**
  * Builds the divider plate: 0.85 mm thick and `cardHeight` tall, wide enough
  * to enter both side-wall slots, with a 5 mm pull tab (left|center|right)
  * rising above the body. Optional text sits on the tab face near its top;
@@ -171,17 +208,12 @@ export async function buildCardBoxDivider(
   const thickness = c.dividerPlateThickness
   const depth = c.accentDepth
 
-  const blueprint = plateOutline(position, width, bodyHeight)
-  let body: Shape3D | null = null
+  let body: Shape3D | null = dividerPlate(
+    cardBoxGeometryOf(parameters),
+    position,
+  )
   let textShape: Shape3D | null = null
   try {
-    const sketch = blueprint.sketchOnPlane('XY', [-width / 2, 0, 0])
-    try {
-      body = sketch.extrude(thickness) as Shape3D
-    } finally {
-      deleteShape(sketch)
-    }
-
     textShape = await makeCardBoxTextShape(parameters.dividerText, {
       textHeight: c.dividerTextHeight,
       maxWidth: tabTextMaxWidth(position),
@@ -222,7 +254,5 @@ export async function buildCardBoxDivider(
     deleteShape(body)
     deleteShape(textShape)
     throw error
-  } finally {
-    deleteShape(blueprint)
   }
 }

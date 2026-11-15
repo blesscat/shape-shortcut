@@ -6,6 +6,7 @@ import {
 } from '../../../cad-contract/units'
 import { deleteShape } from '../../lifetime/dispose'
 import { CARD_BOX_CHANNEL_SLOT_DEPTH } from './box'
+import { cardBoxGeometryOf, type CardBoxGeometry } from './geometry'
 
 /**
  * Fixed feature dimensions of the original FreeCAD lid design that do not
@@ -63,11 +64,11 @@ interface LidFrame {
   skirtInnerX: number
 }
 
-function lidFrame(parameters: CardBoxParameters): LidFrame {
+function lidFrame(geometry: CardBoxGeometry): LidFrame {
   const t = CARD_BOX_CONFIGURATION.wallThickness
-  const w = cardBoxInteriorWidth(parameters.cardWidth)
-  const h = parameters.cardHeight
-  const d = parameters.storageDepth
+  const w = cardBoxInteriorWidth(geometry.cardWidth)
+  const h = geometry.cardHeight
+  const d = geometry.storageDepth
   const halfSketchY = (d + 2 * t - 1.8) / 2
   return {
     w,
@@ -315,19 +316,31 @@ function roundPlateTop(shape: Shape3D, frame: LidFrame): Shape3D {
 }
 
 /**
- * Builds the lid in the assembled frame (slid onto the rails), matching the
- * reference coordinates: bbox z from H−7.8 to H+9 at defaults. The print
- * orientation (flipped, flat top on the bed) is applied by the builder.
+ * Builds the lid in the assembled frame (slid onto the rails) from plain
+ * geometry, matching the reference coordinates: bbox z from H−7.8 to H+9 at
+ * defaults. The print orientation (flipped, flat top on the bed) is applied
+ * by the builder.
+ */
+export function buildCardBoxLidFromGeometry(
+  geometry: CardBoxGeometry,
+): Shape3D {
+  return lidStageBuild(geometry)
+}
+
+/**
+ * Builds the lid of a card-box snapshot. The lid only depends on the card
+ * size and the storage depth, so it is the geometry builder plus the
+ * parameter adapter.
  */
 export function buildCardBoxLid(parameters: CardBoxParameters): Shape3D {
-  return lidStageBuild(parameters)
+  return buildCardBoxLidFromGeometry(cardBoxGeometryOf(parameters))
 }
 
 export function lidStageBuild(
-  parameters: CardBoxParameters,
+  geometry: CardBoxGeometry,
   stage?: (name: string) => void,
 ): Shape3D {
-  const frame = lidFrame(parameters)
+  const frame = lidFrame(geometry)
   let shape = buildPlateAndSkirts(frame)
   stage?.('plate+skirts')
   try {
@@ -336,7 +349,7 @@ export function lidStageBuild(
     stage?.('flange')
     shape = cutRailGrooves(shape, frame)
     stage?.('grooves')
-    shape = cutDetentRecesses(shape, frame, parameters.storageDepth)
+    shape = cutDetentRecesses(shape, frame, geometry.storageDepth)
     stage?.('recesses')
     shape = cutBackPocket(shape, frame)
     stage?.('pocket')
