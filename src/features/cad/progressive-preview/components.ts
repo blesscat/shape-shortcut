@@ -466,8 +466,8 @@ function gameBoxAssemblySolids(
       const thickness = module.holderThickness
       solids.push(
         slab(
-          // The installed holder is pressed into the box, so it is
-          // narrower than the printed part.
+          // The installed holder is pressed into the box, so the preview
+          // draws its body width rather than the printed width.
           gameBoxDiceHolderWidth(p.cardWidth),
           thickness,
           p.cardHeight,
