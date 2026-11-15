@@ -43,6 +43,8 @@ export type CadWorkspaceControllerSnapshot = {
 export type CadWorkspaceController = {
   getSnapshot: () => CadWorkspaceControllerSnapshot
   onInputChange: (key: ModelParameterKey, value: string) => void
+  /** Applies several raw values as one snapshot. */
+  onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
   onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
   onOpenGridParametersChange: (parameters: OpenGridParameters) => void
   onOpenGridDimensionCalculationInvalid: () => void
@@ -199,6 +201,7 @@ export function createCadWorkspaceController(
     getSnapshot: () =>
       createSnapshot(state, rawParameters, fieldErrors, progress),
     onInputChange: runtime.handleInputChange,
+    onInputsChange: runtime.handleInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange: runtime.handleOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid:

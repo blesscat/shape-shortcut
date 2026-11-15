@@ -39,12 +39,18 @@
     type GameBoxModuleGroup,
   } from './module-list'
 
+  type Props = ComponentPanelProps & {
+    /** Applies several raw values as one snapshot. */
+    onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
+  }
+
   let {
     locale,
     rawParameters,
     fieldErrors,
     onInputChange,
-  }: ComponentPanelProps = $props()
+    onInputsChange,
+  }: Props = $props()
 
   const t = (key: string, values?: Record<string, string | number | boolean>) =>
     translate(locale, key, values)
@@ -181,9 +187,7 @@
       cardWidth,
       cardHeight,
     )
-    for (const [key, value] of Object.entries(values)) {
-      onInputChange(key as ModelParameterKey, value)
-    }
+    onInputsChange(values)
   }
 
   function addModule(type: GameBoxModuleType): void {

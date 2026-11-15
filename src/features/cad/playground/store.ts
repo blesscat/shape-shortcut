@@ -344,6 +344,11 @@ export type PlaygroundStore = {
     key: ModelParameterKey,
     rawValue: string,
   ) => void
+  /** Applies several raw values as one snapshot. */
+  setParameters: (
+    instanceId: string,
+    values: Partial<Record<ModelParameterKey, string>>,
+  ) => void
   setInstanceParameters: (
     instanceId: string,
     parameters: ModelParameterValues,
@@ -1057,6 +1062,83 @@ export function createPlaygroundStore(): PlaygroundStore {
     if (!cached) scheduleGenerate(instance)
   }
 
+  /**
+   * Applies raw parameter values as one snapshot: the values are merged into
+   * the instance's raw parameters, parsed once and committed once, so a
+   * panel that writes several keys never publishes an intermediate state.
+   */
+  const applyParameterValues = (
+    instanceId: string,
+    values: Partial<Record<ModelParameterKey, string>>,
+    fallbackField: ModelParameterKey | 'parameters',
+  ): void => {
+    const instance = getInstance(instanceId)
+    if (!instance) return
+    const definition = getModelDefinition(instance.modelId)
+    if (!definition) return
+    // Raw-first like the workspace: the per-model raw parser owns type
+    // interpretation, so enum and boolean edits keep their literal values
+    // (no blanket Number() coercion) and multi-step panel edits accumulate
+    // before validation sees the combined snapshot.
+    const candidateRawParameters = {
+      ...instance.rawParameters,
+      ...values,
+    }
+    let parsed: RawParameterParseResult
+    try {
+      parsed = parseRawParameters(candidateRawParameters, instance.modelId)
+    } catch (error) {
+      // Only the key registry's UNKNOWN_MODEL_ID (the opengrid board,
+      // edited through its typed full-parameters setter) may fall back to
+      // the previous typed merge; its schema is all-numeric, so numeric
+      // coercion is exact. Anything else is a parser bug — rethrow it so
+      // the enum-NaN class this change fixed cannot silently resurrect.
+      if (!(
+        error instanceof Error &&
+        error.message.startsWith('UNKNOWN_MODEL_ID:')
+      )) {
+        throw error
+      }
+      const candidateParameters = {
+        ...instance.parameters,
+        ...Object.fromEntries(
+          Object.entries(values).map(([key, value]) => [key, Number(value)]),
+        ),
+      } as ModelParameterValues
+      const validation = validateModelParameters(
+        instance.modelId,
+        candidateParameters,
+      )
+      if (!validation.valid) {
+        instance.fieldErrors = {}
+        for (const issue of validation.issues) {
+          instance.fieldErrors[issue.field] = issue
+        }
+        emit()
+        return
+      }
+      commitParameters(instance, validation.value.parameters)
+      return
+    }
+    if (!parsed.valid) {
+      instance.rawParameters = candidateRawParameters
+      // Every panel binds per-field errors, so a field-less rejection
+      // (e.g. derived footprint overflowing the workspace) surfaces on
+      // the edited control — the workspace input handler's convention.
+      const field = parsed.field ?? fallbackField
+      instance.fieldErrors = {
+        [field]: {
+          field,
+          messageId: parsed.messageId,
+          ...(parsed.params ? { params: parsed.params } : {}),
+        },
+      }
+      emit()
+      return
+    }
+    commitParameters(instance, parsed.value)
+  }
+
   const current = (): PlaygroundSnapshot => {
     const derived = deriveConflictState()
     return {
@@ -1254,69 +1336,10 @@ export function createPlaygroundStore(): PlaygroundStore {
       )
     },
     setParameter(instanceId, key, rawValue) {
-      const instance = getInstance(instanceId)
-      if (!instance) return
-      const definition = getModelDefinition(instance.modelId)
-      if (!definition) return
-      // Raw-first like the workspace: the per-model raw parser owns type
-      // interpretation, so enum and boolean edits keep their literal values
-      // (no blanket Number() coercion) and multi-step panel edits accumulate
-      // before validation sees the combined snapshot.
-      const candidateRawParameters = {
-        ...instance.rawParameters,
-        [key]: rawValue,
-      }
-      let parsed: RawParameterParseResult
-      try {
-        parsed = parseRawParameters(candidateRawParameters, instance.modelId)
-      } catch (error) {
-        // Only the key registry's UNKNOWN_MODEL_ID (the opengrid board,
-        // edited through its typed full-parameters setter) may fall back to
-        // the previous typed merge; its schema is all-numeric, so numeric
-        // coercion is exact. Anything else is a parser bug — rethrow it so
-        // the enum-NaN class this change fixed cannot silently resurrect.
-        if (!(
-          error instanceof Error &&
-          error.message.startsWith('UNKNOWN_MODEL_ID:')
-        )) {
-          throw error
-        }
-        const candidateParameters = {
-          ...instance.parameters,
-          [key]: Number(rawValue),
-        } as ModelParameterValues
-        const validation = validateModelParameters(
-          instance.modelId,
-          candidateParameters,
-        )
-        if (!validation.valid) {
-          instance.fieldErrors = {}
-          for (const issue of validation.issues) {
-            instance.fieldErrors[issue.field] = issue
-          }
-          emit()
-          return
-        }
-        commitParameters(instance, validation.value.parameters)
-        return
-      }
-      if (!parsed.valid) {
-        instance.rawParameters = candidateRawParameters
-        // Every panel binds per-field errors, so a field-less rejection
-        // (e.g. derived footprint overflowing the workspace) surfaces on
-        // the edited control — the workspace input handler's convention.
-        const field = parsed.field ?? key
-        instance.fieldErrors = {
-          [field]: {
-            field,
-            messageId: parsed.messageId,
-            ...(parsed.params ? { params: parsed.params } : {}),
-          },
-        }
-        emit()
-        return
-      }
-      commitParameters(instance, parsed.value)
+      applyParameterValues(instanceId, { [key]: rawValue }, key)
+    },
+    setParameters(instanceId, values) {
+      applyParameterValues(instanceId, values, 'parameters')
     },
     setInstanceParameters(instanceId, parameters) {
       const instance = getInstance(instanceId)

@@ -25,6 +25,7 @@
       Record<ModelParameterKey | 'parameters', ValidationIssue>
     >
     onInputChange: (key: ModelParameterKey, value: string) => void
+    onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
     onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
     onOpenGridParametersChange: (parameters: OpenGridParameters) => void
     onOpenGridDimensionCalculationInvalid: () => void
@@ -43,6 +44,7 @@
     rawParameters,
     fieldErrors,
     onInputChange,
+    onInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid,
@@ -63,6 +65,7 @@
         {rawParameters}
         {fieldErrors}
         {onInputChange}
+        {onInputsChange}
         {onSystemContextChange}
         {onOpenGridParametersChange}
         {onOpenGridDimensionCalculationInvalid}

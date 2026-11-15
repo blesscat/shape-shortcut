@@ -184,8 +184,8 @@ export function snapshotRawValues(
   part: GameBoxPart,
   cardWidth: number,
   cardHeight: number,
-): Record<string, string> {
-  const values: Record<string, string> = {
+): Partial<Record<ModelParameterKey, string>> {
+  const values: Partial<Record<ModelParameterKey, string>> = {
     part,
     cardWidth: String(cardWidth),
     cardHeight: String(cardHeight),

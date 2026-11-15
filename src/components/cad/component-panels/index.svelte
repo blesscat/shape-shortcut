@@ -5,6 +5,7 @@
   import OpenGridLabelLedgeTestComponentPanel from './opengrid-label-ledge-test/OpenGridLabelLedgeTestComponentPanel.svelte'
   import type {
     ModelId,
+    ModelParameterKey,
     ModelParameterValues,
     OpenGridParameters,
     OpenGridSnapParameters,
@@ -34,6 +35,8 @@
     modelId: ModelId
     parameters: ModelParameterValues
     systemContext?: OpenGridSystemContext
+    /** Applies several raw values as one snapshot. */
+    onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
     onOpenGridParametersChange: (parameters: OpenGridParameters) => void
     onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
     onOpenGridDimensionCalculationInvalid: () => void
@@ -47,6 +50,7 @@
     rawParameters,
     fieldErrors,
     onInputChange,
+    onInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid,
@@ -90,6 +94,7 @@
       {rawParameters}
       {fieldErrors}
       {onInputChange}
+      {onInputsChange}
     />
   {:else if modelId === 'opengrid-pillar'}
     <OpenGridPillarComponentPanel

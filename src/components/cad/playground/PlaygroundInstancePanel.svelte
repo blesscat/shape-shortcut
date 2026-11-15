@@ -166,6 +166,7 @@
         fieldErrors={instance.fieldErrors}
         onInputChange={(key, value) =>
           store.setParameter(instance.id, key, value)}
+        onInputsChange={(values) => store.setParameters(instance.id, values)}
         onSystemContextChange={handleSystemContextChange}
         onOpenGridParametersChange={(parameters) =>
           store.setInstanceParameters(instance.id, parameters)}
