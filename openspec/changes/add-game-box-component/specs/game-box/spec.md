@@ -26,18 +26,37 @@
 - **THEN** 其幾何 MUST 仍符合 `card-box` 規格的參考幾何比對
 - **AND** `card-box` 的參數鍵、route 與匯出檔名 MUST 維持原狀
 
-### Requirement: 卡片尺寸與模組參數合約
+### Requirement: 卡片尺寸參數
 
-面板 MUST 暴露卡片寬 `cardWidth`（預設 70，範圍 40–100 mm）與卡片高 `cardHeight`（預設 120，範圍 60–150 mm），其意義與 `card-box` 相同（內部寬度為 `cardWidth + 0.5`，此調整 MUST NOT 暴露）。面板 MUST NOT 暴露收納深度參數。
+面板 MUST 暴露卡片寬 `cardWidth`（預設 70，範圍 40–100 mm）與卡片高 `cardHeight`（預設 120，範圍 60–150 mm），其意義與 `card-box` 相同（內部寬度為 `cardWidth + 0.5`，此調整 MUST NOT 暴露）。面板 MUST NOT 暴露收納深度參數。卡片尺寸 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制；非有限值或超出範圍的值 MUST 在 CAD 生成前以欄位級錯誤拒絕。
+
+#### Scenario: 預設卡片尺寸
+
+- **WHEN** 請求未提供任何參數
+- **THEN** 元件 MUST 使用 cardWidth 70 與 cardHeight 120
+
+#### Scenario: 卡片尺寸超出範圍
+
+- **WHEN** 參數快照中的 cardWidth 為 120
+- **THEN** 驗證 MUST 回報歸屬於 cardWidth 的欄位錯誤並阻止生成與匯出
+
+### Requirement: 模組欄位組
 
 系統 MUST 提供 6 個模組欄位組，編號 1 至 6。每組包含：類型 `type`（`none`、`cards`、`dice`）、卡片區厚度 `cardDepth`（預設 30，範圍 3–150 mm）、骰子邊長 `diceSize`（預設 16，範圍 8–30 mm，步進 0.5）、骰子顆數 `diceCount`（預設 9，範圍 1–60 的整數）。全部參數 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
 
-模組 1 的類型 MUST NOT 為 `none`。類型為 `none` 的模組之後 MUST NOT 出現非 `none` 的模組。預設參數 MUST 為單一 `cards` 模組（厚度 60），其餘模組為 `none`。非有限值、超出範圍、未知類型或違反上述排列規則的參數 MUST 在 CAD 生成前以欄位級錯誤拒絕。
-
-#### Scenario: 預設參數
+#### Scenario: 預設模組欄位值
 
 - **WHEN** 請求未提供任何參數
-- **THEN** 元件 MUST 使用 cardWidth 70、cardHeight 120、模組 1 為厚度 60 的 `cards`，模組 2 至 6 為 `none`
+- **THEN** 模組 1 MUST 為厚度 60 的 `cards`，模組 2 至 6 MUST 為 `none`
+
+#### Scenario: 模組欄位超出範圍
+
+- **WHEN** 參數快照中某模組的 `cardDepth` 為 200
+- **THEN** 驗證 MUST 回報歸屬於該模組 `cardDepth` 的欄位錯誤並阻止生成與匯出
+
+### Requirement: 模組連續規則
+
+模組 1 的類型 MUST NOT 為 `none`。類型為 `none` 的模組之後 MUST NOT 出現非 `none` 的模組。預設參數 MUST 為單一 `cards` 模組（厚度 60），其餘模組為 `none`。非有限值、超出範圍、未知類型或違反上述排列規則的參數 MUST 在 CAD 生成前以欄位級錯誤拒絕。
 
 #### Scenario: 模組必須連續
 
@@ -169,15 +188,21 @@
 
 每個 `dice` 模組 MUST 產生一個骰子匣零件：直立放入盒內的單一 solid，高度與卡片同高，上段為頂面開口的骰槽，下段墊高使骰槽靠近盒口。骰子匣 MUST 以直立、開口朝上的列印方位輸出於 z ≥ 0。
 
+骰槽 MUST 能容納 `diceCount` 顆邊長 `diceSize` 的骰子。正面每一排位置 MUST 有一道寬度小於骰子邊長的直向開口，使骰子可見且可被手指推動但不會掉出。
+
+#### Scenario: 骰子匣為單一 solid 且可列印
+
+- **WHEN** 以任何有效參數建構骰子匣零件
+- **THEN** 輸出 MUST 恰為一個 solid 且位於 z ≥ 0
+- **AND** 其高度 MUST 等於 `cardHeight`
+
+### Requirement: 骰子排列
+
 排列 MUST 依下列規則推算（`p` 為骰子邊長加 0.6 mm 間隙）：
 
 - 每排上限為骰子匣本體寬度扣除兩側最小牆厚後可容納的 `p` 的個數。
 - 層數上限為骰子匣高度扣除骰槽底板與頂部餘裕後可容納的 `p` 的個數。
 - 層數為顆數除以每排上限後無條件進位；每排顆數為顆數除以層數後無條件進位，使各層盡量排滿。
-
-骰槽 MUST 能容納 `diceCount` 顆邊長 `diceSize` 的骰子。正面每一排位置 MUST 有一道寬度小於骰子邊長的直向開口，使骰子可見且可被手指推動但不會掉出。
-
-骰子匣 MUST 以摩擦力固定而非鎖入側牆槽：本體寬度 MUST 小於盒子內部寬度，兩側各 MUST 有彈性元件，其自然狀態下的最外寬度 MUST 大於盒子內部寬度，且 MUST 能被壓縮至不超過本體寬度。骰子匣厚度 MUST 使其能放入所佔用槽距的相鄰分隔板之間。
 
 `diceCount` 超過每排上限乘以層數上限時 MUST 以歸屬於 `diceCount` 的欄位錯誤拒絕，且錯誤 MUST 帶出可容納的最大顆數。
 
@@ -191,23 +216,21 @@
 - **WHEN** 卡片尺寸為 70 × 120，骰子邊長 16、顆數 3
 - **THEN** 排列 MUST 為每排 3 顆、共 1 層
 
-#### Scenario: 骰子匣為單一 solid 且可列印
+#### Scenario: 顆數超過容量
 
-- **WHEN** 以任何有效參數建構骰子匣零件
-- **THEN** 輸出 MUST 恰為一個 solid 且位於 z ≥ 0
-- **AND** 其高度 MUST 等於 `cardHeight`
+- **WHEN** 卡片尺寸為 40 × 60，某 `dice` 模組的骰子邊長為 30、顆數為 9
+- **THEN** 驗證 MUST 回報歸屬於該模組 `diceCount` 的欄位錯誤
+- **AND** 錯誤訊息參數 MUST 包含可容納的最大顆數 1
+
+### Requirement: 骰子匣固定方式
+
+骰子匣 MUST 以摩擦力固定而非鎖入側牆槽：本體寬度 MUST 小於盒子內部寬度，兩側各 MUST 有彈性元件，其自然狀態下的最外寬度 MUST 大於盒子內部寬度，且 MUST 能被壓縮至不超過本體寬度。骰子匣厚度 MUST 使其能放入所佔用槽距的相鄰分隔板之間。
 
 #### Scenario: 彈性元件提供摩擦
 
 - **WHEN** 以預設參數建構骰子匣
 - **THEN** 本體寬度 MUST 小於盒子內部寬度 70.5 mm
 - **AND** 兩側彈性元件自然狀態下的最外寬度 MUST 大於 70.5 mm
-
-#### Scenario: 顆數超過容量
-
-- **WHEN** 卡片尺寸為 40 × 60，某 `dice` 模組的骰子邊長為 30、顆數為 9
-- **THEN** 驗證 MUST 回報歸屬於該模組 `diceCount` 的欄位錯誤
-- **AND** 錯誤訊息參數 MUST 包含可容納的最大顆數 1
 
 ### Requirement: 組裝預覽與下載限制
 

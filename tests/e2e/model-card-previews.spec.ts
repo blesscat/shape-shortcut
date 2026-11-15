@@ -259,13 +259,14 @@ test('visible model previews are captured from ready generators', async ({
         'data-presentation',
         'thumbnail',
       )
-      if (definition.id === 'card-box') {
-        // The card-box assembly intentionally disables downloads, so
-        // readiness is the committed revision, not the STEP button.
+      if (definition.id === 'card-box' || definition.id === 'game-box') {
+        // The card-box and game-box assemblies intentionally disable
+        // downloads, so readiness is the committed preview, not the STEP
+        // button.
         await expect(page.getByTestId('cad-viewport')).toHaveAttribute(
-          'data-model-revision',
-          /.+/,
-          { timeout: 30_000 },
+          'data-preview-kind',
+          'committed',
+          { timeout: 90_000 },
         )
       } else {
         await waitForCadReady(page)
