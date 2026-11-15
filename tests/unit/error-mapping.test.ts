@@ -45,6 +45,12 @@ describe('CAD Worker error mapping', () => {
     ],
     ['CARD_BOX_SVG_TOO_COMPLEX', 'model.generate', 'CARD_BOX_GEOMETRY_INVALID'],
     [
+      'GAME_BOX_GEOMETRY_INVALID:dice-capacity',
+      'model.generate',
+      'GAME_BOX_GEOMETRY_INVALID',
+    ],
+    ['MODEL_PARAMETERS_MISMATCH:game-box', 'model.generate', 'INVALID_INPUT'],
+    [
       'OPENGRID_WALL_COVER_ASSET_LOAD_FAILED',
       'model.generate',
       'MODEL_ASSET_INVALID',
@@ -163,6 +169,12 @@ describe('CAD Worker error mapping', () => {
     expect(cadErrorStageFor('model.generate', 'CARD_BOX_SVG_TOO_COMPLEX')).toBe(
       'building',
     )
+    expect(
+      cadErrorStageFor(
+        'model.generate',
+        'GAME_BOX_GEOMETRY_INVALID:dice-capacity',
+      ),
+    ).toBe('building')
     expect(
       cadErrorStageFor(
         'model.generate',
