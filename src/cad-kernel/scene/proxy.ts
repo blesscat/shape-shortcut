@@ -11,16 +11,29 @@ import {
   cardBoxOuterDepth,
   cardBoxDividerTabCenterX,
   cardBoxDividerWidth,
+  cardBoxInteriorWidth,
   cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
+  gameBoxDiceHolderOuterWidth,
+  gameBoxDiceHolderThickness,
+  gameBoxModuleDiceSizeKey,
+  gameBoxPartModuleIndex,
+  gameBoxStorageDepth,
   validateModelParameters,
   type CardBoxParameters,
+  type GameBoxModuleIndex,
+  type GameBoxParameters,
   type HexagonalColumnParameters,
   type ModelId,
   type ModelParameterValues,
 } from '../../cad-contract/units'
 import { buildModelBRep, type KernelBuildContext } from '../model'
+import { GAME_BOX_DICE_HOLDER } from '../components/game-box/dice-holder'
+import {
+  gameBoxGeometryOf,
+  gameBoxModulePlacements,
+} from '../components/game-box/geometry'
 
 /**
  * Half extents of the hexagonal-column planning envelope. They match the
@@ -222,6 +235,138 @@ function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
 }
 
 /**
+ * Simplified game-box silhouette: the hollow wall tube with floor, the lid
+ * plate, the dividers on the module boundaries and the dice holders as
+ * plain boxes — far cheaper than the full build, and enough for planning
+ * previews.
+ */
+function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
+  const c = CARD_BOX_CONFIGURATION
+  const t = c.wallThickness
+  const storageDepth = gameBoxStorageDepth(parameters)
+  const outerWidth = cardBoxOuterWidth(parameters.cardWidth)
+  const outerDepth = cardBoxOuterDepth(storageDepth)
+  const height = parameters.cardHeight + 2
+  const halfW = outerWidth / 2
+  const halfD = outerDepth / 2
+  const showTube = parameters.part === 'assembly' || parameters.part === 'box'
+  const shapes: Shape3D[] = []
+  if (showTube) {
+    shapes.push(
+      // Floor
+      makeBox([-halfW, -halfD, 0], [halfW, halfD, c.floorThickness]) as Shape3D,
+      // Front / back walls
+      makeBox([-halfW, -halfD, 0], [halfW, -halfD + t, height]) as Shape3D,
+      makeBox([-halfW, halfD - t, 0], [halfW, halfD, height]) as Shape3D,
+      // Left / right walls
+      makeBox(
+        [-halfW, -halfD + t, 0],
+        [-halfW + t, halfD - t, height],
+      ) as Shape3D,
+      makeBox(
+        [halfW - t, -halfD + t, 0],
+        [halfW, halfD - t, height],
+      ) as Shape3D,
+    )
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'lid') {
+    const lidZ =
+      parameters.part === 'assembly' ? parameters.cardHeight + 7.2 : 0
+    shapes.push(
+      makeBox(
+        [-halfW, -(halfD + 0.9), lidZ],
+        [halfW, halfD + 0.9, lidZ + c.lidRoofThickness],
+      ) as Shape3D,
+    )
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'divider') {
+    const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
+    const bodyHeight = parameters.cardHeight
+    const tabHeight = c.dividerTabHeight
+    const halfThickness = c.dividerPlateThickness / 2
+    if (parameters.part === 'assembly') {
+      // The dividers stand on the module boundaries.
+      for (const y of gameBoxGeometryOf(parameters).dividerCentres) {
+        shapes.push(
+          makeBox(
+            [-halfPlate, y - halfThickness, c.floorThickness],
+            [halfPlate, y + halfThickness, c.floorThickness + bodyHeight],
+          ) as Shape3D,
+        )
+      }
+    } else {
+      // Single-part scene preview: flat on the bed, matching the
+      // print-orientation contract bounds.
+      const tabX = cardBoxDividerTabCenterX(c.defaultTabPosition, halfPlate * 2)
+      shapes.push(
+        makeBox(
+          [-halfPlate, 0, 0],
+          [halfPlate, bodyHeight, c.dividerPlateThickness],
+        ) as Shape3D,
+        makeBox(
+          [tabX - c.dividerTabBaseWidth / 2, bodyHeight, 0],
+          [
+            tabX + c.dividerTabBaseWidth / 2,
+            bodyHeight + tabHeight,
+            c.dividerPlateThickness,
+          ],
+        ) as Shape3D,
+      )
+    }
+  }
+  const moduleIndex = gameBoxPartModuleIndex(parameters.part)
+  if (parameters.part === 'assembly' || moduleIndex !== null) {
+    for (const holder of gameBoxProxyHolders(parameters, moduleIndex)) {
+      shapes.push(holder)
+    }
+  }
+  return compoundShapes(shapes)
+}
+
+/**
+ * The dice holders of the preview: in the assembly they stand between the
+ * dividers of their module, the single part stands on the bed in its print
+ * orientation.
+ */
+function gameBoxProxyHolders(
+  parameters: GameBoxParameters,
+  moduleIndex: GameBoxModuleIndex | null,
+): Shape3D[] {
+  const c = CARD_BOX_CONFIGURATION
+  const holders: Shape3D[] = []
+  for (const placement of gameBoxModulePlacements(parameters)) {
+    if (placement.type !== 'dice') continue
+    if (moduleIndex !== null && placement.index !== moduleIndex) continue
+    const diceSize = parameters[gameBoxModuleDiceSizeKey(placement.index)]
+    const thickness = gameBoxDiceHolderThickness(diceSize)
+    const outerWidth =
+      moduleIndex === null
+        ? gameBoxDiceHolderOuterWidth(parameters.cardWidth)
+        : cardBoxInteriorWidth(parameters.cardWidth) -
+          GAME_BOX_DICE_HOLDER.pressedClearance
+    const halfHolder = outerWidth / 2
+    if (moduleIndex === null) {
+      const y =
+        placement.frontY + (placement.backY - placement.frontY - thickness) / 2
+      holders.push(
+        makeBox(
+          [-halfHolder, y, c.floorThickness],
+          [halfHolder, y + thickness, c.floorThickness + parameters.cardHeight],
+        ) as Shape3D,
+      )
+      continue
+    }
+    holders.push(
+      makeBox(
+        [-halfHolder, 0, 0],
+        [halfHolder, thickness, parameters.cardHeight],
+      ) as Shape3D,
+    )
+  }
+  return holders
+}
+
+/**
  * Builds the scene preview B-Rep for an instance. The preview renders the
  * component's real characteristic geometry through the production builders
  * (grid cutouts, openings, stacking rails, seats, wall-mount interfaces,
@@ -244,6 +389,9 @@ export async function buildScenePreviewBRep(
   }
   if (modelId === 'card-box') {
     return cardBoxProxy(model.parameters as CardBoxParameters)
+  }
+  if (modelId === 'game-box') {
+    return gameBoxProxy(model.parameters as GameBoxParameters)
   }
   return buildModelBRep(
     modelId,

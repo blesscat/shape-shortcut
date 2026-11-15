@@ -47,7 +47,7 @@ function combinedArtShape(body: Shape3D, accent: Shape3D): Shape3D {
  * Flips the lid 180° around X so its flat plate top lies on the bed and
  * translates it to z ≥ 0 (print orientation).
  */
-function flipLidForPrint(lid: Shape3D): Shape3D {
+export function flipLidForPrint(lid: Shape3D): Shape3D {
   const flipped = lid.rotate(180, [0, 0, 0], [1, 0, 0])
   if (flipped !== lid) deleteShape(lid)
   const bottomZ = flipped.boundingBox.bounds[0]![2]!

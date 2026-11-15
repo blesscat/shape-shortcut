@@ -14,9 +14,11 @@ import {
 } from '../cad-contract/messages'
 import {
   boundsForCardBox,
+  boundsForGameBox,
   boundsForOpenGridWallCover,
   boundsForOpenGridLabelCard,
   isCardBoxParameters,
+  isGameBoxParameters,
   isHswCellParameters,
   isOpenGridDividerModelParameters,
   isOpenGridOpenConnectShelfParameters,
@@ -476,6 +478,13 @@ export async function generateCadCandidate(
         ]
       }
       mesh.bounds = boundsForCardBox(generationParameters)
+    }
+
+    if (command.modelId === 'game-box') {
+      if (!isGameBoxParameters(generationParameters)) {
+        throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
+      }
+      mesh.bounds = boundsForGameBox(generationParameters)
     }
 
     if (command.modelId === 'opengrid-label-slot-test') {
