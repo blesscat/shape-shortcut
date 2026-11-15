@@ -46,6 +46,7 @@ import {
 import {
   boundsForGameBox,
   gameBoxDiceHolderWidth,
+  gameBoxFrontWallY,
   gameBoxLayout,
   validateGameBoxParameters,
   type GameBoxParameters,
@@ -448,7 +449,7 @@ function gameBoxAssemblySolids(
 
   // The dividers stand on the module boundaries, the holders fill the dice
   // modules between them.
-  const frontWallY = bounds.min[1] + c.wallThickness
+  const frontWallY = gameBoxFrontWallY(p)
   const halfPlate = c.dividerPlateThickness / 2
   let boundaryBefore = 0
   layout.modules.forEach((module, position) => {
@@ -483,7 +484,7 @@ function gameBoxAssemblySolids(
       slab(
         cardBoxDividerWidth(p.cardWidth),
         c.dividerPlateThickness,
-        p.cardHeight,
+        p.cardHeight + c.dividerTabHeight,
         0,
         frontWallY + center,
         c.floorThickness,

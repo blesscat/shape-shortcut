@@ -460,6 +460,7 @@ export {
   gameBoxDiceLayout,
   gameBoxDiceSlots,
   gameBoxFileName,
+  gameBoxFrontWallY,
   gameBoxLayout,
   gameBoxModuleCardDepthKey,
   gameBoxModuleDiceCountKey,

@@ -732,6 +732,8 @@ export function isGameBoxParameters(
 const CARD_BOX_FRAME = {
   /** The box front lip reaches this far in front of the sketch face. */
   frontLipExtension: 1.85,
+  /** The front wall of the box body sits this far behind the sketch face. */
+  frontWallThickness: 1.2,
   /** The lid back face stops this far short of the sketch back face. */
   lidBackInset: 0.05,
   /** The box body reaches this far above the card height. */
@@ -741,6 +743,15 @@ const CARD_BOX_FRAME = {
   /** The printed lid is this tall (plate plus skirts). */
   lidPrintHeight: 16.8,
 } as const
+
+/**
+ * Y of the cavity front wall face in the box frame: the module grid and the
+ * dividers are measured from there.
+ */
+export function gameBoxFrontWallY(parameters: GameBoxParameters): number {
+  const halfSketchY = cardBoxOuterDepth(gameBoxStorageDepth(parameters)) / 2
+  return -(halfSketchY - CARD_BOX_FRAME.frontWallThickness)
+}
 
 /**
  * The envelope of the built part.
