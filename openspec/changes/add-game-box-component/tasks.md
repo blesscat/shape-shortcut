@@ -30,7 +30,7 @@
 
 - [x] 5.1 新增 `src/features/cad/model-catalog/components/game-box.ts`（family `other`、無 presets）並在目錄索引註冊；以 `tests/unit/model-catalog.test.ts` 檢查 modelId、buildKey、route slug 一致為 `game-box` 來驗證
 - [x] 5.2 新增各零件的漸進式簡化預覽形狀；以單元測試檢查簡化預覽與完整幾何 bounds 各軸差異 ≤ 0.5 mm 來驗證
-- [ ] 5.3 新增模型選擇器的淺色與深色預覽圖；以 `tests/e2e/model-card-previews.spec.ts` 涵蓋 `game-box` 並通過來驗證
+- [x] 5.3 新增模型選擇器的淺色與深色預覽圖；以 `tests/e2e/model-card-previews.spec.ts` 涵蓋 `game-box` 並通過來驗證
 - [x] 5.4 新增 `zh-Hant` 與 `en` 的模型名稱、參數標籤、面板文字、零件名稱、提示與錯誤訊息；以兩種語系開啟面板皆無未翻譯訊息鍵的 e2e 檢查來驗證
 
 ## 6. 面板
@@ -48,4 +48,4 @@
 - [ ] 7.1 匯出預設參數的骰子匣 STL 並試印，確認彈性元件的鬆緊與骰子進出骰槽的順暢度；依結果調整薄片尺寸與間隙常數，並在 design.md 的 Open Questions 記錄定案值
 - [ ] 7.2 量測實際骰子邊長並更新 `diceSize` 與 `diceCount` 的預設值；以單元測試的預設參數案例同步更新並通過來驗證
 - [ ] 7.3 執行 `pnpm test:branch` 與 `game-box`、`card-box` 相關的 e2e spec，全數通過
-- [ ] 7.4 執行 `openspec validate add-game-box-component --strict` 通過
+- [x] 7.4 執行 `openspec validate add-game-box-component --strict` 通過

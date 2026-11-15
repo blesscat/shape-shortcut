@@ -135,7 +135,7 @@ for (const model of modelDefinitions.map((definition) => definition.id)) {
     } finally {
       release()
     }
-    if (model === 'card-box') {
+    if (model === 'card-box' || model === 'game-box') {
       // The assembly disables downloads, so readiness is the committed
       // preview kind rather than the STEP button.
       await expect(viewport).toHaveAttribute('data-preview-kind', 'committed', {
