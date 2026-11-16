@@ -131,6 +131,70 @@ function solidsOf(shape: Shape3D): Shape3D[] {
   return solids
 }
 
+/** The empty span of the front wall around a row position. */
+type OpeningSpan = {
+  /** The left edge of the opening. */
+  start: number
+  /** The right edge of the opening. */
+  end: number
+  /** The middle of the opening. */
+  center: number
+  /** The width of the opening. */
+  width: number
+}
+
+/** A volume that is noise, not material (mm³). */
+const MATERIAL_EPSILON = 1e-9
+
+/**
+ * The empty span of the front wall around a row position: the opening that
+ * covers it, measured from the material edges around it.
+ *
+ * The edges are read from the material inside a probe that reaches into the
+ * wall, so the span is the real width of the opening and not the width of a
+ * probe placed around it. A probe that is empty up to its face touches the
+ * material first on the side it is scanned towards, so the material it
+ * carries gives the exact edge.
+ */
+function openingSpan(
+  holder: Shape3D,
+  x: number,
+  wallY: readonly [number, number],
+  zStart: number,
+  zEnd: number,
+  limit: number,
+): OpeningSpan {
+  const [yStart, yEnd] = wallY
+  const depth = yEnd - yStart
+  const height = zEnd - zStart
+  const width = 2
+  const step = 1
+  /** The material edge of the wall on one side of the opening. */
+  const edge = (direction: 1 | -1): number => {
+    for (let distance = step; distance <= limit; distance += step) {
+      const center = x + direction * distance
+      const probe = makeBox(
+        [center - width / 2, yStart, zStart],
+        [center + width / 2, yEnd, zEnd],
+      ) as Shape3D
+      const volume = volumeOf(holder, probe)
+      probe.delete()
+      if (volume <= MATERIAL_EPSILON) continue
+      // The probe reaches the material: the edge lies inside the probe and
+      // the material it carries gives the exact edge.
+      const material = volume / (depth * height)
+      return direction === 1
+        ? center + width / 2 - material
+        : center - width / 2 + material
+    }
+    // No material on this side: the opening reaches the end of the holder.
+    return x + direction * limit
+  }
+  const start = edge(-1)
+  const end = edge(1)
+  return { start, end, center: (start + end) / 2, width: end - start }
+}
+
 describe('game-box box part', () => {
   it('builds one solid on the bed', () => {
     const build = buildGameBox(
@@ -427,10 +491,26 @@ describe('game-box dice holder', () => {
             `opening in front of the row at ${center.x} mm`,
           ).toBeLessThan(OVERLAP_LIMIT)
           opening.delete()
-          // The opening is narrower than the die: the wall still holds it.
+          // The opening is narrower than the die: the empty span through
+          // the front wall is measured, so an opening that grows to the
+          // width of the die is caught on either side of the row position.
+          const span = openingSpan(
+            holder,
+            center.x,
+            wallY,
+            zStart,
+            zEnd,
+            3 * frame.pitch,
+          )
+          expect(
+            span.width,
+            `width of the opening in front of the row at ${center.x} mm`,
+          ).toBeLessThan(options.diceSize - 0.01)
+          // A die does not pass through the opening: the wall still holds
+          // it, whichever side of the row position the opening reaches.
           const die = makeBox(
-            [center.x - options.diceSize / 2, wallY[0], zStart],
-            [center.x + options.diceSize / 2, wallY[1], zEnd],
+            [span.center - options.diceSize / 2, wallY[0], zStart],
+            [span.center + options.diceSize / 2, wallY[1], zEnd],
           ) as Shape3D
           expect(
             volumeOf(holder, die),
