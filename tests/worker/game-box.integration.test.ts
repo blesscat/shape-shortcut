@@ -406,6 +406,18 @@ describe('game-box assembly', () => {
     ['maximum', 100, 150],
   ] as const
 
+  /**
+   * The parts of the assembly: the box, the lid, one divider per module
+   * boundary and one dice holder per dice module.
+   */
+  function expectedPartCount(params: GameBoxParameters): number {
+    const layout = gameBoxLayout(params)
+    const diceModules = layout.modules.filter(
+      (module) => module.type === 'dice',
+    ).length
+    return 2 + layout.dividerCount + diceModules
+  }
+
   for (const [label, cardWidth, cardHeight] of SIZES) {
     it(`keeps the parts apart at the ${label} card size`, () => {
       const params = moduleParameters(
@@ -419,7 +431,7 @@ describe('game-box assembly', () => {
       const build = buildGameBox(params)
       try {
         const solids = solidsOf(build.shape)
-        expect(solids.length).toBeGreaterThanOrEqual(5)
+        expect(solids.length).toBe(expectedPartCount(params))
         for (let first = 0; first < solids.length; first += 1) {
           for (let second = first + 1; second < solids.length; second += 1) {
             expect(
@@ -487,6 +499,7 @@ describe('game-box assembly', () => {
     const build = buildGameBox(params)
     try {
       const solids = solidsOf(build.shape)
+      expect(solids.length).toBe(expectedPartCount(params))
       const holders = solids.filter((solid) => {
         const bounds = boundsOf(solid)
         return (

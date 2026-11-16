@@ -2,10 +2,9 @@ import { expect, test, type Page } from '@playwright/test'
 import {
   boundsForGameBox,
   cardBoxInteriorWidth,
-  cardBoxOuterDepth,
-  cardBoxOuterWidth,
   GAME_BOX_CONFIGURATION,
   gameBoxLayout,
+  type GameBoxParameters,
 } from '../../src/cad-contract/units'
 import { skipHeadlessFirefoxWithoutWebGL } from './helpers'
 
@@ -15,12 +14,6 @@ const DEFAULTS = GAME_BOX_CONFIGURATION.defaultParameters
 const DEFAULT_CARD_WIDTH = GAME_BOX_CONFIGURATION.defaults.cardWidth
 const DEFAULT_CARD_HEIGHT = GAME_BOX_CONFIGURATION.defaults.cardHeight
 const DEFAULT_LAYOUT = gameBoxLayout(DEFAULTS)
-// The outer size describes the whole product: the box body with the
-// sliding lid on top.
-const DEFAULT_PRODUCT_BOUNDS = boundsForGameBox({
-  ...DEFAULTS,
-  part: 'assembly',
-})
 const DICE_LAYOUT = gameBoxLayout({ ...DEFAULTS, module2Type: 'dice' })
 const CARD_DEPTH_20_LAYOUT = gameBoxLayout({
   ...DEFAULTS,
@@ -35,8 +28,20 @@ function interiorSizeText(layout: typeof DEFAULT_LAYOUT): string {
   return `${cardBoxInteriorWidth(DEFAULT_CARD_WIDTH)} × ${layout.storageDepth} × ${DEFAULT_CARD_HEIGHT} mm`
 }
 
-function outerSizeText(layout: typeof DEFAULT_LAYOUT): string {
-  return `${cardBoxOuterWidth(DEFAULT_CARD_WIDTH)} × ${cardBoxOuterDepth(layout.storageDepth)} × ${DEFAULT_PRODUCT_BOUNDS.max[2] - DEFAULT_PRODUCT_BOUNDS.min[2]} mm`
+/**
+ * The outer size describes the whole product: the box body with the sliding
+ * lid on top, measured in the assembled frame.
+ */
+function outerSizeText(parameters: Partial<GameBoxParameters>): string {
+  const bounds = boundsForGameBox({
+    ...DEFAULTS,
+    ...parameters,
+    part: 'assembly',
+  })
+  const width = bounds.max[0] - bounds.min[0]
+  const depth = bounds.max[1] - bounds.min[1]
+  const height = bounds.max[2] - bounds.min[2]
+  return `${width} × ${depth} × ${height} mm`
 }
 
 async function openGameBox(page: Page): Promise<void> {
@@ -68,7 +73,10 @@ test.describe('game-box', () => {
       interiorSizeText(DEFAULT_LAYOUT),
     )
     await expect(page.getByTestId('game-box-outer-size')).toHaveText(
-      outerSizeText(DEFAULT_LAYOUT),
+      outerSizeText({}),
+    )
+    await expect(page.getByTestId('game-box-module-1')).toContainText(
+      '佔用長度',
     )
     await expect(page.getByTestId('game-box-module-1-length')).toHaveText(
       `${DEFAULT_LAYOUT.modules[0]?.length} mm`,
@@ -87,6 +95,10 @@ test.describe('game-box', () => {
     await expect(page.getByTestId('game-box-interior-size')).toHaveText(
       interiorSizeText(DICE_LAYOUT),
     )
+    // The outer size follows the storage depth of the module list.
+    await expect(page.getByTestId('game-box-outer-size')).toHaveText(
+      outerSizeText({ module2Type: 'dice' }),
+    )
 
     // The list never grows past six modules.
     for (let index = 0; index < MODULE_LIMIT - 2; index += 1) {
@@ -95,6 +107,40 @@ test.describe('game-box', () => {
     await expect(page.getByTestId('game-box-module-6')).toBeVisible()
     await expect(page.getByTestId('game-box-add')).toBeDisabled()
     await expect(page.getByTestId('game-box-module-limit')).toBeVisible()
+  })
+
+  test('keeps the default card depth of the first module and never shows a broken size', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(120_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    const module1 = page.getByTestId('game-box-module-1')
+    const depthField = module1.getByRole('textbox', { name: '卡片區厚度' })
+    const restore = module1.getByRole('button', { name: '復原卡片區厚度' })
+
+    // The default of the first module is not an edit.
+    await expect(restore).toHaveCount(0)
+
+    await depthField.fill('30')
+    await expect(restore).toBeVisible()
+    await restore.click()
+    await expect(depthField).toHaveValue(
+      String(GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth),
+    )
+
+    // An unfinished field never breaks the derived sizes.
+    await depthField.fill('')
+    for (const testId of [
+      'game-box-interior-size',
+      'game-box-outer-size',
+      'game-box-storage-depth',
+      'game-box-module-1-length',
+    ]) {
+      await expect(page.getByTestId(testId)).not.toContainText('NaN')
+    }
   })
 
   test('deletes a middle module and keeps the remaining depth', async ({

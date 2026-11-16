@@ -1,15 +1,9 @@
 <script lang="ts">
   import {
     boundsForGameBox,
-    cardBoxInteriorWidth,
-    cardBoxOuterDepth,
-    cardBoxOuterWidth,
     GAME_BOX_CONFIGURATION,
     gameBoxAvailableParts,
     gameBoxLayout,
-    gameBoxModuleCardDepthKey,
-    gameBoxModuleDiceCountKey,
-    gameBoxModuleDiceSizeKey,
     gameBoxModuleTypeKey,
     type GameBoxModuleIndex,
     type GameBoxModuleType,
@@ -20,18 +14,23 @@
     displayParameterLabel,
     gameBoxDefinition,
     unitLabelFor,
-    type ParameterField as ParameterFieldSpec,
   } from '../../../../features/cad/model-catalog'
   import { translate } from '../../../../i18n'
   import { formatValidationIssue } from '../../../../i18n/diagnostics'
   import ParameterField from '../ParameterField.svelte'
   import ParameterControl from '../ParameterControl.svelte'
   import type { ComponentPanelProps } from '../types'
+  import { formatMillimetres, gameBoxDerivedSizes } from './derived-sizes'
+  import {
+    cardDepthField,
+    diceCountField,
+    diceSizeField,
+    moduleFieldChanged,
+  } from './fields'
   import {
     activeModuleCount,
     addModuleGroup,
     deleteModuleGroup,
-    moduleNumber,
     moduleSnapshot,
     moveModuleGroup,
     readModuleGroups,
@@ -77,9 +76,18 @@
   const canDelete = $derived(enabledGroups.length > 1)
 
   // The outer size describes the whole product: the box body with the
-  // sliding lid on top.
+  // sliding lid on top, measured in the assembled frame.
   const productBounds = $derived(
     boundsForGameBox({ ...snapshot, part: 'assembly' }),
+  )
+
+  const derivedSizes = $derived(
+    gameBoxDerivedSizes({
+      cardWidth,
+      cardHeight,
+      storageDepth: layout.storageDepth,
+      productBounds,
+    }),
   )
 
   const partOptions = $derived(
@@ -113,58 +121,6 @@
   function numberFromRaw(key: ModelParameterKey, fallback: number): number {
     const value = Number(rawParameters[key])
     return Number.isFinite(value) && value > 0 ? value : fallback
-  }
-
-  function moduleField(
-    key: ModelParameterKey,
-    label: string,
-    range: { min: number; max: number; step: number },
-    defaultValue: number,
-  ): ParameterFieldSpec {
-    return {
-      key,
-      label,
-      labelFormat: 'label',
-      axis: 'Y',
-      unit: 'mm',
-      control: 'range-text',
-      defaultValue,
-      min: range.min,
-      max: range.max,
-      step: range.step,
-      sliderMin: range.min,
-      sliderMax: range.max,
-    }
-  }
-
-  function cardDepthField(index: GameBoxModuleIndex): ParameterFieldSpec {
-    const range = GAME_BOX_CONFIGURATION.ranges.cardDepth
-    return moduleField(
-      gameBoxModuleCardDepthKey(index),
-      'parameters.gameBoxCardDepth',
-      { min: range.min, max: range.max, step: 1 },
-      GAME_BOX_CONFIGURATION.defaults.cardDepth,
-    )
-  }
-
-  function diceSizeField(index: GameBoxModuleIndex): ParameterFieldSpec {
-    const range = GAME_BOX_CONFIGURATION.ranges.diceSize
-    return moduleField(
-      gameBoxModuleDiceSizeKey(index),
-      'parameters.gameBoxDiceSize',
-      { min: range.min, max: range.max, step: range.step },
-      GAME_BOX_CONFIGURATION.defaults.diceSize,
-    )
-  }
-
-  function diceCountField(index: GameBoxModuleIndex): ParameterFieldSpec {
-    const range = GAME_BOX_CONFIGURATION.ranges.diceCount
-    return moduleField(
-      gameBoxModuleDiceCountKey(index),
-      'parameters.gameBoxDiceCount',
-      { min: range.min, max: range.max, step: 1 },
-      GAME_BOX_CONFIGURATION.defaults.diceCount,
-    )
   }
 
   function moduleTypeLabel(type: GameBoxModuleType): string {
@@ -285,10 +241,12 @@
             {moduleTypeLabel(group.type)}
           </span>
           <span
-            class="ms-auto text-sm text-muted-foreground"
-            data-testid={`game-box-module-${index}-length`}
+            class="ms-auto flex items-center gap-1 text-sm text-muted-foreground"
           >
-            {moduleLayout?.length ?? 0} mm
+            <span>{t('panel.gameBox.moduleLength')}</span>
+            <span data-testid={`game-box-module-${index}-length`}>
+              {formatMillimetres(moduleLayout?.length ?? Number.NaN)}
+            </span>
           </span>
         </div>
 
@@ -307,8 +265,7 @@
             {locale}
             label={displayParameterLabel(field, locale)}
             unit={unitLabelFor(locale, field.unit)}
-            changed={moduleNumber(group.cardDepth, field.defaultValue) !==
-              field.defaultValue}
+            changed={moduleFieldChanged(group.cardDepth, field)}
             error={fieldErrors[field.key]}
             errorId={`${field.key}-error`}
             onRestore={() =>
@@ -329,8 +286,7 @@
             {locale}
             label={displayParameterLabel(sizeField, locale)}
             unit={unitLabelFor(locale, sizeField.unit)}
-            changed={moduleNumber(group.diceSize, sizeField.defaultValue) !==
-              sizeField.defaultValue}
+            changed={moduleFieldChanged(group.diceSize, sizeField)}
             error={fieldErrors[sizeField.key]}
             errorId={`${sizeField.key}-error`}
             onRestore={() =>
@@ -348,8 +304,7 @@
             {locale}
             label={displayParameterLabel(countField, locale)}
             unit={unitLabelFor(locale, countField.unit)}
-            changed={moduleNumber(group.diceCount, countField.defaultValue) !==
-              countField.defaultValue}
+            changed={moduleFieldChanged(group.diceCount, countField)}
             error={fieldErrors[countField.key]}
             errorId={`${countField.key}-error`}
             onRestore={() =>
@@ -450,23 +405,19 @@
     <div class="flex gap-2">
       <dt class="text-muted-foreground">{t('panel.gameBox.interiorSize')}</dt>
       <dd class="m-0 ms-auto" data-testid="game-box-interior-size">
-        {cardBoxInteriorWidth(cardWidth)} × {layout.storageDepth} × {cardHeight}
-        mm
+        {derivedSizes.interior}
       </dd>
     </div>
     <div class="flex gap-2">
       <dt class="text-muted-foreground">{t('panel.gameBox.outerSize')}</dt>
       <dd class="m-0 ms-auto" data-testid="game-box-outer-size">
-        {cardBoxOuterWidth(cardWidth)} × {cardBoxOuterDepth(
-          layout.storageDepth,
-        )}
-        × {productBounds.max[2] - productBounds.min[2]} mm
+        {derivedSizes.outer}
       </dd>
     </div>
     <div class="flex gap-2">
       <dt class="text-muted-foreground">{t('panel.gameBox.storageDepth')}</dt>
       <dd class="m-0 ms-auto" data-testid="game-box-storage-depth">
-        {layout.storageDepth} mm
+        {derivedSizes.storageDepth}
       </dd>
     </div>
   </dl>

@@ -472,7 +472,9 @@ function gameBoxAssemblySolids(
           thickness,
           p.cardHeight,
           0,
-          frontWallY + (start + end - thickness) / 2,
+          // The slab is centred on the free space of the module, the same
+          // place the kernel installs the holder in.
+          frontWallY + (start + end) / 2,
           c.floorThickness,
         ),
       )

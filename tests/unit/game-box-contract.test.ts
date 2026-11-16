@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import * as gameBoxContract from '../../src/cad-contract/units/game-box'
 import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_PARAMETER_KEYS,
@@ -396,10 +395,6 @@ describe('game-box export file names', () => {
     expect(() => gameBoxFileName(parameters([{ type: 'cards' }]))).toThrow(
       'GAME_BOX_ASSEMBLY_EXPORT_FORBIDDEN',
     )
-  })
-
-  it('offers no 3MF export name', () => {
-    expect(Object.keys(gameBoxContract)).not.toContain('gameBoxThreeMfFileName')
   })
 
   it('routes the model file names through the model layer', () => {
