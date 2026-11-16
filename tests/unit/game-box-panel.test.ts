@@ -17,6 +17,7 @@ import {
   cardBoxInteriorWidth,
   GAME_BOX_CONFIGURATION,
 } from '../../src/cad-contract/units'
+import { unitLabelFor } from '../../src/features/cad/model-catalog'
 
 const DEFAULTS = GAME_BOX_CONFIGURATION.defaultParameters
 const PRODUCT_BOUNDS = boundsForGameBox({ ...DEFAULTS, part: 'assembly' })
@@ -49,9 +50,17 @@ describe('game-box module fields', () => {
   })
 
   it('counts the dice instead of measuring them', () => {
-    expect(diceCountField(1).unit).toBe('count')
+    expect(diceCountField(1).unit).toBe('dice')
     expect(diceSizeField(1).unit).toBe('mm')
     expect(cardDepthField(1).unit).toBe('mm')
+  })
+
+  it('labels the die count in dice in every locale', () => {
+    const field = diceCountField(1)
+    expect(unitLabelFor('en', field.unit)).toBe('dice')
+    expect(unitLabelFor('zh-Hant', field.unit)).toBe('顆')
+    expect(unitLabelFor('en', field.unit)).not.toBe('mm')
+    expect(unitLabelFor('en', field.unit)).not.toBe('columns')
   })
 })
 

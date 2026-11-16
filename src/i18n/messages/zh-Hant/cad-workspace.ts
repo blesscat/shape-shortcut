@@ -70,6 +70,7 @@ export const messages = {
   'unit.degree': '°',
   'unit.grid': '格',
   'unit.count': '支',
+  'unit.dice': '顆',
   'cad.cylinder.topRimEnabled': '雙色飾圈',
   'cad.cylinder.topRimHeight': '飾圈高度',
   'cad.action.step': '下載 STEP',

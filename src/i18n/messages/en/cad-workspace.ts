@@ -76,6 +76,7 @@ export const messages = {
   'unit.degree': '°',
   'unit.grid': 'cells',
   'unit.count': 'columns',
+  'unit.dice': 'dice',
   'cad.cylinder.topRimEnabled': 'Two-color accent rim',
   'cad.cylinder.topRimHeight': 'Accent rim height',
   'cad.action.step': 'Download STEP',

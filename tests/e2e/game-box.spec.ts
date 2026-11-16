@@ -143,6 +143,37 @@ test.describe('game-box', () => {
     }
   })
 
+  test('labels the die count in dice in both locales', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(120_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+
+    const cases = [
+      { locale: 'zh-Hant', label: '骰子顆數', unit: '顆' },
+      { locale: 'en', label: 'Die count', unit: 'dice' },
+    ]
+
+    for (const { locale, label, unit } of cases) {
+      await page.goto(`/${locale}/cad/game-box`)
+      // Every locale starts from the default module list.
+      await page.evaluate(() => window.localStorage.clear())
+      await page.reload()
+      await expect(page.getByTestId('game-box-modules')).toBeVisible()
+      await addModule(page, 'dice')
+
+      // The unit stands next to the value of the die count.
+      const row = page
+        .getByTestId('game-box-module-2')
+        .getByRole('textbox', { name: label })
+        .locator('..')
+      await expect(row).toContainText(unit)
+      await expect(row).not.toContainText('mm')
+      await expect(row).not.toContainText('columns')
+    }
+  })
+
   test('deletes a middle module and keeps the remaining depth', async ({
     page,
     browserName,

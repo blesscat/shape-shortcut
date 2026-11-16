@@ -76,7 +76,7 @@ export function diceCountField(index: GameBoxModuleIndex): ParameterField {
     'parameters.gameBoxDiceCount',
     { min: range.min, max: range.max, step: 1 },
     GAME_BOX_CONFIGURATION.defaults.diceCount,
-    'count',
+    'dice',
   )
 }
 
