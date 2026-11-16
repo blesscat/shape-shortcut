@@ -397,6 +397,65 @@ describe('game-box dice holder', () => {
       holder.delete()
     }
   })
+
+  it('opens the front wall in front of every row position', () => {
+    const frame = gameBoxDiceHolderFrame(options)
+    const centers = gameBoxDiceCenters(options)
+    // The front wall of the holder: it spans the thickness of the holder
+    // between the front face and the dice well.
+    const wallY: [number, number] = [0.01, frame.frontWall - 0.01]
+    // The openings run from the well floor to the top of the holder, so a
+    // die can be seen and pushed from the front.
+    const bands: [number, number][] = [
+      [frame.wellFloorZ + 0.2, frame.wellFloorZ + 1.2],
+      [frame.height - 2, frame.height - 0.2],
+    ]
+    const holder = buildGameBoxDiceHolder(options)
+    try {
+      // One opening in front of every position of the first row.
+      const row = centers.slice(0, frame.layout.perRow)
+      expect(row).toHaveLength(frame.layout.perRow)
+      for (const center of row) {
+        for (const [zStart, zEnd] of bands) {
+          // The opening is there: the front of the row is free.
+          const opening = makeBox(
+            [center.x - 0.5, wallY[0], zStart],
+            [center.x + 0.5, wallY[1], zEnd],
+          ) as Shape3D
+          expect(
+            volumeOf(holder, opening),
+            `opening in front of the row at ${center.x} mm`,
+          ).toBeLessThan(OVERLAP_LIMIT)
+          opening.delete()
+          // The opening is narrower than the die: the wall still holds it.
+          const die = makeBox(
+            [center.x - options.diceSize / 2, wallY[0], zStart],
+            [center.x + options.diceSize / 2, wallY[1], zEnd],
+          ) as Shape3D
+          expect(
+            volumeOf(holder, die),
+            `wall in front of the row at ${center.x} mm`,
+          ).toBeGreaterThan(OVERLAP_LIMIT)
+          die.delete()
+        }
+      }
+      // The wall between two neighbouring openings is still there.
+      for (let column = 1; column < row.length; column += 1) {
+        const middle = (row[column - 1]!.x + row[column]!.x) / 2
+        const wall = makeBox(
+          [middle - 0.5, wallY[0], bands[0]![0]],
+          [middle + 0.5, wallY[1], bands[0]![1]],
+        ) as Shape3D
+        expect(
+          volumeOf(holder, wall),
+          `wall between the openings at ${middle} mm`,
+        ).toBeGreaterThan(OVERLAP_LIMIT)
+        wall.delete()
+      }
+    } finally {
+      holder.delete()
+    }
+  })
 })
 
 describe('game-box assembly', () => {

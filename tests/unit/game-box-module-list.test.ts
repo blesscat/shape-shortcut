@@ -11,6 +11,7 @@ import {
 import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_PARAMETER_KEYS,
+  gameBoxLayout,
   validateGameBoxParameters,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
@@ -156,5 +157,60 @@ describe('game-box module list', () => {
       ? (validation.value as GameBoxParameters)
       : null
     expect(parameters?.module3Type).toBe('cards')
+  })
+
+  it('falls back to the default of the position for an empty field', () => {
+    const groups = readModuleGroups({
+      module1Type: 'cards',
+      module1CardDepth: '',
+      module2Type: 'cards',
+      module2CardDepth: '',
+    } as RawParameters)
+    const snapshot = moduleSnapshot(groups, 'assembly', 70, 120)
+    // The first module keeps its thicker default, every other module the
+    // plain one: an empty field is unfinished, never a zero.
+    expect(snapshot.module1CardDepth).toBe(
+      GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth,
+    )
+    expect(snapshot.module2CardDepth).toBe(
+      GAME_BOX_CONFIGURATION.defaults.cardDepth,
+    )
+    // The read-only storage depth follows the fallback, not the empty field.
+    const filled = moduleSnapshot(
+      readModuleGroups({
+        module1Type: 'cards',
+        module1CardDepth: String(
+          GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth,
+        ),
+        module2Type: 'cards',
+        module2CardDepth: String(GAME_BOX_CONFIGURATION.defaults.cardDepth),
+      } as RawParameters),
+      'assembly',
+      70,
+      120,
+    )
+    expect(gameBoxLayout(snapshot).storageDepth).toBe(
+      gameBoxLayout(filled).storageDepth,
+    )
+  })
+
+  it('falls back to the default of the position for an unreadable field', () => {
+    const groups = readModuleGroups({
+      module1Type: 'dice',
+      module1DiceSize: 'abc',
+      module1DiceCount: '',
+      module2Type: 'cards',
+      module2CardDepth: 'abc',
+    } as RawParameters)
+    const snapshot = moduleSnapshot(groups, 'assembly', 70, 120)
+    expect(snapshot.module1DiceSize).toBe(
+      GAME_BOX_CONFIGURATION.defaults.diceSize,
+    )
+    expect(snapshot.module1DiceCount).toBe(
+      GAME_BOX_CONFIGURATION.defaults.diceCount,
+    )
+    expect(snapshot.module2CardDepth).toBe(
+      GAME_BOX_CONFIGURATION.defaults.cardDepth,
+    )
   })
 })

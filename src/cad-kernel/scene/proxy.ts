@@ -243,7 +243,6 @@ function cardBoxProxy(parameters: CardBoxParameters): Shape3D {
  */
 function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
   const c = CARD_BOX_CONFIGURATION
-  const t = c.wallThickness
   const shapes: Shape3D[] = []
   if (parameters.part === 'assembly' || parameters.part === 'box') {
     shapes.push(...gameBoxProxyTube(parameters))

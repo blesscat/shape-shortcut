@@ -5,6 +5,7 @@ import {
   gameBoxModuleDiceCountKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
+  type GameBoxModuleIndex,
   type GameBoxModuleType,
   type GameBoxParameters,
   type GameBoxPart,
@@ -26,10 +27,18 @@ export type GameBoxModuleGroup = {
 
 const DEFAULTS = GAME_BOX_CONFIGURATION.defaults
 
-function inactiveGroup(): GameBoxModuleGroup {
+/**
+ * The card depth a module position falls back to: the first module carries
+ * the thicker default card compartment, every other module the plain one.
+ */
+function moduleCardDepthDefault(index: GameBoxModuleIndex): number {
+  return index === 1 ? DEFAULTS.firstModuleCardDepth : DEFAULTS.cardDepth
+}
+
+function inactiveGroup(index: GameBoxModuleIndex): GameBoxModuleGroup {
   return {
     type: 'none',
-    cardDepth: String(DEFAULTS.cardDepth),
+    cardDepth: String(moduleCardDepthDefault(index)),
     diceSize: String(DEFAULTS.diceSize),
     diceCount: String(DEFAULTS.diceCount),
   }
@@ -61,7 +70,7 @@ export function readModuleGroups(raw: RawParameters): GameBoxModuleGroup[] {
       ),
       cardDepth:
         raw[gameBoxModuleCardDepthKey(index)] ??
-        String(isFirst ? DEFAULTS.firstModuleCardDepth : DEFAULTS.cardDepth),
+        String(moduleCardDepthDefault(index)),
       diceSize:
         raw[gameBoxModuleDiceSizeKey(index)] ?? String(DEFAULTS.diceSize),
       diceCount:
@@ -78,8 +87,13 @@ export function activeModuleCount(
   return firstInactive === -1 ? groups.length : firstInactive
 }
 
-/** The number a raw module field carries; unreadable text falls back. */
+/**
+ * The number a raw module field carries; an empty or unreadable text falls
+ * back to the default of its field, so an unfinished entry never counts as
+ * zero.
+ */
 export function moduleNumber(text: string, fallback: number): number {
+  if (text.trim() === '') return fallback
   const value = Number(text)
   return Number.isFinite(value) ? value : fallback
 }
@@ -92,7 +106,7 @@ export function moduleNumber(text: string, fallback: number): number {
 function repack(enabled: readonly GameBoxModuleGroup[]): GameBoxModuleGroup[] {
   const packed: GameBoxModuleGroup[] = enabled.map((group) => ({ ...group }))
   while (packed.length < GAME_BOX_MODULE_INDICES.length) {
-    packed.push(inactiveGroup())
+    packed.push(inactiveGroup(GAME_BOX_MODULE_INDICES[packed.length]!))
   }
   return packed
 }
@@ -107,7 +121,7 @@ export function addModuleGroup(
   const enabled = groups.slice(0, count).map((group) => ({ ...group }))
   enabled.push({
     type,
-    cardDepth: String(DEFAULTS.cardDepth),
+    cardDepth: String(moduleCardDepthDefault(GAME_BOX_MODULE_INDICES[count]!)),
     diceSize: String(DEFAULTS.diceSize),
     diceCount: String(DEFAULTS.diceCount),
   })
@@ -146,7 +160,9 @@ export function moveModuleGroup(
 
 /**
  * The parameter snapshot the six groups describe. The numbers come from the
- * raw text, so the derived sizes stay readable while a field is unfinished.
+ * raw text, so the derived sizes stay readable while a field is unfinished:
+ * an empty or unreadable field falls back to the default of its position, the
+ * same value `readModuleGroups` uses.
  */
 export function moduleSnapshot(
   groups: readonly GameBoxModuleGroup[],
@@ -156,11 +172,11 @@ export function moduleSnapshot(
 ): GameBoxParameters {
   const parameters: Record<string, unknown> = { part, cardWidth, cardHeight }
   GAME_BOX_MODULE_INDICES.forEach((index, position) => {
-    const group = groups[position] ?? inactiveGroup()
+    const group = groups[position] ?? inactiveGroup(index)
     parameters[gameBoxModuleTypeKey(index)] = group.type
     parameters[gameBoxModuleCardDepthKey(index)] = moduleNumber(
       group.cardDepth,
-      DEFAULTS.cardDepth,
+      moduleCardDepthDefault(index),
     )
     parameters[gameBoxModuleDiceSizeKey(index)] = moduleNumber(
       group.diceSize,
@@ -191,7 +207,7 @@ export function snapshotRawValues(
     cardHeight: String(cardHeight),
   }
   GAME_BOX_MODULE_INDICES.forEach((index, position) => {
-    const group = groups[position] ?? inactiveGroup()
+    const group = groups[position] ?? inactiveGroup(index)
     values[gameBoxModuleTypeKey(index)] = group.type
     values[gameBoxModuleCardDepthKey(index)] = group.cardDepth
     values[gameBoxModuleDiceSizeKey(index)] = group.diceSize
