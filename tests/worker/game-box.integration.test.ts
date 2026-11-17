@@ -335,6 +335,57 @@ describe('game-box dice holder', () => {
     }
   })
 
+  it('fills the riser below the well and the full bed face', () => {
+    const cases = [
+      { name: 'default', options },
+      {
+        name: 'tall riser',
+        options: { ...options, cardHeight: 150, diceCount: 3 },
+      },
+      {
+        name: 'short riser',
+        options: { ...options, cardHeight: 60, diceSize: 18, diceCount: 9 },
+      },
+    ]
+
+    for (const scenario of cases) {
+      const frame = gameBoxDiceHolderFrame(scenario.options)
+      const holder = buildGameBoxDiceHolder(scenario.options)
+      const probes = [
+        {
+          name: 'below the well',
+          probe: makeBox(
+            [-frame.wellWidth / 2, frame.frontWall, 0],
+            [
+              frame.wellWidth / 2,
+              frame.thickness - frame.frontWall,
+              frame.wellFloorZ,
+            ],
+          ) as Shape3D,
+        },
+        {
+          name: 'the bed face',
+          probe: makeBox(
+            [-frame.bodyWidth / 2, 0, 0],
+            [frame.bodyWidth / 2, frame.thickness, 0.2],
+          ) as Shape3D,
+        },
+      ]
+
+      try {
+        for (const region of probes) {
+          expect(
+            volumeOf(holder, region.probe),
+            `${scenario.name}: ${region.name}`,
+          ).toBeCloseTo(measureVolume(region.probe), 2)
+        }
+      } finally {
+        for (const region of probes) region.probe.delete()
+        holder.delete()
+      }
+    }
+  })
+
   it('is narrower than the box interior and wider in its natural state', () => {
     const interior = cardBoxInteriorWidth(options.cardWidth)
     const holder = buildGameBoxDiceHolder(options)

@@ -195,6 +195,7 @@
 - **WHEN** 以任何有效參數建構骰子匣零件
 - **THEN** 輸出 MUST 恰為一個 solid 且位於 z ≥ 0
 - **AND** 其高度 MUST 等於 `cardHeight`
+- **AND** 骰子匣在骰槽下方 MUST 為實心，且其底面 MUST 為本體完整截面
 
 ### Requirement: 骰子排列
 

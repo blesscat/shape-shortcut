@@ -16,7 +16,7 @@
 
 - [x] 3.1 新增 `src/cad-kernel/components/game-box/builder.ts`：由參數推算幾何輸入並呼叫重構後的盒體、滑蓋、分隔板 builder，單一零件以列印方位輸出；以 Worker 整合測試檢查 `box` 為單一 solid、z ≥ 0、每個模組邊界有槽來驗證
 - [x] 3.2 以整合測試比對相同卡片尺寸與收納深度 72 時 `game-box` 與 `card-box` 的 `lid` 對稱差 ≤ 1 mm³，以及兩者無文字 `divider` 外形相同
-- [x] 3.3 新增 `dice-holder.ts`：本體、骰槽、正面開口、墊高中空殼與兩側彈性元件；以整合測試檢查單一 solid、z ≥ 0、高度等於 `cardHeight`、本體寬小於內寬、彈性元件自然最外寬大於內寬來驗證
+- [x] 3.3 新增 `dice-holder.ts`：本體、骰槽、正面開口、實心墊高段與兩側彈性元件；以整合測試檢查單一 solid、z ≥ 0、高度等於 `cardHeight`、骰槽下方為實心且底面為本體完整截面、本體寬小於內寬、彈性元件自然最外寬大於內寬來驗證
 - [x] 3.4 以整合測試驗證骰槽容量：在骰槽內放入 `diceCount` 個邊長 `diceSize` 的方塊，與骰子匣的交集體積為零
 - [x] 3.5 實作 `assembly`：盒體、滑蓋、各邊界的分隔板、各 `dice` 模組位置的骰子匣；以整合測試在預設、最小、最大卡片尺寸下檢查任兩零件交集體積為零，以及骰子匣位於正確的兩片分隔板之間來驗證
 - [x] 3.6 在 `src/cad-kernel/model/index.ts` 與 `scene/proxy.ts` 註冊 `game-box`；以 `tests/worker/scene-proxy.integration.test.ts` 通過來驗證

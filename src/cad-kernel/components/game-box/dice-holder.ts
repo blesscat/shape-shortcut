@@ -22,8 +22,6 @@ import { deleteShape } from '../../lifetime/dispose'
  * pocket is the space the strip needs to press in to the body width.
  */
 export const GAME_BOX_DICE_HOLDER = {
-  /** Thickness of the dice well floor plate. */
-  floorThickness: 1.2,
   /** Widest vertical opening of the front wall. */
   frontSlotMaxWidth: 8,
   /** Radial thickness of the bowed grip strip. */
@@ -307,18 +305,16 @@ function cutGripRelief(
 
 /**
  * Builds the dice holder: a body with a dice well open at the top, a
- * vertical opening in front of every row position, a hollow riser below the
+ * vertical opening in front of every row position, a solid riser below the
  * well and a bowed grip strip on each side. The holder is built in its print
  * orientation: standing upright, opening up, z ≥ 0.
  *
- * The riser is the hollow shell below the well: its floor is the well floor
- * plate, a short bridge that spans the clear space between the front and the
- * back wall.
+ * Everything below the dice well is solid, so the full body cross-section
+ * forms the bottom face. The slicer's infill setting controls its material.
  */
 export function buildGameBoxDiceHolder(
   options: GameBoxDiceHolderOptions,
 ): Shape3D {
-  const constants = GAME_BOX_DICE_HOLDER
   const frame = gameBoxDiceHolderFrame(options)
   if (frame.layout.layers > frame.layout.layerLimit) {
     throw new Error('GAME_BOX_GEOMETRY_INVALID:dice-capacity')
@@ -337,19 +333,6 @@ export function buildGameBoxDiceHolder(
       makeBox(
         [-wellWidth / 2, frontWall, wellFloorZ],
         [wellWidth / 2, thickness - frontWall, height + 1],
-      ) as Shape3D,
-    )
-    // The hollow riser below the well: the well floor is the short bridge
-    // that closes it at the top, the riser is open at the bottom.
-    shape = cutShape(
-      shape,
-      makeBox(
-        [-wellWidth / 2, frontWall, -1],
-        [
-          wellWidth / 2,
-          thickness - frontWall,
-          wellFloorZ - constants.floorThickness,
-        ],
       ) as Shape3D,
     )
     // The vertical openings in front of the row positions.
