@@ -22,6 +22,11 @@ import { unitLabelFor } from '../../src/features/cad/model-catalog'
 const DEFAULTS = GAME_BOX_CONFIGURATION.defaultParameters
 const PRODUCT_BOUNDS = boundsForGameBox({ ...DEFAULTS, part: 'assembly' })
 
+/** The panel shows a length rounded to two decimals, without trailing zeros. */
+function shownLength(value: number): string {
+  return Number(value.toFixed(2)).toString()
+}
+
 describe('game-box module fields', () => {
   it('gives the first module its thicker default card depth', () => {
     expect(gameBoxModuleCardDepthDefault(1)).toBe(
@@ -73,7 +78,7 @@ describe('game-box derived sizes', () => {
       productBounds: PRODUCT_BOUNDS,
     })
     expect(sizes.interior).toBe(
-      `${cardBoxInteriorWidth(DEFAULTS.cardWidth)} × 33 × ${DEFAULTS.cardHeight} mm`,
+      `${shownLength(cardBoxInteriorWidth(DEFAULTS.cardWidth))} × ${shownLength(33)} × ${shownLength(DEFAULTS.cardHeight)} mm`,
     )
   })
 
@@ -85,8 +90,26 @@ describe('game-box derived sizes', () => {
       productBounds: PRODUCT_BOUNDS,
     })
     expect(sizes.outer).toBe(
-      `${PRODUCT_BOUNDS.max[0] - PRODUCT_BOUNDS.min[0]} × ${PRODUCT_BOUNDS.max[1] - PRODUCT_BOUNDS.min[1]} × ${PRODUCT_BOUNDS.max[2] - PRODUCT_BOUNDS.min[2]} mm`,
+      `${shownLength(PRODUCT_BOUNDS.max[0] - PRODUCT_BOUNDS.min[0])} × ${shownLength(PRODUCT_BOUNDS.max[1] - PRODUCT_BOUNDS.min[1])} × ${shownLength(PRODUCT_BOUNDS.max[2] - PRODUCT_BOUNDS.min[2])} mm`,
     )
+  })
+
+  it('rounds the floating-point noise of a computed length', () => {
+    expect(formatMillimetres(69.05000000000001)).toBe('69.05 mm')
+    expect(formatSize(76.5, 69.05000000000001, 129)).toBe(
+      '76.5 × 69.05 × 129 mm',
+    )
+  })
+
+  it('drops the trailing zeros of a length', () => {
+    expect(formatMillimetres(70.5)).toBe('70.5 mm')
+    expect(formatMillimetres(63.0)).toBe('63 mm')
+    expect(formatSize(70.5, 63.0, 120.0)).toBe('70.5 × 63 × 120 mm')
+  })
+
+  it('keeps an integer length an integer', () => {
+    expect(formatMillimetres(63)).toBe('63 mm')
+    expect(formatSize(76, 63, 129)).toBe('76 × 63 × 129 mm')
   })
 
   it('never shows a broken measurement', () => {
@@ -104,5 +127,12 @@ describe('game-box derived sizes', () => {
     expect(sizes.storageDepth).toBe(UNKNOWN_MEASURE)
     expect(formatMillimetres(Number.NaN)).toBe(UNKNOWN_MEASURE)
     expect(formatSize(1, Number.NaN, 3)).toBe(UNKNOWN_MEASURE)
+  })
+
+  it('shows a dash for a length that is not a finite number', () => {
+    expect(formatMillimetres(Number.POSITIVE_INFINITY)).toBe(UNKNOWN_MEASURE)
+    expect(formatMillimetres(Number.NEGATIVE_INFINITY)).toBe(UNKNOWN_MEASURE)
+    expect(formatSize(Number.POSITIVE_INFINITY, 1, 3)).toBe(UNKNOWN_MEASURE)
+    expect(formatSize(1, 2, Number.NaN)).toBe(UNKNOWN_MEASURE)
   })
 })

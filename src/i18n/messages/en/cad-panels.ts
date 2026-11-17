@@ -449,7 +449,8 @@ export const messages = {
   'panel.gameBox.moveEarlier': 'Move earlier',
   'panel.gameBox.moveLater': 'Move later',
   'panel.gameBox.derivedSizes': 'Derived sizes',
-  'panel.gameBox.interiorSize': 'Interior size (X × Y × Z)',
-  'panel.gameBox.outerSize': 'Outer size (X × Y × Z)',
+  'panel.gameBox.axisOrder': 'X × Y × Z',
+  'panel.gameBox.interiorSize': 'Interior size',
+  'panel.gameBox.outerSize': 'Outer size',
   'panel.gameBox.storageDepth': 'Storage depth',
 }

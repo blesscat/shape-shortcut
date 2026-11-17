@@ -10,12 +10,21 @@ export type GameBoxProductBounds = {
 }
 
 /**
+ * A length in millimetres, rounded to at most two decimals so the
+ * floating-point noise of a computed measurement never reaches the panel.
+ * Trailing zeros are dropped: 70.50 reads 70.5 and 63.00 reads 63.
+ */
+function formatLength(value: number): string {
+  return Number(value.toFixed(2)).toString()
+}
+
+/**
  * A length in millimetres; a value that is not a number shows a dash
  * instead of a broken measurement.
  */
 export function formatMillimetres(value: number): string {
   if (!Number.isFinite(value)) return UNKNOWN_MEASURE
-  return `${value} mm`
+  return `${formatLength(value)} mm`
 }
 
 /** The three axes of a size in millimetres. */
@@ -27,7 +36,7 @@ export function formatSize(
   if (!Number.isFinite(width)) return UNKNOWN_MEASURE
   if (!Number.isFinite(depth)) return UNKNOWN_MEASURE
   if (!Number.isFinite(height)) return UNKNOWN_MEASURE
-  return `${width} × ${depth} × ${height} mm`
+  return `${formatLength(width)} × ${formatLength(depth)} × ${formatLength(height)} mm`
 }
 
 /**

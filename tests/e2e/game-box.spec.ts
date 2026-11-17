@@ -24,8 +24,13 @@ const CARD_DEPTH_30_LAYOUT = gameBoxLayout({
   module1CardDepth: 30,
 })
 
+/** The panel shows a length rounded to two decimals, without trailing zeros. */
+function shownLength(value: number): string {
+  return Number(value.toFixed(2)).toString()
+}
+
 function interiorSizeText(layout: typeof DEFAULT_LAYOUT): string {
-  return `${cardBoxInteriorWidth(DEFAULT_CARD_WIDTH)} × ${layout.storageDepth} × ${DEFAULT_CARD_HEIGHT} mm`
+  return `${shownLength(cardBoxInteriorWidth(DEFAULT_CARD_WIDTH))} × ${shownLength(layout.storageDepth)} × ${shownLength(DEFAULT_CARD_HEIGHT)} mm`
 }
 
 /**
@@ -41,7 +46,7 @@ function outerSizeText(parameters: Partial<GameBoxParameters>): string {
   const width = bounds.max[0] - bounds.min[0]
   const depth = bounds.max[1] - bounds.min[1]
   const height = bounds.max[2] - bounds.min[2]
-  return `${width} × ${depth} × ${height} mm`
+  return `${shownLength(width)} × ${shownLength(depth)} × ${shownLength(height)} mm`
 }
 
 async function openGameBox(page: Page): Promise<void> {

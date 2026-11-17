@@ -398,25 +398,45 @@
 </fieldset>
 
 <fieldset class="m-0 grid gap-3 border-0 p-0">
-  <legend class="mb-3 text-sm font-semibold text-muted-foreground"
-    >{t('panel.gameBox.derivedSizes')}</legend
+  <legend
+    class="mb-3 flex w-full items-baseline justify-between gap-2 text-sm font-semibold text-muted-foreground"
   >
+    <span>{t('panel.gameBox.derivedSizes')}</span>
+    <span class="text-xs font-normal text-muted-foreground/80"
+      >{t('panel.gameBox.axisOrder')}</span
+    >
+  </legend>
   <dl class="m-0 grid gap-1 text-sm">
-    <div class="flex gap-2">
-      <dt class="text-muted-foreground">{t('panel.gameBox.interiorSize')}</dt>
-      <dd class="m-0 ms-auto" data-testid="game-box-interior-size">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+      <dt class="whitespace-nowrap text-muted-foreground">
+        {t('panel.gameBox.interiorSize')}
+      </dt>
+      <dd
+        class="m-0 whitespace-nowrap tabular-nums text-right"
+        data-testid="game-box-interior-size"
+      >
         {derivedSizes.interior}
       </dd>
     </div>
-    <div class="flex gap-2">
-      <dt class="text-muted-foreground">{t('panel.gameBox.outerSize')}</dt>
-      <dd class="m-0 ms-auto" data-testid="game-box-outer-size">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+      <dt class="whitespace-nowrap text-muted-foreground">
+        {t('panel.gameBox.outerSize')}
+      </dt>
+      <dd
+        class="m-0 whitespace-nowrap tabular-nums text-right"
+        data-testid="game-box-outer-size"
+      >
         {derivedSizes.outer}
       </dd>
     </div>
-    <div class="flex gap-2">
-      <dt class="text-muted-foreground">{t('panel.gameBox.storageDepth')}</dt>
-      <dd class="m-0 ms-auto" data-testid="game-box-storage-depth">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+      <dt class="whitespace-nowrap text-muted-foreground">
+        {t('panel.gameBox.storageDepth')}
+      </dt>
+      <dd
+        class="m-0 whitespace-nowrap tabular-nums text-right"
+        data-testid="game-box-storage-depth"
+      >
         {derivedSizes.storageDepth}
       </dd>
     </div>

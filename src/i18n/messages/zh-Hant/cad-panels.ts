@@ -430,7 +430,8 @@ export const messages = {
   'panel.gameBox.moveEarlier': '往前移',
   'panel.gameBox.moveLater': '往後移',
   'panel.gameBox.derivedSizes': '推算尺寸',
-  'panel.gameBox.interiorSize': '內部尺寸（X × Y × Z）',
-  'panel.gameBox.outerSize': '外部尺寸（X × Y × Z）',
+  'panel.gameBox.axisOrder': 'X × Y × Z',
+  'panel.gameBox.interiorSize': '內部尺寸',
+  'panel.gameBox.outerSize': '外部尺寸',
   'panel.gameBox.storageDepth': '收納深度',
 }
