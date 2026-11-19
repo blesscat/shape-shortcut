@@ -7,11 +7,11 @@
 
 ## 2. Worker error rules 拆分
 
-- [ ] 2.1 建立 `src/workers/error-rules/` 目錄，把 `src/workers/error-mapping.ts` 中每一個 component 的 rule 轉成**等價的 rule 資料結構**搬進 `src/workers/error-rules/<component>.ts`：依 design 決策 3，每條 rule 帶上唯一的 `order` key 對應目前的原始順序（order 唯一、組間可比）；依 design 決策 5，把原本的 if-chain 轉成等價的 rule 資料結構屬於允許的新程式碼，因此不要求逐字保留 if 敘述本身，但每條 rule 的 pattern 與結果碼必須逐字不變；共用規則留在 shared module
-- [ ] 2.2 把 `src/workers/error-mapping.ts` 改為自動收集各 rule module、依 `order` 排序後進行 first-match 比對；保留 `cadErrorCodeFor` 與 `cadErrorStageFor` 的名稱、參數與回傳型別，command kind fallback 順序不變
-- [ ] 2.3 確認 `opengrid-snap`、`opengrid-organizer-box`、`opengrid-stackable-box` 這三個 component 的 rule 在拆分前後的相對順序完全一致，並讓 1.2 的順序敏感測試通過
-- [ ] 2.4 執行 error mapping 相關的 targeted tests（`tests/unit/error-mapping.test.ts`、`tests/unit/opengrid-bottom-hole-error-mapping.test.ts`、`tests/unit/opengrid-divider-admission.test.ts`、`tests/unit/opengrid-open-shelf-admission.test.ts`）並確認 1.1 的 golden baseline 完全一致
-- [ ] 2.5 讓 error rule 集合具備可窮舉性保護：新增一條 error rule 而沒有同步記錄到 golden fixture 時，必須有測試失敗（不得靜默通過）。做法是把 fixture 的 error rule 集合改成可檢查總數／一一對應的形式，取代目前只有單向保護的陣列形式
+- [x] 2.1 建立 `src/workers/error-rules/` 目錄，把 `src/workers/error-mapping.ts` 中每一個 component 的 rule 轉成**等價的 rule 資料結構**搬進 `src/workers/error-rules/<component>.ts`：依 design 決策 3，每條 rule 帶上唯一的 `order` key 對應目前的原始順序（order 唯一、組間可比）；依 design 決策 5，把原本的 if-chain 轉成等價的 rule 資料結構屬於允許的新程式碼，因此不要求逐字保留 if 敘述本身，但每條 rule 的 pattern 與結果碼必須逐字不變；共用規則留在 shared module
+- [x] 2.2 把 `src/workers/error-mapping.ts` 改為自動收集各 rule module、依 `order` 排序後進行 first-match 比對；保留 `cadErrorCodeFor` 與 `cadErrorStageFor` 的名稱、參數與回傳型別，command kind fallback 順序不變
+- [x] 2.3 確認 `opengrid-snap`、`opengrid-organizer-box`、`opengrid-stackable-box` 這三個 component 的 rule 在拆分前後的相對順序完全一致，並讓 1.2 的順序敏感測試通過
+- [x] 2.4 執行 error mapping 相關的 targeted tests（`tests/unit/error-mapping.test.ts`、`tests/unit/opengrid-bottom-hole-error-mapping.test.ts`、`tests/unit/opengrid-divider-admission.test.ts`、`tests/unit/opengrid-open-shelf-admission.test.ts`）並確認 1.1 的 golden baseline 完全一致
+- [x] 2.5 讓 error rule 集合具備可窮舉性保護：新增一條 error rule 而沒有同步記錄到 golden fixture 時，必須有測試失敗（不得靜默通過）。做法是把 fixture 的 error rule 集合改成可檢查總數／一一對應的形式，取代目前只有單向保護的陣列形式
 
 ## 3. CAD-kernel model definitions 拆分
 
