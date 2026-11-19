@@ -110,6 +110,8 @@ describe('game-box parameter validation', () => {
     expect(validation.value.part).toBe('assembly')
     expect(validation.value[gameBoxModuleTypeKey(1)]).toBe('cards')
     expect(validation.value[gameBoxModuleCardDepthKey(1)]).toBe(60)
+    expect(validation.value[gameBoxModuleDiceSizeKey(1)]).toBe(16)
+    expect(validation.value[gameBoxModuleDiceCountKey(1)]).toBe(9)
     for (const index of [2, 3, 4, 5, 6] as GameBoxModuleIndex[]) {
       expect(validation.value[gameBoxModuleTypeKey(index)]).toBe('none')
     }

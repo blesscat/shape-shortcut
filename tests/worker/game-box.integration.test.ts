@@ -441,6 +441,55 @@ describe('game-box dice holder', () => {
     }
   })
 
+  it('pins the grip strip dimensions confirmed by the test print', () => {
+    const frame = gameBoxDiceHolderFrame(options)
+    const strip = gameBoxGripStripFrame(frame)
+    // The dimensions the 2026-11-19 test print confirmed (design decision 5).
+    expect(strip.zEnd - strip.zStart).toBeCloseTo(60, 6) // length along the height
+    expect(strip.yEnd - strip.yStart).toBeCloseTo(1.2, 6) // width along the thickness
+    expect(strip.relief).toBe(0.6) // depth of the relief pocket
+    // A holder shorter than the strip loses both end margins: the strip
+    // length is capped at the height minus 2 × 4 mm.
+    const shortFrame = gameBoxDiceHolderFrame({
+      ...options,
+      cardHeight: 60,
+      diceSize: 18,
+      diceCount: 9,
+    })
+    const shortStrip = gameBoxGripStripFrame(shortFrame)
+    expect(shortStrip.zEnd - shortStrip.zStart).toBeCloseTo(52, 6)
+    // The sheet thickness is measured on the built solid: within the
+    // relieved band the strip is the only material between the pocket
+    // floor and the outer face, and its horizontal span equals the sheet
+    // thickness at every height, so the material in the probe divided by
+    // the probe's y × z face gives the thickness.
+    const holder = buildGameBoxDiceHolder(options)
+    try {
+      const probeHeight = 2
+      const probeWidth = 0.2
+      const yMid = (strip.yStart + strip.yEnd) / 2
+      const probe = makeBox(
+        [
+          frame.bodyWidth / 2 - strip.relief,
+          yMid - probeWidth / 2,
+          frame.height / 2 - probeHeight / 2,
+        ],
+        [
+          frame.outerWidth / 2 + 1,
+          yMid + probeWidth / 2,
+          frame.height / 2 + probeHeight / 2,
+        ],
+      ) as Shape3D
+      expect(
+        volumeOf(holder, probe) / (probeHeight * probeWidth),
+        'grip strip thickness measured at the bow apex',
+      ).toBeCloseTo(0.4, 2)
+      probe.delete()
+    } finally {
+      holder.delete()
+    }
+  })
+
   it('leaves the grip strip free between the walls of its relief pocket', () => {
     const frame = gameBoxDiceHolderFrame(options)
     const strip = gameBoxGripStripFrame(frame)

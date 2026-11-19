@@ -42,7 +42,7 @@
 
 ### Requirement: 模組欄位組
 
-系統 MUST 提供 6 個模組欄位組，編號 1 至 6。每組包含：類型 `type`（`none`、`cards`、`dice`）、卡片區厚度 `cardDepth`（預設 30，範圍 3–150 mm）、骰子邊長 `diceSize`（預設 16，範圍 8–30 mm，步進 0.5）、骰子顆數 `diceCount`（預設 9，範圍 1–60 的整數）。全部參數 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+系統 MUST 提供 6 個模組欄位組，編號 1 至 6。每組包含：類型 `type`（`none`、`cards`、`dice`）、卡片區厚度 `cardDepth`（範圍 3–150 mm；模組 1 預設 60，其餘模組預設 30）、骰子邊長 `diceSize`（預設 16，範圍 8–30 mm，步進 0.5）、骰子顆數 `diceCount`（預設 9，範圍 1–60 的整數）。全部參數 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
 
 #### Scenario: 預設模組欄位值
 

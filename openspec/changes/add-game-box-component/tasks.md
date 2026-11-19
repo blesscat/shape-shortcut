@@ -48,6 +48,6 @@
 - [x] 7.1 匯出預設參數的骰子匣 STL 並試印，確認彈性元件的鬆緊與骰子進出骰槽的順暢度；依結果調整薄片尺寸與間隙常數，並在 design.md 的 Open Questions 記錄定案值
   - 2026-11-19 以 commit `f3eb571` 的實心墊高版骰子匣試印：彈性薄片放入盒中鬆緊「剛好」——不晃動、不滑動、可再取出且薄片完好；骰子進出骰槽順暢。所有常數維持不變，定案值記錄於 design.md 的 Open Questions。
 - [x] 7.2 量測實際骰子邊長並更新 `diceSize` 與 `diceCount` 的預設值；以單元測試的預設參數案例同步更新並通過來驗證
-  - 2026-11-19 量測實際骰子邊長為 16 mm；預設 `diceSize` 16 與 `diceCount` 9 維持不變，無需更新任何單元測試。
+  - 2026-11-19 量測實際骰子邊長為 16 mm；預設 `diceSize` 16 與 `diceCount` 9 維持不變。預設參數的單元測試（`tests/unit/game-box-contract.test.ts` 的 `uses the agreed defaults`）已補上並通過這兩個字面值的斷言。
 - [x] 7.3 執行 `pnpm test:branch` 與 `game-box`、`card-box` 相關的 e2e spec，全數通過
 - [x] 7.4 執行 `openspec validate add-game-box-component --strict` 通過
