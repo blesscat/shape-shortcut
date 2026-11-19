@@ -397,6 +397,9 @@ describe('game-box dice holder', () => {
         gameBoxDiceHolderOuterWidth(options.cardWidth),
         3,
       )
+      // The surplus over the interior is the grip allowance confirmed by
+      // the test print: it sets how hard the strips press into the walls.
+      expect(bounds.max[0]! - bounds.min[0]! - interior).toBeCloseTo(0.4, 3)
       // The body itself stays clear of the box walls: no material reaches
       // the interior wall, neither beside nor above the grip strips.
       for (const side of [1, -1] as const) {

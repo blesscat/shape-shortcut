@@ -114,6 +114,7 @@ describe('game-box parameter validation', () => {
     expect(validation.value[gameBoxModuleDiceCountKey(1)]).toBe(9)
     for (const index of [2, 3, 4, 5, 6] as GameBoxModuleIndex[]) {
       expect(validation.value[gameBoxModuleTypeKey(index)]).toBe('none')
+      expect(validation.value[gameBoxModuleCardDepthKey(index)]).toBe(30)
     }
   })
 
