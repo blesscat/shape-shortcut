@@ -7,6 +7,7 @@ import { setOC, type Shape3D } from 'replicad'
 
 import {
   OPENGRID_CONFIGURATION,
+  GAME_BOX_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_SHELF_DEFAULT_PARAMETERS,
@@ -124,6 +125,28 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
     parameters: {
       ...CARD_BOX_CONFIGURATION.defaultParameters,
       part: 'divider',
+    },
+  },
+  {
+    modelId: 'game-box',
+    parameters: { ...GAME_BOX_CONFIGURATION.defaultParameters },
+  },
+  {
+    modelId: 'game-box',
+    parameters: {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      part: 'divider',
+      module2Type: 'cards',
+    },
+  },
+  {
+    modelId: 'game-box',
+    parameters: {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      part: 'module2',
+      module2Type: 'dice',
+      module2DiceSize: 16,
+      module2DiceCount: 9,
     },
   },
   {

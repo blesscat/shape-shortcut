@@ -69,6 +69,12 @@ export function cadErrorCodeFor(
   if (message.includes('MODEL_PARAMETERS_MISMATCH:card-box')) {
     return 'INVALID_INPUT'
   }
+  if (message.includes('GAME_BOX_GEOMETRY_INVALID')) {
+    return 'GAME_BOX_GEOMETRY_INVALID'
+  }
+  if (message.includes('MODEL_PARAMETERS_MISMATCH:game-box')) {
+    return 'INVALID_INPUT'
+  }
   if (
     message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
     message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')
@@ -163,6 +169,7 @@ export function cadErrorStageFor(
     return 'building'
   }
   if (message.includes('CARD_BOX_SVG_')) return 'building'
+  if (message.includes('GAME_BOX_GEOMETRY_INVALID')) return 'building'
   if (
     message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
     message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')

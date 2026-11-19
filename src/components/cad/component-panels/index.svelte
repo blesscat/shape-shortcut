@@ -5,6 +5,7 @@
   import OpenGridLabelLedgeTestComponentPanel from './opengrid-label-ledge-test/OpenGridLabelLedgeTestComponentPanel.svelte'
   import type {
     ModelId,
+    ModelParameterKey,
     ModelParameterValues,
     OpenGridParameters,
     OpenGridSnapParameters,
@@ -12,6 +13,7 @@
   import BoxComponentPanel from './box/BoxComponentPanel.svelte'
   import HexagonalColumnComponentPanel from './hexagonal-column/HexagonalColumnComponentPanel.svelte'
   import CardBoxComponentPanel from './card-box/CardBoxComponentPanel.svelte'
+  import GameBoxComponentPanel from './game-box/GameBoxComponentPanel.svelte'
   import HswCellComponentPanel from './hsw-cell/HswCellComponentPanel.svelte'
   import ModularGridBaseComponentPanel from './modular-grid-base/ModularGridBaseComponentPanel.svelte'
   import OpenGridComponentPanel from './opengrid/OpenGridComponentPanel.svelte'
@@ -33,6 +35,8 @@
     modelId: ModelId
     parameters: ModelParameterValues
     systemContext?: OpenGridSystemContext
+    /** Applies several raw values as one snapshot. */
+    onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
     onOpenGridParametersChange: (parameters: OpenGridParameters) => void
     onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
     onOpenGridDimensionCalculationInvalid: () => void
@@ -46,6 +50,7 @@
     rawParameters,
     fieldErrors,
     onInputChange,
+    onInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid,
@@ -82,6 +87,14 @@
       {rawParameters}
       {fieldErrors}
       {onInputChange}
+    />
+  {:else if modelId === 'game-box'}
+    <GameBoxComponentPanel
+      {locale}
+      {rawParameters}
+      {fieldErrors}
+      {onInputChange}
+      {onInputsChange}
     />
   {:else if modelId === 'opengrid-pillar'}
     <OpenGridPillarComponentPanel

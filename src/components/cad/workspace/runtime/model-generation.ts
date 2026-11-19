@@ -204,31 +204,50 @@ export function createModelGenerationHandlers(
     }, PROTOTYPE_CONFIGURATION.inputDebounceMs)
   }
 
-  const handleInputChange = (key: ModelParameterKey, value: string) => {
-    const modelId = context.refs.state.current.modelId
-    let next = { ...context.refs.rawParameters.current, [key]: value }
-    if (modelId === 'opengrid-pillar' && key === 'mode') {
+  /**
+   * Merges raw parameter changes into the current raw parameters and applies
+   * the model specific adjustments a change needs before it is parsed.
+   */
+  const mergedRawParameters = (
+    modelId: ModelId,
+    changes: Partial<Record<ModelParameterKey, string>>,
+  ): RawParameters => {
+    let next = { ...context.refs.rawParameters.current, ...changes }
+    const mode = changes.mode
+    if (modelId === 'opengrid-pillar' && mode !== undefined) {
       // Both pillar modes share the length/offset keys with different
       // semantics, so a mode switch resets them to the target mode's defaults.
       next =
-        value === 'detachable-corner-seat'
+        mode === 'detachable-corner-seat'
           ? {
-              mode: value,
+              mode,
               length: String(PILLAR_CONFIGURATION.seatDefaultLength),
               offset: '0',
             }
           : {
-              mode: value,
+              mode,
               length: String(PILLAR_CONFIGURATION.positioningDefaultLength),
               offset: '0',
             }
     }
     if (
       modelId === 'opengrid-openconnect-shelf' &&
-      (key === 'rows' || key === 'connectorRows')
+      (changes.rows !== undefined || changes.connectorRows !== undefined)
     ) {
       next = clampOpenConnectShelfAngle(next)
     }
+    return next
+  }
+
+  /**
+   * The flow every raw parameter change goes through: the raw values are
+   * stored, parsed once, persisted once and queued as one generation.
+   */
+  const applyRawParameters = (
+    next: RawParameters,
+    fallbackField: ModelParameterKey | 'parameters',
+  ): void => {
+    const modelId = context.refs.state.current.modelId
     context.refs.rawParameters.current = next
     context.setRawParameters(next)
     const generation = context.refs.latestGeneration.current + 1
@@ -237,7 +256,7 @@ export function createModelGenerationHandlers(
     if (!parsed.valid) {
       context.clearProgress()
       const issue = {
-        field: parsed.field ?? key,
+        field: parsed.field ?? fallbackField,
         messageId: parsed.messageId,
         ...(parsed.params ? { params: parsed.params } : {}),
       }
@@ -267,6 +286,23 @@ export function createModelGenerationHandlers(
       generation,
     })
     queueModelGeneration(modelId, parsed.value, generation)
+  }
+
+  const handleInputChange = (key: ModelParameterKey, value: string) => {
+    const modelId = context.refs.state.current.modelId
+    applyRawParameters(mergedRawParameters(modelId, { [key]: value }), key)
+  }
+
+  /**
+   * Applies several raw values as one snapshot: they are merged, parsed,
+   * persisted and queued once, so a list operation never publishes an
+   * intermediate state.
+   */
+  const handleInputsChange = (
+    values: Partial<Record<ModelParameterKey, string>>,
+  ) => {
+    const modelId = context.refs.state.current.modelId
+    applyRawParameters(mergedRawParameters(modelId, values), 'parameters')
   }
 
   const handleParametersScopeChange = (
@@ -421,6 +457,7 @@ export function createModelGenerationHandlers(
     sendGenerate,
     sendInvalidate,
     handleInputChange,
+    handleInputsChange,
     handleParametersScopeChange,
     handleOpenGridParametersChange,
     handleOpenGridDimensionCalculationInvalid,

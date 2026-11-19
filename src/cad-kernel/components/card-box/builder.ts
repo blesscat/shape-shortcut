@@ -6,8 +6,13 @@ import {
   type CardBoxParameters,
 } from '../../../cad-contract/units'
 import { deleteShape } from '../../lifetime/dispose'
-import { CARD_BOX_CHANNEL_SLOT_DEPTH, buildCardBoxBox } from './box'
-import { buildCardBoxLid } from './lid'
+import {
+  CARD_BOX_CHANNEL_SLOT_DEPTH,
+  buildCardBoxBoxFromGeometry,
+  cardBoxDividerSlotCentres,
+} from './box'
+import { buildCardBoxLidFromGeometry } from './lid'
+import { cardBoxGeometryOf, type CardBoxGeometry } from './geometry'
 import { buildCardBoxDivider, type CardBoxArtPartBuild } from './divider'
 import { buildCardBoxCover } from './cover'
 
@@ -42,7 +47,7 @@ function combinedArtShape(body: Shape3D, accent: Shape3D): Shape3D {
  * Flips the lid 180° around X so its flat plate top lies on the bed and
  * translates it to z ≥ 0 (print orientation).
  */
-function flipLidForPrint(lid: Shape3D): Shape3D {
+export function flipLidForPrint(lid: Shape3D): Shape3D {
   const flipped = lid.rotate(180, [0, 0, 0], [1, 0, 0])
   if (flipped !== lid) deleteShape(lid)
   const bottomZ = flipped.boundingBox.bounds[0]![2]!
@@ -108,10 +113,14 @@ function transformArtBuild(
 
 async function buildAssembly(
   parameters: CardBoxParameters,
+  geometry: CardBoxGeometry,
   coverSvg: CardBoxSvgOutlineData | undefined,
 ): Promise<Shape3D> {
-  const box = buildCardBoxBox(parameters)
-  const lid = buildCardBoxLid(parameters)
+  const box = buildCardBoxBoxFromGeometry(
+    geometry,
+    cardBoxDividerSlotCentres(geometry),
+  )
+  const lid = buildCardBoxLidFromGeometry(geometry)
   let divider: Shape3D | null = null
   let cover: Shape3D | null = null
   try {
@@ -135,13 +144,19 @@ async function buildAssembly(
 
 async function buildPrintPart(
   parameters: CardBoxParameters,
+  geometry: CardBoxGeometry,
   coverSvg: CardBoxSvgOutlineData | undefined,
 ): Promise<CardBoxMultipartBuild> {
   switch (parameters.part) {
     case 'box':
-      return { shape: buildCardBoxBox(parameters) }
+      return {
+        shape: buildCardBoxBoxFromGeometry(
+          geometry,
+          cardBoxDividerSlotCentres(geometry),
+        ),
+      }
     case 'lid':
-      return { shape: flipLidForPrint(buildCardBoxLid(parameters)) }
+      return { shape: flipLidForPrint(buildCardBoxLidFromGeometry(geometry)) }
     case 'divider':
     case 'cover': {
       const build =
@@ -182,8 +197,9 @@ export async function buildCardBox(
   if (!isCardBoxParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
   }
+  const geometry = cardBoxGeometryOf(parameters)
   if (parameters.part === 'assembly') {
-    return { shape: await buildAssembly(parameters, coverSvg) }
+    return { shape: await buildAssembly(parameters, geometry, coverSvg) }
   }
-  return buildPrintPart(parameters, coverSvg)
+  return buildPrintPart(parameters, geometry, coverSvg)
 }

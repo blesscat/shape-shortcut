@@ -71,6 +71,10 @@ export const messages = {
   'models.model.card-box.description':
     '參數化的卡牌收納盒，附滑蓋、可標示的隔板與印刷標籤面板。',
   'models.model.card-box.alt': '卡片收納盒預覽',
+  'models.model.game-box.name': '桌遊收納盒',
+  'models.model.game-box.description':
+    '深度由模組堆疊推算的收納盒：卡片區與骰子匣模組，附前推滑蓋。',
+  'models.model.game-box.alt': '桌遊收納盒預覽',
   'models.model.opengrid.name': 'opengrid board (底版)',
   'models.model.opengrid.selection': 'Board (底版)',
   'models.model.opengrid.description':

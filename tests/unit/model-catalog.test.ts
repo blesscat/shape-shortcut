@@ -8,6 +8,7 @@ import {
   partitionByPartZone,
 } from '../../src/features/cad/model-catalog'
 import {
+  GAME_BOX_CONFIGURATION,
   OPENGRID_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_SNAP_CONFIGURATION,
@@ -16,6 +17,7 @@ import {
   OPENGRID_STACKABLE_CYLINDER_DEFAULT_PARAMETERS,
   type OpenGridParameters,
 } from '../../src/cad-contract/units'
+import { translate } from '../../src/i18n'
 
 function opengridParameters(
   overrides: Partial<OpenGridParameters> = {},
@@ -60,6 +62,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-slot-test',
       'hsw-cell',
       'card-box',
+      'game-box',
     ])
 
     const previewImages = visibleDefinitions.map(
@@ -133,6 +136,7 @@ describe('CAD component catalog', () => {
     expect(groups[1]?.definitions.map((definition) => definition.id)).toEqual([
       'hsw-cell',
       'card-box',
+      'game-box',
     ])
 
     const groupedIds = groups.flatMap((group) =>
@@ -208,6 +212,7 @@ describe('CAD component catalog', () => {
       'opengrid-label-slot-test',
       'opengrid-label-ledge-test',
       'card-box',
+      'game-box',
     ])
 
     const grid = getModelDefinition('modular-grid-base')
@@ -344,6 +349,65 @@ describe('CAD component catalog', () => {
           orientation: 'lying',
         },
       },
+    })
+  })
+
+  it('registers game-box as its own component with a dedicated route', () => {
+    const gameBox = getModelDefinition('game-box')
+    expect(gameBox?.id).toBe('game-box')
+    expect(gameBox?.buildKey).toBe('game-box')
+    expect(gameBox?.family).toBe('other')
+    expect(gameBox?.displayName).toBe('models.model.game-box.name')
+    expect(gameBox?.selectionDescription).toBe(
+      'models.model.game-box.description',
+    )
+    expect(translate('en', gameBox!.displayName).startsWith('OpenGrid ')).toBe(
+      false,
+    )
+    expect(cadPathForModel('game-box')).toBe('/cad/game-box')
+    expect(modelIdForCadPath('/cad/game-box')).toBe('game-box')
+    expect(gameBox?.presets).toBeUndefined()
+    expect(gameBox?.threeMfFileName).toBeUndefined()
+    expect(gameBox?.previewImage).toEqual({
+      src: '/model-previews/game-box.webp',
+      darkSrc: '/model-previews/game-box-dark.webp',
+      alt: 'models.model.game-box.alt',
+      width: 640,
+      height: 400,
+    })
+    expect(gameBox?.defaultParameters).toEqual(
+      GAME_BOX_CONFIGURATION.defaultParameters,
+    )
+    expect(gameBox?.parameterSchema.map((field) => field.key)).toEqual([
+      'cardWidth',
+      'cardHeight',
+    ])
+
+    const defaults = GAME_BOX_CONFIGURATION.defaultParameters
+    expect(gameBox?.exportBlockedHintKey?.(defaults)).toBe(
+      'panel.gameBox.pickPartToDownload',
+    )
+    expect(
+      gameBox?.exportBlockedHintKey?.({ ...defaults, part: 'box' }),
+    ).toBeNull()
+    expect(gameBox?.exportFileName({ ...defaults, part: 'box' })).toBe(
+      'game-box-box-70x120x63.step',
+    )
+    expect(gameBox?.stlFileName({ ...defaults, part: 'box' })).toBe(
+      'game-box-box-70x120x63.stl',
+    )
+    expect(
+      gameBox?.exportFileName({
+        ...defaults,
+        part: 'module2',
+        module1Type: 'cards',
+        module2Type: 'dice',
+        module3Type: 'none',
+      }),
+    ).toBe('game-box-dice-holder-70x120-d16x9.step')
+    expect(gameBox?.validateParameters(defaults)).toEqual({
+      valid: true,
+      value: { modelId: 'game-box', parameters: defaults },
     })
   })
 

@@ -74,6 +74,10 @@ export const messages = {
   'models.model.card-box.description':
     'A parametric storage box for trading cards with a sliding lid, an optional label divider, and a printed label cover.',
   'models.model.card-box.alt': 'Card box preview',
+  'models.model.game-box.name': 'Game Box',
+  'models.model.game-box.description':
+    'A storage box whose depth follows the modules you stack: card compartments and dice trays in a sliding-lid box.',
+  'models.model.game-box.alt': 'Game box preview',
   'models.model.opengrid.name': 'OpenGrid Board',
   'models.model.opengrid.selection': 'Board',
   'models.model.opengrid.description':

@@ -100,4 +100,9 @@ export const messages = {
   'parameters.cardBoxCardWidth': 'Card width',
   'parameters.cardBoxCardHeight': 'Card height',
   'parameters.cardBoxStorageDepth': 'Storage depth',
+  'parameters.gameBoxCardWidth': 'Card width',
+  'parameters.gameBoxCardHeight': 'Card height',
+  'parameters.gameBoxCardDepth': 'Card compartment depth',
+  'parameters.gameBoxDiceSize': 'Die size',
+  'parameters.gameBoxDiceCount': 'Die count',
 }

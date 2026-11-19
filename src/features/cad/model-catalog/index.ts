@@ -9,6 +9,7 @@ import {
 } from '../system-entry-context'
 import { boxDefinition as rawBoxDefinition } from './components/box'
 import { cardBoxDefinition as rawCardBoxDefinition } from './components/card-box'
+import { gameBoxDefinition as rawGameBoxDefinition } from './components/game-box'
 import { hexagonalColumnDefinition as rawHexagonalColumnDefinition } from './components/hexagonal-column'
 import { hswCellDefinition as rawHswCellDefinition } from './components/hsw-cell'
 import { modularGridBaseDefinition as rawModularGridBaseDefinition } from './components/modular-grid-base'
@@ -71,6 +72,8 @@ export const boxDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawBoxDefinition)
 export const cardBoxDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawCardBoxDefinition)
+export const gameBoxDefinition: ModelDefinition<ModelPreviewImage> =
+  withDerivedDarkPreview(rawGameBoxDefinition)
 export const hexagonalColumnDefinition: ModelDefinition<ModelPreviewImage> =
   withDerivedDarkPreview(rawHexagonalColumnDefinition)
 export const hswCellDefinition: ModelDefinition<ModelPreviewImage> =
@@ -164,6 +167,7 @@ export const modelDefinitions: ReadonlyArray<
   opengridLabelSlotTestDefinition,
   opengridLabelLedgeTestDefinition,
   cardBoxDefinition,
+  gameBoxDefinition,
 ]
 
 export const modelFamilyOrder: ReadonlyArray<ModelFamily> = [

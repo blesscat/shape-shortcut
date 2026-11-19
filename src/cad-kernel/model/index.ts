@@ -39,6 +39,8 @@ import {
 import { buildBoxBRep } from '../components/box/builder'
 import { buildCardBox } from '../components/card-box/builder'
 import { isCardBoxParameters } from '../../cad-contract/units/card-box'
+import { buildGameBox } from '../components/game-box/builder'
+import { isGameBoxParameters } from '../../cad-contract/units/game-box'
 import { buildHswCell } from '../components/hsw-cell/builder'
 import { buildHexagonalColumn } from '../components/hexagonal-column/builder'
 import { buildModularGridBase } from '../components/modular-grid-base/builder'
@@ -632,6 +634,21 @@ export const cardBoxKernelDefinition: KernelModelDefinition = {
   build: buildCardBoxModel,
 }
 
+function buildGameBoxModel(
+  parameters: ModelParameterValues,
+  _context: KernelBuildContext,
+): Shape3D {
+  if (!isGameBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
+  }
+  return buildGameBox(parameters).shape
+}
+
+export const gameBoxKernelDefinition: KernelModelDefinition = {
+  id: 'game-box',
+  build: buildGameBoxModel,
+}
+
 export const opengridLabelSlotTestKernelDefinition: KernelModelDefinition = {
   id: 'opengrid-label-slot-test',
   async build(parameters, context) {
@@ -684,6 +701,7 @@ export const kernelModelDefinitions: ReadonlyArray<KernelModelDefinition> = [
   opengridLabelSlotTestKernelDefinition,
   opengridLabelLedgeTestKernelDefinition,
   cardBoxKernelDefinition,
+  gameBoxKernelDefinition,
 ]
 
 export function getKernelModelDefinition(

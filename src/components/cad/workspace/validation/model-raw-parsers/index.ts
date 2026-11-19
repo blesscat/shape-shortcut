@@ -26,6 +26,7 @@ import {
 } from '../raw-input-parsers'
 import { parseOpenGridDividerRawParameters } from './divider'
 import { parseCardBoxRawParameters } from './card-box'
+import { parseGameBoxRawParameters } from './game-box'
 import { parseOpenGridLabelCardRawParameters } from './label-card'
 import { parseOpenGridOpenConnectOrganizerRawParameters } from './openconnect-organizer'
 import { parseOpenGridOrganizerBoxRawParameters } from './organizer-box'
@@ -128,6 +129,10 @@ export function parseRawParameters(
 
   if (modelId === 'card-box') {
     return parseCardBoxRawParameters(raw)
+  }
+
+  if (modelId === 'game-box') {
+    return parseGameBoxRawParameters(raw)
   }
 
   const parsed: Partial<

@@ -463,6 +463,14 @@ export class CadWorkerRuntime {
         true,
       )
     }
+    if (code === 'GAME_BOX_GEOMETRY_INVALID') {
+      return makeError(
+        'building',
+        code,
+        diagnostic('diagnostic.modelBuildFailed'),
+        true,
+      )
+    }
 
     if (code === 'OPENGRID_DIVIDER_QUALITY_INVALID') {
       return makeError(

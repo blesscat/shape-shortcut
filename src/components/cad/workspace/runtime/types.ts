@@ -91,6 +91,13 @@ export type ModelGenerationHandlers = {
     reason: 'invalid-input' | 'superseded',
   ) => void
   handleInputChange: (key: ModelParameterKey, value: string) => void
+  /**
+   * Applies several raw values as one snapshot: they are merged, parsed,
+   * persisted and queued once.
+   */
+  handleInputsChange: (
+    values: Partial<Record<ModelParameterKey, string>>,
+  ) => void
   handleParametersScopeChange: (parameters: ModelParameterValues) => void
   handleOpenGridParametersChange: (parameters: OpenGridParameters) => void
   handleOpenGridDimensionCalculationInvalid: () => void

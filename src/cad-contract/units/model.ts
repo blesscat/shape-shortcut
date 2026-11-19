@@ -8,6 +8,14 @@ import {
   type CardBoxParameters,
 } from './card-box'
 import {
+  boundsForGameBox,
+  gameBoxFileName,
+  gameBoxStlFileName,
+  validateGameBoxParameters,
+  type GameBoxParameterKey,
+  type GameBoxParameters,
+} from './game-box'
+import {
   boundsForOpenGridLabelCard,
   openGridLabelCardFileName,
   openGridLabelCardStlFileName,
@@ -193,6 +201,7 @@ export type ModelParameterKey =
   | OpenGridWallCoverParameterKey
   | OpenGridLabelCardParameterKey
   | CardBoxParameterKey
+  | GameBoxParameterKey
 export type ScalarModelParameterKey =
   | DimensionKey
   | GridParameterKey
@@ -205,6 +214,7 @@ export type ModelId =
   | 'hsw-cell'
   | 'hexagonal-column'
   | 'card-box'
+  | 'game-box'
   | 'opengrid'
   | 'opengrid-stackable-box'
   | 'opengrid-organizer-box'
@@ -238,6 +248,7 @@ export type ModelParameters =
       parameters: HexagonalColumnParameters
     }
   | { modelId: 'card-box'; parameters: CardBoxParameters }
+  | { modelId: 'game-box'; parameters: GameBoxParameters }
   | { modelId: 'opengrid'; parameters: OpenGridParameters }
   | {
       modelId: 'opengrid-stackable-box'
@@ -548,6 +559,21 @@ export function validateModelParameters(
     return { valid: true, value: { modelId, parameters: validation.value } }
   }
 
+  if (modelId === 'game-box') {
+    const validation = validateGameBoxParameters(value)
+    if (!validation.valid) {
+      return {
+        valid: false,
+        issues: validation.issues.map((issue) => ({
+          field: issue.field,
+          messageId: issue.messageId,
+          ...(issue.params ? { params: issue.params } : {}),
+        })),
+      }
+    }
+    return { valid: true, value: { modelId, parameters: validation.value } }
+  }
+
   if (modelId === 'opengrid-label-card') {
     const validation = validateOpenGridLabelCardParameters(value)
     if (!validation.valid) {
@@ -683,6 +709,8 @@ export function boundsForModel(model: ModelParameters): ModelBounds {
       return boundsForHexagonalColumn(model.parameters)
     case 'card-box':
       return boundsForCardBox(model.parameters)
+    case 'game-box':
+      return boundsForGameBox(model.parameters)
     case 'opengrid':
       return boundsForOpenGrid(model.parameters)
     case 'opengrid-stackable-box':
@@ -730,6 +758,8 @@ export function modelFileName(model: ModelParameters): string {
       return hexagonalColumnFileName(model.parameters)
     case 'card-box':
       return cardBoxFileName(model.parameters)
+    case 'game-box':
+      return gameBoxFileName(model.parameters)
     case 'opengrid':
       return openGridFileName(model.parameters)
     case 'opengrid-stackable-box':
@@ -777,6 +807,8 @@ export function modelStlFileName(model: ModelParameters): string {
       return hexagonalColumnStlFileName(model.parameters)
     case 'card-box':
       return cardBoxStlFileName(model.parameters)
+    case 'game-box':
+      return gameBoxStlFileName(model.parameters)
     case 'opengrid':
       return openGridStlFileName(model.parameters)
     case 'opengrid-stackable-box':

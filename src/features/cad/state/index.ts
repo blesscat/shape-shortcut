@@ -8,6 +8,7 @@ import type {
 } from '../../../cad-contract/messages'
 import {
   CARD_BOX_CONFIGURATION,
+  GAME_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
   OPENGRID_DIVIDER_CONFIGURATION,
   OPENGRID_CONFIGURATION,
@@ -122,6 +123,9 @@ function defaultParametersForModel(modelId: ModelId): ModelParameterValues {
   }
   if (modelId === 'card-box') {
     return { ...CARD_BOX_CONFIGURATION.defaultParameters }
+  }
+  if (modelId === 'game-box') {
+    return { ...GAME_BOX_CONFIGURATION.defaultParameters }
   }
   throw new Error(`UNKNOWN_MODEL_ID:${modelId}`)
 }

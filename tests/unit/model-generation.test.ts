@@ -8,6 +8,7 @@ import type {
   OpenGridSnapParameters,
 } from '../../src/cad-contract/units'
 import {
+  GAME_BOX_CONFIGURATION,
   OPENGRID_CONFIGURATION,
   OPENGRID_ORGANIZER_BOX_DEFAULT_PARAMETERS,
   OPENGRID_OPENCONNECT_ORGANIZER_DEFAULT_PARAMETERS,
@@ -68,6 +69,9 @@ function defaultInputForModel(modelId: ModelId): ModelParameterValues {
       magnetHoleDiameter: 0,
       magnetHoleThickness: 0,
     }
+  }
+  if (modelId === 'game-box') {
+    return { ...GAME_BOX_CONFIGURATION.defaultParameters }
   }
   if (modelId === 'opengrid-wall-cover') return { text: 'A' }
   if (modelId === 'opengrid-divider') {
@@ -1152,5 +1156,67 @@ describe('CAD model generation debounce', () => {
           (command.parameters as OpenGridSnapParameters).offset === null,
       ),
     ).toBe(false)
+  })
+  it('applies a batch of raw values as one snapshot', () => {
+    const { send, context } = createRuntimeContext('game-box')
+    const handlers = createModelGenerationHandlers(context)
+
+    handlers.handleInputsChange({
+      module1Type: 'cards',
+      module2Type: 'dice',
+      module3Type: 'none',
+    })
+
+    // One parse, one dispatch, one persisted snapshot.
+    expect(context.dispatch).toHaveBeenCalledTimes(1)
+    expect(context.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'input-valid' }),
+    )
+    expect(context.setPersistedParameters).toHaveBeenCalledTimes(1)
+    expect(context.setPersistedParameters).toHaveBeenCalledWith(
+      'game-box',
+      expect.objectContaining({
+        module1Type: 'cards',
+        module2Type: 'dice',
+        module3Type: 'none',
+      }),
+    )
+
+    vi.advanceTimersByTime(PROTOTYPE_CONFIGURATION.inputDebounceMs)
+    expect(
+      send.mock.calls.filter(([command]) => command.kind === 'model.generate'),
+    ).toHaveLength(1)
+    expect(send).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        kind: 'model.generate',
+        modelId: 'game-box',
+        parameters: expect.objectContaining({
+          module1Type: 'cards',
+          module2Type: 'dice',
+        }),
+      }),
+    )
+  })
+
+  it('reports an invalid batch once', () => {
+    const { context } = createRuntimeContext('game-box')
+    const handlers = createModelGenerationHandlers(context)
+
+    handlers.handleInputsChange({
+      module1Type: 'none',
+      module2Type: 'dice',
+    })
+
+    expect(context.dispatch).toHaveBeenCalledTimes(1)
+    expect(context.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'input-invalid' }),
+    )
+    expect(context.setFieldErrors).toHaveBeenCalledTimes(1)
+    expect(context.setFieldErrors).toHaveBeenCalledWith({
+      module1Type: expect.objectContaining({
+        messageId: 'validation.gameBoxModuleRequired',
+      }),
+    })
+    expect(context.setPersistedParameters).not.toHaveBeenCalled()
   })
 })

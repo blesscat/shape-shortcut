@@ -185,6 +185,12 @@
     controller?.onInputChange(key, value)
   }
 
+  function handleInputsChange(
+    values: Partial<Record<ModelParameterKey, string>>,
+  ): void {
+    controller?.onInputsChange(values)
+  }
+
   function handleSystemContextChange(
     nextContext: OpenGridSystemContext | undefined,
   ): void {
@@ -277,6 +283,7 @@
         canExportThreeMf={snapshot.canExportThreeMf}
         downloadHintKey={snapshot.downloadHintKey}
         onInputChange={handleInputChange}
+        onInputsChange={handleInputsChange}
         onSystemContextChange={handleSystemContextChange}
         onOpenGridParametersChange={handleOpenGridParametersChange}
         onOpenGridDimensionCalculationInvalid={handleOpenGridDimensionCalculationInvalid}
@@ -375,6 +382,7 @@
             rawParameters={snapshot.rawParameters}
             fieldErrors={snapshot.fieldErrors}
             onInputChange={handleInputChange}
+            onInputsChange={handleInputsChange}
             onSystemContextChange={handleSystemContextChange}
             onOpenGridParametersChange={handleOpenGridParametersChange}
             onOpenGridDimensionCalculationInvalid={handleOpenGridDimensionCalculationInvalid}

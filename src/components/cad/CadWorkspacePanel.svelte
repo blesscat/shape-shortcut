@@ -32,6 +32,7 @@
     supportsThreeMf: boolean
     canExportThreeMf: boolean
     onInputChange: (key: ModelParameterKey, value: string) => void
+    onInputsChange: (values: Partial<Record<ModelParameterKey, string>>) => void
     onSystemContextChange: (context: OpenGridSystemContext | undefined) => void
     onOpenGridParametersChange: (parameters: OpenGridParameters) => void
     onOpenGridDimensionCalculationInvalid: () => void
@@ -57,6 +58,7 @@
     supportsThreeMf,
     canExportThreeMf,
     onInputChange,
+    onInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid,
@@ -85,6 +87,7 @@
     {rawParameters}
     {fieldErrors}
     {onInputChange}
+    {onInputsChange}
     {onSystemContextChange}
     {onOpenGridParametersChange}
     {onOpenGridDimensionCalculationInvalid}

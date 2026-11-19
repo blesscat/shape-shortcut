@@ -100,4 +100,9 @@ export const messages = {
   'parameters.cardBoxCardWidth': '卡片寬',
   'parameters.cardBoxCardHeight': '卡片高',
   'parameters.cardBoxStorageDepth': '收納深度',
+  'parameters.gameBoxCardWidth': '卡片寬',
+  'parameters.gameBoxCardHeight': '卡片高',
+  'parameters.gameBoxCardDepth': '卡片區厚度',
+  'parameters.gameBoxDiceSize': '骰子邊長',
+  'parameters.gameBoxDiceCount': '骰子顆數',
 }

@@ -42,7 +42,7 @@ export type ParameterField = {
   /** Stable translation key; never render this value directly. */
   label: string
   axis: string
-  unit: 'mm' | 'degree' | 'grid' | 'count'
+  unit: 'mm' | 'degree' | 'grid' | 'count' | 'dice'
   labelFormat?: 'axis' | 'label-axis' | 'label'
   control: 'text' | 'range' | 'range-text'
   defaultValue: number
