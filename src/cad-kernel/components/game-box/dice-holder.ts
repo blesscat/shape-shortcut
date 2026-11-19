@@ -12,8 +12,8 @@ import { deleteShape } from '../../lifetime/dispose'
 /**
  * Named constants of the dice holder (mm).
  *
- * The grip strip dimensions are starting points: the design (decision 5)
- * leaves the thickness and the length to the first test print, so they live
+ * The grip strip dimensions were confirmed by the test print of
+ * 2026-11-19: the design (decision 5) records them as final, and they live
  * in named constants here.
  *
  * The strip is a thin sheet that is fixed at both ends in the side wall and
