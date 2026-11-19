@@ -113,30 +113,34 @@ describe('HSW kernel model registration', () => {
   })
 
   it('registers each component as an independent kernel definition', () => {
-    expect(kernelModelDefinitions.map((definition) => definition.id)).toEqual([
-      'box',
-      'modular-grid-base',
-      'hsw-cell',
-      'hexagonal-column',
-      'opengrid-pillar',
-      'opengrid',
-      'opengrid-stackable-box',
-      'opengrid-organizer-box',
-      'opengrid-stackable-cylinder',
-      'opengrid-open-shelf',
-      'opengrid-openconnect-shelf',
-      'opengrid-openconnect-tissue-box',
-      'opengrid-openconnect-organizer',
-      'opengrid-snap',
-      'opengrid-wall-cover',
-      'opengrid-snap-remover',
-      'opengrid-divider',
-      'opengrid-label-card',
-      'opengrid-label-slot-test',
-      'opengrid-label-ledge-test',
-      'card-box',
-      'game-box',
-    ])
+    expect(
+      kernelModelDefinitions.map((definition) => definition.id).sort(),
+    ).toEqual(
+      [
+        'box',
+        'modular-grid-base',
+        'hsw-cell',
+        'hexagonal-column',
+        'opengrid-pillar',
+        'opengrid',
+        'opengrid-stackable-box',
+        'opengrid-organizer-box',
+        'opengrid-stackable-cylinder',
+        'opengrid-open-shelf',
+        'opengrid-openconnect-shelf',
+        'opengrid-openconnect-tissue-box',
+        'opengrid-openconnect-organizer',
+        'opengrid-snap',
+        'opengrid-wall-cover',
+        'opengrid-snap-remover',
+        'opengrid-divider',
+        'opengrid-label-card',
+        'opengrid-label-slot-test',
+        'opengrid-label-ledge-test',
+        'card-box',
+        'game-box',
+      ].sort(),
+    )
     expect(getKernelModelDefinition('hsw-cell')?.id).toBe('hsw-cell')
     expect(getKernelModelDefinition('hexagonal-column')?.id).toBe(
       'hexagonal-column',

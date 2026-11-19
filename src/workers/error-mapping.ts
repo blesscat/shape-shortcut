@@ -1,141 +1,31 @@
 import type { CadErrorCode, CadErrorStage } from '../cad-contract/errors'
 import type { WorkerCommand } from '../cad-contract/messages'
+import { collectErrorRules, type ErrorRuleModule } from './error-mapping-rules'
 
 type WorkerCommandKind = WorkerCommand['kind']
+
+/**
+ * The per-component error rule modules. Every module under
+ * `src/workers/error-rules/` is collected automatically, so adding a
+ * component's rules never requires editing this file.
+ */
+const ruleModules = import.meta.glob<ErrorRuleModule>('./error-rules/*.ts', {
+  eager: true,
+})
+
+const { codeRules, stageRules } = collectErrorRules(ruleModules)
 
 export function cadErrorCodeFor(
   message: string,
   commandKind: WorkerCommandKind,
 ): CadErrorCode {
-  if (message.includes('MODEL_REVISION_MISSING'))
-    return 'MODEL_REVISION_MISSING'
-  if (message.includes('WORKER_RESTARTED')) return 'WORKER_RESTARTED'
-  if (message.includes('CANDIDATE_MISSING')) return 'CANDIDATE_ORPHANED'
-  if (message.includes('CANDIDATE_CAPACITY')) return 'CANDIDATE_CAPACITY'
-  if (message.includes('ENGINE_NOT_READY')) return 'ENGINE_INIT_FAILED'
-  if (
-    message.includes('MODEL_PARAMETERS_INVALID') ||
-    message === 'INVALID_INPUT'
-  ) {
-    return 'INVALID_INPUT'
+  for (const rule of codeRules) {
+    const matched = rule.exact
+      ? message === rule.pattern
+      : message.includes(rule.pattern)
+    if (matched) return rule.code
   }
-  if (message.includes('OPENGRID_UNSUPPORTED_CONFIGURATION')) {
-    return 'OPENGRID_UNSUPPORTED_CONFIGURATION'
-  }
-  if (
-    message.includes('OPENGRID_SNAP_PARAMETERS_INVALID') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-snap') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-wall-cover') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-label-card') ||
-    message.includes('OPENGRID_STACKABLE_CYLINDER_PARAMETERS_INVALID') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-stackable-cylinder') ||
-    message.includes('OPENGRID_ORGANIZER_BOX_PARAMETERS_INVALID') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-organizer-box') ||
-    message.includes('MODEL_PARAMETERS_MISMATCH:opengrid-openconnect-organizer')
-  ) {
-    return 'INVALID_INPUT'
-  }
-  if (message.includes('OPENGRID_SNAP_QUALITY_INVALID')) {
-    return 'OPENGRID_SNAP_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_WALL_COVER_QUALITY_INVALID')) {
-    return 'OPENGRID_WALL_COVER_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID')) {
-    return 'OPENGRID_LABEL_CARD_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID')) {
-    return 'OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_LABEL_CARD_PARTS_INVALID')) {
-    return 'OPENGRID_LABEL_CARD_PARTS_INVALID'
-  }
-  if (
-    message.includes('LABEL_CARD_TEXT_TOO_WIDE') ||
-    message.includes('LABEL_CARD_ICON_UNKNOWN') ||
-    message.includes('LABEL_CARD_ICON_GEOMETRY_FAILED') ||
-    message.includes('LABEL_CARD_TEXT_GLYPH_UNSUPPORTED') ||
-    message.includes('LABEL_CARD_FONT_LOAD_FAILED')
-  ) {
-    return 'LABEL_CARD_ACCENT_INVALID'
-  }
-  if (
-    message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE') ||
-    message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA') ||
-    message.includes('CARD_BOX_SVG_')
-  ) {
-    return 'CARD_BOX_GEOMETRY_INVALID'
-  }
-  if (message.includes('MODEL_PARAMETERS_MISMATCH:card-box')) {
-    return 'INVALID_INPUT'
-  }
-  if (message.includes('GAME_BOX_GEOMETRY_INVALID')) {
-    return 'GAME_BOX_GEOMETRY_INVALID'
-  }
-  if (message.includes('MODEL_PARAMETERS_MISMATCH:game-box')) {
-    return 'INVALID_INPUT'
-  }
-  if (
-    message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
-    message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')
-  ) {
-    return 'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID'
-  }
-  if (
-    message.includes('OPENGRID_SNAP_HOLD_REFERENCE_MISSING') ||
-    message.includes('OPENGRID_SNAP_HOLD_REFERENCE_INVALID') ||
-    message.includes('OPENGRID_SNAP_HOLD_REFERENCE_LOAD_FAILED')
-  ) {
-    return 'MODEL_ASSET_INVALID'
-  }
-  if (message.includes('OPENGRID_SNAP_HOLD_')) {
-    return 'OPENGRID_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_DETACHABLE_CORNER_SEAT_')) {
-    return 'MODEL_ASSET_INVALID'
-  }
-  if (message.includes('OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT'
-  }
-  if (message.includes('OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT'
-  }
-  if (message.includes('OPENGRID_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'OPENGRID_HONEYCOMB_MEMORY_LIMIT'
-  }
-  if (
-    message.includes('OPENGRID_QUALITY_INVALID') ||
-    message.includes('OPENGRID_OPENCONNECT_SHELF_QUALITY_FAILED') ||
-    message.includes('OPENGRID_OPENCONNECT_ORGANIZER_QUALITY_FAILED') ||
-    message.includes('OPENGRID_BREP_INVALID') ||
-    message.includes('OPENGRID_STACKABLE_BOX_') ||
-    message.includes('OPENGRID_ORGANIZER_BOX_')
-  ) {
-    return 'OPENGRID_QUALITY_INVALID'
-  }
-  if (message.includes('OPENGRID_DIVIDER_QUALITY_INVALID')) {
-    return 'OPENGRID_DIVIDER_QUALITY_INVALID'
-  }
-  if (message.includes('STEP_METADATA_INVALID')) return 'STEP_METADATA_INVALID'
-  if (message.includes('STL_METADATA_INVALID')) return 'STL_METADATA_INVALID'
-  if (message.includes('THREEMF_METADATA_INVALID')) {
-    return 'THREEMF_METADATA_INVALID'
-  }
-  if (message.includes('MESH_INVALID')) return 'MESH_INVALID'
-  if (
-    message.includes('MODEL_ASSET_INVALID') ||
-    message.includes('GRID_TEMPLATE') ||
-    message.includes('HSW_CELL_ASSET') ||
-    message.includes('HEXAGONAL_COLUMN_ASSET') ||
-    message.includes('MODEL_ASSET_CONTEXT_MISSING') ||
-    message.includes('OPENGRID_SNAP_ASSET') ||
-    message.includes('OPENGRID_SNAP_OPEN_CONNECT_HEAD') ||
-    message.includes('OPENGRID_SNAP_REMOVER_ASSET') ||
-    message.includes('OPENGRID_WALL_COVER_ASSET') ||
-    message.includes('OPENGRID_OPENCONNECT_SLOT_ASSET')
-  ) {
-    return 'MODEL_ASSET_INVALID'
-  }
+
   if (commandKind === 'engine.init') return 'ENGINE_INIT_FAILED'
   if (commandKind === 'export.step') return 'STEP_EXPORT_FAILED'
   if (commandKind === 'export.stl') return 'STL_EXPORT_FAILED'
@@ -149,60 +39,10 @@ export function cadErrorStageFor(
   commandKind: WorkerCommandKind,
   message = '',
 ): CadErrorStage {
-  if (message.includes('OPENGRID_UNSUPPORTED_CONFIGURATION')) {
-    return 'validation'
+  for (const rule of stageRules) {
+    if (message.includes(rule.pattern)) return rule.stage
   }
-  if (message.includes('OPENGRID_SNAP_QUALITY_INVALID')) return 'meshing'
-  if (message.includes('OPENGRID_WALL_COVER_QUALITY_INVALID')) {
-    return 'meshing'
-  }
-  if (
-    message.includes('OPENGRID_LABEL_CARD_QUALITY_INVALID') ||
-    message.includes('OPENGRID_LABEL_SLOT_TEST_QUALITY_INVALID')
-  ) {
-    return 'meshing'
-  }
-  if (message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE')) {
-    return 'building'
-  }
-  if (message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
-    return 'building'
-  }
-  if (message.includes('CARD_BOX_SVG_')) return 'building'
-  if (message.includes('GAME_BOX_GEOMETRY_INVALID')) return 'building'
-  if (
-    message.includes('OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID') ||
-    message.includes('OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID')
-  ) {
-    return 'meshing'
-  }
-  if (message.includes('OPENGRID_SNAP_HOLD_REFERENCE_')) {
-    return 'initializing'
-  }
-  if (message.includes('OPENGRID_DETACHABLE_CORNER_SEAT_')) {
-    return 'initializing'
-  }
-  if (message.includes('OPENGRID_SNAP_HOLD_')) return 'meshing'
-  if (message.includes('OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'building'
-  }
-  if (message.includes('OPENGRID_DIVIDER_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'building'
-  }
-  if (message.includes('OPENGRID_HONEYCOMB_MEMORY_LIMIT')) {
-    return 'building'
-  }
-  if (
-    message.includes('OPENGRID_QUALITY_INVALID') ||
-    message.includes('OPENGRID_OPENCONNECT_SHELF_QUALITY_FAILED') ||
-    message.includes('OPENGRID_OPENCONNECT_ORGANIZER_QUALITY_FAILED') ||
-    message.includes('OPENGRID_STACKABLE_BOX_') ||
-    message.includes('OPENGRID_ORGANIZER_BOX_')
-  ) {
-    return 'meshing'
-  }
-  if (message.includes('OPENGRID_DIVIDER_QUALITY_INVALID')) return 'meshing'
-  if (message.includes('MESH_INVALID')) return 'meshing'
+
   switch (commandKind) {
     case 'engine.init':
       return 'initializing'
