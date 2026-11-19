@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isHswCellParameters } from '../../../cad-contract/units'
+import {
+  isHswCellParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildHswCell } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildHswCellModel(

@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isGameBoxParameters } from '../../../cad-contract/units'
+import {
+  isGameBoxParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildGameBox } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 function buildGameBoxModel(

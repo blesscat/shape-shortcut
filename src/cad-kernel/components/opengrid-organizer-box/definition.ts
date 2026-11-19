@@ -7,12 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridOrganizerBoxParameters } from '../../../cad-contract/units'
+import {
+  isOpenGridOrganizerBoxParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import {
   buildOpenGridOrganizerBox,
   buildOpenGridOrganizerBoxWithParts,
 } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

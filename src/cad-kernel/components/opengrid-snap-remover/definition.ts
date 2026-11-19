@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridSnapRemoverParameters } from '../../../cad-contract/units'
+import {
+  isOpenGridSnapRemoverParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildOpenGridSnapRemover } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildOpenGridSnapRemoverModel(

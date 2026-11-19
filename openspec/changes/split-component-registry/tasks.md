@@ -17,18 +17,19 @@
 
 - [x] 3.1 為每個 component 建立 `src/cad-kernel/components/<component>/definition.ts`，把 `src/cad-kernel/model/index.ts` 中該 component 的 `build*Model` 函式與 definition 常數逐字搬入，並保留需要時的 `buildWithParts` 路徑
 - [x] 3.2 把 `src/cad-kernel/model/index.ts` 改為自動收集各 component 的 definition module，並保留 `KernelBuildContext`、`KernelBuildPhase`、`KernelModelDefinition`、`KernelModelBuildResult`、`kernelModelDefinitions`、`getKernelModelDefinition`、`buildModelBRep`、`buildModelBRepWithParts` 的名稱、型別與簽章
-- [x] 3.3 加入 runtime 驗證：每個被收集到的 definition 必須有合法且唯一的 `ModelId`，缺漏、重複或格式錯誤必須讓測試失敗而不是靜默忽略
+- [x] 3.3 加入 definition id 的驗證：編譯期 `definition.id` 就是 `ModelId`（`KernelModelDefinition.id` 的型別），runtime 由 `src/cad-kernel/model/collect.ts` 檢查 module 形狀、`id` 是非空字串且 `id` 不重複；缺漏、重複或格式錯誤必須讓測試失敗而不是靜默忽略
 - [x] 3.4 確認新增一個 component 時不需要修改 `src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts`，並以一個 fixture component 驗證這個前提
 - [x] 3.5 移除 `src/cad-kernel/model/index.ts` 中 21 個沒有任何 consumer 的 per-component `*KernelDefinition` export（`boxKernelDefinition` … `opengridLabelLedgeTestKernelDefinition`），使共用檔案的 public surface 收斂為 delta spec 明列的 8 個符號；保留它們會讓每新增一個 component 都必須修改這個共用檔案，與本變更的硬性約束衝突
 
 ## 4. 測試更新與新增
 
 - [x] 4.1 驗證沒有任何 import 壞掉：glob 方案不改變任何 import 路徑，因此既有測試（`tests/unit/hsw-cell-kernel.test.ts`、`tests/unit/opengrid-openconnect-organizer-kernel.test.ts`、`tests/unit/opengrid-regression.test.ts`、`tests/worker/opengrid-organizer-box.integration.test.ts`、`tests/worker/opengrid-stackable-box.integration.test.ts`、`tests/worker/runtime-lifecycle.test.ts` 等）的 import 敘述必須原封不動仍可運作；唯一允許的既有測試變更是 4.6
-- [x] 4.2 新增 `tests/unit/affected-test-selection.test.ts` 的 case：component 的 per-component definition 與 error rule 檔案走 `related` 模式，`src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts` 仍然走 `all-cad`
+- [x] 4.2 新增 `tests/unit/affected-test-selection.test.ts` 的 case：component 的 per-component definition 與 error rule 檔案走 `related` 模式，`src/cad-kernel/model/index.ts`、`src/workers/error-mapping.ts` 與不屬於任何單一 component 的 `src/workers/error-rules/shared.ts` 仍然走 `all-cad`
 - [x] 4.3 新增**行為式**測試證明「改一個 component 只碰該 component 的檔案」：對純收集函式（`collectKernelModelDefinitions` / `collectErrorRules`）注入一個 synthetic component module map，證明新增 component module 就會被收集、且不需要修改共用 registry 的收集邏輯；配合 4.2 的 `createExecutionPlan` case 即可證明隔離契約。**不得**斷言 `git diff` 或任何 repository／工作樹狀態（會耦合 VCS，且 merge 之後會空跑通過）
 - [x] 4.4 新增測試證明 geometry 不變：以 1.4 錄製的 geometry baseline fixture，在拆分後對同一 component 與參數驗證產生的 shape 與搬移前一致
-- [x] 4.5 新增測試證明 `import.meta.glob` 收集到每個 component 恰好一次，且沒有遺漏任何 model component；`src/cad-kernel/components/` 底下的 `opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared` 四個目錄不是 model component（不含也不匯出 `ModelId`），不列入收集對應清單
+- [x] 4.5 新增測試證明 `import.meta.glob` 收集到每個 component 恰好一次，且沒有遺漏任何 model component：以公開的 `kernelModelDefinitions` 與 golden fixture 雙向比對（`tests/unit/cad-model-registry-baseline.test.ts`），並以 `KERNEL_MODEL_GOLDEN_ENTRIES` 的 `Record<ModelId, …>` 型別在編譯期擋下漏掉的 component；`src/cad-kernel/components/` 底下的 `opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared` 四個目錄不是 model component（不含也不匯出 `ModelId`），不列入收集對應清單
 - [x] 4.6 把 `tests/unit/hsw-cell-kernel.test.ts` 中釘住 `kernelModelDefinitions` 手寫順序的斷言改成**與順序無關**的集合比對；`kernelModelDefinitions` 的順序沒有任何程式碼依賴（runtime 以 `find` 依唯一 `id` 查找），且**不得**在 `KernelModelDefinition` 新增 `order` key（order key 只有 error rule 需要）
+- [x] 4.7 新增測試鎖住共用 registry 的 public surface：`src/cad-kernel/model/index.ts` 的 run-time export 必須剛好是 4 個值 export、四個型別 export 以編譯期型別釘住，`src/workers/error-mapping.ts` 的 run-time export 必須剛好是 `cadErrorCodeFor` 與 `cadErrorStageFor`；不得讀 source 文字
 
 ## 5. 驗證與交付
 

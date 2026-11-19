@@ -25,6 +25,7 @@ const sharedCadPrefixes = [
   'src/cad-kernel/boolean-progress',
   'src/workers/cad.worker.ts',
   'src/workers/error-mapping',
+  'src/workers/error-rules/shared',
   'src/workers/mesh-progress',
   'vendor/replicad-opencascadejs/',
 ]

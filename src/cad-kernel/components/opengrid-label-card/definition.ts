@@ -7,12 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridLabelCardParameters } from '../../../cad-contract/units'
+import {
+  isOpenGridLabelCardParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import {
   buildOpenGridLabelCard,
   buildOpenGridLabelCardWithParts,
 } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

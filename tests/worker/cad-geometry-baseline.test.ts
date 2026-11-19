@@ -10,7 +10,9 @@ import {
   buildModelBRep,
   buildModelBRepWithParts,
   type KernelBuildContext,
+  type KernelModelBuildResult,
 } from '../../src/cad-kernel/model'
+import { deleteShape } from '../../src/cad-kernel/lifetime/dispose'
 import { countSolids } from '../../src/cad-kernel/shape-query/solids'
 import { CadWorkerAssetCache } from '../../src/workers/cad-worker-assets'
 import {
@@ -37,19 +39,22 @@ const BOUNDS_ABSOLUTE_TOLERANCE = 1e-4
 const originalFetch = globalThis.fetch
 
 /**
+ * The URL a `fetch` input refers to. Node's fetch accepts a URL, a string, or
+ * a request-like object.
+ */
+function urlOf(input: unknown): URL {
+  if (input instanceof URL) return input
+  if (typeof input === 'string') return new URL(input)
+  return new URL(String((input as { url?: string }).url))
+}
+
+/**
  * The kernel asset loaders fetch `file:` URLs, which Node's fetch rejects.
  * Serving them from disk keeps the real loader path in play.
  */
 function installFileUrlFetch(): void {
   globalThis.fetch = (async (input: unknown) => {
-    const url =
-      input instanceof URL
-        ? input
-        : new URL(
-            typeof input === 'string'
-              ? input
-              : String((input as { url?: string }).url),
-          )
+    const url = urlOf(input)
     if (url.protocol === 'file:') {
       return new Response(readFileSync(url), { status: 200 })
     }
@@ -124,6 +129,25 @@ function signatureOf(shape: Shape3D): GeometrySignature {
   }
 }
 
+/**
+ * Releases every native shape the multipart build path returned. The same
+ * shape can appear more than once, so each one is deleted only once.
+ */
+function releaseBuildShapes(result: KernelModelBuildResult): void {
+  const released = new Set<Shape3D>()
+  const candidates = [
+    result.shape,
+    result.qualityShape,
+    ...(result.parts ?? []).map((part) => part.shape),
+  ].filter((candidate): candidate is Shape3D => Boolean(candidate))
+
+  for (const candidate of candidates) {
+    if (released.has(candidate)) continue
+    released.add(candidate)
+    deleteShape(candidate)
+  }
+}
+
 function expectSameGeometry(
   actual: GeometrySignature,
   expected: GeometrySignature,
@@ -183,7 +207,7 @@ describe('CAD geometry baseline', () => {
       try {
         expectSameGeometry(signatureOf(result.shape), expected.buildWithParts)
       } finally {
-        result.shape.delete()
+        releaseBuildShapes(result)
       }
     },
     120_000,

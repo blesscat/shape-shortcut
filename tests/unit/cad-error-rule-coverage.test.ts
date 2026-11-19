@@ -10,9 +10,11 @@ import {
 } from './cad-registry-baseline.fixture'
 
 /**
- * The same per-component modules the Worker error mapping collects. Reading
- * them here makes the rule set exhaustiveness-checkable: a rule that is
- * added without being recorded in the golden fixture fails these cases.
+ * The per-component rule modules the Worker error mapping collects. This
+ * glob mirrors the production one in `src/workers/error-mapping.ts`, which
+ * collects `./error-rules/*.ts`. There is no public way to list the rules, so
+ * the test reads the same modules: a rule that is added without being
+ * recorded in the golden fixture fails these cases.
  */
 const ruleModules = import.meta.glob<ErrorRuleModule>(
   '../../src/workers/error-rules/*.ts',
@@ -34,14 +36,5 @@ describe('error rule coverage', () => {
     expect(stageRules.map((rule) => rule.pattern).sort()).toEqual(
       [...ERROR_STAGE_RULE_NAMES].sort(),
     )
-  })
-
-  it('gives every rule a unique order key', () => {
-    const { codeRules, stageRules } = collectErrorRules(ruleModules)
-    const codeOrders = codeRules.map((rule) => rule.order)
-    const stageOrders = stageRules.map((rule) => rule.order)
-
-    expect(new Set(codeOrders).size).toBe(codeOrders.length)
-    expect(new Set(stageOrders).size).toBe(stageOrders.length)
   })
 })

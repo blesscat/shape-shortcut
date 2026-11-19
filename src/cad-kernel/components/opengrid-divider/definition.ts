@@ -7,9 +7,11 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridDividerModelParameters } from '../../../cad-contract/units'
+import {
+  isOpenGridDividerModelParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildOpenGridDivider, buildOpenGridDividerWithParts } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

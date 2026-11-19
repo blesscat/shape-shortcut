@@ -7,14 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridSnapParameters } from '../../../cad-contract/units'
-import { buildOpenGridSnap } from './builder'
-import type { OpenGridSnapFixedFootprint } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
+import {
+  isOpenGridSnapParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
+import { buildOpenGridSnap, type OpenGridSnapFixedFootprint } from './builder'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildOpenGridSnapModel(

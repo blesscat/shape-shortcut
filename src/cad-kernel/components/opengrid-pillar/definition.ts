@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isPillarParameters } from '../../../cad-contract/units'
+import {
+  isPillarParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildPillar } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildPillarModel(

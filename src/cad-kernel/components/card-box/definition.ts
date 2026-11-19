@@ -7,9 +7,11 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isCardBoxParameters } from '../../../cad-contract/units'
+import {
+  isCardBoxParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildCardBox } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

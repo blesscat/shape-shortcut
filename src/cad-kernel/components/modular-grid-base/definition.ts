@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isModularGridBaseParameters } from '../../../cad-contract/units'
+import {
+  isModularGridBaseParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildModularGridBase } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildModularGridBaseModel(

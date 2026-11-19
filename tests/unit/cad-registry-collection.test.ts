@@ -1,20 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Shape3D } from 'replicad'
-import type { ModelId } from '../../src/cad-contract/units'
-import {
-  collectKernelModelDefinitions,
-  type ComponentDefinitionModule,
-} from '../../src/cad-kernel/model/collect'
-import {
-  collectErrorRules,
-  type ErrorRuleModule,
-} from '../../src/workers/error-mapping-rules'
-import { KERNEL_MODEL_GOLDEN_ENTRIES } from './cad-registry-baseline.fixture'
-
-const definitionModules = import.meta.glob<ComponentDefinitionModule>(
-  '../../src/cad-kernel/components/*/definition.ts',
-  { eager: true },
-)
+import { collectKernelModelDefinitions } from '../../src/cad-kernel/model/collect'
+import { collectErrorRules } from '../../src/workers/error-mapping-rules'
 
 const syntheticBuild = () => ({}) as unknown as Shape3D
 
@@ -85,30 +72,5 @@ describe('component registry collection', () => {
         },
       }),
     ).toThrow('ERROR_RULE_ORDER_DUPLICATED')
-  })
-})
-
-describe('component definition coverage', () => {
-  it('collects exactly one definition per model component', () => {
-    const collectedIds = Object.values(definitionModules).map(
-      (module) => module.definition.id,
-    )
-    const knownModelIds = Object.keys(KERNEL_MODEL_GOLDEN_ENTRIES)
-
-    expect(collectedIds).toHaveLength(knownModelIds.length)
-    expect(new Set(collectedIds).size).toBe(collectedIds.length)
-    expect([...collectedIds].sort()).toEqual([...knownModelIds].sort())
-  })
-
-  it('registers every model id exactly once', () => {
-    const knownModelIds = Object.keys(KERNEL_MODEL_GOLDEN_ENTRIES) as ModelId[]
-
-    for (const modelId of knownModelIds) {
-      const matching = Object.values(definitionModules).filter(
-        (module) => module.definition.id === modelId,
-      )
-
-      expect(matching).toHaveLength(1)
-    }
   })
 })

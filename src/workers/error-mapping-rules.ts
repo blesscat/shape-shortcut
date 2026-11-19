@@ -4,8 +4,9 @@ import type { CadErrorCode, CadErrorStage } from '../cad-contract/errors'
  * One Worker error-code rule.
  *
  * `order` is the position of the rule in the first-match order. It is unique
- * across every rule module and stays comparable, so a new rule can be
- * inserted between two existing ones without renumbering them.
+ * within its list (the code rules or the stage rules) across every rule
+ * module and stays comparable, so a new rule can be inserted between two
+ * existing ones without renumbering them.
  */
 export type CadErrorCodeRule = {
   order: number

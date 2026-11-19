@@ -163,6 +163,15 @@ describe('affected-test execution planning', () => {
     expect(plan.reasons).toContain('shared CAD infrastructure changed')
   })
 
+  it('runs every CAD test for the shared Worker error rule module', () => {
+    const plan = createExecutionPlan([
+      { status: 'M', path: 'src/workers/error-rules/shared.ts' },
+    ])
+
+    expect(plan.kind).toBe('all-cad')
+    expect(plan.reasons).toContain('shared CAD infrastructure changed')
+  })
+
   it('keeps per-component definition and error rule files on related-test selection', () => {
     for (const path of [
       'src/cad-kernel/components/box/definition.ts',

@@ -2,9 +2,9 @@
 
 ### Requirement: Component model definitions and error rules are owned per component
 
-Every CAD component MUST own its model definition and its Worker error rules in
-module files that belong to that component, and MUST NOT require edits to the
-shared registry modules `src/cad-kernel/model/index.ts` or
+Every CAD component MUST own its model definition, and the Worker error rules
+that belong to it, in module files that belong to that component, and MUST NOT
+require edits to the shared registry modules `src/cad-kernel/model/index.ts` or
 `src/workers/error-mapping.ts` in order to add or change that component. The
 shared registry modules MUST discover those modules automatically and MUST keep
 the public registry surface named in the scenario below with unchanged names,
@@ -18,6 +18,13 @@ types, and signatures.
   `src/workers/error-mapping.ts` MUST require any change
 - **AND** the shared registries MUST expose that component's definition and
   error rules after the change
+
+#### Scenario: Rules that belong to no component live in a shared rule module
+
+- **WHEN** a Worker error rule is emitted by shared cross-component code and
+  therefore belongs to no single CAD component
+- **THEN** that rule MUST live in the shared rule module
+- **AND** it MUST NOT be distributed across per-component rule modules
 
 #### Scenario: Every component is collected exactly once
 
@@ -87,7 +94,9 @@ a shared Worker error mapping MUST move code verbatim: it MUST NOT change logic,
 identifiers, function signatures, error codes, error stages, geometry outputs,
 progress/phase reporting, or resource disposal behavior. Newly authored code
 MUST be limited to import statements, re-export barrels, module file boundaries,
-and the collection code that replaces a hand-written per-component list. The
+the collection code that replaces a hand-written per-component list, and the
+declarative order keys and equivalent rule data structure that replace a
+hand-written if-chain. The
 split MUST be covered by characterization tests that compare the collected
 registry contents and the resolved error mapping before and after the split, and
 it MUST pass the repository validation gates (`pnpm check`, Prettier check on
@@ -105,8 +114,9 @@ touched files, and the affected-test command) before it is considered complete.
 - **WHEN** the change diff is reviewed with move detection enabled
 - **THEN** all extracted geometry logic and all extracted error rules MUST be
   present verbatim at their new location
-- **AND** the only additions MUST be import/export glue, barrel re-exports, and
-  collection code
+- **AND** the only additions MUST be import/export glue, barrel re-exports,
+  collection code, and the declarative rule order keys that replace a
+  hand-written if-chain
 
 #### Scenario: Generated geometry is unchanged
 

@@ -19,17 +19,21 @@ related-test mode on such a commit still had to run 248 tests in 160 seconds.
   into a per-component module that lives next to that component's builder
   (`src/cad-kernel/components/<component>/definition.ts`).
 - Move each component's error rules out of `src/workers/error-mapping.ts` into
-  per-component rule modules (`src/workers/error-rules/<component>.ts`).
+  per-component rule modules (`src/workers/error-rules/<component>.ts`), with the
+  rules that belong to no single component staying in one shared rule module
+  (`src/workers/error-rules/shared.ts`).
 - Collect both sets automatically from the two shared modules, so adding or
   changing a component never requires editing `src/cad-kernel/model/index.ts`
   or `src/workers/error-mapping.ts`.
 - Keep the first-match error-rule order byte-for-byte equivalent to today's
   order, and keep the public import surface of both shared modules named and
   unchanged for the symbols that consumers actually use.
-- Leave `scripts/affected-tests.mjs` unchanged: the shared prefixes still point
-  at the same two shared files, and the new per-component files live outside
-  those prefixes, so a component change now selects the related tests instead
-  of the full CAD suite.
+- Leave the existing `scripts/affected-tests.mjs` rules unchanged: the shared
+  prefixes still point at the same two shared files, and the new per-component
+  files live outside those prefixes, so a component change now selects the
+  related tests instead of the full CAD suite. The one addition is the shared
+  rule module, which belongs to no single component and therefore has to select
+  the full CAD group like the other shared files.
 - Change no behaviour: generated geometry, error codes, error stages, model
   IDs, parameter contracts, and export formats stay identical.
 
@@ -58,9 +62,10 @@ None.
 - Tests: new characterization tests for the registry contents, the error-rule
   order, the geometry baseline, and the affected-test plan. The glob approach
   changes no import path, so existing tests keep their import statements
-  unchanged; the only edit to an existing test is the order-independent
+  unchanged; the only edit to an existing assertion is the order-independent
   rewrite of the `kernelModelDefinitions` order assertion in
-  `tests/unit/hsw-cell-kernel.test.ts`.
+  `tests/unit/hsw-cell-kernel.test.ts`. `tests/unit/affected-test-selection.test.ts`
+  gained new cases without changing any existing assertion.
 - Public contract: unchanged for the named registry surface.
   `KernelBuildContext`, `KernelModelDefinition`, `KernelModelBuildResult`,
   `KernelBuildPhase`, `kernelModelDefinitions`, `getKernelModelDefinition`,

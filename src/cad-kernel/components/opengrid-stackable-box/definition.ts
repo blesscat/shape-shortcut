@@ -10,12 +10,12 @@ import type { Shape3D } from 'replicad'
 import {
   isOpenGridStackableBoxParameters,
   validateOpenGridStackableBoxParameters,
+  type ModelParameterValues,
 } from '../../../cad-contract/units'
 import {
   buildOpenGridStackableBoxAsync,
   buildOpenGridStackableBoxWithParts,
 } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

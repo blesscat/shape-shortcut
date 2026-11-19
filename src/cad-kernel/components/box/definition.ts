@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isBoxParameters } from '../../../cad-contract/units'
+import {
+  isBoxParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildBoxBRep } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 function buildBoxModel(

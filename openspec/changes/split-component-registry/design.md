@@ -110,7 +110,7 @@ const modules = import.meta.glob<ComponentErrorRuleModule>('./error-rules/*.ts',
 ```
 
 - Vite build / worker bundle：worker 是 Vite module worker（`src/features/cad/worker-client/index.ts:38`），`import.meta.glob` 是 Vite 原生功能，`eager: true` 會產生**靜態** import，因此 bundle 特性與今天相同，不會多出 chunk，也不會有 runtime dynamic import 的載入風險。`eager: false` 則會產生 chunk 與非同步載入，故排除。
-- 型別安全：`import.meta.glob<T>()` 提供泛型，module 形狀有型別；代價是 key 是字串，所以補上 runtime 驗證（每個 module 必須有合法 `definition.id`、id 不重複、`id` 必須是已知 `ModelId`）與一條測試保證「每個 component 目錄都剛好被收進來一次」。
+- 型別安全：`import.meta.glob<T>()` 提供泛型，module 形狀有型別；代價是 key 是字串，所以補上三層驗證：編譯期 `definition.id` 就是 `ModelId`（`KernelModelDefinition.id` 的型別）、runtime 由 `src/cad-kernel/model/collect.ts` 檢查 module 形狀、`id` 是非空字串且不重複、以及 golden coverage test 把收集到的 id 與 `ModelId` 清單雙向比對。runtime 端沒有可用的 `ModelId` 清單（`ModelId` 是型別層級的 union），所以「id 是已知 `ModelId`」這個保證是由編譯期型別與 golden coverage test 一起給出的，不是由 collector 單獨驗證。
 - Test selection：**達標**。新增 component 只需要新增 `src/cad-kernel/components/<c>/definition.ts` 與 `src/workers/error-rules/<c>.ts`，兩個共用 registry 檔案完全不動，而這兩個新路徑都不在 `sharedCadPrefixes` 內，所以 plan kind 是 `related`。
 - error rule 順序：自動收集回來的 key 是依路徑排序，不是原本的語意順序，因此**每條 rule 必須帶一個明確的 order key**，共用模組依 order key 排序後才進行 first-match 比對。這讓順序變成宣告式的、可測的，同時新增 component 不需要動共用檔案。
 - 遷移風險：中。可分步進行，且每一步都有可驗證的落點。
@@ -136,7 +136,7 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 
 除了保真搬移的 characterization test 之外，還要有一條測試直接鎖住這 7 對順序敏感 rule 的結果，避免未來新增 rule 時破壞順序語意。
 
-### 4. `scripts/affected-tests.mjs` 不需要修改
+### 4. `scripts/affected-tests.mjs` 只需要新增一個共用前綴
 
 新的 per-component 檔案放在
 
@@ -145,7 +145,9 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 
 而 `src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts` 兩個檔案本身的路徑不變，仍然被 `sharedCadPrefixes` 命中，所以「改真正共用程式碼仍然跑完整 CAD suite」這個規則自動成立。
 
-這樣一來 `affected-tests.mjs` 完全不需要動，既有 `tests/unit/affected-test-selection.test.ts` 的行為契約也不需要修改，只需要補一條新 case 證明 component 的 per-component 檔案會走 `related`。
+唯一的例外是 `src/workers/error-rules/shared.ts`：它承載不屬於任何單一 component 的共用 rule（例如 `MESH_INVALID`、`OPENGRID_QUALITY_INVALID`、`MODEL_ASSET_INVALID`），改動它會影響所有 component 的錯誤碼與錯誤階段，所以它的路徑要加入 `sharedCadPrefixes`（新增 `src/workers/error-rules/shared` 前綴），走 `all-cad` 而不是 `related`。
+
+既有規則一律不動：只新增一個前綴，per-component 的 rule module 仍然走 `related`。`tests/unit/affected-test-selection.test.ts` 補一條 case 證明 `src/workers/error-rules/shared.ts` 走 `all-cad`，component 的 per-component 檔案仍然走 `related`。
 
 ### 5. 搬移必須是逐字搬移
 
@@ -154,7 +156,7 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 ## Risks / Trade-offs
 
 - [`import.meta.glob` 只在 Vite 下有效] → repo 的測試與 build 都走 Vite（Vitest / Astro），worker 是 Vite module worker；實作時先用一個最小 spike 驗證 eager glob 在 worker bundle 內的行為，並保留方案 A 作為 fallback。
-- [由字串 key 組出的 registry 失去編譯期完整性] → 以 runtime 驗證（id 存在、是合法 `ModelId`、不重複）加上「每個 component 目錄剛好被收一次」的測試補回；缺漏或重複會直接讓測試失敗。
+- [由字串 key 組出的 registry 失去編譯期完整性] → 以編譯期的 `definition.id: ModelId` 型別、`src/cad-kernel/model/collect.ts` 的 runtime 檢查（module 形狀、`id` 非空、`id` 不重複）加上 golden coverage test 補回；缺漏或重複會直接讓測試或 `pnpm check` 失敗。
 - [order key 維護失誤會改變 error mapping 結果] → 以兩條測試把關：完整 rule 表的 characterization test（搬移前 golden、搬移後比對）與 7 對順序敏感 rule 的專屬斷言。
 - [per-component module 變多，導覽成本上升] → 檔名與目錄沿用既有的 component slug，並在 `src/workers/error-rules/` 與 `src/cad-kernel/components/` 維持一致命名。
 - [fan-out 不會更小] → 這是 static worker bundle 的必然結果；本次收益是 plan kind 從 `all-cad`（841 tests / 57 分鐘）降為 `related`（約 24 個 test 檔 / 248 tests / 160 秒），而不是把 fan-out 降到單一 component。若要再收斂，需要改成 runtime 解析 definition，會牴觸 worker bundle 的可分析性，屬於另外的議題。
@@ -184,3 +186,4 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
    - 4.5 排除 `src/cad-kernel/components/` 底下四個非 model 目錄：`opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared`（皆不含也不匯出 `ModelId`）。
    - 4.4 在搬移前先錄製 geometry baseline（每個 `ModelId` 在預設參數下的體積、bbox、solid 數），搬移後以同一份 fixture 驗證。
 8. **已定案（2026-11-19，owner 決定「好 照建議做」）— review A 五項 finding 與 review B 有效 finding 全數修正**：P2-1（spec public surface 明確化）、P2-2（決策寫入 design/tasks）、P3-1（task 2.1 措辭矛盾）、P3-2（import 路徑不變）、P3-3（Goals 範圍），以及 review B P3-1（error rule 集合的可窮舉性 guard：新增 rule 未寫入 golden fixture 必須讓測試失敗）。
+9. **已定案（2026-11-19，apply review A 與 review B 都 PASS）— apply 輪的 P3 finding 全數修正**：A P3-1（delta spec 允許不屬於任何單一 component 的 rule 放在共用 rule module）、A P3-2（verbatim 白名單加上 declarative order key 與等價 rule 資料結構）、A P3-3（proposal 的既有測試敘述改為準確敘述）、A P3-4（design 說明實際的 id 驗證方式：編譯期型別 + `collect.ts` 的 runtime 檢查 + golden coverage test）、A P3-5（report 的 rule module 數量）、A P3-6（新增 public surface 測試），以及 B P3-1（`src/workers/error-rules/shared` 加入 `sharedCadPrefixes`，走 `all-cad`）、B P3-2（定義覆蓋測試改用 public `kernelModelDefinitions`、刪掉不會失敗的 order key 斷言、補上 glob 對照說明）、B P3-3（geometry baseline 在 `finally` 釋放 multipart 路徑回傳的每個 shape）、B P3-4（移除未使用的 `KernelModelBuildResult` import、合併同一模組的 split import）、B P3-5（geometry baseline 的巢狀三元運算改成 early return helper）、B P3-6（order key 註解改成「在其清單內唯一」）。這些修正都不改變任何行為、錯誤碼、幾何輸出或 baseline 數值。

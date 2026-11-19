@@ -7,12 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { validateOpenGridWallCoverParameters } from '../../../cad-contract/units'
+import {
+  validateOpenGridWallCoverParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import {
   buildOpenGridWallCover,
   buildOpenGridWallCoverWithFlatText,
 } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,

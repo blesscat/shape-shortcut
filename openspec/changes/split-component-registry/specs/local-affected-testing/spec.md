@@ -11,7 +11,8 @@ suite according to its scope. A deleted, renamed, or otherwise ambiguous CAD
 path MUST run the full CAD group. A change confined to files owned by a single
 CAD component MUST select the related tests for that component instead of the
 full CAD group, and MUST NOT be classified as a shared CAD infrastructure
-change.
+change. Worker error rules that belong to no single CAD component are shared
+CAD infrastructure, so a change to them MUST select the full CAD group.
 
 #### Scenario: Component STEP asset selects mapped CAD tests
 
@@ -54,6 +55,6 @@ change.
 
 #### Scenario: Shared CAD registry change still selects every CAD test
 
-- **WHEN** the shared CAD model registry module or the shared Worker error
-  mapping module changes
+- **WHEN** the shared CAD model registry module, the shared Worker error
+  mapping module, or the shared Worker error rule module changes
 - **THEN** the affected command MUST run the full CAD group with one worker

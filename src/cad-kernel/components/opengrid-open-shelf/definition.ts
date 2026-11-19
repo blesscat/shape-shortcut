@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isOpenGridOpenShelfParameters } from '../../../cad-contract/units'
+import {
+  isOpenGridOpenShelfParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildOpenGridOpenShelf } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildOpenGridOpenShelfModel(

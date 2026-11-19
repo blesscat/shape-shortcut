@@ -7,13 +7,14 @@
  */
 
 import type { Shape3D } from 'replicad'
-import { isHexagonalColumnParameters } from '../../../cad-contract/units'
+import {
+  isHexagonalColumnParameters,
+  type ModelParameterValues,
+} from '../../../cad-contract/units'
 import { buildHexagonalColumn } from './builder'
-import type { ModelParameterValues } from '../../../cad-contract/units'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
-  KernelModelBuildResult,
 } from '../../model/types'
 
 async function buildHexagonalColumnModel(
