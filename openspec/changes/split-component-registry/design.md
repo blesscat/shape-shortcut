@@ -169,3 +169,10 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 6. 補 `affected-tests.mjs` 的 plan 測試：component 的 per-component 檔案走 `related`，兩個共用 registry 檔案仍走 `all-cad`。
 7. 收尾：跑 `pnpm check`、Prettier 檢查、targeted tests，最後跑一次完整 `pnpm test:branch` 作為整體門檻。
 8. 不涉及資料 migration；若需回滾，只需還原本 change 的程式與規格提交。
+
+## Open Questions
+
+1. **已定案（2026-11-19，owner 決定「好 照建議做」）— 硬性約束**：確認「新增 component 時也不得修改兩個共用 registry 檔案」為硬性需求，採用方案 B（`import.meta.glob` eager 自動收集）。
+2. **已定案（2026-11-19，owner 決定「好 照建議做」）— fan-out 範圍**：接受經由靜態 worker bundle 產生的約 24 個 test 檔（約 248 個 test case）`related` fan-out，本次不進一步將 definition 解析改為 runtime 動態載入。
+3. **實作細節 — error rule 順序**：維持採用每條 rule 攜帶明確 `order` key、由 `src/workers/error-mapping.ts` 排序後 first-match 比對的設計。
+4. **Stage 1 spike 結果（已驗證）**：task 1.3 已以 `box`、`game-box` 的 `definition.ts` 與 `error-rules/game-box.ts` 實測 eager `import.meta.glob`，在 `pnpm check`、Vitest `fast` / `cad` 兩個 project、`pnpm build` worker bundle（無新增 chunk 且內含收集到的 builder 與 error rules）以及 `vitest related` 均運作正常，可進入 stage 2 實作。
