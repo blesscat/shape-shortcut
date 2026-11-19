@@ -7,7 +7,8 @@ module files that belong to that component, and MUST NOT require edits to the
 shared registry modules `src/cad-kernel/model/index.ts` or
 `src/workers/error-mapping.ts` in order to add or change that component. The
 shared registry modules MUST discover those modules automatically and MUST keep
-their existing public exports, names, types, and signatures.
+the public registry surface named in the scenario below with unchanged names,
+types, and signatures.
 
 #### Scenario: Adding a component does not edit the shared registries
 
@@ -36,14 +37,20 @@ their existing public exports, names, types, and signatures.
 - **AND** the changed paths MUST remain confined to files owned by that
   component
 
-#### Scenario: Shared registry public surface is unchanged
+#### Scenario: Shared registry public surface is the named registry contract
 
 - **WHEN** the exports of `src/cad-kernel/model/index.ts` and
-  `src/workers/error-mapping.ts` are compared before and after the split
-- **THEN** every export available before the split MUST remain importable from
-  the same path with the same name, type, and signature
-- **AND** source and test consumers MUST keep working without edits to their
-  import statements
+  `src/workers/error-mapping.ts` are inspected after the split
+- **THEN** `src/cad-kernel/model/index.ts` MUST export exactly the eight
+  registry symbols `KernelBuildContext`, `KernelBuildPhase`,
+  `KernelModelDefinition`, `KernelModelBuildResult`, `kernelModelDefinitions`,
+  `getKernelModelDefinition`, `buildModelBRep`, and `buildModelBRepWithParts`
+- **AND** `src/workers/error-mapping.ts` MUST export exactly the two mapping
+  symbols `cadErrorCodeFor` and `cadErrorStageFor`
+- **AND** the 21 per-component `*KernelDefinition` constants that existed before
+  the split MUST be removed, because no source or test consumer imports them
+- **AND** source and test consumers of the named symbols MUST keep working
+  without edits to their import statements
 
 ### Requirement: Error rule matching order is preserved
 

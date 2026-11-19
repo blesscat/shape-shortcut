@@ -24,7 +24,8 @@ related-test mode on such a commit still had to run 248 tests in 160 seconds.
   changing a component never requires editing `src/cad-kernel/model/index.ts`
   or `src/workers/error-mapping.ts`.
 - Keep the first-match error-rule order byte-for-byte equivalent to today's
-  order, and keep the public import surface of both shared modules unchanged.
+  order, and keep the public import surface of both shared modules named and
+  unchanged for the symbols that consumers actually use.
 - Leave `scripts/affected-tests.mjs` unchanged: the shared prefixes still point
   at the same two shared files, and the new per-component files live outside
   those prefixes, so a component change now selects the related tests instead
@@ -55,13 +56,19 @@ None.
   modules appear under `src/cad-kernel/components/<component>/` and
   `src/workers/error-rules/`.
 - Tests: new characterization tests for the registry contents, the error-rule
-  order, and the affected-test plan; existing tests that import moved symbols
-  are updated to their new paths.
-- Public contract: unchanged. `KernelBuildContext`, `KernelModelDefinition`,
-  `KernelModelBuildResult`, `KernelBuildPhase`, `kernelModelDefinitions`,
-  `getKernelModelDefinition`, `buildModelBRep`, `buildModelBRepWithParts`,
-  `cadErrorCodeFor`, and `cadErrorStageFor` keep their names, types, and
-  signatures.
+  order, the geometry baseline, and the affected-test plan. The glob approach
+  changes no import path, so existing tests keep their import statements
+  unchanged; the only edit to an existing test is the order-independent
+  rewrite of the `kernelModelDefinitions` order assertion in
+  `tests/unit/hsw-cell-kernel.test.ts`.
+- Public contract: unchanged for the named registry surface.
+  `KernelBuildContext`, `KernelModelDefinition`, `KernelModelBuildResult`,
+  `KernelBuildPhase`, `kernelModelDefinitions`, `getKernelModelDefinition`,
+  `buildModelBRep`, `buildModelBRepWithParts`, `cadErrorCodeFor`, and
+  `cadErrorStageFor` keep their names, types, and signatures. The 21
+  per-component `*KernelDefinition` constants are removed: they have no
+  consumer anywhere in `src/`, `tests/`, or `e2e/`, and keeping them would
+  force an edit of the shared file for every new component.
 - No new dependency, no schema change, no data migration, no CI change.
 - Existing component IDs are intentionally preserved; this change introduces no
   new component and therefore does not add any `opengrid-<component-slug>`

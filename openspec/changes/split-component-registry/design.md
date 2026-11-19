@@ -51,11 +51,12 @@ stage 端 2 對：
 **Goals:**
 
 - 新增或修改一個 component 時，改動只落在該 component 自己的檔案，兩個共用 registry 檔案不需要被修改。
+  範圍說明：新增一個 component 仍需要在 `src/cad-contract/units/model.ts` 註冊 `ModelId` 與參數驗證，並在 `src/features/cad/model-catalog/index.ts` 的 UI model catalog 註冊該 component。兩者都不在 `scripts/affected-tests.mjs` 的 `sharedCadPrefixes` 內，因此 plan kind 仍是 `related`，本變更的硬性約束不受影響。
 - `pnpm test:branch` 對這種改動走 `related` 模式，而不是整個 CAD group。
 - 真正共用程式碼（兩個 registry、kernel context、worker runtime）的改動仍然跑完整 CAD suite。
 - error mapping 的結果（code 與 stage）對每一條既有 rule 都必須一模一樣，包含上面 7 對順序敏感 rule。
 - 產生的 geometry 完全不變；model ID、參數 contract、export format 完全不變。
-- 兩個共用模組的 public import surface 完全不變。
+- 兩個共用模組的 public import surface 維持在實際被使用的 10 個符號（`model/index.ts` 8 個 + `error-mapping.ts` 2 個），名稱、型別與簽章不變；21 個零引用的 per-component `*KernelDefinition` export 移除（owner 決策 2）。
 
 **Non-Goals:**
 
@@ -163,9 +164,9 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 
 1. 先加 characterization 測試：把目前 `kernelModelDefinitions` 的內容、`cadErrorCodeFor` / `cadErrorStageFor` 對每一條既有 rule 的結果、以及 7 對順序敏感 rule 的結果固定下來，作為搬移前的 golden baseline。
 2. 確認 `import.meta.glob` 的 eager 形式在 worker bundle（`src/features/cad/worker-client/index.ts:38`）與 Vitest 下都可運作；不可行則改用方案 A。
-3. 搬移 error rules：建立 `src/workers/error-rules/<component>.ts`，把 `src/workers/error-mapping.ts` 的 if-chain 逐字搬進各 module，改成帶 `order` key 的 rule 資料結構，`src/workers/error-mapping.ts` 改成收集 + 排序 + first-match。跑 error mapping 相關測試確認結果一致。
+3. 搬移 error rules：建立 `src/workers/error-rules/<component>.ts`，把 `src/workers/error-mapping.ts` 每個 component 的 rule 轉成帶唯一 `order` key 的等價 rule 資料結構（決策 3 允許把原本的 if-chain 轉成等價的 rule 資料結構，決策 5 限定只有 pattern 與結果碼必須逐字不變），`src/workers/error-mapping.ts` 改成收集 + 排序 + first-match。跑 error mapping 相關測試確認結果一致。
 4. 搬移 model definitions：建立 `src/cad-kernel/components/<component>/definition.ts`，把 `src/cad-kernel/model/index.ts` 的 `build*Model` 函式與 definition 常數逐字搬過去，`src/cad-kernel/model/index.ts` 改成 glob 收集 + 保留 public surface。跑 kernel / worker 相關測試確認一致。
-5. 更新受影響的測試 import 路徑（`tests/unit/hsw-cell-kernel.test.ts`、`tests/unit/opengrid-openconnect-organizer-kernel.test.ts`、`tests/unit/opengrid-regression.test.ts`、`tests/worker/opengrid-organizer-box.integration.test.ts`、`tests/worker/opengrid-stackable-box.integration.test.ts` 等）。
+5. 驗證沒有任何 import 路徑壞掉：glob 方案不改變任何 import 路徑，既有測試的 import 敘述必須原封不動仍可運作；唯一允許的既有測試變更是把 `tests/unit/hsw-cell-kernel.test.ts` 中釘住 `kernelModelDefinitions` 手寫順序的斷言改成與順序無關的集合比對。
 6. 補 `affected-tests.mjs` 的 plan 測試：component 的 per-component 檔案走 `related`，兩個共用 registry 檔案仍走 `all-cad`。
 7. 收尾：跑 `pnpm check`、Prettier 檢查、targeted tests，最後跑一次完整 `pnpm test:branch` 作為整體門檻。
 8. 不涉及資料 migration；若需回滾，只需還原本 change 的程式與規格提交。
@@ -176,3 +177,10 @@ export const gameBoxCodeRules: readonly CadErrorCodeRule[] = [
 2. **已定案（2026-11-19，owner 決定「好 照建議做」）— fan-out 範圍**：接受經由靜態 worker bundle 產生的約 24 個 test 檔（約 248 個 test case）`related` fan-out，本次不進一步將 definition 解析改為 runtime 動態載入。
 3. **實作細節 — error rule 順序**：維持採用每條 rule 攜帶明確 `order` key、由 `src/workers/error-mapping.ts` 排序後 first-match 比對的設計。
 4. **Stage 1 spike 結果（已驗證）**：task 1.3 已以 `box`、`game-box` 的 `definition.ts` 與 `error-rules/game-box.ts` 實測 eager `import.meta.glob`，在 `pnpm check`、Vitest `fast` / `cad` 兩個 project、`pnpm build` worker bundle（無新增 chunk 且內含收集到的 builder 與 error rules）以及 `vitest related` 均運作正常，可進入 stage 2 實作。
+5. **已定案（2026-11-19，owner 決定「好 照建議做」）— `kernelModelDefinitions` 的順序**：`kernelModelDefinitions` 的順序沒有任何程式碼依賴（runtime 以 `find` 依唯一 `id` 查找，`src/` 內沒有 consumer），因此把 `tests/unit/hsw-cell-kernel.test.ts` 中釘住手寫順序的斷言改成與順序無關的集合比對。`KernelModelDefinition` 不新增 `order` key —— 只有 error rule 需要 `order`。
+6. **已定案（2026-11-19，owner 決定「好 照建議做」）— 移除 21 個未使用的 export**：`src/cad-kernel/model/index.ts` 目前的 21 個 per-component `*KernelDefinition` export（`boxKernelDefinition` … `opengridLabelLedgeTestKernelDefinition`）在 `src/`、`tests/`、`e2e/`、`scripts/` 都沒有 consumer，已確認為零引用，予以移除。保留它們會讓每新增一個 component 都得修改這個共用檔案，與本變更的硬性約束衝突。delta spec 的 public surface 情境同步改為明確列出 8 + 2 = 10 個符號。
+7. **已定案（2026-11-19，owner 決定「好 照建議做」）— task 4.3 / 4.4 / 4.5 的修正**：
+   - 4.3 改為行為式檢查（純收集函式 + `createExecutionPlan` 的 case），不再斷言 `git diff`。斷言 `git diff` 會把測試耦合到 VCS 與工作樹狀態，違反 `testing-guardrails`。
+   - 4.5 排除 `src/cad-kernel/components/` 底下四個非 model 目錄：`opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared`（皆不含也不匯出 `ModelId`）。
+   - 4.4 在搬移前先錄製 geometry baseline（每個 `ModelId` 在預設參數下的體積、bbox、solid 數），搬移後以同一份 fixture 驗證。
+8. **已定案（2026-11-19，owner 決定「好 照建議做」）— review A 五項 finding 與 review B 有效 finding 全數修正**：P2-1（spec public surface 明確化）、P2-2（決策寫入 design/tasks）、P3-1（task 2.1 措辭矛盾）、P3-2（import 路徑不變）、P3-3（Goals 範圍），以及 review B P3-1（error rule 集合的可窮舉性 guard：新增 rule 未寫入 golden fixture 必須讓測試失敗）。
