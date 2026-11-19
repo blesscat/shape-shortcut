@@ -1,8 +1,10 @@
+# game-box Specification
+
 ## Purpose
 
 定義參數化桌遊收納盒 component `game-box`：盒體、前推滑蓋、封面槽與分隔板沿用 `card-box` 的設計，但收納深度由使用者排列的模組清單推算；第一版提供卡片區與骰子匣兩種模組，並支援零件層級下載。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Game Box 元件註冊
 
