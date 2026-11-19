@@ -154,6 +154,29 @@ describe('affected-test execution planning', () => {
     }
   })
 
+  it('runs every CAD test for the shared Worker error mapping module', () => {
+    const plan = createExecutionPlan([
+      { status: 'M', path: 'src/workers/error-mapping.ts' },
+    ])
+
+    expect(plan.kind).toBe('all-cad')
+    expect(plan.reasons).toContain('shared CAD infrastructure changed')
+  })
+
+  it('keeps per-component definition and error rule files on related-test selection', () => {
+    for (const path of [
+      'src/cad-kernel/components/box/definition.ts',
+      'src/cad-kernel/components/opengrid-snap/definition.ts',
+      'src/workers/error-rules/box.ts',
+      'src/workers/error-rules/opengrid-snap.ts',
+    ]) {
+      const plan = createExecutionPlan([{ status: 'M', path }])
+
+      expect(plan.kind).toBe('related')
+      expect(plan.reasons).toEqual([])
+    }
+  })
+
   it('keeps extracted Worker modules on related-test selection', () => {
     for (const path of [
       'src/workers/cad-worker-assets.ts',

@@ -24,10 +24,10 @@
 ## 4. 測試更新與新增
 
 - [x] 4.1 驗證沒有任何 import 壞掉：glob 方案不改變任何 import 路徑，因此既有測試（`tests/unit/hsw-cell-kernel.test.ts`、`tests/unit/opengrid-openconnect-organizer-kernel.test.ts`、`tests/unit/opengrid-regression.test.ts`、`tests/worker/opengrid-organizer-box.integration.test.ts`、`tests/worker/opengrid-stackable-box.integration.test.ts`、`tests/worker/runtime-lifecycle.test.ts` 等）的 import 敘述必須原封不動仍可運作；唯一允許的既有測試變更是 4.6
-- [ ] 4.2 新增 `tests/unit/affected-test-selection.test.ts` 的 case：component 的 per-component definition 與 error rule 檔案走 `related` 模式，`src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts` 仍然走 `all-cad`
-- [ ] 4.3 新增**行為式**測試證明「改一個 component 只碰該 component 的檔案」：對純收集函式（`collectKernelModelDefinitions` / `collectErrorRules`）注入一個 synthetic component module map，證明新增 component module 就會被收集、且不需要修改共用 registry 的收集邏輯；配合 4.2 的 `createExecutionPlan` case 即可證明隔離契約。**不得**斷言 `git diff` 或任何 repository／工作樹狀態（會耦合 VCS，且 merge 之後會空跑通過）
-- [ ] 4.4 新增測試證明 geometry 不變：以 1.4 錄製的 geometry baseline fixture，在拆分後對同一 component 與參數驗證產生的 shape 與搬移前一致
-- [ ] 4.5 新增測試證明 `import.meta.glob` 收集到每個 component 恰好一次，且沒有遺漏任何 model component；`src/cad-kernel/components/` 底下的 `opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared` 四個目錄不是 model component（不含也不匯出 `ModelId`），不列入收集對應清單
+- [x] 4.2 新增 `tests/unit/affected-test-selection.test.ts` 的 case：component 的 per-component definition 與 error rule 檔案走 `related` 模式，`src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts` 仍然走 `all-cad`
+- [x] 4.3 新增**行為式**測試證明「改一個 component 只碰該 component 的檔案」：對純收集函式（`collectKernelModelDefinitions` / `collectErrorRules`）注入一個 synthetic component module map，證明新增 component module 就會被收集、且不需要修改共用 registry 的收集邏輯；配合 4.2 的 `createExecutionPlan` case 即可證明隔離契約。**不得**斷言 `git diff` 或任何 repository／工作樹狀態（會耦合 VCS，且 merge 之後會空跑通過）
+- [x] 4.4 新增測試證明 geometry 不變：以 1.4 錄製的 geometry baseline fixture，在拆分後對同一 component 與參數驗證產生的 shape 與搬移前一致
+- [x] 4.5 新增測試證明 `import.meta.glob` 收集到每個 component 恰好一次，且沒有遺漏任何 model component；`src/cad-kernel/components/` 底下的 `opengrid-benchmark`、`opengrid-label-ledge`、`opengrid-locating-assembly`、`shared` 四個目錄不是 model component（不含也不匯出 `ModelId`），不列入收集對應清單
 - [x] 4.6 把 `tests/unit/hsw-cell-kernel.test.ts` 中釘住 `kernelModelDefinitions` 手寫順序的斷言改成**與順序無關**的集合比對；`kernelModelDefinitions` 的順序沒有任何程式碼依賴（runtime 以 `find` 依唯一 `id` 查找），且**不得**在 `KernelModelDefinition` 新增 `order` key（order key 只有 error rule 需要）
 
 ## 5. 驗證與交付
