@@ -3,7 +3,7 @@
 - [x] 1.1 建立 registry 與 error mapping 的 golden baseline：記錄 `kernelModelDefinitions` 目前每一筆的 `id` 與 `build` 對應、`getKernelModelDefinition` 對每個 `ModelId` 的查找結果，以及 `cadErrorCodeFor` / `cadErrorStageFor` 對每一條既有 rule 的 code 與 stage；輸出成可在搬移後直接比對的測試 fixture
 - [x] 1.2 建立順序敏感 rule 的專屬 baseline 測試，涵蓋 `OPENGRID_SNAP_HOLD_REFERENCE_MISSING`、`OPENGRID_SNAP_HOLD_REFERENCE_INVALID`、`OPENGRID_SNAP_HOLD_REFERENCE_LOAD_FAILED`、`OPENGRID_ORGANIZER_BOX_PARAMETERS_INVALID`、`OPENGRID_STACKABLE_BOX_HONEYCOMB_MEMORY_LIMIT` 與其對應的 `OPENGRID_SNAP_HOLD_`、`OPENGRID_ORGANIZER_BOX_`、`OPENGRID_STACKABLE_BOX_` 規則，鎖定 code 與 stage 的結果
 - [x] 1.3 以最小 spike 驗證 `import.meta.glob` 的 eager 形式在 worker bundle（`src/features/cad/worker-client/index.ts:38` 的 module worker）與 Vitest 下都可運作且不產生額外 chunk；驗證失敗則改採 design.md 決策 2 的方案 A，並在 design.md 記錄降級理由
-- [ ] 1.4 錄製 geometry baseline（搬移前）：對每一個 `ModelId` 以預設參數經由公開的 build 路徑建構幾何，記錄可辨識該幾何的值（體積、bounding box、solid 數），寫成 fixture 與測試；此測試必須在尚未搬移的 source 上就通過，搬移後以同一份 fixture 驗證 geometry 不變
+- [x] 1.4 錄製 geometry baseline（搬移前）：對每一個 `ModelId` 以預設參數經由公開的 build 路徑建構幾何，記錄可辨識該幾何的值（體積、bounding box、solid 數），寫成 fixture 與測試；此測試必須在尚未搬移的 source 上就通過，搬移後以同一份 fixture 驗證 geometry 不變
 
 ## 2. Worker error rules 拆分
 
