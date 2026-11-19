@@ -18,7 +18,7 @@
 - [x] 3.1 為每個 component 建立 `src/cad-kernel/components/<component>/definition.ts`，把 `src/cad-kernel/model/index.ts` 中該 component 的 `build*Model` 函式與 definition 常數逐字搬入，並保留需要時的 `buildWithParts` 路徑
 - [x] 3.2 把 `src/cad-kernel/model/index.ts` 改為自動收集各 component 的 definition module，並保留 `KernelBuildContext`、`KernelBuildPhase`、`KernelModelDefinition`、`KernelModelBuildResult`、`kernelModelDefinitions`、`getKernelModelDefinition`、`buildModelBRep`、`buildModelBRepWithParts` 的名稱、型別與簽章
 - [x] 3.3 加入 runtime 驗證：每個被收集到的 definition 必須有合法且唯一的 `ModelId`，缺漏、重複或格式錯誤必須讓測試失敗而不是靜默忽略
-- [ ] 3.4 確認新增一個 component 時不需要修改 `src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts`，並以一個 fixture component 驗證這個前提
+- [x] 3.4 確認新增一個 component 時不需要修改 `src/cad-kernel/model/index.ts` 與 `src/workers/error-mapping.ts`，並以一個 fixture component 驗證這個前提
 - [x] 3.5 移除 `src/cad-kernel/model/index.ts` 中 21 個沒有任何 consumer 的 per-component `*KernelDefinition` export（`boxKernelDefinition` … `opengridLabelLedgeTestKernelDefinition`），使共用檔案的 public surface 收斂為 delta spec 明列的 8 個符號；保留它們會讓每新增一個 component 都必須修改這個共用檔案，與本變更的硬性約束衝突
 
 ## 4. 測試更新與新增
@@ -32,6 +32,6 @@
 
 ## 5. 驗證與交付
 
-- [ ] 5.1 執行 `pnpm check` 與 `pnpm exec prettier --check`（觸及的檔案），修正所有型別與格式問題
-- [ ] 5.2 執行 `pnpm exec openspec validate split-component-registry --strict` 並修正所有規格問題
+- [x] 5.1 執行 `pnpm check` 與 `pnpm exec prettier --check`（觸及的檔案），修正所有型別與格式問題
+- [x] 5.2 執行 `pnpm exec openspec validate split-component-registry --strict` 並修正所有規格問題
 - [ ] 5.3 最後完整執行一次 `pnpm test:branch` 作為整體門檻，並記錄實際選到的 test 檔案與 test case 數量，確認 component 改動已不再觸發完整 CAD group（本 task 在 review gate 通過之後由 lead 執行）
