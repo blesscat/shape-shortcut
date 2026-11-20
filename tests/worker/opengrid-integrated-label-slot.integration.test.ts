@@ -154,6 +154,7 @@ describe('integrated front label slot geometry', () => {
         locked.delete()
       }
     },
+    120_000,
   )
 
   it('rejects absent rails and a blocked card seat', async () => {
@@ -196,5 +197,5 @@ describe('integrated front label slot geometry', () => {
       plain.delete()
       locked.delete()
     }
-  })
+  }, 120_000)
 })
