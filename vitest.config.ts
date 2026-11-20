@@ -26,13 +26,12 @@ export default defineConfig({
           include: cadTestIncludes,
           maxWorkers: 1,
           sequence: { groupOrder: 1 },
-          // The CAD group runs OpenCascade cases that sit close to vitest's
-          // 5 s test and 10 s hook defaults, so they fail under full-run load
-          // (PR #212, 5039 ms against the 5000 ms default). One project-wide
-          // limit gives the whole group headroom; an explicit per-test or
-          // per-hook timeout still overrides these values.
+          // CAD test cases sit close to vitest's 5 s test default, and one
+          // failed under full-run load (5039 ms in the full local CAD run for
+          // PR #211). PR #212 gave that file explicit timeouts; this covers the
+          // rest of the group. An explicit per-test timeout still overrides
+          // this value.
           testTimeout: 120_000,
-          hookTimeout: 120_000,
         },
       },
     ],
