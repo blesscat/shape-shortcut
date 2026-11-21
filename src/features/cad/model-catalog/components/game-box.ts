@@ -8,7 +8,7 @@ import {
   isGameBoxParameters,
   validateGameBoxParameters,
 } from '../../../../cad-contract/units'
-import type { ModelDefinition, ParameterField } from '../types'
+import type { ModelDefinition, ModelPreset, ParameterField } from '../types'
 
 const GAME_BOX_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
   {
@@ -38,6 +38,51 @@ const GAME_BOX_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
     sliderMax: GAME_BOX_CONFIGURATION.ranges.cardHeight.max,
   },
 ]
+
+/**
+ * The seven card size presets, in the order they are shown in the panel.
+ *
+ * Each preset overrides only the card size; every other parameter follows the
+ * definition defaults, so applying a preset also returns the part selection,
+ * the module list and the dice settings to their defaults.
+ */
+const GAME_BOX_PRESETS: ReadonlyArray<ModelPreset> = [
+  {
+    id: 'tarot-70x120',
+    labelKey: 'cad.presets.game-box.tarot-70x120',
+    overrides: { cardWidth: 70, cardHeight: 120 },
+  },
+  {
+    id: 'standard-tcg-63x88',
+    labelKey: 'cad.presets.game-box.standard-tcg-63x88',
+    overrides: { cardWidth: 63, cardHeight: 88 },
+  },
+  {
+    id: 'standard-tcg-sleeved-66x91',
+    labelKey: 'cad.presets.game-box.standard-tcg-sleeved-66x91',
+    overrides: { cardWidth: 66, cardHeight: 91 },
+  },
+  {
+    id: 'japanese-small-59x86',
+    labelKey: 'cad.presets.game-box.japanese-small-59x86',
+    overrides: { cardWidth: 59, cardHeight: 86 },
+  },
+  {
+    id: 'japanese-small-sleeved-62x89',
+    labelKey: 'cad.presets.game-box.japanese-small-sleeved-62x89',
+    overrides: { cardWidth: 62, cardHeight: 89 },
+  },
+  {
+    id: 'mini-american-41x63',
+    labelKey: 'cad.presets.game-box.mini-american-41x63',
+    overrides: { cardWidth: 41, cardHeight: 63 },
+  },
+  {
+    id: 'mini-euro-44x68',
+    labelKey: 'cad.presets.game-box.mini-euro-44x68',
+    overrides: { cardWidth: 44, cardHeight: 68 },
+  },
+] as const
 
 function exportGameBoxFileName(parameters: ModelParameterValues): string {
   if (!isGameBoxParameters(parameters)) {
@@ -76,6 +121,7 @@ export const gameBoxDefinition: ModelDefinition = {
   defaultParameters: {
     ...GAME_BOX_CONFIGURATION.defaultParameters,
   },
+  presets: GAME_BOX_PRESETS,
   simplifiedPreview: (parameters) =>
     gameBoxPreview(parameters as Parameters<typeof gameBoxPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
