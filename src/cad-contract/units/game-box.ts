@@ -812,9 +812,35 @@ function diceHolderBounds(
 }
 
 /**
+ * A length in millimetres, rounded to two decimals and without trailing
+ * zeros, so a computed depth never carries floating-point noise into a file
+ * name and two different geometries never share one.
+ */
+function formatDepth(depth: number): string {
+  return Number(depth.toFixed(2)).toString()
+}
+
+/**
+ * The module list of a box file name: every module contributes its code and
+ * its content size, in front-to-back order. The depth alone does not tell
+ * two different module lists apart, so the box file name carries the list.
+ */
+function gameBoxModuleList(parameters: GameBoxParameters): string {
+  const layout = gameBoxLayout(parameters)
+  return layout.modules
+    .map((module) => {
+      if (module.type === 'cards') {
+        return `c${parameters[gameBoxModuleCardDepthKey(module.index)]}`
+      }
+      return `d${parameters[gameBoxModuleDiceSizeKey(module.index)]}`
+    })
+    .join('-')
+}
+
+/**
  * Export file name. The assembly has no file name; the box parts carry the
- * card size and the derived storage depth, the dice holder carries the card
- * size, the die size and the die count.
+ * card size, the derived storage depth and the module list, the dice holder
+ * carries the card size, the die size and the die count.
  */
 export function gameBoxFileName(parameters: GameBoxParameters): string {
   if (parameters.part === 'assembly') {
@@ -823,8 +849,13 @@ export function gameBoxFileName(parameters: GameBoxParameters): string {
   const size = `${parameters.cardWidth}x${parameters.cardHeight}`
   const partModule = gameBoxPartModuleIndex(parameters.part)
   if (partModule === null) {
-    const depth = gameBoxStorageDepth(parameters)
-    return `game-box-${parameters.part}-${size}x${depth}${PROTOTYPE_CONFIGURATION.stepExtension}`
+    const depth = formatDepth(gameBoxStorageDepth(parameters))
+    // Only the box depends on the module list; the lid and the divider
+    // follow the depth alone.
+    const modules =
+      parameters.part === 'box' ? gameBoxModuleList(parameters) : ''
+    const suffix = modules ? `-${modules}` : ''
+    return `game-box-${parameters.part}-${size}x${depth}${suffix}${PROTOTYPE_CONFIGURATION.stepExtension}`
   }
   const diceSize = parameters[gameBoxModuleDiceSizeKey(partModule)]
   const diceCount = parameters[gameBoxModuleDiceCountKey(partModule)]
