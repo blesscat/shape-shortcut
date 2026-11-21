@@ -29,6 +29,8 @@
     >
     canExport: boolean
     downloadHintKey: string | null
+    /** Shown when a preset was not applied because it does not fit. */
+    presetNoticeKey: string | null
     supportsThreeMf: boolean
     canExportThreeMf: boolean
     onInputChange: (key: ModelParameterKey, value: string) => void
@@ -55,6 +57,7 @@
     fieldErrors,
     canExport,
     downloadHintKey,
+    presetNoticeKey,
     supportsThreeMf,
     canExportThreeMf,
     onInputChange,
@@ -82,6 +85,7 @@
     {modelId}
     {showParameters}
     presets={presetsFor(modelId)}
+    {presetNoticeKey}
     {systemContext}
     {parameters}
     {rawParameters}

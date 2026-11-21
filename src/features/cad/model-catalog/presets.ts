@@ -1,29 +1,90 @@
-import type { ModelParameterValues } from '../../../cad-contract/units'
+import type {
+  ModelParameterValues,
+  ValidationIssue,
+} from '../../../cad-contract/units'
 import { cloneModelParameters } from '../system-entry-context'
 import type { ModelDefinition, ModelPreset } from './types'
 
 export type ResolvedPresetParameters =
   { ok: true; parameters: ModelParameterValues } | { ok: false }
 
+/** The parameter key that selects which part of a model is built. */
+const PART_KEY = 'part'
+
 /**
- * Merges a preset's overrides onto the definition's `defaultParameters` and
- * gates the result through the component's own validator. The definition's
- * defaults are never mutated; other components are never consulted.
+ * The message shown when a preset does not fit the parameters the user has
+ * now. The key is scoped to the component, so every component can word the
+ * message for its own parameters.
+ */
+export function presetNotApplicableMessageKey(
+  definition: ModelDefinition,
+): string {
+  return `cad.presets.${definition.id}.notApplicable`
+}
+
+/**
+ * The parameters a preset is merged onto: the definition's defaults, or the
+ * parameters the user has now for a definition that asks for it.
+ *
+ * A definition with `presetBase: 'current'` keeps its other parameters only
+ * when the caller hands over the current parameters; resolving the preset on
+ * its own still starts from the defaults.
+ */
+function presetBaseParameters(
+  definition: ModelDefinition,
+  currentParameters?: ModelParameterValues,
+): ModelParameterValues {
+  if (definition.presetBase !== 'current') return definition.defaultParameters
+  return currentParameters ?? definition.defaultParameters
+}
+
+/**
+ * Validates the merged parameters and returns the accepted parameter set. A
+ * selected part that no longer exists is not a failure of the preset itself,
+ * so the parameters are retried as the assembly.
+ */
+function validatePresetParameters(
+  definition: ModelDefinition,
+  parameters: ModelParameterValues,
+): ModelParameterValues | null {
+  const validation = definition.validateParameters(parameters)
+  if (validation.valid) return validation.value.parameters
+  const partIsTheOnlyProblem =
+    validation.issues.length > 0 &&
+    validation.issues.every(
+      (issue: ValidationIssue) => issue.field === PART_KEY,
+    )
+  if (!partIsTheOnlyProblem) return null
+  if (!(PART_KEY in parameters)) return null
+  const retry = definition.validateParameters({
+    ...parameters,
+    [PART_KEY]: 'assembly',
+  })
+  return retry.valid ? retry.value.parameters : null
+}
+
+/**
+ * Merges a preset's overrides onto the definition's `defaultParameters` — or,
+ * for a definition with `presetBase: 'current'`, onto the parameters the user
+ * has now — and gates the result through the component's own validator. The
+ * definition's defaults are never mutated; other components are never
+ * consulted.
  */
 export function resolvePresetParameters(
   definition: ModelDefinition,
   preset: ModelPreset,
+  currentParameters?: ModelParameterValues,
 ): ResolvedPresetParameters {
   const merged: ModelParameterValues = {
-    ...definition.defaultParameters,
+    ...presetBaseParameters(definition, currentParameters),
     ...preset.overrides,
   }
   try {
-    const validation = definition.validateParameters(merged)
-    if (!validation.valid) return { ok: false }
+    const parameters = validatePresetParameters(definition, merged)
+    if (!parameters) return { ok: false }
     return {
       ok: true,
-      parameters: cloneModelParameters(validation.value.parameters),
+      parameters: cloneModelParameters(parameters),
     }
   } catch {
     return { ok: false }

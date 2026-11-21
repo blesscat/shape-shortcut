@@ -32,6 +32,7 @@ import {
 import { getModelDefinition } from '../model-catalog'
 import {
   findModelPreset,
+  presetNotApplicableMessageKey,
   resolvePresetParameters,
 } from '../model-catalog/presets'
 import {
@@ -1094,8 +1095,7 @@ export function createPlaygroundStore(): PlaygroundStore {
       // coercion is exact. Anything else is a parser bug — rethrow it so
       // the enum-NaN class this change fixed cannot silently resurrect.
       if (!(
-        error instanceof Error &&
-        error.message.startsWith('UNKNOWN_MODEL_ID:')
+        error instanceof Error && error.message.startsWith('UNKNOWN_MODEL_ID:')
       )) {
         throw error
       }
@@ -1325,7 +1325,14 @@ export function createPlaygroundStore(): PlaygroundStore {
     setPlacement(instanceId, cellX, cellY, rotation) {
       return commitPlacementInView(viewMode, instanceId, cellX, cellY, rotation)
     },
-    setPlacementInViewMode(instanceId, cellX, cellY, rotation, targetView, options) {
+    setPlacementInViewMode(
+      instanceId,
+      cellX,
+      cellY,
+      rotation,
+      targetView,
+      options,
+    ) {
       return commitPlacementInView(
         targetView,
         instanceId,
@@ -1377,8 +1384,21 @@ export function createPlaygroundStore(): PlaygroundStore {
         }
         return
       }
-      const resolved = resolvePresetParameters(definition, preset)
+      const resolved = resolvePresetParameters(
+        definition,
+        preset,
+        instance.parameters,
+      )
       if (!resolved.ok) {
+        if (definition.presetBase === 'current') {
+          // The preset does not fit the current parameters: they are kept and
+          // the user is told why the preset was not applied.
+          diagnostic = {
+            messageId: presetNotApplicableMessageKey(definition),
+          }
+          emit()
+          return
+        }
         if (import.meta.env.DEV) {
           console.error(`MODEL_PRESET_INVALID:${instance.modelId}:${presetId}`)
         }

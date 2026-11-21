@@ -9,6 +9,7 @@ import { initialCadState, type CadState } from '../../../features/cad/state'
 import { getModelDefinition } from '../../../features/cad/model-catalog'
 import {
   findModelPreset,
+  presetNotApplicableMessageKey,
   resolvePresetParameters,
 } from '../../../features/cad/model-catalog/presets'
 import {
@@ -38,6 +39,11 @@ export type CadWorkspaceControllerSnapshot = {
   canExportThreeMf: boolean
   /** Present when downloads are disabled with a hint (definition-provided). */
   downloadHintKey: string | null
+  /**
+   * Present when a preset was not applied because it does not fit the
+   * parameters the user has now.
+   */
+  presetNoticeKey: string | null
 }
 
 export type CadWorkspaceController = {
@@ -76,6 +82,7 @@ function createSnapshot(
   rawParameters: RawParameters,
   fieldErrors: FieldErrors,
   progress: CadProgress | null,
+  presetNoticeKey: string | null,
 ): CadWorkspaceControllerSnapshot {
   const downloadHintKey =
     getModelDefinition(state.modelId)?.exportBlockedHintKey?.(state.input) ??
@@ -98,6 +105,7 @@ function createSnapshot(
     supportsThreeMf,
     canExportThreeMf: canExport && supportsThreeMf,
     downloadHintKey,
+    presetNoticeKey,
   }
 }
 
@@ -115,9 +123,18 @@ export function createCadWorkspaceController(
   let rawParameters = rawFromParameters(initialParameters)
   let fieldErrors: FieldErrors = {}
   let progress: CadProgress | null = null
+  let presetNoticeKey: string | null = null
 
   const emit = () => {
-    onChange(createSnapshot(state, rawParameters, fieldErrors, progress))
+    onChange(
+      createSnapshot(
+        state,
+        rawParameters,
+        fieldErrors,
+        progress,
+        presetNoticeKey,
+      ),
+    )
   }
 
   const runtime: CadWorkerRuntime = createCadWorkerRuntime({
@@ -174,14 +191,46 @@ export function createCadWorkspaceController(
       }
       return
     }
-    const resolved = resolvePresetParameters(definition, preset)
+    // The current parameters are the base of the preset, so a preset that
+    // changes only the card size keeps everything else the user has set.
+    const resolved = resolvePresetParameters(definition, preset, state.input)
     if (!resolved.ok) {
+      if (definition.presetBase === 'current') {
+        // The preset does not fit the current parameters: they are kept and
+        // the user is told why the preset was not applied.
+        presetNoticeKey = presetNotApplicableMessageKey(definition)
+        emit()
+        return
+      }
       if (import.meta.env.DEV) {
         console.error(`MODEL_PRESET_INVALID:${modelId}:${presetId}`)
       }
       return
     }
+    presetNoticeKey = null
     applyParameters(resolved.parameters)
+  }
+
+  /**
+   * Drops the notice of an unapplied preset: the user changed the
+   * parameters, so the old notice no longer describes the current state.
+   */
+  const clearPresetNotice = (): void => {
+    if (presetNoticeKey === null) return
+    presetNoticeKey = null
+    emit()
+  }
+
+  const handleInputChange = (key: ModelParameterKey, value: string): void => {
+    clearPresetNotice()
+    runtime.handleInputChange(key, value)
+  }
+
+  const handleInputsChange = (
+    values: Partial<Record<ModelParameterKey, string>>,
+  ): void => {
+    clearPresetNotice()
+    runtime.handleInputsChange(values)
   }
 
   const onSystemContextChange = (
@@ -199,9 +248,15 @@ export function createCadWorkspaceController(
 
   return {
     getSnapshot: () =>
-      createSnapshot(state, rawParameters, fieldErrors, progress),
-    onInputChange: runtime.handleInputChange,
-    onInputsChange: runtime.handleInputsChange,
+      createSnapshot(
+        state,
+        rawParameters,
+        fieldErrors,
+        progress,
+        presetNoticeKey,
+      ),
+    onInputChange: handleInputChange,
+    onInputsChange: handleInputsChange,
     onSystemContextChange,
     onOpenGridParametersChange: runtime.handleOpenGridParametersChange,
     onOpenGridDimensionCalculationInvalid:

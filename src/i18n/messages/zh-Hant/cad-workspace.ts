@@ -94,6 +94,8 @@ export const messages = {
   'cad.presets.game-box.japanese-small-sleeved-62x89': '日版小型 含套 62×89',
   'cad.presets.game-box.mini-american-41x63': '美式迷你 41×63',
   'cad.presets.game-box.mini-euro-44x68': '歐版迷你 44×68',
+  'cad.presets.game-box.notApplicable':
+    '這組卡片尺寸不適用於目前的模組。請先調整模組或骰子設定，再重新套用預設。',
   'cad.drawer.title': '參數',
   'cad.drawer.open': '開啟參數面板',
   'cad.drawer.close': '關閉參數面板',

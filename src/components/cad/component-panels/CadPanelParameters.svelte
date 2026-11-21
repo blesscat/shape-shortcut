@@ -9,6 +9,7 @@
   import type { OpenGridSystemContext } from '../../../features/cad/system-entry-context'
   import type { RawParameters } from '../workspace/types'
   import type { Locale } from '../../../i18n'
+  import { translate } from '../../../i18n'
   import type { ModelPreset } from '../../../features/cad/model-catalog'
   import ComponentParameterPanel from './index.svelte'
   import PresetButtonRow from './PresetButtonRow.svelte'
@@ -18,6 +19,8 @@
     modelId: ModelId
     showParameters: boolean
     presets: ReadonlyArray<ModelPreset>
+    /** Shown when a preset was not applied because it does not fit. */
+    presetNoticeKey?: string | null
     systemContext?: OpenGridSystemContext
     parameters: ModelParameterValues
     rawParameters: RawParameters
@@ -39,6 +42,7 @@
     modelId,
     showParameters,
     presets,
+    presetNoticeKey = null,
     systemContext,
     parameters,
     rawParameters,
@@ -77,5 +81,14 @@
       onRestore={onRestoreDefaults}
       {onApplyPreset}
     />
+    {#if presetNoticeKey}
+      <p
+        class="m-0 text-sm text-error"
+        role="alert"
+        data-testid="cad-preset-notice"
+      >
+        {translate(locale, presetNoticeKey)}
+      </p>
+    {/if}
   {/if}
 </div>
