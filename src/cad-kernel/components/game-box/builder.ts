@@ -14,7 +14,8 @@ import { buildCardBoxBoxFromGeometry } from '../card-box/box'
 import { flipLidForPrint } from '../card-box/builder'
 import { buildCardBoxDividerFromGeometry } from '../card-box/divider'
 import { buildCardBoxLidFromGeometry } from '../card-box/lid'
-import { buildGameBoxDiceHolder, GAME_BOX_DICE_HOLDER } from './dice-holder'
+import { buildGameBoxDiceHolder } from './dice-holder'
+import { GAME_BOX_GRIP } from './grip'
 import {
   gameBoxGeometryOf,
   gameBoxModulePlacements,
@@ -58,8 +59,7 @@ function buildInstalledDiceHolder(
   const diceCount = parameters[gameBoxModuleDiceCountKey(placement.index)]
   const thickness = gameBoxDiceHolderThickness(diceSize)
   const pressedOuterWidth =
-    cardBoxInteriorWidth(parameters.cardWidth) -
-    GAME_BOX_DICE_HOLDER.pressedClearance
+    cardBoxInteriorWidth(parameters.cardWidth) - GAME_BOX_GRIP.pressedClearance
   const holder = buildGameBoxDiceHolder({
     cardWidth: parameters.cardWidth,
     cardHeight: parameters.cardHeight,
@@ -87,7 +87,7 @@ function buildAssembly(
   const parts: Shape3D[] = []
   try {
     parts.push(
-      buildCardBoxBoxFromGeometry(geometry.cardBox, geometry.slotCentres),
+      buildCardBoxBoxFromGeometry(geometry.cardBox, geometry.dividerCentres),
     )
     parts.push(buildCardBoxLidFromGeometry(geometry.cardBox))
     for (const y of geometry.dividerCentres) {
@@ -142,7 +142,7 @@ export function buildGameBox(parameters: GameBoxParameters): GameBoxBuild {
       return {
         shape: buildCardBoxBoxFromGeometry(
           geometry.cardBox,
-          geometry.slotCentres,
+          geometry.dividerCentres,
         ),
       }
     case 'lid':

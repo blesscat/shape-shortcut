@@ -13,15 +13,15 @@ import { PROTOTYPE_CONFIGURATION } from './prototype-configuration'
  *
  * A game box is a card box whose storage depth is derived from a list of
  * storage modules instead of a user-entered depth: every active module
- * occupies whole 3 mm divider slots and every module boundary lands on a
- * slot, so a divider plate always separates two neighbouring modules.
+ * occupies a length that is computed directly from its contents, and a
+ * divider plate always separates two neighbouring modules.
  *
  * The module list is stored as six groups of flat parameters
  * (`moduleNType`, `moduleNCardDepth`, `moduleNDiceSize`, `moduleNDiceCount`)
  * because the shared parameter infrastructure only carries flat scalars.
- * The geometry-relevant numbers (slot counts, storage depth, slot centres,
- * dice layout) are derived here so the kernel, the panel, the bounds and the
- * export file names can never disagree.
+ * The geometry-relevant numbers (module lengths, storage depth, divider
+ * centres, dice layout) are derived here so the kernel, the panel, the bounds
+ * and the export file names can never disagree.
  */
 
 export const GAME_BOX_MODULE_INDICES = [1, 2, 3, 4, 5, 6] as const
@@ -137,21 +137,23 @@ const GAME_BOX_DEFAULTS = {
 
 /**
  * Fixed constants of the game box. The wall, floor and divider geometry is
- * inherited from `card-box`; only the slot grid, the dice holder and the
+ * inherited from `card-box`; only the module lengths, the dice holder and the
  * derived storage depth are new.
  */
 export const GAME_BOX_CONFIGURATION = {
   moduleCount: GAME_BOX_MODULE_INDICES.length,
-  /** Wall slot pitch; every module boundary lands on a slot. */
-  slotPitch: 3,
   /** Divider plate thickness, inherited from card-box. */
   dividerPlateThickness: CARD_BOX_CONFIGURATION.dividerPlateThickness,
   /** Clearance between a dice holder and the neighbouring divider. */
   diceHolderGap: 0.3,
   /** Clearance between a die and the wall of its well. */
   diceClearance: 0.6,
-  /** Minimum wall thickness of the dice holder. */
+  /** Minimum wall thickness of the dice holder side walls and floor. */
   diceHolderWall: 1.2,
+  /** Thickness of the front and the back wall of the dice holder. */
+  diceHolderFrontBackWall: 0.8,
+  /** Clearance between a card stack and the divider that bounds it. */
+  cardsModuleClearance: 1,
   /** The holder body is this much narrower than the box interior. */
   diceHolderWidthAllowance: 0.6,
   /** Free height above the topmost dice well. */
@@ -191,53 +193,45 @@ function buildDefaultParameters(): GameBoxParameters {
   } as GameBoxParameters
 }
 
-/** Floating point slack for slot and dice fit computations. */
+/** Floating point slack for fit computations. */
 const TOLERANCE = 1e-9
 
-function ceilSlots(value: number): number {
-  return Math.ceil(value - TOLERANCE)
-}
-
-function floorSlots(value: number): number {
-  return Math.floor(value + TOLERANCE)
-}
-
 /**
- * Slots occupied by a card module: the smallest count whose clear length
- * (occupied length minus one divider plate) still holds the card depth.
+ * Length a card module occupies in the storage depth: the card depth, the
+ * clearance that lets a finger reach the card stack and the share of the
+ * divider plate that bounds the module.
  */
-export function gameBoxCardsSlots(cardDepth: number): number {
-  const occupied = cardDepth + GAME_BOX_CONFIGURATION.dividerPlateThickness
-  return ceilSlots(occupied / GAME_BOX_CONFIGURATION.slotPitch)
-}
-
-/** Minimum dice holder thickness: one die pitch plus both walls. */
-export function gameBoxDiceHolderMinimumThickness(diceSize: number): number {
+export function gameBoxCardsModuleLength(cardDepth: number): number {
   return (
-    diceSize +
-    GAME_BOX_CONFIGURATION.diceClearance +
-    2 * GAME_BOX_CONFIGURATION.diceHolderWall
+    cardDepth +
+    GAME_BOX_CONFIGURATION.cardsModuleClearance +
+    GAME_BOX_CONFIGURATION.dividerPlateThickness
   )
 }
 
 /**
- * Slots occupied by a dice module: the holder thickness plus the gap to the
- * neighbouring dividers has to fit in whole slots.
+ * Thickness of a dice holder: the die pitch and the front and the back wall.
+ * The holder no longer fills the slots it occupies; it is as thin as its
+ * contents need it to be.
  */
-export function gameBoxDiceSlots(diceSize: number): number {
-  const occupied =
-    gameBoxDiceHolderMinimumThickness(diceSize) +
-    GAME_BOX_CONFIGURATION.dividerPlateThickness +
-    GAME_BOX_CONFIGURATION.diceHolderGap
-  return ceilSlots(occupied / GAME_BOX_CONFIGURATION.slotPitch)
-}
-
-/** Dice holder thickness inside the slots it occupies. */
 export function gameBoxDiceHolderThickness(diceSize: number): number {
   return (
-    gameBoxDiceSlots(diceSize) * GAME_BOX_CONFIGURATION.slotPitch -
-    GAME_BOX_CONFIGURATION.dividerPlateThickness -
-    GAME_BOX_CONFIGURATION.diceHolderGap
+    diceSize +
+    GAME_BOX_CONFIGURATION.diceClearance +
+    2 * GAME_BOX_CONFIGURATION.diceHolderFrontBackWall
+  )
+}
+
+/**
+ * Length a dice module occupies in the storage depth: the holder thickness,
+ * the gap to the neighbouring dividers and the share of the divider plate
+ * that bounds the module.
+ */
+export function gameBoxDiceModuleLength(diceSize: number): number {
+  return (
+    gameBoxDiceHolderThickness(diceSize) +
+    2 * GAME_BOX_CONFIGURATION.diceHolderGap +
+    GAME_BOX_CONFIGURATION.dividerPlateThickness
   )
 }
 
@@ -288,8 +282,8 @@ export function gameBoxDiceLayout(
     cardHeight -
     GAME_BOX_CONFIGURATION.diceHolderWall -
     GAME_BOX_CONFIGURATION.diceHolderTopMargin
-  const perRowLimit = Math.max(0, floorSlots(usableWidth / pitch))
-  const layerLimit = Math.max(0, floorSlots(usableHeight / pitch))
+  const perRowLimit = Math.max(0, Math.floor(usableWidth / pitch + TOLERANCE))
+  const layerLimit = Math.max(0, Math.floor(usableHeight / pitch + TOLERANCE))
   const layers = perRowLimit > 0 ? Math.ceil(diceCount / perRowLimit) : 0
   const perRow = layers > 0 ? Math.ceil(diceCount / layers) : 0
   return {
@@ -315,13 +309,11 @@ export type GameBoxModuleLayout =
   | {
       index: GameBoxModuleIndex
       type: 'cards'
-      slots: number
       length: number
     }
   | {
       index: GameBoxModuleIndex
       type: 'dice'
-      slots: number
       length: number
       holderThickness: number
     }
@@ -329,67 +321,55 @@ export type GameBoxModuleLayout =
 export type GameBoxLayout = {
   /** Active modules in front-to-back order. */
   modules: GameBoxModuleLayout[]
-  /** Slots occupied by all active modules. */
-  slots: number
   /** Derived storage depth in millimetres. */
   storageDepth: number
-  /** Every wall slot, measured from the front inner wall. */
-  slotCenters: number[]
-  /** The slots that carry a divider: one per module boundary. */
+  /** The module boundaries, measured from the front inner wall. */
   dividerCenters: number[]
   /** Number of divider plates to print. */
   dividerCount: number
 }
 
 /**
- * Derived layout of the active modules: occupied slots, storage depth, the
- * slot grid of the side walls and the divider positions.
+ * Derived layout of the active modules: the length every module occupies, the
+ * storage depth and the divider positions.
+ *
+ * The lengths are computed directly from the module contents, so the storage
+ * depth is the sum of the module lengths and the divider centres are the
+ * cumulative module lengths. No module is rounded to a slot grid.
  */
 export function gameBoxLayout(parameters: GameBoxParameters): GameBoxLayout {
-  const pitch = GAME_BOX_CONFIGURATION.slotPitch
   const modules: GameBoxModuleLayout[] = []
   const dividerCenters: number[] = []
-  let slots = 0
+  let occupied = 0
 
   for (const index of GAME_BOX_MODULE_INDICES) {
     const type = parameters[gameBoxModuleTypeKey(index)]
     if (type === 'none') continue
-    if (modules.length > 0) dividerCenters.push(slots * pitch)
+    if (modules.length > 0) dividerCenters.push(occupied)
 
     if (type === 'cards') {
-      const moduleSlots = gameBoxCardsSlots(
+      const length = gameBoxCardsModuleLength(
         parameters[gameBoxModuleCardDepthKey(index)],
       )
-      modules.push({
-        index,
-        type: 'cards',
-        slots: moduleSlots,
-        length: moduleSlots * pitch,
-      })
-      slots += moduleSlots
+      modules.push({ index, type: 'cards', length })
+      occupied += length
       continue
     }
 
     const diceSize = parameters[gameBoxModuleDiceSizeKey(index)]
-    const moduleSlots = gameBoxDiceSlots(diceSize)
+    const length = gameBoxDiceModuleLength(diceSize)
     modules.push({
       index,
       type: 'dice',
-      slots: moduleSlots,
-      length: moduleSlots * pitch,
+      length,
       holderThickness: gameBoxDiceHolderThickness(diceSize),
     })
-    slots += moduleSlots
+    occupied += length
   }
-
-  const slotCenters: number[] = []
-  for (let slot = 1; slot < slots; slot += 1) slotCenters.push(slot * pitch)
 
   return {
     modules,
-    slots,
-    storageDepth: slots * pitch,
-    slotCenters,
+    storageDepth: occupied,
     dividerCenters,
     dividerCount: dividerCenters.length,
   }

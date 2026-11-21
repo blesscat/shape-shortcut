@@ -13,16 +13,15 @@ import type { CardBoxGeometry } from '../card-box/geometry'
  * Geometry input of the game-box part builders.
  *
  * The game box reuses the card-box geometry: only the storage depth (derived
- * from the module list) and the divider slot grid differ. The slot grid of a
- * game box starts at the front inner wall, so every module boundary lands on
- * a slot; the card box centres its slots on the box instead.
+ * from the module list) and the divider slots differ. The divider slots of a
+ * game box sit on the computed module boundaries, so every module is
+ * separated from its neighbour by a divider plate; the card box centres its
+ * slots on the box instead.
  */
 export type GameBoxGeometry = {
   /** The card-box geometry the box, lid and divider builders read. */
   cardBox: CardBoxGeometry
   /** Divider slot centres in the box frame (y from the box centre). */
-  slotCentres: number[]
-  /** Divider centres in the box frame (y from the box centre). */
   dividerCentres: number[]
   /** y of the cavity front wall face in the box frame. */
   frontWallY: number
@@ -51,8 +50,8 @@ export function gameBoxCardBoxGeometry(
 
 /**
  * Derives the geometry input of the game-box builders: the card-box
- * geometry, the wall slot grid counted from the front inner wall and the
- * divider centres on the module boundaries.
+ * geometry and the divider centres on the module boundaries. The side walls
+ * carry a divider slot at exactly these centres and nowhere else.
  */
 export function gameBoxGeometryOf(
   parameters: GameBoxParameters,
@@ -62,7 +61,6 @@ export function gameBoxGeometryOf(
   const frontWallY = cardBoxInnerFrontY(cardBox)
   return {
     cardBox,
-    slotCentres: layout.slotCenters.map((distance) => frontWallY + distance),
     dividerCentres: layout.dividerCenters.map(
       (distance) => frontWallY + distance,
     ),
