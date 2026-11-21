@@ -226,8 +226,10 @@ const GAME_BOX_WITH_DICE = {
 } as GameBoxParameters
 
 describe('playground store game-box presets', () => {
-  function gameBoxWithDice(store: PlaygroundStore): ModelParameterValues {
-    const parameters = store.getSnapshot().instances[0]?.parameters
+  function firstInstanceParameters(
+    next: PlaygroundStore,
+  ): ModelParameterValues {
+    const parameters = next.getSnapshot().instances[0]?.parameters
     if (!parameters) throw new Error('missing instance')
     return parameters
   }
@@ -236,7 +238,8 @@ describe('playground store game-box presets', () => {
     const next = setupStore()
     next.addInstance('game-box')
     next.setInstanceParameters('inst-1', GAME_BOX_WITH_DICE)
-    const before = gameBoxWithDice(next)
+    const before = firstInstanceParameters(next)
+    expect(before).toMatchObject({ module2Type: 'dice' })
 
     next.applyPreset('inst-1', 'standard-tcg-63x88')
 
@@ -253,7 +256,8 @@ describe('playground store game-box presets', () => {
     const next = setupStore()
     next.addInstance('game-box')
     next.setInstanceParameters('inst-1', GAME_BOX_WITH_DICE)
-    const before = gameBoxWithDice(next)
+    const before = firstInstanceParameters(next)
+    expect(before).toMatchObject({ module2Type: 'dice' })
 
     // Nine dice of 16 mm do not fit a 41 × 63 mm card, so the preset is not
     // applied and the parameters stay as they are.

@@ -167,8 +167,9 @@ export function createCadWorkspaceController(
   }
 
   const applyParameters = (parameters: ModelParameterValues): void => {
-    // Every path that writes parameters goes through here, so a notice from
-    // an unapplied preset never outlives the parameters it described.
+    // Restoring the defaults and an applied preset write the parameters
+    // through here, so a notice from an unapplied preset never outlives the
+    // parameters it described.
     clearPresetNotice()
     if (modelId === 'opengrid') {
       runtime.handleOpenGridParametersChange(
@@ -216,7 +217,6 @@ export function createCadWorkspaceController(
       }
       return
     }
-    presetNoticeKey = null
     applyParameters(resolved.parameters)
   }
 
