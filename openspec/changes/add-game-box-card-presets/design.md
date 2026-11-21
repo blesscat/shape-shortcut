@@ -115,10 +115,11 @@ workspace 交的是 `state.input`（上一組通過驗證的參數），playgrou
 （`cad.presets.<modelId>.notApplicable`），所以每個 component 可以用自己的措辭；目前只有
 game-box 使用這個路徑。
 
-零件重試是通用的規則：任何帶 `part` 參數的 component 都適用。game-box 的零件清單只取決於
-模組清單而不取決於卡片尺寸，所以這條規則在 game-box 的 preset 路徑上不會被觸發；它保護
-的是「preset 改變的欄位恰好讓某個零件消失」的情況，並且由共用機制的單元測試以一個零件
-受限的 fixture 覆蓋。
+零件重試屬於 opt-in：只有宣告 `presetBase: 'current'` 的 component 會走這條路徑；以預設參數
+為底的 component 維持原行為，無效的 preset 一律拒絕。game-box 的零件清單只取決於模組清單
+而不取決於卡片尺寸，所以這條規則在 game-box 的 preset 路徑上不會被觸發；它保護的是
+「preset 改變的欄位恰好讓某個零件消失」的情況，並且由共用機制的單元測試以一個零件受限的
+fixture 覆蓋。
 
 ### 5. 翻譯 key 新增 `cad.presets.game-box.*`，不沿用 card-box 的 key
 
@@ -131,29 +132,47 @@ message catalog 各新增七筆。不重用也不改名 `cad.presets.card-box.*`
 label 文字沿用同一組卡片標準的名稱（例：en `Standard TCG 63×88`、zh-Hant
 `標準 TCG 63×88`），因為兩者描述的是同一組實體卡片尺寸。
 
-### 6. 規格 delta 只涵蓋 `game-box` capability
+### 6. 共用 capability 的解析需求以 MODIFIED delta 修正，列舉需求不動
 
-`component-parameter-presets` capability 目前列舉了會宣告 presets 的 component
-（`opengrid-stackable-box` 與 `card-box`）。那條列舉在下架 card-box 時必然要改，而那個
-改動屬於下架 task；本 change 的 delta 只寫 `game-box`。
+`component-parameter-presets` capability 有兩處與本 change 相關：
 
-理由是 delta 的同步語義：`MODIFIED Requirements` 必須帶整條 requirement 的完整內容，
-若這裡一併改寫那條列舉，同步時會把下架 task 對 card-box 的移除結果覆蓋回去。分開由兩
-個 task 各自改各自的 capability，可以避免在同一條 requirement 上互相覆寫。副作用是
-`component-parameter-presets` 的列舉在兩個 task 都落地後仍不會提到 `game-box`，這是
-已知的後續項，已列入本次交付的報告給 owner 決定由哪個 task 補上。
+- **「Preset 參數解析與驗證」requirement** 說「套用任一 preset 時 MUST 以該 component 的
+  `defaultParameters` 為底」。本 change 讓 game-box 以目前參數為底，兩者直接衝突；若不同步
+  修改，兩個主規格會互相矛盾。因此本 change 以 `MODIFIED` delta 帶上該 requirement 的完整
+  內容：預設仍以 `defaultParameters` 為底；component 定義可宣告 `presetBase: 'current'` 改以
+  目前參數為底；零件失效時改以 `assembly` 重試一次；不適用時保留參數並顯示本地化訊息，
+  絕不退回預設參數取代。
+- **「Component 定義可宣告命名參數預設」requirement** 列舉了會宣告 presets 的 component
+  （`opengrid-stackable-box` 與 `card-box`）。那條列舉在下架 card-box 時必然要改，而那個
+  改動屬於下架 task；本 change 的 delta 不碰它。
+
+理由是 delta 的同步語義：`MODIFIED Requirements` 必須帶整條 requirement 的完整內容，若這裡
+一併改寫那條列舉，同步時會把下架 task 對 card-box 的移除結果覆蓋回去。分開由兩個 task 各自
+改各自的 requirement，可以避免在同一條 requirement 上互相覆寫。副作用是
+`component-parameter-presets` 的列舉在兩個 task 都落地後仍不會提到 `game-box`，這是已知的
+後續項，已列入本次交付的報告給 owner 決定由哪個 task 補上。
+
+另外，`component-parameter-presets` 的 Purpose 仍寫著「點擊即以該組預設覆蓋使用者目前參數」。
+OpenSpec 的 delta 無法取代既有 capability 的 Purpose（`## Purpose` 只在建立新 capability 時
+被讀取，既有 capability 的 delta Purpose 會被忽略），因此 Purpose 的修正必須在 sync 時直接
+改主規格檔 `openspec/specs/component-parameter-presets/spec.md`；這件事列在 tasks.md 的同步
+待辦，本 phase 不動主規格檔。
 
 ### 7. 測試分三層
 
 - **單元測試**：以字面值釘住七組 preset 的 id、順序與尺寸；驗證每一組 preset 都通過
-  game-box contract；驗證套用後只改變卡片尺寸、模組清單與收納深度不變；驗證零件失效時
-  改用組裝；驗證放不下時不套用。共用機制另外驗證 `presetBase: 'current'` 的合併底、
-  零件重試與 card-box 仍以預設參數為底。
+  game-box contract；驗證套用後只改變卡片尺寸、模組清單與收納深度不變；驗證放不下時不套用。
+  共用機制另外驗證 `presetBase: 'current'` 的合併底、零件重試只發生在 opt-in 上、以預設
+  參數為底的 component 仍拒絕只因零件而無效的 preset、card-box 仍以預設參數為底，以及每個
+  opt-in component 的不適用訊息在兩種語系都有譯文。
+  playground 的 `applyPreset` 另外以 store 單元測試驗證：放得下的 preset 保留模組欄位、只改
+  卡片尺寸；放不下的 preset 保留參數並帶出不適用的診斷訊息。
 - **幾何測試**：在 worker 測試中，對每一組 preset 以預設參數疊加 overrides 建構
   game-box 的 `box`、`lid` 與 `assembly`，確認每次建構都完成且量體積大於零。preset 不再
   重設模組清單並不改變這組測試建構的內容，所以幾何測試維持原樣。
 - **瀏覽器測試**：驗證面板顯示「回復預設」加七顆 preset 按鈕；套用 preset 後卡片尺寸改變
-  而模組清單仍在；放不下時顯示本地化訊息且參數不變。
+  而模組清單仍在；放不下時顯示本地化訊息且參數不變；按「回復預設」後該訊息消失，因為
+  參數一改，舊訊息就不再描述目前的狀態。
 
 ## Risks / Trade-offs
 
