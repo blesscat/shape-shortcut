@@ -29,7 +29,7 @@ import {
   type ModelParameterValues,
 } from '../../cad-contract/units'
 import { buildModelBRep, type KernelBuildContext } from '../model'
-import { GAME_BOX_DICE_HOLDER } from '../components/game-box/dice-holder'
+import { GAME_BOX_GRIP } from '../components/game-box/grip'
 import {
   gameBoxGeometryOf,
   gameBoxModulePlacements,
@@ -361,7 +361,7 @@ function gameBoxProxyHolders(
       moduleIndex === null
         ? gameBoxDiceHolderOuterWidth(parameters.cardWidth)
         : cardBoxInteriorWidth(parameters.cardWidth) -
-          GAME_BOX_DICE_HOLDER.pressedClearance
+          GAME_BOX_GRIP.pressedClearance
     const halfHolder = outerWidth / 2
     if (moduleIndex === null) {
       const y =
