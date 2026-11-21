@@ -32,7 +32,7 @@ import {
 import { getModelDefinition } from '../model-catalog'
 import {
   findModelPreset,
-  presetNotApplicableMessageKey,
+  presetNoticeKeyFor,
   resolvePresetParameters,
 } from '../model-catalog/presets'
 import {
@@ -1390,12 +1390,11 @@ export function createPlaygroundStore(): PlaygroundStore {
         instance.parameters,
       )
       if (!resolved.ok) {
-        if (definition.presetBase === 'current') {
+        const noticeKey = presetNoticeKeyFor(definition)
+        if (noticeKey) {
           // The preset does not fit the current parameters: they are kept and
           // the user is told why the preset was not applied.
-          diagnostic = {
-            messageId: presetNotApplicableMessageKey(definition),
-          }
+          diagnostic = { messageId: noticeKey }
           emit()
           return
         }

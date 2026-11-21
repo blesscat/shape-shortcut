@@ -9,7 +9,7 @@ import { initialCadState, type CadState } from '../../../features/cad/state'
 import { getModelDefinition } from '../../../features/cad/model-catalog'
 import {
   findModelPreset,
-  presetNotApplicableMessageKey,
+  presetNoticeKeyFor,
   resolvePresetParameters,
 } from '../../../features/cad/model-catalog/presets'
 import {
@@ -125,16 +125,11 @@ export function createCadWorkspaceController(
   let progress: CadProgress | null = null
   let presetNoticeKey: string | null = null
 
+  const snapshot = (): CadWorkspaceControllerSnapshot =>
+    createSnapshot(state, rawParameters, fieldErrors, progress, presetNoticeKey)
+
   const emit = () => {
-    onChange(
-      createSnapshot(
-        state,
-        rawParameters,
-        fieldErrors,
-        progress,
-        presetNoticeKey,
-      ),
-    )
+    onChange(snapshot())
   }
 
   const runtime: CadWorkerRuntime = createCadWorkerRuntime({
@@ -160,6 +155,16 @@ export function createCadWorkspaceController(
       emit()
     },
   })
+
+  /**
+   * Drops the notice of an unapplied preset: the user changed the
+   * parameters, so the old notice no longer describes the current state.
+   */
+  const clearPresetNotice = (): void => {
+    if (presetNoticeKey === null) return
+    presetNoticeKey = null
+    emit()
+  }
 
   const applyParameters = (parameters: ModelParameterValues): void => {
     if (modelId === 'opengrid') {
@@ -195,10 +200,11 @@ export function createCadWorkspaceController(
     // changes only the card size keeps everything else the user has set.
     const resolved = resolvePresetParameters(definition, preset, state.input)
     if (!resolved.ok) {
-      if (definition.presetBase === 'current') {
+      const noticeKey = presetNoticeKeyFor(definition)
+      if (noticeKey) {
         // The preset does not fit the current parameters: they are kept and
         // the user is told why the preset was not applied.
-        presetNoticeKey = presetNotApplicableMessageKey(definition)
+        presetNoticeKey = noticeKey
         emit()
         return
       }
@@ -209,16 +215,6 @@ export function createCadWorkspaceController(
     }
     presetNoticeKey = null
     applyParameters(resolved.parameters)
-  }
-
-  /**
-   * Drops the notice of an unapplied preset: the user changed the
-   * parameters, so the old notice no longer describes the current state.
-   */
-  const clearPresetNotice = (): void => {
-    if (presetNoticeKey === null) return
-    presetNoticeKey = null
-    emit()
   }
 
   const handleInputChange = (key: ModelParameterKey, value: string): void => {
@@ -247,14 +243,7 @@ export function createCadWorkspaceController(
   emit()
 
   return {
-    getSnapshot: () =>
-      createSnapshot(
-        state,
-        rawParameters,
-        fieldErrors,
-        progress,
-        presetNoticeKey,
-      ),
+    getSnapshot: snapshot,
     onInputChange: handleInputChange,
     onInputsChange: handleInputsChange,
     onSystemContextChange,

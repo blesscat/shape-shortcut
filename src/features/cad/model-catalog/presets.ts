@@ -23,6 +23,20 @@ export function presetNotApplicableMessageKey(
 }
 
 /**
+ * The notice a component shows when a preset does not fit the parameters the
+ * user has now.
+ *
+ * Only a component that merges presets onto the current parameters can end up
+ * in that situation, so the notice exists for those components alone. A
+ * component that merges onto its defaults has no user-facing notice: an
+ * unusable preset there is a mistake in the preset list.
+ */
+export function presetNoticeKeyFor(definition: ModelDefinition): string | null {
+  if (definition.presetBase !== 'current') return null
+  return presetNotApplicableMessageKey(definition)
+}
+
+/**
  * The parameters a preset is merged onto: the definition's defaults, or the
  * parameters the user has now for a definition that asks for it.
  *
