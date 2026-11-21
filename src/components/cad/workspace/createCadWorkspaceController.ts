@@ -167,6 +167,9 @@ export function createCadWorkspaceController(
   }
 
   const applyParameters = (parameters: ModelParameterValues): void => {
+    // Every path that writes parameters goes through here, so a notice from
+    // an unapplied preset never outlives the parameters it described.
+    clearPresetNotice()
     if (modelId === 'opengrid') {
       runtime.handleOpenGridParametersChange(
         cloneOpenGridParameters(parameters as OpenGridParameters),

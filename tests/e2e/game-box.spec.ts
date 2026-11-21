@@ -373,8 +373,8 @@ test.describe('game-box', () => {
     await expect(
       page.getByRole('textbox', { name: '卡片高（Z）' }),
     ).toHaveValue('88')
-    // The preset resets the module list, so the derived depth is the default
-    // depth again.
+    // The default module list is unchanged, so the derived depth stays the
+    // default depth.
     await expect(page.getByTestId('game-box-storage-depth')).toHaveText('63 mm')
     // The model is rebuilt with the new card size.
     await expect(viewport).not.toHaveAttribute(
@@ -430,6 +430,12 @@ test.describe('game-box', () => {
       page.getByRole('textbox', { name: '卡片寬（X）' }),
     ).toHaveValue('70')
     await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    // Restoring the defaults writes new parameters, so the notice no longer
+    // describes the current state and disappears.
+    await page.getByRole('button', { name: '全部恢復預設' }).click()
+    await expect(page.getByTestId('cad-preset-notice')).toHaveCount(0)
+    await expect(page.getByTestId('game-box-module-2')).toHaveCount(0)
   })
 
   test('shows a module error inside its own module only', async ({
