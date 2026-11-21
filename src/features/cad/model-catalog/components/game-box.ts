@@ -42,9 +42,10 @@ const GAME_BOX_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
 /**
  * The seven card size presets, in the order they are shown in the panel.
  *
- * Each preset overrides only the card size; every other parameter follows the
- * definition defaults, so applying a preset also returns the part selection,
- * the module list and the dice settings to their defaults.
+ * Each preset overrides only the card size. The game box merges a preset onto
+ * the parameters the user has now, so the module list, the module fields and
+ * the selected part survive the preset; a part that no longer exists falls
+ * back to the assembly.
  */
 const GAME_BOX_PRESETS: ReadonlyArray<ModelPreset> = [
   {
@@ -122,6 +123,9 @@ export const gameBoxDefinition: ModelDefinition = {
     ...GAME_BOX_CONFIGURATION.defaultParameters,
   },
   presets: GAME_BOX_PRESETS,
+  // A card size preset changes the card size only; the module list the user
+  // has built up stays as it is.
+  presetBase: 'current',
   simplifiedPreview: (parameters) =>
     gameBoxPreview(parameters as Parameters<typeof gameBoxPreview>[0]),
   previewMetadata: { centeredOnXY: true, baseAtZ: 0 },
