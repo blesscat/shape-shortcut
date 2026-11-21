@@ -95,6 +95,17 @@ export const messages = {
     'Japanese small sleeved 62×89',
   'cad.presets.card-box.mini-american-41x63': 'Mini American 41×63',
   'cad.presets.card-box.mini-euro-44x68': 'Mini Euro 44×68',
+  'cad.presets.game-box.tarot-70x120': 'Tarot 70×120',
+  'cad.presets.game-box.standard-tcg-63x88': 'Standard TCG 63×88',
+  'cad.presets.game-box.standard-tcg-sleeved-66x91':
+    'Standard TCG sleeved 66×91',
+  'cad.presets.game-box.japanese-small-59x86': 'Japanese small 59×86',
+  'cad.presets.game-box.japanese-small-sleeved-62x89':
+    'Japanese small sleeved 62×89',
+  'cad.presets.game-box.mini-american-41x63': 'Mini American 41×63',
+  'cad.presets.game-box.mini-euro-44x68': 'Mini Euro 44×68',
+  'cad.presets.game-box.notApplicable':
+    'This card size does not fit the current modules. Adjust the modules or their dice settings, then apply the preset again.',
   'cad.drawer.title': 'Parameters',
   'cad.drawer.open': 'Open parameter drawer',
   'cad.drawer.close': 'Close parameter drawer',

@@ -158,6 +158,13 @@ export type ModelDefinition<
   defaultParameters: ModelParameterValues
   /** Named parameter presets shown as apply buttons; optional. */
   presets?: ReadonlyArray<ModelPreset>
+  /**
+   * Where a preset's overrides are merged onto. `defaults` merges onto the
+   * definition's `defaultParameters`, so applying a preset resets every
+   * other parameter. `current` merges onto the parameters the user has now,
+   * so a preset only changes the fields it overrides. Defaults to `defaults`.
+   */
+  presetBase?: 'defaults' | 'current'
   /** Required for every model. Receives validated parameters; synchronous and CAD-free. */
   simplifiedPreview: (parameters: ModelParameterValues) => PreviewDescription
   previewMetadata: { centeredOnXY: boolean; baseAtZ: number }
