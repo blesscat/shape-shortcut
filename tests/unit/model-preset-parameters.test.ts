@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { modelDefinitions } from '../../src/features/cad/model-catalog'
 import {
   findModelPreset,
+  presetNotApplicableMessageKey,
   resolvePresetParameters,
 } from '../../src/features/cad/model-catalog/presets'
 import type { ModelDefinition } from '../../src/features/cad/model-catalog'
+import { SUPPORTED_LOCALES, translate } from '../../src/i18n'
 import {
   CARD_BOX_CONFIGURATION,
   OPENGRID_STACKABLE_BOX_DEFAULT_PARAMETERS,
@@ -330,5 +332,22 @@ describe('catalog presets', () => {
       'card-box',
       'game-box',
     ])
+  })
+
+  it('translates the not-applicable notice of every current-base component', () => {
+    const currentBase = modelDefinitions.filter(
+      (definition) => definition.presetBase === 'current',
+    )
+    expect(currentBase.length).toBeGreaterThan(0)
+
+    for (const definition of currentBase) {
+      const key = presetNotApplicableMessageKey(definition)
+      for (const locale of SUPPORTED_LOCALES) {
+        expect(
+          translate(locale, key),
+          `${definition.id} must translate ${key} in ${locale}`,
+        ).not.toContain('⟦')
+      }
+    }
   })
 })
