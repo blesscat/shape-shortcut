@@ -387,6 +387,51 @@ test.describe('game-box', () => {
     })
   })
 
+  test('keeps the module list when a card size preset is applied', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    // A module the user built up must survive the preset.
+    await addModule(page, 'dice')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    await page.getByTestId('cad-preset-standard-tcg-63x88').click()
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('63')
+    await expect(
+      page.getByRole('textbox', { name: '卡片高（Z）' }),
+    ).toHaveValue('88')
+    await expect(page.getByTestId('game-box-module-2')).toContainText('骰子匣')
+    await expect(page.getByTestId('game-box-module-3')).toHaveCount(0)
+  })
+
+  test('does not apply a card size preset that does not fit the modules', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    await addModule(page, 'dice')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    // Nine dice of 16 mm do not fit a 41 × 63 mm card, so the preset is not
+    // applied and the parameters stay as they are.
+    await page.getByTestId('cad-preset-mini-american-41x63').click()
+    await expect(page.getByTestId('cad-preset-notice')).toBeVisible()
+    await expect(page.getByTestId('cad-preset-notice')).toContainText('模組')
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('70')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+  })
+
   test('shows a module error inside its own module only', async ({
     page,
     browserName,

@@ -6,7 +6,10 @@ import {
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
 import { gameBoxDefinition } from '../../src/features/cad/model-catalog/components/game-box'
-import { resolvePresetParameters } from '../../src/features/cad/model-catalog/presets'
+import {
+  presetNotApplicableMessageKey,
+  resolvePresetParameters,
+} from '../../src/features/cad/model-catalog/presets'
 import type { ModelPreset } from '../../src/features/cad/model-catalog'
 import { translate } from '../../src/i18n'
 
@@ -27,6 +30,18 @@ const EXPECTED_PRESETS = [
 
 const PRESETS = gameBoxDefinition.presets ?? []
 
+/** A module list the user has built up: a dice module and a second card module. */
+const CURRENT_WITH_MODULES: GameBoxParameters = {
+  ...GAME_BOX_CONFIGURATION.defaultParameters,
+  module2Type: 'dice',
+  module2CardDepth: 20,
+  module2DiceSize: 14,
+  module2DiceCount: 6,
+  module3Type: 'cards',
+  module3CardDepth: 18,
+  part: 'box',
+} as GameBoxParameters
+
 /** The card size a preset overrides. */
 function cardSize(preset: ModelPreset): {
   cardWidth: number
@@ -40,10 +55,24 @@ function cardSize(preset: ModelPreset): {
 }
 
 /** The resolved parameters of a preset, or null when the preset is rejected. */
-function resolvedParameters(preset: ModelPreset): GameBoxParameters | null {
-  const resolved = resolvePresetParameters(gameBoxDefinition, preset)
+function resolvedParameters(
+  preset: ModelPreset,
+  currentParameters?: GameBoxParameters,
+): GameBoxParameters | null {
+  const resolved = resolvePresetParameters(
+    gameBoxDefinition,
+    preset,
+    currentParameters,
+  )
   if (!resolved.ok) return null
   return resolved.parameters as GameBoxParameters
+}
+
+/** The preset with the given id. */
+function presetById(presetId: string): ModelPreset {
+  const preset = PRESETS.find((candidate) => candidate.id === presetId)
+  if (!preset) throw new Error(`The preset ${presetId} does not exist`)
+  return preset
 }
 
 describe('game-box card size presets', () => {
@@ -81,33 +110,61 @@ describe('game-box card size presets', () => {
     }
   })
 
-  it('resets every other parameter to the definition defaults', () => {
-    for (const preset of PRESETS) {
-      const parameters = resolvedParameters(preset)
-      expect(parameters, `preset ${preset.id}`).not.toBeNull()
-      if (!parameters) continue
-      const size = cardSize(preset)
-      expect(parameters).toEqual({
-        ...GAME_BOX_CONFIGURATION.defaultParameters,
-        cardWidth: size.cardWidth,
-        cardHeight: size.cardHeight,
-      })
+  it('keeps the module list and changes only the card size', () => {
+    const preset = presetById('standard-tcg-63x88')
+    const parameters = resolvedParameters(preset, CURRENT_WITH_MODULES)
+    expect(parameters).not.toBeNull()
+    if (!parameters) return
+    expect(parameters).toEqual({
+      ...CURRENT_WITH_MODULES,
+      cardWidth: 63,
+      cardHeight: 88,
+    })
+  })
+
+  it('keeps the selected part while it still exists', () => {
+    const preset = presetById('standard-tcg-63x88')
+    const current = {
+      ...CURRENT_WITH_MODULES,
+      part: 'module2',
+    } as GameBoxParameters
+    const parameters = resolvedParameters(preset, current)
+    expect(parameters).not.toBeNull()
+    if (!parameters) return
+    expect(parameters.part).toBe('module2')
+  })
+
+  it('does not apply a preset that does not fit the current modules', () => {
+    const preset = presetById('mini-american-41x63')
+    const current = {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      module2Type: 'dice',
+      module2CardDepth: 20,
+      module2DiceSize: 16,
+      module2DiceCount: 9,
+    } as GameBoxParameters
+    // Nine dice of 16 mm do not fit a 41 × 63 mm card.
+    expect(resolvedParameters(preset, current)).toBeNull()
+    // The current parameters are left untouched.
+    expect(current.module2Type).toBe('dice')
+    expect(current.cardWidth).toBe(70)
+  })
+
+  it('offers a localized message when a preset does not fit', () => {
+    const key = presetNotApplicableMessageKey(gameBoxDefinition)
+    expect(key).toBe('cad.presets.game-box.notApplicable')
+    for (const locale of ['zh-Hant', 'en'] as const) {
+      expect(translate(locale, key)).not.toContain('⟦')
     }
   })
 
-  it('returns the derived storage depth to the default depth', () => {
-    for (const preset of PRESETS) {
-      const parameters = resolvedParameters(preset)
-      expect(parameters, `preset ${preset.id}`).not.toBeNull()
-      if (!parameters) continue
-      const depth = gameBoxStorageDepth(parameters)
-      // The preset resets the module list, so the derived depth is the depth
-      // of the default module list.
-      expect(depth).toBe(
-        gameBoxStorageDepth(GAME_BOX_CONFIGURATION.defaultParameters),
-      )
-      // The specification pins that default depth at 63 mm.
-      expect(depth).toBe(63)
-    }
+  it('keeps the derived storage depth of the module list', () => {
+    const preset = presetById('standard-tcg-63x88')
+    const parameters = resolvedParameters(preset, CURRENT_WITH_MODULES)
+    expect(parameters).not.toBeNull()
+    if (!parameters) return
+    expect(gameBoxStorageDepth(parameters)).toBe(
+      gameBoxStorageDepth(CURRENT_WITH_MODULES),
+    )
   })
 })
