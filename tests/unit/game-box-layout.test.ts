@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAME_BOX_CONFIGURATION,
-  gameBoxCardsSlots,
+  gameBoxCardsModuleLength,
   gameBoxDiceCapacity,
-  gameBoxDiceHolderMinimumThickness,
   gameBoxDiceHolderThickness,
   gameBoxDiceLayout,
-  gameBoxDiceSlots,
+  gameBoxDiceModuleLength,
   gameBoxLayout,
   gameBoxModuleCardDepthKey,
   gameBoxModuleDiceCountKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
   gameBoxStorageDepth,
+  validateGameBoxParameters,
   type GameBoxModuleIndex,
   type GameBoxModuleType,
   type GameBoxParameters,
@@ -56,39 +56,58 @@ function parameters(
   } as GameBoxParameters
 }
 
-describe('game-box module slots', () => {
-  it('rounds a card module up to whole slots', () => {
-    expect(gameBoxCardsSlots(30)).toBe(11)
-    expect(gameBoxCardsSlots(30) * GAME_BOX_CONFIGURATION.slotPitch).toBe(33)
+describe('game-box module lengths', () => {
+  it('computes a card module from the card depth, the clearance and the plate', () => {
+    expect(gameBoxCardsModuleLength(30)).toBeCloseTo(31.85, 6)
+    expect(gameBoxCardsModuleLength(60)).toBeCloseTo(61.85, 6)
+    expect(gameBoxCardsModuleLength(3)).toBeCloseTo(4.85, 6)
   })
 
-  it('keeps the clear length of a card module at least its depth', () => {
+  it('never rounds a card module up to a whole slot', () => {
     for (const cardDepth of [3, 17, 30, 60, 149]) {
-      const slots = gameBoxCardsSlots(cardDepth)
-      const clearLength =
-        slots * GAME_BOX_CONFIGURATION.slotPitch -
-        GAME_BOX_CONFIGURATION.dividerPlateThickness
-      expect(clearLength).toBeGreaterThanOrEqual(cardDepth)
-      expect(
-        (slots - 1) * GAME_BOX_CONFIGURATION.slotPitch -
+      const length = gameBoxCardsModuleLength(cardDepth)
+      expect(length).toBeGreaterThan(cardDepth)
+      // The length is the card depth plus a fixed clearance and the share of
+      // the divider plate, so it never grows in steps.
+      expect(length - cardDepth).toBeCloseTo(
+        GAME_BOX_CONFIGURATION.cardsModuleClearance +
           GAME_BOX_CONFIGURATION.dividerPlateThickness,
-      ).toBeLessThan(cardDepth)
+        6,
+      )
     }
   })
 
-  it('reserves the holder thickness plus the divider gaps for a dice module', () => {
-    expect(gameBoxDiceHolderMinimumThickness(16)).toBeCloseTo(19, 6)
-    expect(gameBoxDiceSlots(16)).toBe(7)
-    expect(gameBoxDiceHolderThickness(16)).toBeCloseTo(19.85, 6)
+  it('computes the holder thickness from the die and the two thin walls', () => {
+    expect(gameBoxDiceHolderThickness(16)).toBeCloseTo(18.2, 6)
+    expect(gameBoxDiceHolderThickness(8)).toBeCloseTo(10.2, 6)
+    expect(gameBoxDiceHolderThickness(30)).toBeCloseTo(32.2, 6)
+  })
+
+  it('computes a dice module from the holder, the gaps and the plate', () => {
+    expect(gameBoxDiceModuleLength(16)).toBeCloseTo(19.65, 6)
+    expect(gameBoxDiceModuleLength(8)).toBeCloseTo(11.65, 6)
+    expect(gameBoxDiceModuleLength(30)).toBeCloseTo(33.65, 6)
+  })
+
+  it('leaves the side wall and the floor at their own minimum', () => {
+    expect(GAME_BOX_CONFIGURATION.diceHolderWall).toBe(1.2)
+    // The holder thickness follows the front and the back wall only; the
+    // side wall and the floor minimum does not enter it.
+    expect(gameBoxDiceHolderThickness(16)).toBeCloseTo(
+      16 +
+        GAME_BOX_CONFIGURATION.diceClearance +
+        2 * GAME_BOX_CONFIGURATION.diceHolderFrontBackWall,
+      6,
+    )
   })
 })
 
 describe('game-box storage depth', () => {
-  it('derives the depth of a single card module from its slots', () => {
+  it('derives the depth of a single card module from its length', () => {
     const layout = gameBoxLayout(parameters([{ type: 'cards', cardDepth: 30 }]))
-    expect(layout.storageDepth).toBe(33)
+    expect(layout.storageDepth).toBeCloseTo(31.85, 6)
     expect(layout.modules).toHaveLength(1)
-    expect(layout.modules[0]?.length).toBe(33)
+    expect(layout.modules[0]?.length).toBeCloseTo(31.85, 6)
   })
 
   it('adds up the lengths of a card, a dice and a card module', () => {
@@ -99,13 +118,16 @@ describe('game-box storage depth', () => {
         { type: 'cards', cardDepth: 20 },
       ]),
     )
-    expect(layout.storageDepth).toBe(75)
-    expect(layout.storageDepth % GAME_BOX_CONFIGURATION.slotPitch).toBe(0)
-    expect(layout.modules.map((module) => module.length)).toEqual([33, 21, 21])
+    expect(layout.storageDepth).toBeCloseTo(73.35, 6)
+    expect(layout.modules.map((module) => module.length)).toEqual([
+      expect.closeTo(31.85, 6),
+      expect.closeTo(19.65, 6),
+      expect.closeTo(21.85, 6),
+    ])
     expect(layout.dividerCount).toBe(2)
   })
 
-  it('places one divider on every module boundary', () => {
+  it('puts a divider on every module boundary', () => {
     const layout = gameBoxLayout(
       parameters([
         { type: 'cards', cardDepth: 30 },
@@ -113,10 +135,11 @@ describe('game-box storage depth', () => {
         { type: 'cards', cardDepth: 20 },
       ]),
     )
-    expect(layout.dividerCenters).toEqual([33, 54])
+    expect(layout.dividerCenters[0]).toBeCloseTo(31.85, 6)
+    expect(layout.dividerCenters[1]).toBeCloseTo(51.5, 6)
   })
 
-  it('numbers the wall slots from the front inner wall', () => {
+  it('does not round the depth up to a whole slot', () => {
     const layout = gameBoxLayout(
       parameters([
         { type: 'cards', cardDepth: 30 },
@@ -124,13 +147,15 @@ describe('game-box storage depth', () => {
         { type: 'cards', cardDepth: 20 },
       ]),
     )
-    expect(layout.slots).toBe(25)
-    expect(layout.slotCenters).toHaveLength(24)
-    expect(layout.slotCenters[0]).toBe(3)
-    expect(layout.slotCenters.at(-1)).toBe(72)
-    for (const center of layout.dividerCenters) {
-      expect(layout.slotCenters).toContain(center)
-    }
+    expect(layout.storageDepth % 3).toBeCloseTo(1.35, 6)
+  })
+
+  it('keeps the depth of the default module list', () => {
+    expect(gameBoxStorageDepth(GAME_BOX_CONFIGURATION.defaultParameters)).toBe(
+      gameBoxCardsModuleLength(
+        GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth,
+      ),
+    )
   })
 
   it('ignores the fields of disabled modules', () => {
@@ -199,6 +224,42 @@ describe('game-box storage depth', () => {
   })
 })
 
+describe('game-box storage depth range', () => {
+  it('accepts a depth inside the supported range', () => {
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'cards', cardDepth: 30 }]),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('rejects a depth above the range on the last module', () => {
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'cards', cardDepth: 150 }]),
+    )
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.field).toBe(gameBoxModuleCardDepthKey(1))
+    expect(validation.issues[0]?.messageId).toBe(
+      'validation.gameBoxStorageDepthOutOfRange',
+    )
+  })
+
+  it('rejects a depth below the range on the last module', () => {
+    const validation = validateGameBoxParameters(
+      parameters([
+        { type: 'cards', cardDepth: 3 },
+        { type: 'cards', cardDepth: 3 },
+      ]),
+    )
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.field).toBe(gameBoxModuleCardDepthKey(2))
+    expect(validation.issues[0]?.messageId).toBe(
+      'validation.gameBoxStorageDepthOutOfRange',
+    )
+  })
+})
+
 describe('game-box dice layout', () => {
   it('spreads nine dice over three rows of three', () => {
     const layout = gameBoxDiceLayout(70, 120, 16, 9)
@@ -224,5 +285,12 @@ describe('game-box dice layout', () => {
         expect(layout.layers).toBeLessThanOrEqual(layout.layerLimit)
       }
     }
+  })
+
+  it('keeps the dice rows unchanged over the whole die size range', () => {
+    expect(gameBoxDiceLayout(70, 120, 8, 9).perRowLimit).toBe(7)
+    expect(gameBoxDiceLayout(70, 120, 16, 9).perRowLimit).toBe(4)
+    expect(gameBoxDiceLayout(70, 120, 30, 9).perRowLimit).toBe(2)
+    expect(gameBoxDiceLayout(70, 120, 16, 9).layerLimit).toBe(7)
   })
 })

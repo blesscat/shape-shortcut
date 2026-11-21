@@ -299,7 +299,7 @@ describe('game-box parameter validation', () => {
 })
 
 describe('game-box export file names', () => {
-  it('names the box after the card size and the derived storage depth', () => {
+  it('names the box after the card size, the depth and the module list', () => {
     const box = parameters(
       [
         { type: 'cards', cardDepth: 30 },
@@ -308,8 +308,47 @@ describe('game-box export file names', () => {
       ],
       { part: 'box' },
     )
-    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x75.step')
-    expect(gameBoxStlFileName(box)).toBe('game-box-box-70x120x75.stl')
+    expect(gameBoxFileName(box)).toBe(
+      'game-box-box-70x120x73.35-c30-d16-c20.step',
+    )
+    expect(gameBoxStlFileName(box)).toBe(
+      'game-box-box-70x120x73.35-c30-d16-c20.stl',
+    )
+  })
+
+  it('names the box of a mixed module list with its depth and its modules', () => {
+    const box = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x51.5-c30-d16.step')
+  })
+
+  it('never lets two module lists share a box file name', () => {
+    const first = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    const second = parameters(
+      [
+        { type: 'cards', cardDepth: 33 },
+        { type: 'dice', diceSize: 13, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    // Both module lists occupy the same depth, but their divider boundaries
+    // differ, so the box file names have to tell them apart.
+    expect(gameBoxStorageDepth(first)).toBeCloseTo(
+      gameBoxStorageDepth(second),
+      6,
+    )
+    expect(gameBoxFileName(first)).not.toBe(gameBoxFileName(second))
   })
 
   it('names the dice holder after the card size, the die size and the count', () => {
@@ -330,8 +369,8 @@ describe('game-box export file names', () => {
     const divider = parameters([{ type: 'cards', cardDepth: 30 }], {
       part: 'divider',
     })
-    expect(gameBoxFileName(lid)).toBe('game-box-lid-70x120x33.step')
-    expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x33.step')
+    expect(gameBoxFileName(lid)).toBe('game-box-lid-70x120x31.85.step')
+    expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x31.85.step')
   })
 
   it('never lets two sizes share a file name', () => {
@@ -412,8 +451,12 @@ describe('game-box export file names', () => {
         { part: 'box' },
       ),
     } as const
-    expect(modelFileName(model)).toBe('game-box-box-70x120x75.step')
-    expect(modelStlFileName(model)).toBe('game-box-box-70x120x75.stl')
+    expect(modelFileName(model)).toBe(
+      'game-box-box-70x120x73.35-c30-d16-c20.step',
+    )
+    expect(modelStlFileName(model)).toBe(
+      'game-box-box-70x120x73.35-c30-d16-c20.stl',
+    )
   })
 })
 
