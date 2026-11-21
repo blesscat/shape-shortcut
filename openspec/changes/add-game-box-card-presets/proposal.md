@@ -18,18 +18,22 @@ sizes has to survive the move to the new component.
 - The preset labels use new translation keys `cad.presets.game-box.*`; the
   existing `cad.presets.card-box.*` keys are left untouched for the separate
   task that retires `card-box`.
-- Applying a preset follows the existing preset mechanism: the overrides are
-  merged onto the component's `defaultParameters` and the merged set must
-  pass the game-box validator. Because the game-box defaults own every
-  parameter, applying a preset therefore sets the card size and resets
-  everything else to those defaults — the selected part returns to
-  `assembly`, the module list returns to the single default `cards` module
-  (module 1, card depth 60 mm), modules 2 to 6 return to `none`, the die
-  size returns to 16 mm, the die count returns to 9, and the derived storage
-  depth returns to 63 mm.
+- Applying a preset follows the existing preset mechanism, with one opt-in:
+  the game-box definition asks for its presets to be merged onto the
+  **current** parameters instead of the definition defaults, so applying a
+  preset changes only the card width and height. The module list, every
+  module field (type, card depth, die size, die count), the derived storage
+  depth and the selected part stay as they are; a part that no longer exists
+  falls back to `assembly`.
+- If the new card size does not fit the current modules (a die tray that no
+  longer holds its dice), the preset is not applied: the current parameters
+  are kept, the defaults are never substituted for them, and a localized
+  message (en and zh-Hant) tells the user that the preset does not fit.
+- The shared preset mechanism gains one opt-in field on the model
+  definition; every other component keeps merging its presets onto the
+  definition defaults, exactly as before.
 - No change to `card-box` (code, spec, tests, translations), no change to the
-  game-box geometry, ranges or defaults, no change to the shared preset
-  mechanism and no new dependency.
+  game-box geometry, ranges or defaults, and no new dependency.
 
 ## Capabilities
 
