@@ -329,6 +329,64 @@ test.describe('game-box', () => {
     await expect(page.getByRole('button', { name: '下載 3MF' })).toHaveCount(0)
   })
 
+  test('shows the card size presets and applies the chosen card size', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    // The preset row shows the restore button followed by the seven presets.
+    const labels = await page
+      .getByRole('button')
+      .evaluateAll((buttons) =>
+        buttons
+          .filter((button) =>
+            button.matches(
+              '[data-testid^="cad-preset-"], [aria-label="全部恢復預設"]',
+            ),
+          )
+          .map((button) => button.getAttribute('aria-label')),
+      )
+    expect(labels).toEqual([
+      '全部恢復預設',
+      '塔羅 70×120',
+      '標準 TCG 63×88',
+      '標準 TCG 含套 66×91',
+      '日版小型 59×86',
+      '日版小型 含套 62×89',
+      '美式迷你 41×63',
+      '歐版迷你 44×68',
+    ])
+
+    const viewport = page.getByTestId('cad-viewport')
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+    const revision = await viewport.getAttribute('data-model-revision')
+
+    await page.getByTestId('cad-preset-standard-tcg-63x88').click()
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('63')
+    await expect(
+      page.getByRole('textbox', { name: '卡片高（Z）' }),
+    ).toHaveValue('88')
+    // The preset resets the module list, so the derived depth is the default
+    // depth again.
+    await expect(page.getByTestId('game-box-storage-depth')).toHaveText('63 mm')
+    // The model is rebuilt with the new card size.
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      revision!,
+      { timeout: 120_000 },
+    )
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+  })
+
   test('shows a module error inside its own module only', async ({
     page,
     browserName,
