@@ -61,13 +61,16 @@ function fakeDefinition(
 
 /**
  * A component whose selected part only exists while the card is narrow, so a
- * preset that widens the card invalidates the part.
+ * preset that widens the card invalidates the part. The `presetBase` decides
+ * whether the part retry applies.
  */
-function partBoundDefinition(): ModelDefinition {
+function partBoundDefinition(
+  presetBase: ModelDefinition['presetBase'],
+): ModelDefinition {
   return fakeDefinition({
-    presetBase: 'current',
+    presetBase,
     defaultParameters: {
-      part: 'assembly',
+      part: 'small',
       cardWidth: 70,
     } as unknown as ModelDefinition['defaultParameters'],
     presets: [
@@ -214,7 +217,7 @@ describe('resolvePresetParameters', () => {
   })
 
   it('retries a part that no longer exists as the assembly', () => {
-    const definition = partBoundDefinition()
+    const definition = partBoundDefinition('current')
     const preset = findModelPreset(definition, 'wide-card')
     if (!preset) throw new Error('preset missing')
 
@@ -228,6 +231,16 @@ describe('resolvePresetParameters', () => {
       part: 'assembly',
       cardWidth: 90,
     })
+  })
+
+  it('rejects a part that no longer exists for a component that merges onto its defaults', () => {
+    const definition = partBoundDefinition('defaults')
+    const preset = findModelPreset(definition, 'wide-card')
+    if (!preset) throw new Error('preset missing')
+
+    // The part retry belongs to the current-parameter opt-in: a component
+    // that merges onto its defaults keeps rejecting an invalid preset.
+    expect(resolvePresetParameters(definition, preset)).toEqual({ ok: false })
   })
 
   it('does not apply a preset whose result is invalid for another reason', () => {

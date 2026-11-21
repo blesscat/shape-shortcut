@@ -44,8 +44,8 @@ const GAME_BOX_PARAMETER_SCHEMA: ReadonlyArray<ParameterField> = [
  *
  * Each preset overrides only the card size. The game box merges a preset onto
  * the parameters the user has now, so the module list, the module fields and
- * the selected part survive the preset; a part that no longer exists falls
- * back to the assembly.
+ * the selected part survive the preset; the available parts depend on the
+ * module types, and a card size never changes them.
  */
 const GAME_BOX_PRESETS: ReadonlyArray<ModelPreset> = [
   {

@@ -39,9 +39,12 @@ function presetBaseParameters(
 }
 
 /**
- * Validates the merged parameters and returns the accepted parameter set. A
- * selected part that no longer exists is not a failure of the preset itself,
- * so the parameters are retried as the assembly.
+ * Validates the merged parameters and returns the accepted parameter set.
+ *
+ * A selected part that no longer exists is not a failure of the preset
+ * itself, so a component that merges onto the current parameters retries the
+ * parameters as the assembly. A component that merges onto its defaults
+ * keeps the previous behaviour: a preset that does not validate is rejected.
  */
 function validatePresetParameters(
   definition: ModelDefinition,
@@ -49,6 +52,7 @@ function validatePresetParameters(
 ): ModelParameterValues | null {
   const validation = definition.validateParameters(parameters)
   if (validation.valid) return validation.value.parameters
+  if (definition.presetBase !== 'current') return null
   const partIsTheOnlyProblem =
     validation.issues.length > 0 &&
     validation.issues.every(
