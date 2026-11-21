@@ -6,6 +6,10 @@ import type {
   ModelParameterValues,
 } from '../../src/cad-contract/units'
 import type { OpenGridParameters } from '../../src/cad-contract/units'
+import {
+  GAME_BOX_CONFIGURATION,
+  type GameBoxParameters,
+} from '../../src/cad-contract/units'
 import type { PlaygroundStore } from '../../src/features/cad/playground/store'
 
 type SentWorkerCommand = {
@@ -77,26 +81,26 @@ function parametersOf(
   return instance.parameters as OpenGridParameters
 }
 
+let store: PlaygroundStore | null = null
+
+afterEach(() => {
+  store?.dispose()
+  store = null
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+  harness.sentCommands.length = 0
+  harness.handler = null
+})
+
+function setupStore(): PlaygroundStore {
+  vi.stubGlobal('window', { location: { origin: 'http://test.local' } })
+  const next = createPlaygroundStore()
+  store = next
+  deliverEngineReady()
+  return next
+}
+
 describe('playground store panel-driven parameter editing', () => {
-  let store: PlaygroundStore | null = null
-
-  afterEach(() => {
-    store?.dispose()
-    store = null
-    vi.unstubAllGlobals()
-    vi.useRealTimers()
-    harness.sentCommands.length = 0
-    harness.handler = null
-  })
-
-  function setupStore(): PlaygroundStore {
-    vi.stubGlobal('window', { location: { origin: 'http://test.local' } })
-    const next = createPlaygroundStore()
-    store = next
-    deliverEngineReady()
-    return next
-  }
-
   it('edits a typed-parameter component through the full-parameters setter', async () => {
     vi.useFakeTimers()
     const next = setupStore()
@@ -212,5 +216,53 @@ describe('playground store panel-driven parameter editing', () => {
     // The next valid edit clears the diagnostic through commitParameters.
     next.setParameter('inst-1', 'width', '56')
     expect(next.getSnapshot().instances[0]?.fieldErrors).toEqual({})
+  })
+})
+
+/** A game box whose second module is a dice holder with the default dice. */
+const GAME_BOX_WITH_DICE = {
+  ...GAME_BOX_CONFIGURATION.defaultParameters,
+  module2Type: 'dice',
+} as GameBoxParameters
+
+describe('playground store game-box presets', () => {
+  function gameBoxWithDice(store: PlaygroundStore): ModelParameterValues {
+    const parameters = store.getSnapshot().instances[0]?.parameters
+    if (!parameters) throw new Error('missing instance')
+    return parameters
+  }
+
+  it('keeps the module list and changes only the card size', () => {
+    const next = setupStore()
+    next.addInstance('game-box')
+    next.setInstanceParameters('inst-1', GAME_BOX_WITH_DICE)
+    const before = gameBoxWithDice(next)
+
+    next.applyPreset('inst-1', 'standard-tcg-63x88')
+
+    const snapshot = next.getSnapshot()
+    expect(snapshot.instances[0]?.parameters).toEqual({
+      ...before,
+      cardWidth: 63,
+      cardHeight: 88,
+    })
+    expect(snapshot.diagnostic).toBeNull()
+  })
+
+  it('keeps the parameters and reports the notice when a preset does not fit', () => {
+    const next = setupStore()
+    next.addInstance('game-box')
+    next.setInstanceParameters('inst-1', GAME_BOX_WITH_DICE)
+    const before = gameBoxWithDice(next)
+
+    // Nine dice of 16 mm do not fit a 41 × 63 mm card, so the preset is not
+    // applied and the parameters stay as they are.
+    next.applyPreset('inst-1', 'mini-american-41x63')
+
+    const snapshot = next.getSnapshot()
+    expect(snapshot.instances[0]?.parameters).toEqual(before)
+    expect(snapshot.diagnostic?.messageId).toBe(
+      'cad.presets.game-box.notApplicable',
+    )
   })
 })
