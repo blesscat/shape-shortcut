@@ -166,7 +166,13 @@ export const GAME_BOX_CONFIGURATION = {
     cardDepth: { min: 3, max: 150 },
     diceSize: { min: 8, max: 30, step: 0.5 },
     diceCount: { min: 1, max: 60 },
-    storageDepth: { min: 20, max: 150 },
+    // The minimum follows the round-1 gate decision: with the direct module
+    // lengths a lone 16 mm dice module adds up to 19.65 mm, so the old 20 mm
+    // minimum would reject saved designs. The box and the lid still build
+    // (and pass their geometry checks) down to 8 mm at every card width, so
+    // the minimum is the lead's floor of 15 mm; a lone 14 mm dice module
+    // (17.65 mm) stays valid.
+    storageDepth: { min: 15, max: 150 },
   },
   defaults: GAME_BOX_DEFAULTS,
   defaultParameters: buildDefaultParameters(),
@@ -195,6 +201,16 @@ function buildDefaultParameters(): GameBoxParameters {
 
 /** Floating point slack for fit computations. */
 const TOLERANCE = 1e-9
+
+/**
+ * Lengths are read back to a hundredth of a millimetre: `cardDepth` and
+ * `diceSize` have no enforced input step, and the export names round the
+ * derived depth to two decimals, so two inputs that differ by less than a
+ * hundredth must not become two different geometries under one name.
+ */
+function quantizeLength(value: number): number {
+  return Math.round(value * 100) / 100
+}
 
 /**
  * Length a card module occupies in the storage depth: the card depth, the
@@ -543,7 +559,7 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
       'mm',
     )
     if (!depth.ok) return { valid: false, issues: [depth.issue] }
-    cardDepths.push(depth.value)
+    cardDepths.push(quantizeLength(depth.value))
 
     const sizeKey = gameBoxModuleDiceSizeKey(index)
     const size = numberInRange(
@@ -555,7 +571,7 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
       'mm',
     )
     if (!size.ok) return { valid: false, issues: [size.issue] }
-    diceSizes.push(size.value)
+    diceSizes.push(quantizeLength(size.value))
 
     const countKey = gameBoxModuleDiceCountKey(index)
     const count = numberInRange(
@@ -605,7 +621,10 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
   const layout = gameBoxLayout(parameters)
   const depth = layout.storageDepth
   const depthRange = GAME_BOX_CONFIGURATION.ranges.storageDepth
-  if (depth < depthRange.min || depth > depthRange.max) {
+  if (
+    depth < depthRange.min - TOLERANCE ||
+    depth > depthRange.max + TOLERANCE
+  ) {
     const lastModule = layout.modules.at(-1)
     if (!lastModule) return invalid('parameters')
     const field =
@@ -613,7 +632,10 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
         ? gameBoxModuleCardDepthKey(lastModule.index)
         : gameBoxModuleDiceSizeKey(lastModule.index)
     return invalid(field, 'validation.gameBoxStorageDepthOutOfRange', {
-      depth,
+      // The formatted depth: the raw sum carries binary noise (a nominal
+      // 150 mm can arrive as 150.00000000000003), which is not what the
+      // message should show.
+      depth: formatDepth(depth),
       min: depthRange.min,
       max: depthRange.max,
     })

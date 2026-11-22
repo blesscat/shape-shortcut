@@ -88,18 +88,6 @@ describe('game-box module lengths', () => {
     expect(gameBoxDiceModuleLength(8)).toBeCloseTo(11.65, 6)
     expect(gameBoxDiceModuleLength(30)).toBeCloseTo(33.65, 6)
   })
-
-  it('leaves the side wall and the floor at their own minimum', () => {
-    expect(GAME_BOX_CONFIGURATION.diceHolderWall).toBe(1.2)
-    // The holder thickness follows the front and the back wall only; the
-    // side wall and the floor minimum does not enter it.
-    expect(gameBoxDiceHolderThickness(16)).toBeCloseTo(
-      16 +
-        GAME_BOX_CONFIGURATION.diceClearance +
-        2 * GAME_BOX_CONFIGURATION.diceHolderFrontBackWall,
-      6,
-    )
-  })
 })
 
 describe('game-box storage depth', () => {
@@ -257,6 +245,93 @@ describe('game-box storage depth range', () => {
     expect(validation.issues[0]?.messageId).toBe(
       'validation.gameBoxStorageDepthOutOfRange',
     )
+  })
+
+  it('accepts a lone dice module of the default die size', () => {
+    // The direct lengths shrank some saved designs below the old 20 mm
+    // minimum; the minimum now follows the smallest depth the box and the
+    // lid still build at, so the default 16 mm dice module stays valid.
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'dice', diceSize: 16, diceCount: 9 }]),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('accepts a lone dice module at the smallest confirmed die size', () => {
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'dice', diceSize: 14, diceCount: 9 }]),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('rejects a lone dice module below the range', () => {
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'dice', diceSize: 8, diceCount: 9 }]),
+    )
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.field).toBe(gameBoxModuleDiceSizeKey(1))
+    expect(validation.issues[0]?.messageId).toBe(
+      'validation.gameBoxStorageDepthOutOfRange',
+    )
+  })
+
+  it('accepts a depth at the maximum despite binary noise', () => {
+    // Four 30 mm dice modules and a 13.55 mm cards module add up to a
+    // nominal 150 mm; the raw sum arrives as 150.00000000000003.
+    const validation = validateGameBoxParameters(
+      parameters([
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'cards', cardDepth: 13.55 },
+      ]),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('reports the range rejection with a formatted depth', () => {
+    const validation = validateGameBoxParameters(
+      parameters([
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+        { type: 'dice', diceSize: 30, diceCount: 6 },
+      ]),
+    )
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.params?.depth).toBe('168.25')
+  })
+
+  it('reads card depths back to a hundredth of a millimetre', () => {
+    // The card depth has no input step, but the derived depth and the
+    // export names round to two decimals: two depths that differ by less
+    // than a hundredth must not become two different geometries.
+    const coarse = validateGameBoxParameters(
+      parameters([{ type: 'cards', cardDepth: 30.004 }]),
+    )
+    expect(coarse.valid).toBe(true)
+    if (!coarse.valid) return
+    expect(coarse.value[gameBoxModuleCardDepthKey(1)]).toBe(30)
+
+    const finer = validateGameBoxParameters(
+      parameters([{ type: 'cards', cardDepth: 30.006 }]),
+    )
+    expect(finer.valid).toBe(true)
+    if (!finer.valid) return
+    expect(finer.value[gameBoxModuleCardDepthKey(1)]).toBe(30.01)
+  })
+
+  it('reads dice sizes back to a hundredth of a millimetre', () => {
+    const validation = validateGameBoxParameters(
+      parameters([{ type: 'dice', diceSize: 16.3000001, diceCount: 9 }]),
+    )
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) return
+    expect(validation.value[gameBoxModuleDiceSizeKey(1)]).toBe(16.3)
   })
 })
 

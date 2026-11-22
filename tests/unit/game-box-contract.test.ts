@@ -373,6 +373,23 @@ describe('game-box export file names', () => {
     expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x31.85.step')
   })
 
+  it('gives card depths within a hundredth of a millimetre one name', () => {
+    // The lid and the divider are named after the derived depth rounded to
+    // two decimals, so validation reads the card depth back to a hundredth
+    // of a millimetre: depths that round to the same name also build the
+    // same geometry.
+    const names = new Set<string>()
+    for (const cardDepth of [30, 30.001, 30.004]) {
+      const validation = validateGameBoxParameters(
+        parameters([{ type: 'cards', cardDepth }], { part: 'lid' }),
+      )
+      expect(validation.valid).toBe(true)
+      if (!validation.valid) return
+      names.add(gameBoxFileName(validation.value))
+    }
+    expect(names.size).toBe(1)
+  })
+
   it('never lets two sizes share a file name', () => {
     const names = new Set<string>()
     for (const cardWidth of [40, 70, 100]) {
