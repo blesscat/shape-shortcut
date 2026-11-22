@@ -14,12 +14,13 @@ import {
   gameBoxGripProtrusion,
   type GameBoxGripFrame,
 } from './grip'
+import { cutShape } from './shape-ops'
 
 /**
  * Named constants of the dice holder (mm).
  *
  * The grip is no longer part of the holder: it lives in its own module
- * (`grip.ts`) so that other holders can use the same fin.
+ * (`grip.ts`) so that other holders can use the same flap.
  *
  * The holder is a solid block with a dice well open at the top. The front
  * and the back wall are 0.8 mm thick; the side walls and the floor keep the
@@ -67,18 +68,6 @@ export type GameBoxDiceHolderFrame = {
 
 /** Centre of one die in the holder frame. */
 export type GameBoxDiceCenter = { x: number; y: number; z: number }
-
-function cutShape(source: Shape3D, cutter: Shape3D): Shape3D {
-  try {
-    const result = source.cut(cutter)
-    if (result !== source) deleteShape(source)
-    deleteShape(cutter)
-    return result
-  } catch (error) {
-    deleteShape(cutter)
-    throw error
-  }
-}
 
 /**
  * Derives the dimensions of a dice holder: the body is narrower than the
@@ -141,8 +130,8 @@ export function gameBoxDiceHolderSlotWidth(diceSize: number): number {
 }
 
 /**
- * The grip zone of one side of a holder: the fin band and the height it
- * covers. The fin is joined to the wall along its whole length.
+ * The grip zone of one side of a holder: the flap band and the height it
+ * covers. The flap is joined to the wall along its whole length.
  */
 export function gameBoxDiceHolderGripFrame(
   frame: GameBoxDiceHolderFrame,
@@ -158,7 +147,7 @@ export function gameBoxDiceHolderGripFrame(
 /**
  * Builds the dice holder: a body with a dice well open at the top, a
  * vertical opening in front of every row position, a solid riser below the
- * well and a grip fin on each side. The holder is built in its print
+ * well and a grip flap on each side. The holder is built in its print
  * orientation: standing upright, opening up, z ≥ 0.
  *
  * Everything below the dice well is solid, so the full body cross-section

@@ -47,9 +47,9 @@ function placeDividerInAssembly(plate: Shape3D, y: number): Shape3D {
 }
 
 /**
- * Builds the dice holder in its installed state: the grip strips are
+ * Builds the dice holder in its installed state: the grip flaps are
  * pressed in so that the holder fits between the box walls. The single part
- * export keeps the natural, wider strips.
+ * export keeps the natural, wider flaps.
  */
 function buildInstalledDiceHolder(
   parameters: GameBoxParameters,
