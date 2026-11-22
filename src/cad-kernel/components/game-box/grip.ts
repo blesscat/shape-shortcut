@@ -8,9 +8,11 @@ import { cutShape, fuseShape } from './shape-ops'
  * The grip is a flap that grows out of each side wall along the whole grip
  * zone: its root is buried in the wall over a short pad that runs the whole
  * height of the grip zone, and its free end stands out of the wall at a
- * shallow angle. A recess behind the flap leaves it free over its whole
- * length, so pressing the holder into the box bends the flap about its root
- * line — inside every print layer, the strong direction of FDM.
+ * shallow angle. A recess behind the flap — covering the whole height and
+ * running `recessEndClearance` past both of its ends — leaves the flap
+ * free over its whole length and its whole height, so pressing the holder
+ * into the box bends the flap about its root line — inside every print
+ * layer, the strong direction of FDM.
  *
  * The flap is sized so the full press stays elastic: a cantilever of
  * thickness `t` and length `L` bent by `δ` carries a peak strain of about
@@ -35,6 +37,10 @@ export const GAME_BOX_GRIP = {
   recessDepth: 0.8,
   /** Recess length past the flap tip, so the flap can fold in. */
   recessTail: 0.4,
+  /** How far the recess runs past each end of the flap along the height. */
+  recessEndClearance: 0.4,
+  /** The least wall the recess must leave behind it. */
+  minWallBehindRecess: 0.4,
   /** Length of the grip zone along the holder's height. */
   length: 60,
   /** Clearance between the grip zone and the holder edges. */
@@ -43,8 +49,6 @@ export const GAME_BOX_GRIP = {
   protrusion: 0.5,
   /** Radius of the fillet on the flap's inner tip corner. */
   tipRadius: 0.15,
-  /** Cutters narrower than this are never built. */
-  minCutterWidth: 0.01,
   /** Clearance between the installed holder and the box wall. */
   pressedClearance: 0.2,
 } as const
@@ -63,9 +67,12 @@ export type GameBoxGripFrame = {
   /** y of the recess behind the flap. */
   recessYStart: number
   recessYEnd: number
-  /** z of the grip zone. */
+  /** z of the grip zone: where the flap runs. */
   zStart: number
   zEnd: number
+  /** z of the recess behind the flap: `recessEndClearance` past both ends. */
+  recessZStart: number
+  recessZEnd: number
 }
 
 /**
@@ -105,6 +112,8 @@ export function gameBoxGripFrame(input: GameBoxGripInput): GameBoxGripFrame {
     recessYEnd: yStart + constants.flapLength + constants.recessTail,
     zStart,
     zEnd: zStart + length,
+    recessZStart: zStart - constants.recessEndClearance,
+    recessZEnd: zStart + length + constants.recessEndClearance,
   }
 }
 
@@ -129,10 +138,12 @@ function recessRange(input: GameBoxGripInput, side: 1 | -1): [number, number] {
 
 /**
  * The recess of one side of the grip: a pocket cut into the outer face of
- * the wall over the whole grip zone, in front of the flap, so the flap is
- * free over its whole length and has room to fold in when pressed. The
- * recess leaves at least 0.4 mm of wall behind it (the wall is never
- * thinner than 1.2 mm) and never reaches the dice well.
+ * the wall over the whole grip zone and `recessEndClearance` past both of
+ * its ends, in front of the flap, so the flap is free over its whole length
+ * and its whole height — its end faces stay clear of the wall — and has
+ * room to fold in when pressed. The wall is checked before cutting: the
+ * recess leaves at least 0.4 mm of wall behind it and never reaches the
+ * dice well.
  */
 function cutGripRecess(
   shape: Shape3D,
@@ -141,12 +152,11 @@ function cutGripRecess(
   side: 1 | -1,
 ): Shape3D {
   const [start, end] = recessRange(input, side)
-  if (end - start < GAME_BOX_GRIP.minCutterWidth) return shape
   return cutShape(
     shape,
     makeBox(
-      [start, frame.recessYStart, frame.zStart],
-      [end, frame.recessYEnd, frame.zEnd],
+      [start, frame.recessYStart, frame.recessZStart],
+      [end, frame.recessYEnd, frame.recessZEnd],
     ) as Shape3D,
   )
 }
@@ -278,11 +288,33 @@ function buildGripFlap(
   }
 }
 
+/** Floating point slack for the wall thickness comparison. */
+const WALL_TOLERANCE = 1e-9
+
+/**
+ * The recess consumes `recessDepth` of the wall the grip is built on: that
+ * wall must leave at least `minWallBehindRecess` behind the recess, which
+ * also keeps the recess out of the holder's well. A holder whose side wall
+ * is thinner than that cannot carry this grip.
+ */
+function assertRecessFitsWall(input: GameBoxGripInput): void {
+  const wallThickness = input.bodyHalfWidth - input.wallInnerHalfWidth
+  const behindRecess = wallThickness - GAME_BOX_GRIP.recessDepth
+  if (behindRecess < GAME_BOX_GRIP.minWallBehindRecess - WALL_TOLERANCE) {
+    throw new Error(
+      `GAME_BOX_GEOMETRY_INVALID:grip-wall: the side wall is ${wallThickness.toFixed(2)} mm thick; ` +
+        `the grip recess needs at least ${(GAME_BOX_GRIP.recessDepth + GAME_BOX_GRIP.minWallBehindRecess).toFixed(1)} mm of wall`,
+    )
+  }
+}
+
 /**
  * Builds the grip of one side of a holder: the recess cut into the wall and
  * the flap that grows out of it. The flap is joined to the wall along the
- * whole grip zone through its buried root pad, so the holder stays a single
- * solid and no horizontal slice carries a grip element of its own.
+ * whole grip zone through its buried root pad and nowhere else — the recess
+ * runs past its ends — so the holder stays a single solid, no horizontal
+ * slice carries a grip element of its own, and the flap bends about its
+ * root alone.
  */
 export function applyGameBoxGrip(
   shape: Shape3D,
@@ -290,6 +322,7 @@ export function applyGameBoxGrip(
   side: 1 | -1,
   protrusion: number,
 ): Shape3D {
+  assertRecessFitsWall(input)
   const frame = gameBoxGripFrame(input)
   const relieved = cutGripRecess(shape, input, frame, side)
   return fuseShape(relieved, buildGripFlap(input, frame, side, protrusion))

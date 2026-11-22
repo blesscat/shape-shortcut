@@ -471,7 +471,6 @@ describe('game-box dice holder', () => {
       // The side wall and the floor keep their own minimum, measured on the
       // solid: the probe bands next to the well and under its floor are
       // full material.
-      const grip = gameBoxDiceHolderGripFrame(frame)
       // Measured above the well floor, where the side wall stands beside
       // the well, in front of the recess of the grip flap.
       const wallZ = frame.wellFloorZ + 0.5
@@ -506,6 +505,124 @@ describe('game-box dice holder', () => {
     } finally {
       holder.delete()
     }
+  })
+
+  it('keeps the side wall at its 1.2 mm minimum where the row fills the width', () => {
+    // 63 × 88 with five 11.5 mm dice per row: the row spans the whole
+    // usable width, so the side wall is exactly the 1.2 mm minimum — the
+    // size where the minimum actually binds.
+    const holderOptions = {
+      cardWidth: 63,
+      cardHeight: 88,
+      diceSize: 11.5,
+      diceCount: 35,
+    }
+    const frame = gameBoxDiceHolderFrame(holderOptions)
+    const holder = buildGameBoxDiceHolder(holderOptions)
+    try {
+      // Measured above the well floor and below the grip zone, in front
+      // of the recess of the grip flap.
+      const z = frame.wellFloorZ + 0.5
+      for (const side of [1, -1] as const) {
+        const wall = span(
+          side * (frame.wellWidth / 2 + 0.01),
+          side * (frame.bodyWidth / 2 - 0.01),
+        )
+        const wallProbe = makeBox(
+          [wall[0], frame.frontWall + 0.5, z],
+          [wall[1], frame.frontWall + 1, z + 0.5],
+        ) as Shape3D
+        expect(
+          volumeOf(holder, wallProbe) / measureVolume(wallProbe),
+          `the side wall on the ${side} side`,
+        ).toBeCloseTo(1, 2)
+        wallProbe.delete()
+        // The well face sits exactly one minimum wall inside the body
+        // face: the band just inside the well face is empty, so no
+        // thinner wall (a wider row) is possible and none is built.
+        const beside = span(
+          side * (frame.wellWidth / 2 - 0.15),
+          side * (frame.wellWidth / 2 - 0.05),
+        )
+        const besideProbe = makeBox(
+          [beside[0], frame.frontWall + 0.5, z],
+          [beside[1], frame.frontWall + 1, z + 0.5],
+        ) as Shape3D
+        expect(
+          volumeOf(holder, besideProbe),
+          `the well face on the ${side} side`,
+        ).toBeLessThan(OVERLAP_LIMIT)
+        besideProbe.delete()
+      }
+    } finally {
+      holder.delete()
+    }
+  })
+
+  it('keeps the floor at its 1.2 mm minimum where the rows fill the height', () => {
+    // 70 × 135 with 16 mm dice: eight rows span the whole usable height,
+    // so the floor under the well is exactly the 1.2 mm minimum — the
+    // size where the minimum actually binds.
+    const holderOptions = {
+      cardWidth: 70,
+      cardHeight: 135,
+      diceSize: 16,
+      diceCount: 32,
+    }
+    const frame = gameBoxDiceHolderFrame(holderOptions)
+    const holder = buildGameBoxDiceHolder(holderOptions)
+    try {
+      const wellY: [number, number] = [
+        frame.frontWall + 0.01,
+        frame.thickness - frame.frontWall - 0.01,
+      ]
+      const floorProbe = makeBox(
+        [-frame.wellWidth / 2 + 0.01, wellY[0], 0.02],
+        [frame.wellWidth / 2 - 0.01, wellY[1], frame.wellFloorZ - 0.02],
+      ) as Shape3D
+      expect(
+        volumeOf(holder, floorProbe) / measureVolume(floorProbe),
+        'the floor under the well',
+      ).toBeCloseTo(1, 2)
+      floorProbe.delete()
+      // The well floor sits exactly one minimum wall above the bed: the
+      // band just above it, inside the well, is empty.
+      const aboveProbe = makeBox(
+        [-frame.wellWidth / 2 + 0.01, wellY[0], frame.wellFloorZ + 0.02],
+        [frame.wellWidth / 2 - 0.01, wellY[1], frame.wellFloorZ + 0.12],
+      ) as Shape3D
+      expect(
+        volumeOf(holder, aboveProbe),
+        'the well above the floor',
+      ).toBeLessThan(OVERLAP_LIMIT)
+      aboveProbe.delete()
+    } finally {
+      holder.delete()
+    }
+  })
+
+  it('rejects more dice than the walls leave room for', () => {
+    // One more column of 8 mm dice than fits beside two 1.2 mm walls in
+    // a 70 mm wide box, and one more row of 16 mm dice than fits above
+    // the 1.2 mm floor of a 118 mm tall one: the layout rules bind there,
+    // and the holder must refuse the extra dice instead of thinning a
+    // wall or dropping the floor.
+    expect(() =>
+      buildGameBoxDiceHolder({
+        cardWidth: 70,
+        cardHeight: 120,
+        diceSize: 8,
+        diceCount: 92,
+      }),
+    ).toThrow(/dice-capacity/)
+    expect(() =>
+      buildGameBoxDiceHolder({
+        cardWidth: 70,
+        cardHeight: 118,
+        diceSize: 16,
+        diceCount: 28,
+      }),
+    ).toThrow(/dice-capacity/)
   })
 
   it('joins the flap to the body along its whole height', () => {
@@ -631,6 +748,141 @@ describe('game-box dice holder', () => {
       }
     } finally {
       holder.delete()
+    }
+  })
+
+  it('leaves the recess open past the ends of the flap', () => {
+    const cases = [
+      { name: 'default', holderOptions: options },
+      {
+        name: 'minimum side wall',
+        holderOptions: {
+          cardWidth: 63,
+          cardHeight: 88,
+          diceSize: 11.5,
+          diceCount: 5,
+        },
+      },
+      {
+        name: 'smallest holder',
+        holderOptions: {
+          cardWidth: 40,
+          cardHeight: 60,
+          diceSize: 8,
+          diceCount: 4,
+        },
+      },
+    ]
+    for (const scenario of cases) {
+      const frame = gameBoxDiceHolderFrame(scenario.holderOptions)
+      const grip = gameBoxDiceHolderGripFrame(frame)
+      const holder = buildGameBoxDiceHolder(scenario.holderOptions)
+      try {
+        for (const side of [1, -1] as const) {
+          // The recess runs 0.4 mm past each end of the flap, so the
+          // bands just above and below the flap are empty across the
+          // whole recess footprint: the flap's end faces touch nothing.
+          for (const band of [grip.zStart, grip.zEnd]) {
+            const [zLow, zHigh] =
+              band === grip.zStart
+                ? [band - 0.35, band - 0.05]
+                : [band + 0.05, band + 0.35]
+            const reach = span(
+              side * (frame.bodyWidth / 2 - 0.75),
+              side * (frame.bodyWidth / 2 + 0.6),
+            )
+            const reachProbe = makeBox(
+              [reach[0], grip.recessYStart + 0.05, zLow],
+              [reach[1], grip.recessYEnd - 0.05, zHigh],
+            ) as Shape3D
+            expect(
+              volumeOf(holder, reachProbe),
+              `${scenario.name}: the band past the flap end on the ${side} side at ${band} mm`,
+            ).toBeLessThan(OVERLAP_LIMIT)
+            reachProbe.delete()
+            // The wall behind the extended recess is still there: the
+            // band from the well face to the recess floor is full
+            // material, so the recess still never reaches the well.
+            const behind = span(
+              side * (frame.wellWidth / 2 + 0.01),
+              side * (frame.bodyWidth / 2 - 0.8),
+            )
+            const behindProbe = makeBox(
+              [behind[0], grip.recessYStart + 0.05, zLow],
+              [behind[1], grip.recessYEnd - 0.05, zHigh],
+            ) as Shape3D
+            expect(
+              volumeOf(holder, behindProbe) / measureVolume(behindProbe),
+              `${scenario.name}: the wall behind the band on the ${side} side at ${band} mm`,
+            ).toBeCloseTo(1, 2)
+            behindProbe.delete()
+          }
+        }
+      } finally {
+        holder.delete()
+      }
+    }
+  })
+
+  it('holds the flap on its root alone', () => {
+    const cases = [
+      { name: 'default', holderOptions: options },
+      {
+        name: 'minimum side wall',
+        holderOptions: {
+          cardWidth: 63,
+          cardHeight: 88,
+          diceSize: 11.5,
+          diceCount: 5,
+        },
+      },
+      {
+        name: 'smallest holder',
+        holderOptions: {
+          cardWidth: 40,
+          cardHeight: 60,
+          diceSize: 8,
+          diceCount: 4,
+        },
+      },
+    ]
+    for (const scenario of cases) {
+      const frame = gameBoxDiceHolderFrame(scenario.holderOptions)
+      const grip = gameBoxDiceHolderGripFrame(frame)
+      const holder = buildGameBoxDiceHolder(scenario.holderOptions)
+      try {
+        expect(countSolids(holder), `${scenario.name}: the built holder`).toBe(
+          1,
+        )
+        for (const side of [1, -1] as const) {
+          // Sever the flap 0.5 mm past its root edge: a 0.2 mm cut along
+          // the whole height whose inner face stays inside the void of
+          // the recess (its floor lies 0.8 mm into the wall), so the cut
+          // only crosses the flap. If the flap were fused to the wall
+          // anywhere else — at its end faces — the tip would stay
+          // attached and the holder would still be one solid.
+          const cut = span(
+            side * (frame.bodyWidth / 2 - 0.7),
+            side * (frame.bodyWidth / 2 + 1),
+          )
+          const cutter = makeBox(
+            [cut[0], grip.yStart + 0.5, -1],
+            [cut[1], grip.yStart + 0.7, frame.height + 1],
+          ) as Shape3D
+          const severed = holder.cut(cutter)
+          try {
+            expect(
+              countSolids(severed),
+              `${scenario.name}: the solids after severing the ${side} flap`,
+            ).toBe(2)
+          } finally {
+            severed.delete()
+            cutter.delete()
+          }
+        }
+      } finally {
+        holder.delete()
+      }
     }
   })
 
