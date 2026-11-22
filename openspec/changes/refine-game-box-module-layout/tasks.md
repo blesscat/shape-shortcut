@@ -1,6 +1,6 @@
 # Tasks
 
-本清單採 design.md 決策 1（選項 A：沿全長連接的鰭）、決策 3 的公式。**design.md 的四個開放問題已由 owner 於 2026-11-21 回答**（見 design.md 決策 7）：卡片堆間隙 1.0 mm、單一模組的前後間隙接受、槽底殘牆 0.6 mm、握持區端部邊距保留 4 mm。實作依這些答案進行。
+本清單採 design.md 決策 1（選項 A：沿全高連接、在層內彎折的彈性薄片 flap；2026-11-21 round-1 審查後重設計，見決策 8）、決策 3 的公式。**design.md 的四個開放問題已由 owner 於 2026-11-21 回答**（見 design.md 決策 7）：卡片堆間隙 1.0 mm、單一模組的前後間隙接受、槽底殘牆 0.6 mm（round-1 審查後隨重設計失效）、握持區端部邊距保留 4 mm。實作依這些答案進行。
 
 ## 1. 合約層：模組長度與收納深度
 
@@ -14,9 +14,9 @@
 ## 2. 握持元件模組（可重用）
 
 - [x] 2.1 新增 `src/cad-kernel/components/game-box/grip.ts`，把握持常數（長度 60 mm、寬 1.2 mm、凸出 0.5 mm、退讓 0.6 mm、端部邊距 4 mm）、`gameBoxGripFrame()` 與鰭的建構函式從 `dice-holder.ts` 搬出；驗證函式的輸入只有匣身側牆的幾何與握持長度，因此可被其他匣形重用（`tests/unit/game-box-layout.test.ts`）。
-- [x] 2.2 以鰭取代現有的弓形薄片：側牆開 0.6 mm 深、1.6 mm 寬、貫穿握持區的退讓槽，槽上立 0.5 mm 凸出、1.2 mm 寬的鰭，鰭與槽底殘牆沿全長融合，鰭的兩端與根部做圓角；驗證握持區任一高度切出的薄片沒有與本體分離的握持元件，且握持區外的高度不受影響（`tests/worker/game-box.integration.test.ts` 新增的橫截面連通性測試）。
-- [x] 2.3 保留壓入狀態的建構路徑（鰭平躺在退讓槽內），使組裝中的骰子匣最外寬等於本體寬度；驗證壓入版本的 bounding box 寬度等於 `gameBoxDiceHolderWidth(cardWidth)`（`tests/worker/game-box.integration.test.ts`）。
-- [x] 2.4 刪除「薄片在退讓槽兩側壁之間保持自由」的測試，改為固定鰭的凸出量、寬度、長度、退讓深度與槽底殘牆厚度；驗證新測試涵蓋 design.md 決策 1 的全部數值（`tests/worker/game-box.integration.test.ts`）。
+- [x] 2.2 以彈性薄片（flap）取代現有的弓形薄片：根部埋入側牆 1 mm、沿整個握持區高度連續，自由段 5 mm、厚 0.4 mm、凸出牆面 0.5 mm；背後開 0.8 mm 深的凹槽（尾端留 0.4 mm 折入餘量），薄片沿自由長度不接觸牆面；尖端內角做 tangent 圓角、根部不挖根；驗證握持區任一高度切出的薄片沒有與本體分離的握持元件（含兩端 0.2 mm 內、多個匣形），且凹槽永不切入骰槽（`tests/worker/game-box.integration.test.ts`）。
+- [x] 2.3 保留壓入狀態的建構路徑：組裝中的骰子匣以凸出 0.2 mm 的半壓狀態建構（最外寬 = 盒子內寬 − 0.2 mm），單零件匯出保持自然的 W + 0.4；驗證組裝與盒壁零交集，且全壓建構（`outerWidth` = 本體寬，CAD 參數狀態）的 bounding box 寬度等於本體寬度（`tests/worker/game-box.integration.test.ts`、組裝零交集測試）。
+- [x] 2.4 刪除「薄片在退讓槽兩側壁之間保持自由」的測試，改為在實體上量測：凹槽與凹槽後的牆（≥ 0.4 mm）、薄片厚度 0.4 mm 與自由長度 5 mm、滿壓應變 ≤ 2 %、凸出量 0.5 mm；驗證每個新測試在對應突變下失敗（突變後還原）（`tests/worker/game-box.integration.test.ts`）。
 
 ## 3. 骰子匣前後牆
 
@@ -36,10 +36,21 @@
 
 ## 6. 整合檢查
 
-- [x] 6.1 以預設、最小與最大卡片尺寸搭配含 `dice` 模組的清單建構組裝，驗證任兩個零件的交集體積為零，且深度在 20–150 mm 的驗證規則下正確拒絕超出範圍的組合（`tests/worker/game-box.integration.test.ts`、`tests/e2e/game-box.spec.ts`）。
+- [x] 6.1 以預設、最小與最大卡片尺寸搭配含 `dice` 模組的清單建構組裝，驗證任兩個零件的交集體積為零，且深度在 15–150 mm 的驗證規則下正確拒絕超出範圍的組合（組裝與交集：`tests/worker/game-box.integration.test.ts`；深度範圍拒絕：`tests/unit/game-box-layout.test.ts`）。
 - [x] 6.2 執行 `pnpm exec openspec validate refine-game-box-module-layout --strict` 與受影響的單元／Worker 測試，確認全數通過且 `card-box` 的參考幾何回歸測試未變更期望值。
 
 ## 7. 試印（owner）
 
-- [ ] 7.1 owner 試印一個含 `dice` 模組的盒子與一個只含 `cards` 模組的盒子：確認握持鰭不再斷裂、0.2 mm 的干涉量可以徒手壓入、抽出時不鬆脫、確認收納深度符合新的推算值；把結果（照片與量測）回報給 lead。
+- [ ] 7.1 owner 試印一個含 `dice` 模組的盒子與一個只含 `cards` 模組的盒子：確認新的彈性薄片不再斷裂、滿壓 0.5 mm 可以徒手壓入且回彈重複、抽出時不鬆脫、凹槽後 0.4 mm 的牆在最薄側牆的匣上沒有缺陷、確認收納深度符合新的推算值；把結果（照片與量測）回報給 lead。
 - [x] 7.2 owner 確認 design.md 的四個開放問題（卡片堆間隙、單一模組的前後間隙、槽底殘牆厚度、握持區端部邊距），若要調整則先更新 spec delta 與 design.md 再修改實作。**已於 2026-11-21 確認，答案見 design.md 決策 7。**
+
+## 8. Round-1 gate 修正（2026-11-21）
+
+- [x] 8.1 握持元件重設計為 flap（審查 B P1-2）：design.md 決策 1 改寫並附應變計算（t = 0.4、L = 5、滿壓應變 1.2 % ≤ 2 %），規格 delta 的「骰子匣固定方式」改寫；實作見 `src/cad-kernel/components/game-box/grip.ts`（`tests/worker/game-box.integration.test.ts`）。
+- [x] 8.2 最薄側牆（恰 1.2 mm）的三組輸入建構骰子匣與組裝不崩潰（審查 B P1-1）：63 × 88 配 5 顆 11.5 mm、48 × 120 配 10 顆 8.5 mm、68.9 × 120 配 4 顆 16 mm；寬度低於 0.01 mm 的切刀一律不建構（`tests/worker/game-box.integration.test.ts`）。
+- [x] 8.3 連通性測試取樣握持區兩端 0.2 mm 內的高度、四個匣形（審查 B P2-1）；圓角只做在尖端內角，根部不挖根。
+- [x] 8.4 設定常數斷言改為實體量測（審查 B P2-2）：凹槽後的牆、前後牆 0.8 mm、側牆與底板 ≥ 1.2 mm；每個新測試在突變下確認失敗後還原（`tests/worker/game-box.integration.test.ts`）。
+- [x] 8.5 最小收納深度 20 → 15 mm（審查 B P2-3）：量測盒體與滑蓋建到 8 mm 仍通過幾何檢查，下限取 15 mm；單一 16 mm / 14 mm 骰子模組恢復有效（`tests/unit/game-box-layout.test.ts`、proposal.md、design.md 決策 8）。
+- [x] 8.6 深度範圍比較加容差、訊息深度格式化（審查 B P3-1）；cardDepth / diceSize 以 0.01 mm 讀回、檔名不再撞名（審查 B P3-2）（`tests/unit/game-box-layout.test.ts`、`tests/unit/game-box-contract.test.ts`）。
+- [x] 8.7 文件與測試名稱同步（審查 B P3-3、A）：任務 2.3 改為「內寬 − 0.2 mm」、任務 6.1 指向實際驗證檔案；測試與註解的「strips」改為 flaps；design.md 決策 7.3 標記失效。
+- [x] 8.8 `cutShape` / `fuseShape` 共用到 `shape-ops.ts`（審查 B P3-4）。
