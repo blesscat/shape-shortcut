@@ -92,6 +92,7 @@ export function threeMfMetaFor(
     | ContainerThreeMfModelId
     | 'opengrid-label-tag'
     | 'card-box'
+    | 'game-box'
     | 'opengrid-label-card',
   fileName: string,
 ): ThreeMfPackageMeta {
@@ -127,6 +128,18 @@ export function threeMfMetaFor(
       baseMaterialName: 'Card Box Body',
       baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
       accentMaterialName: 'Card Box Accent',
+      accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
+      accentPartName: 'accent',
+    }
+  }
+  if (modelId === 'game-box') {
+    return {
+      modelSettingsName: 'game-box',
+      sourceFileName: fileName,
+      platerName: 'Game Box',
+      baseMaterialName: 'Game Box Body',
+      baseMaterialColor: DEFAULT_MODEL_COLORS.primary,
+      accentMaterialName: 'Game Box Accent',
       accentMaterialColor: DEFAULT_MODEL_COLORS.secondary,
       accentPartName: 'accent',
     }

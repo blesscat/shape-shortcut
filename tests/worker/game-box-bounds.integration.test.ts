@@ -126,7 +126,14 @@ const CARD_SIZES = [
   { cardWidth: 100, cardHeight: 150 },
 ]
 
-const PARTS = ['assembly', 'box', 'lid', 'divider1', 'module2'] as const
+const PARTS = [
+  'assembly',
+  'box',
+  'lid',
+  'cover',
+  'divider1',
+  'module2',
+] as const
 
 describe('game-box bounds', () => {
   for (const { cardWidth, cardHeight } of CARD_SIZES) {
