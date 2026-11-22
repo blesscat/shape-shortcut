@@ -92,7 +92,7 @@ describe('game-box progressive preview', () => {
     )
   })
 
-  it('keeps the dice holder upright and as wide as its grip tabs', () => {
+  it('keeps the dice holder upright and as wide as its grip flaps', () => {
     const snapshot = parameters({
       part: 'module2',
       ...moduleGroups(['cards', 'dice']),

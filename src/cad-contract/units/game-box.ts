@@ -158,7 +158,7 @@ export const GAME_BOX_CONFIGURATION = {
   diceHolderWidthAllowance: 0.6,
   /** Free height above the topmost dice well. */
   diceHolderTopMargin: 1,
-  /** Natural outer width surplus of the grip tabs. */
+  /** Natural outer width surplus of the grip flaps. */
   diceHolderGripAllowance: 0.4,
   ranges: {
     cardWidth: { min: 40, max: 100 },
@@ -259,7 +259,7 @@ export function gameBoxDiceHolderWidth(cardWidth: number): number {
   )
 }
 
-/** Natural outer width of the dice holder including its grip tabs. */
+/** Natural outer width of the dice holder including its grip flaps. */
 export function gameBoxDiceHolderOuterWidth(cardWidth: number): number {
   return (
     cardBoxInteriorWidth(cardWidth) +

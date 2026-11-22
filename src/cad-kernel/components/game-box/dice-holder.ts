@@ -37,8 +37,8 @@ export type GameBoxDiceHolderOptions = {
   diceSize: number
   diceCount: number
   /**
-   * Outer width of the holder including the grip fins. Defaults to the
-   * natural width; the assembly rebuilds the holder with the fins pressed
+   * Outer width of the holder including the grip flaps. Defaults to the
+   * natural width; the assembly rebuilds the holder with the flaps pressed
    * in so that it fits the box interior.
    */
   outerWidth?: number
@@ -46,9 +46,9 @@ export type GameBoxDiceHolderOptions = {
 
 /** The derived dimensions of a dice holder (mm). */
 export type GameBoxDiceHolderFrame = {
-  /** Width of the holder body (without the grip fins). */
+  /** Width of the holder body (without the grip flaps). */
   bodyWidth: number
-  /** Outer width including the grip fins. */
+  /** Outer width including the grip flaps. */
   outerWidth: number
   /** Thickness of the holder (the direction of the box depth). */
   thickness: number

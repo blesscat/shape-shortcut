@@ -87,7 +87,7 @@ test.describe('game-box', () => {
       `${shownLength(DEFAULT_LAYOUT.modules[0]?.length ?? Number.NaN)} mm`,
     )
 
-    // A dice module adds its own slots to the storage depth.
+    // A dice module adds its own length to the storage depth.
     await addModule(page, 'dice')
     await expect(page.getByTestId('game-box-module-2')).toBeVisible()
     await expect(page.getByTestId('game-box-module-2')).toContainText('骰子匣')

@@ -412,7 +412,7 @@ function gameBoxDividerSolids(bounds: ModelBounds): PreviewSolid[] {
   ]
 }
 
-/** The dice holder standing on the bed, as wide as its grip tabs. */
+/** The dice holder standing on the bed, as wide as its grip flaps. */
 function gameBoxDiceHolderSolids(bounds: ModelBounds): PreviewSolid[] {
   const width = bounds.max[0] - bounds.min[0]
   const depth = bounds.max[1] - bounds.min[1]

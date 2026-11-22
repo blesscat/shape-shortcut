@@ -13,7 +13,7 @@
 
 ## 2. 握持元件模組（可重用）
 
-- [x] 2.1 新增 `src/cad-kernel/components/game-box/grip.ts`，把握持常數（長度 60 mm、寬 1.2 mm、凸出 0.5 mm、退讓 0.6 mm、端部邊距 4 mm）、`gameBoxGripFrame()` 與鰭的建構函式從 `dice-holder.ts` 搬出；驗證函式的輸入只有匣身側牆的幾何與握持長度，因此可被其他匣形重用（`tests/unit/game-box-layout.test.ts`）。
+- [x] 2.1 新增 `src/cad-kernel/components/game-box/grip.ts`，把握持常數（`GAME_BOX_GRIP`：薄片厚 0.4 mm、自由段 5 mm、根部埋入 1 mm、凹槽深 0.8 mm、凹槽尾端餘量 0.4 mm、凹槽端部餘量 0.4 mm、握持區長度 60 mm、端部邊距 4 mm、自然凸出 0.5 mm）、`gameBoxGripFrame()`（握持區與凹槽的位置）與 `applyGameBoxGrip()`（凹槽與薄片的建構）放進可重用的模組；驗證函式的輸入只有匣身側牆的幾何與握持長度，因此可被其他匣形重用（`tests/worker/game-box.integration.test.ts`）。
 - [x] 2.2 以彈性薄片（flap）取代現有的弓形薄片：根部埋入側牆 1 mm、沿整個握持區高度連續，自由段 5 mm、厚 0.4 mm、凸出牆面 0.5 mm；背後開 0.8 mm 深的凹槽（尾端留 0.4 mm 折入餘量），薄片沿自由長度不接觸牆面；尖端內角做 tangent 圓角、根部不挖根；驗證握持區任一高度切出的薄片沒有與本體分離的握持元件（含兩端 0.2 mm 內、多個匣形），且凹槽永不切入骰槽（`tests/worker/game-box.integration.test.ts`）。
 - [x] 2.3 保留壓入狀態的建構路徑：組裝中的骰子匣以凸出 0.2 mm 的半壓狀態建構（最外寬 = 盒子內寬 − 0.2 mm），單零件匯出保持自然的 W + 0.4；驗證組裝與盒壁零交集，且全壓建構（`outerWidth` = 本體寬，CAD 參數狀態）的 bounding box 寬度等於本體寬度（`tests/worker/game-box.integration.test.ts`、組裝零交集測試）。
 - [x] 2.4 刪除「薄片在退讓槽兩側壁之間保持自由」的測試，改為在實體上量測：凹槽與凹槽後的牆（≥ 0.4 mm）、薄片厚度 0.4 mm 與自由長度 5 mm、滿壓應變 ≤ 2 %、凸出量 0.5 mm；驗證每個新測試在對應突變下失敗（突變後還原）（`tests/worker/game-box.integration.test.ts`）。
@@ -54,3 +54,11 @@
 - [x] 8.6 深度範圍比較加容差、訊息深度格式化（審查 B P3-1）；cardDepth / diceSize 以 0.01 mm 讀回、檔名不再撞名（審查 B P3-2）（`tests/unit/game-box-layout.test.ts`、`tests/unit/game-box-contract.test.ts`）。
 - [x] 8.7 文件與測試名稱同步（審查 B P3-3、A）：任務 2.3 改為「內寬 − 0.2 mm」、任務 6.1 指向實際驗證檔案；測試與註解的「strips」改為 flaps；design.md 決策 7.3 標記失效。
 - [x] 8.8 `cutShape` / `fuseShape` 共用到 `shape-ops.ts`（審查 B P3-4）。
+
+## 9. Round-2 gate 修正（2026-11-22）
+
+- [x] 9.1 凹槽沿高度超出薄片兩端各 0.4 mm（審查 B P1-1）：薄片端面不再與牆熔接，整個自由段只靠根部連接；握持區 60 mm 與端部邊距 4 mm 不變（凹槽向邊距內多切 0.4 mm）。切斷根部後薄片成為獨立 solid、凹槽上下端的空帶與後方完整的牆，在三個匣形上於實體量測；兩個新測試都在修正前的幾何上確認失敗後還原（`tests/worker/game-box.integration.test.ts`）。
+- [x] 9.2 側牆與底板的 1.2 mm 在規則生效處量測（審查 B P3-1）：63 × 88 配 35 顆 11.5 mm（整排填滿，側牆恰 1.2 mm）與 70 × 135 配 32 顆 16 mm（整高填滿，底板恰 1.2 mm）在實體上量測；超出一排（70 × 120 配 92 顆 8 mm）或一層（70 × 118 配 28 顆 16 mm）以 `dice-capacity` 錯誤拒絕；移除未使用的 `grip` 變數；側牆下限突變（1.2 → 0.4）與底板下限突變（1.2 → 0.2）都被這些測試攔下後還原（`tests/worker/game-box.integration.test.ts`）。
+- [x] 9.3 `filletCorner` 的切點長度改為 `r / tan(θ/2)`（審查 B P3-3）：抽出純函式 `filletCornerArc`，以 60° 與 90° 驗證切點與弧中點；`cosθ` 改名 `cosInterior`（`tests/unit/game-box-grip.test.ts`）。
+- [x] 9.4 `applyGameBoxGrip` 以 `wallInnerHalfWidth` 檢查凹槽後的牆（審查 B P3-4）：少於 0.4 mm（或切進骰槽）時擲出 `GAME_BOX_GEOMETRY_INVALID:grip-wall`；移除 flap 重設計後永不觸發的 `minCutterWidth` 保護（凹槽切刀是固定 0.81 mm 寬的帶）。
+- [x] 9.5 文件與註解清理（審查 B P3-2、審查 A P3-1、P3-2）：任務 2.1 與 design.md 決策 6 改為 flap 常數與實際函式名；design.md 決策 1 的凹槽長度改為 5.4 mm；決策 4 表格的深度範圍標 15–150；`dice-holder.ts`、`game-box.ts` 與 e2e 註解的 fin / tab 用語改為 flap。
