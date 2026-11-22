@@ -66,7 +66,8 @@ describe('game-box progressive preview', () => {
     const cases: GameBoxParameters[] = [
       parameters({ part: 'box' }),
       parameters({ part: 'lid' }),
-      parameters({ part: 'divider', ...moduleGroups(['cards', 'cards']) }),
+      parameters({ part: 'cover' }),
+      parameters({ part: 'divider1', ...moduleGroups(['cards', 'cards']) }),
       parameters({
         part: 'module2',
         ...moduleGroups(['cards', 'dice', 'cards']),
@@ -109,9 +110,9 @@ describe('game-box progressive preview', () => {
       ...moduleGroups(['cards', 'dice', 'cards']),
     })
     const solids = gameBoxPreview(snapshot)
-    // Box body (5 slabs), lid roof (1), 1 dice holder. The holder is its
-    // own divider, so no plate stands next to it.
-    expect(solids).toHaveLength(7)
+    // Box body (5 slabs), lid roof (1), 1 dice holder, 1 cover plate. The
+    // holder is its own divider, so no plate stands next to it.
+    expect(solids).toHaveLength(8)
   })
 
   it('draws a divider between two card modules in the assembly', () => {
@@ -120,8 +121,8 @@ describe('game-box progressive preview', () => {
       ...moduleGroups(['cards', 'cards']),
     })
     const solids = gameBoxPreview(snapshot)
-    // Box body (5 slabs), lid roof (1), 1 divider.
-    expect(solids).toHaveLength(7)
+    // Box body (5 slabs), lid roof (1), 1 divider, 1 cover plate.
+    expect(solids).toHaveLength(8)
   })
 
   it('rejects parameters that are not a valid game-box snapshot', () => {

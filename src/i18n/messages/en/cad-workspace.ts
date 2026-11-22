@@ -243,6 +243,10 @@ export const messages = {
   'diagnostic.meshInvalid':
     'The preview model data is invalid. The Worker will restart.',
   'diagnostic.staleGeneration': 'This build was superseded by newer input.',
+  'diagnostic.gameBoxCoverArtOutsideSafeArea':
+    'The cover art does not fit the visible window of this card size.',
+  'diagnostic.gameBoxSvgUnsupported':
+    'The imported cover SVG cannot be built. Re-import a supported SVG or turn it off.',
   'diagnostic.cardBoxCoverArtOutsideSafeArea':
     'Cover art does not fit the printable safe area. Reduce the title, subtitle or SVG width.',
   'diagnostic.cardBoxSvgUnsupported':
@@ -291,11 +295,11 @@ export const messages = {
   'validation.cardBoxDividerTextTooWide':
     'The divider text does not fit the tab. Shorten the text.',
   'validation.gameBoxPartInvalid':
-    '{field} must be a game-box part (assembly, box, lid, divider or a dice holder).',
+    '{field} must be a game-box part (assembly, box, lid, cover, a divider card or a dice holder).',
   'validation.gameBoxPartUnavailable':
     'Module {module} is not a dice module, so it has no dice holder part.',
   'validation.gameBoxDividerUnavailable':
-    'A divider needs at least two modules. Remove a module or pick another part.',
+    'That divider card needs one more module behind its boundary. Add a module or pick another part.',
   'validation.gameBoxModuleTypeInvalid': '{field} must be none, cards or dice.',
   'validation.gameBoxModuleRequired':
     'Module 1 must be enabled; a game box needs at least one module.',
@@ -306,6 +310,16 @@ export const messages = {
     'This dice module can hold at most {max} dice.',
   'validation.gameBoxStorageDepthOutOfRange':
     'The modules add up to a storage depth of {depth} mm, outside the supported {min}–{max} mm range.',
+  'validation.gameBoxTabPositionInvalid':
+    '{field} must be left, center or right.',
+  'validation.gameBoxStyleInvalid': '{field} must be flat or raised.',
+  'validation.gameBoxTextTooLong': '{field} cannot exceed {max} characters.',
+  'validation.gameBoxSvgFingerprintMissing':
+    'The cover is set to use an imported SVG but its data is missing. Re-import the SVG or turn it off.',
+  'validation.gameBoxCoverArtOutsideSafeArea':
+    'The cover art is wider than the visible window of this card size. Reduce the SVG width or pick a larger card size.',
+  'validation.gameBoxDividerTextTooWide':
+    'A divider label does not fit its tab. Shorten the text.',
   'validation.parameter': 'Parameter',
   'validation.invalidNumber': '{field} must be a valid number.',
   'validation.requiredDimension': '{axis} dimension is required.',

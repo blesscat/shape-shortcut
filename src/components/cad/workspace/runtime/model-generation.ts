@@ -11,12 +11,14 @@ import {
   validateOpenGridGenerationSupport,
   validateOpenGridParameters,
   validateModelParameters,
+  isGameBoxParameters,
   type ModelId,
   type ModelParameterKey,
   type ModelParameterValues,
   type OpenGridParameters,
 } from '../../../../cad-contract/units'
 import { loadCardBoxCoverSvgForRequest } from '../../../../features/cad/card-box-svg/store'
+import { loadGameBoxCoverSvgForRequest } from '../../../../features/cad/game-box-cover-svg/store'
 import { newOperationId } from '../../../../features/cad/worker-client'
 import {
   errorForInput,
@@ -131,7 +133,11 @@ export function createModelGenerationHandlers(
       isCardBoxParameters(parameters) &&
       parameters.usesCoverSvg
         ? loadCardBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
-        : undefined
+        : modelId === 'game-box' &&
+            isGameBoxParameters(parameters) &&
+            parameters.usesCoverSvg
+          ? loadGameBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
+          : undefined
     const requestId = client.send({
       kind: 'model.generate',
       operationId,

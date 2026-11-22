@@ -113,6 +113,7 @@ export const KERNEL_MODEL_WITH_PARTS_MISMATCH_IDS: ReadonlySet<ModelId> =
     'opengrid-divider',
     'opengrid-openconnect-organizer',
     'opengrid-label-card',
+    'game-box',
     'card-box',
   ])
 
@@ -310,6 +311,24 @@ export const ERROR_RULE_GOLDEN_CASES: readonly ErrorRuleGoldenCase[] = [
     rule: 'MODEL_PARAMETERS_MISMATCH:card-box',
     message: 'MODEL_PARAMETERS_MISMATCH:card-box',
     code: 'INVALID_INPUT',
+    stageOnGenerate: 'building',
+  },
+  {
+    rule: 'GAME_BOX_DIVIDER_TEXT_TOO_WIDE',
+    message: 'GAME_BOX_DIVIDER_TEXT_TOO_WIDE',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
+    stageOnGenerate: 'building',
+  },
+  {
+    rule: 'GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+    message: 'GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
+    stageOnGenerate: 'building',
+  },
+  {
+    rule: 'GAME_BOX_SVG_',
+    message: 'GAME_BOX_SVG_INVALID',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
     stageOnGenerate: 'building',
   },
   {
@@ -538,6 +557,9 @@ export const ERROR_STAGE_RULE_NAMES: readonly string[] = [
   'CARD_BOX_DIVIDER_TEXT_TOO_WIDE',
   'CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
   'CARD_BOX_SVG_',
+  'GAME_BOX_DIVIDER_TEXT_TOO_WIDE',
+  'GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+  'GAME_BOX_SVG_',
   'GAME_BOX_GEOMETRY_INVALID',
   'OPENGRID_STACKABLE_CYLINDER_QUALITY_INVALID',
   'OPENGRID_STACKABLE_CYLINDER_OPENINGS_INVALID',

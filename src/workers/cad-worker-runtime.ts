@@ -464,6 +464,30 @@ export class CadWorkerRuntime {
       )
     }
     if (code === 'GAME_BOX_GEOMETRY_INVALID') {
+      if (message.includes('GAME_BOX_DIVIDER_TEXT_TOO_WIDE')) {
+        return makeError(
+          'building',
+          code,
+          diagnostic('validation.gameBoxDividerTextTooWide'),
+          true,
+        )
+      }
+      if (message.includes('GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
+        return makeError(
+          'building',
+          code,
+          diagnostic('diagnostic.gameBoxCoverArtOutsideSafeArea'),
+          true,
+        )
+      }
+      if (message.includes('GAME_BOX_SVG_')) {
+        return makeError(
+          'building',
+          code,
+          diagnostic('diagnostic.gameBoxSvgUnsupported'),
+          true,
+        )
+      }
       return makeError(
         'building',
         code,

@@ -39,14 +39,39 @@ export const GAME_BOX_MODULE_TYPES: readonly GameBoxModuleType[] = [
   'dice',
 ]
 
+/** Module boundaries that carry a divider plate: up to five cards pairs. */
+export const GAME_BOX_DIVIDER_INDICES = [1, 2, 3, 4, 5] as const
+
+export type GameBoxDividerIndex = (typeof GAME_BOX_DIVIDER_INDICES)[number]
+
+/** Tab position of one divider card; the values are the card-box values. */
+export type GameBoxTabPosition = CardBoxTabPosition
+
+export const GAME_BOX_TAB_POSITIONS: readonly GameBoxTabPosition[] = [
+  'left',
+  'center',
+  'right',
+]
+
+/** Art style of one divider card or of the cover; card-box values. */
+export type GameBoxStyle = CardBoxStyle
+
+export const GAME_BOX_STYLES: readonly GameBoxStyle[] = ['raised', 'flat']
+
 export type GameBoxPart =
-  'assembly' | 'box' | 'lid' | 'divider' | `module${GameBoxModuleIndex}`
+  | 'assembly'
+  | 'box'
+  | 'lid'
+  | 'cover'
+  | `divider${GameBoxDividerIndex}`
+  | `module${GameBoxModuleIndex}`
 
 export const GAME_BOX_PARTS: readonly GameBoxPart[] = [
   'assembly',
   'box',
   'lid',
-  'divider',
+  'cover',
+  ...GAME_BOX_DIVIDER_INDICES.map((index) => `divider${index}` as GameBoxPart),
   ...GAME_BOX_MODULE_INDICES.map((index) => `module${index}` as GameBoxPart),
 ]
 
@@ -60,7 +85,7 @@ export type GameBoxDividerTabPositionKey =
   `divider${GameBoxDividerIndex}TabPosition`
 export type GameBoxDividerStyleKey = `divider${GameBoxDividerIndex}Style`
 
-PLACEHOLDER_NOPE
+export type GameBoxParameterKey =
   | 'part'
   | 'cardWidth'
   | 'cardHeight'

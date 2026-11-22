@@ -375,7 +375,31 @@ describe('CAD component catalog', () => {
       'mini-american-41x63',
       'mini-euro-44x68',
     ])
-    expect(gameBox?.threeMfFileName).toBeUndefined()
+    // Exactly the art parts export a two-color 3MF: the definition carries
+    // the game-box 3MF file name and evaluates it per parameters.
+    expect(gameBox?.threeMfFileName).toBeDefined()
+    expect(gameBox?.threeMfFileName?.(gameBox.defaultParameters)).toBeNull()
+    expect(
+      gameBox?.threeMfFileName?.({
+        ...gameBox.defaultParameters,
+        part: 'cover',
+      }),
+    ).toMatch(/^game-box-cover-.*\.3mf$/)
+    expect(
+      gameBox?.threeMfFileName?.({
+        ...gameBox.defaultParameters,
+        module2Type: 'dice',
+        part: 'divider1',
+      }),
+    ).toBeNull()
+    expect(
+      gameBox?.threeMfFileName?.({
+        ...gameBox.defaultParameters,
+        module2Type: 'dice',
+        divider1Text: 'A',
+        part: 'divider1',
+      }),
+    ).toMatch(/^game-box-divider1-.*\.3mf$/)
     expect(gameBox?.previewImage).toEqual({
       src: '/model-previews/game-box.webp',
       darkSrc: '/model-previews/game-box-dark.webp',

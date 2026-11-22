@@ -116,16 +116,16 @@ const CARD_SIZES = [
   { cardWidth: 100, cardHeight: 150 },
 ]
 
-const PARTS = ['assembly', 'box', 'lid', 'divider', 'module2'] as const
+const PARTS = ['assembly', 'box', 'lid', 'divider1', 'module2'] as const
 
 describe('game-box bounds', () => {
   for (const { cardWidth, cardHeight } of CARD_SIZES) {
     const size = `${cardWidth}x${cardHeight}`
 
     for (const part of PARTS) {
-      it(`matches the built geometry for ${part} at ${size}`, () => {
+      it(`matches the built geometry for ${part} at ${size}`, async () => {
         const parameters = moduleParameters({ part, cardWidth, cardHeight })
-        const build = buildGameBox(parameters)
+        const build = await buildGameBox(parameters)
         try {
           expectBoundsMatch(
             geometryBounds(build.shape),
@@ -136,9 +136,9 @@ describe('game-box bounds', () => {
         }
       })
 
-      it(`matches the built geometry with the simplified preview for ${part} at ${size}`, () => {
+      it(`matches the built geometry with the simplified preview for ${part} at ${size}`, async () => {
         const parameters = moduleParameters({ part, cardWidth, cardHeight })
-        const build = buildGameBox(parameters)
+        const build = await buildGameBox(parameters)
         try {
           expectBoundsMatch(
             previewBounds(gameBoxPreview(parameters)),

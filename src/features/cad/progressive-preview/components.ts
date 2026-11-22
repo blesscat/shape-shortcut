@@ -46,10 +46,13 @@ import {
 import {
   boundsForGameBox,
   gameBoxDiceHolderOuterWidth,
+  gameBoxDividerTabPositionKey,
   gameBoxFrontWallY,
   gameBoxLayout,
+  gameBoxPartDividerOrdinal,
   validateGameBoxParameters,
   type GameBoxParameters,
+  type GameBoxTabPosition,
 } from '../../../cad-contract/units/game-box'
 import {
   boundsForOpenGridLabelSlotTest,
@@ -300,8 +303,15 @@ export function gameBoxPreview(
   if (p.part === 'lid') {
     return gameBoxLidSolids(bounds)
   }
-  if (p.part === 'divider') {
-    return gameBoxDividerSolids(bounds)
+  const dividerOrdinal = gameBoxPartDividerOrdinal(p.part)
+  if (dividerOrdinal !== null) {
+    return gameBoxDividerSolids(
+      bounds,
+      p[gameBoxDividerTabPositionKey(dividerOrdinal)],
+    )
+  }
+  if (p.part === 'cover') {
+    return gameBoxCoverSolids(bounds)
   }
   return gameBoxDiceHolderSolids(bounds)
 }
@@ -392,13 +402,16 @@ function gameBoxLidSolids(bounds: ModelBounds): PreviewSolid[] {
  * The printed divider: the plate lies flat on the bed with its pull tab
  * rising above the body.
  */
-function gameBoxDividerSolids(bounds: ModelBounds): PreviewSolid[] {
+function gameBoxDividerSolids(
+  bounds: ModelBounds,
+  tabPosition: GameBoxTabPosition,
+): PreviewSolid[] {
   const c = CARD_BOX_CONFIGURATION
   const width = bounds.max[0] - bounds.min[0]
   const height = bounds.max[1] - bounds.min[1]
   const thickness = bounds.max[2] - bounds.min[2]
   const bodyHeight = height - c.dividerTabHeight
-  const tabX = cardBoxDividerTabCenterX(c.defaultTabPosition, width)
+  const tabX = cardBoxDividerTabCenterX(tabPosition, width)
   return [
     slab(width, bodyHeight, thickness, 0, bodyHeight / 2, bounds.min[2]),
     slab(
@@ -410,6 +423,14 @@ function gameBoxDividerSolids(bounds: ModelBounds): PreviewSolid[] {
       bounds.min[2],
     ),
   ]
+}
+
+/** The printed cover: the flat plate on the bed. */
+function gameBoxCoverSolids(bounds: ModelBounds): PreviewSolid[] {
+  const width = bounds.max[0] - bounds.min[0]
+  const height = bounds.max[1] - bounds.min[1]
+  const thickness = bounds.max[2] - bounds.min[2]
+  return [slab(width, height, thickness, 0, height / 2, bounds.min[2])]
 }
 
 /** The dice holder standing on the bed, as wide as its tenons. */
@@ -480,6 +501,18 @@ function gameBoxAssemblySolids(
       ),
     )
   }
+  // The cover plate stands in the front channel (card-box placement).
+  const outerDepth = cardBoxOuterDepth(layout.storageDepth)
+  solids.push(
+    slab(
+      width,
+      c.coverPlateThickness,
+      p.cardHeight,
+      0,
+      -(outerDepth + c.coverPlateThickness) / 2,
+      c.floorThickness,
+    ),
+  )
   return solids
 }
 

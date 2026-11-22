@@ -15,19 +15,36 @@ import { buildGameBox } from './builder'
 import type {
   ComponentModelDefinition,
   KernelBuildContext,
+  KernelModelBuildResult,
 } from '../../model/types'
 
-function buildGameBoxModel(
+async function buildGameBoxModel(
   parameters: ModelParameterValues,
-  _context: KernelBuildContext,
-): Shape3D {
+  context: KernelBuildContext,
+): Promise<Shape3D> {
   if (!isGameBoxParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
   }
-  return buildGameBox(parameters).shape
+  const build = await buildGameBox(parameters, context.coverSvg)
+  return build.shape
+}
+
+async function buildGameBoxWithPartsModel(
+  parameters: ModelParameterValues,
+  context: KernelBuildContext,
+): Promise<KernelModelBuildResult> {
+  if (!isGameBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
+  }
+  const build = await buildGameBox(parameters, context.coverSvg)
+  return {
+    shape: build.shape,
+    parts: build.parts,
+  }
 }
 
 export const definition: ComponentModelDefinition = {
   id: 'game-box',
   build: buildGameBoxModel,
+  buildWithParts: buildGameBoxWithPartsModel,
 }

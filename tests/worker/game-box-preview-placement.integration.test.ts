@@ -132,9 +132,9 @@ const MODULE_LISTS = [
 
 describe('game-box preview placement', () => {
   for (const { name, modules } of MODULE_LISTS) {
-    it(`places the holder like the built one with ${name}`, () => {
+    it(`places the holder like the built one with ${name}`, async () => {
       const snapshot = parameters(modules)
-      const build = buildGameBox(snapshot)
+      const build = await buildGameBox(snapshot)
       try {
         const built = builtHolderOf(solidsOf(build.shape), snapshot.cardHeight)
         const preview = previewHolderOf(

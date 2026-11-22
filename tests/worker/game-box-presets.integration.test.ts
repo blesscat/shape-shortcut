@@ -47,15 +47,16 @@ const PRESET_IDS = (gameBoxDefinition.presets ?? []).map((preset) => preset.id)
 describe('game-box card size presets build with default parameters', () => {
   for (const [index, presetId] of PRESET_IDS.entries()) {
     for (const part of ['box', 'lid', 'assembly'] as const) {
-      it(`builds ${part} for preset ${presetId}`, () => {
-        const build = buildGameBox(presetParameters(index, part))
+      it(`builds ${part} for preset ${presetId}`, async () => {
+        const build = await buildGameBox(presetParameters(index, part))
         try {
           expect(measureVolume(build.shape)).toBeGreaterThan(0)
           expect(countSolids(build.shape)).toBeGreaterThanOrEqual(1)
           if (part === 'assembly') {
             // The box body and the lid, with no divider because the default
-            // module list holds a single module.
-            expect(countSolids(build.shape)).toBe(2)
+            // module list holds a single module, plus the cover plate with
+            // its raised GAME title art (body and accent).
+            expect(countSolids(build.shape)).toBe(4)
             return
           }
           // A single part is printed on the bed.

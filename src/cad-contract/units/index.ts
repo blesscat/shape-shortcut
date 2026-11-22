@@ -470,7 +470,7 @@ export {
   gameBoxModuleDiceCountKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
-  gameBoxPartDividerIndex,
+  gameBoxPartDividerOrdinal,
   gameBoxPartModuleIndex,
   gameBoxDividerStyleKey,
   gameBoxDividerTabPositionKey,
