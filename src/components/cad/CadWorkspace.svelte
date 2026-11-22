@@ -282,6 +282,7 @@
         supportsThreeMf={snapshot.supportsThreeMf}
         canExportThreeMf={snapshot.canExportThreeMf}
         downloadHintKey={snapshot.downloadHintKey}
+        presetNoticeKey={snapshot.presetNoticeKey}
         onInputChange={handleInputChange}
         onInputsChange={handleInputsChange}
         onSystemContextChange={handleSystemContextChange}
@@ -377,6 +378,7 @@
             modelId={snapshot.modelId}
             {showParameters}
             presets={presetsFor(snapshot.modelId)}
+            presetNoticeKey={snapshot.presetNoticeKey}
             {systemContext}
             parameters={snapshot.state.input}
             rawParameters={snapshot.rawParameters}

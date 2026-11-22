@@ -366,7 +366,15 @@ describe('CAD component catalog', () => {
     )
     expect(cadPathForModel('game-box')).toBe('/cad/game-box')
     expect(modelIdForCadPath('/cad/game-box')).toBe('game-box')
-    expect(gameBox?.presets).toBeUndefined()
+    expect(gameBox?.presets?.map((preset) => preset.id)).toEqual([
+      'tarot-70x120',
+      'standard-tcg-63x88',
+      'standard-tcg-sleeved-66x91',
+      'japanese-small-59x86',
+      'japanese-small-sleeved-62x89',
+      'mini-american-41x63',
+      'mini-euro-44x68',
+    ])
     expect(gameBox?.threeMfFileName).toBeUndefined()
     expect(gameBox?.previewImage).toEqual({
       src: '/model-previews/game-box.webp',

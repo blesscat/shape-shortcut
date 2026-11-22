@@ -329,6 +329,115 @@ test.describe('game-box', () => {
     await expect(page.getByRole('button', { name: '下載 3MF' })).toHaveCount(0)
   })
 
+  test('shows the card size presets and applies the chosen card size', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    // The preset row shows the restore button followed by the seven presets.
+    const labels = await page
+      .getByRole('button')
+      .evaluateAll((buttons) =>
+        buttons
+          .filter((button) =>
+            button.matches(
+              '[data-testid^="cad-preset-"], [aria-label="全部恢復預設"]',
+            ),
+          )
+          .map((button) => button.getAttribute('aria-label')),
+      )
+    expect(labels).toEqual([
+      '全部恢復預設',
+      '塔羅 70×120',
+      '標準 TCG 63×88',
+      '標準 TCG 含套 66×91',
+      '日版小型 59×86',
+      '日版小型 含套 62×89',
+      '美式迷你 41×63',
+      '歐版迷你 44×68',
+    ])
+
+    const viewport = page.getByTestId('cad-viewport')
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+    const revision = await viewport.getAttribute('data-model-revision')
+
+    await page.getByTestId('cad-preset-standard-tcg-63x88').click()
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('63')
+    await expect(
+      page.getByRole('textbox', { name: '卡片高（Z）' }),
+    ).toHaveValue('88')
+    // The default module list is unchanged, so the derived depth stays the
+    // default depth.
+    await expect(page.getByTestId('game-box-storage-depth')).toHaveText('63 mm')
+    // The model is rebuilt with the new card size.
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      revision!,
+      { timeout: 120_000 },
+    )
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+  })
+
+  test('keeps the module list when a card size preset is applied', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    // A module the user built up must survive the preset.
+    await addModule(page, 'dice')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    await page.getByTestId('cad-preset-standard-tcg-63x88').click()
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('63')
+    await expect(
+      page.getByRole('textbox', { name: '卡片高（Z）' }),
+    ).toHaveValue('88')
+    await expect(page.getByTestId('game-box-module-2')).toContainText('骰子匣')
+    await expect(page.getByTestId('game-box-module-3')).toHaveCount(0)
+  })
+
+  test('does not apply a card size preset that does not fit the modules', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+
+    await addModule(page, 'dice')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    // Nine dice of 16 mm do not fit a 41 × 63 mm card, so the preset is not
+    // applied and the parameters stay as they are.
+    await page.getByTestId('cad-preset-mini-american-41x63').click()
+    await expect(page.getByTestId('cad-preset-notice')).toBeVisible()
+    await expect(page.getByTestId('cad-preset-notice')).toContainText('模組')
+    await expect(
+      page.getByRole('textbox', { name: '卡片寬（X）' }),
+    ).toHaveValue('70')
+    await expect(page.getByTestId('game-box-module-2')).toBeVisible()
+
+    // Restoring the defaults writes new parameters, so the notice no longer
+    // describes the current state and disappears.
+    await page.getByRole('button', { name: '全部恢復預設' }).click()
+    await expect(page.getByTestId('cad-preset-notice')).toHaveCount(0)
+    await expect(page.getByTestId('game-box-module-2')).toHaveCount(0)
+  })
+
   test('shows a module error inside its own module only', async ({
     page,
     browserName,
