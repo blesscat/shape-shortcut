@@ -195,32 +195,49 @@ function filletCorner(
   after: ProfilePoint,
   radius: number,
 ): void {
+  const arc = filletCornerArc(before, corner, after, radius)
+  sketcher.lineTo([arc.start.x, arc.start.y])
+  sketcher.threePointsArcTo([arc.end.x, arc.end.y], [arc.mid.x, arc.mid.y])
+}
+
+/**
+ * The tangent arc that fillets one corner of a polygon: for the interior
+ * angle θ between the two edges the tangent points sit `r / tan(θ/2)` along
+ * the edges from the corner and the arc reaches `r / sin(θ/2) − r` into the
+ * corner along the bisector, so it meets both edges tangentially.
+ */
+export function filletCornerArc(
+  before: ProfilePoint,
+  corner: ProfilePoint,
+  after: ProfilePoint,
+  radius: number,
+): { start: ProfilePoint; end: ProfilePoint; mid: ProfilePoint } {
   const toCorner = normalize(corner.x - before.x, corner.y - before.y)
   const fromCorner = normalize(after.x - corner.x, after.y - corner.y)
   // The interior angle θ sits between −toCorner and fromCorner.
-  const cosθ = -toCorner.x * fromCorner.x - toCorner.y * fromCorner.y
-  const cosHalf = Math.sqrt((1 + cosθ) / 2)
+  const cosInterior = -toCorner.x * fromCorner.x - toCorner.y * fromCorner.y
+  const cosHalf = Math.sqrt((1 + cosInterior) / 2)
   const sinHalf = Math.sqrt(1 - cosHalf * cosHalf)
   const tangent = Math.min(
-    (radius * sinHalf) / cosHalf,
+    (radius * cosHalf) / sinHalf,
     0.4 * Math.hypot(corner.x - before.x, corner.y - before.y),
     0.4 * Math.hypot(after.x - corner.x, after.y - corner.y),
   )
   const inward = normalize(fromCorner.x - toCorner.x, fromCorner.y - toCorner.y)
-  const start = {
-    x: corner.x - tangent * toCorner.x,
-    y: corner.y - tangent * toCorner.y,
+  return {
+    start: {
+      x: corner.x - tangent * toCorner.x,
+      y: corner.y - tangent * toCorner.y,
+    },
+    end: {
+      x: corner.x + tangent * fromCorner.x,
+      y: corner.y + tangent * fromCorner.y,
+    },
+    mid: {
+      x: corner.x + (radius / sinHalf - radius) * inward.x,
+      y: corner.y + (radius / sinHalf - radius) * inward.y,
+    },
   }
-  const end = {
-    x: corner.x + tangent * fromCorner.x,
-    y: corner.y + tangent * fromCorner.y,
-  }
-  const mid = {
-    x: corner.x + (radius / sinHalf - radius) * inward.x,
-    y: corner.y + (radius / sinHalf - radius) * inward.y,
-  }
-  sketcher.lineTo([start.x, start.y])
-  sketcher.threePointsArcTo([end.x, end.y], [mid.x, mid.y])
 }
 
 function normalize(x: number, y: number): ProfilePoint {
