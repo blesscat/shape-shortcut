@@ -374,8 +374,10 @@ test.describe('game-box', () => {
       page.getByRole('textbox', { name: '卡片高（Z）' }),
     ).toHaveValue('88')
     // The default module list is unchanged, so the derived depth stays the
-    // default depth.
-    await expect(page.getByTestId('game-box-storage-depth')).toHaveText('63 mm')
+    // default depth (derived from the module list, not a preset constant).
+    await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
+      `${shownLength(DEFAULT_LAYOUT.storageDepth)} mm`,
+    )
     // The model is rebuilt with the new card size.
     await expect(viewport).not.toHaveAttribute(
       'data-model-revision',
