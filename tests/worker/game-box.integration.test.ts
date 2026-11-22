@@ -477,11 +477,7 @@ describe('game-box dice holder', () => {
       const wallZ = frame.wellFloorZ + 0.5
       for (const side of [1, -1] as const) {
         const probe = makeBox(
-          [
-            side * (frame.bodyWidth / 2 - 1.2),
-            frame.frontWall + 0.5,
-            wallZ,
-          ],
+          [side * (frame.bodyWidth / 2 - 1.2), frame.frontWall + 0.5, wallZ],
           [side * (frame.bodyWidth / 2), frame.frontWall + 1, wallZ + 0.5],
         ) as Shape3D
         expect(
@@ -652,16 +648,8 @@ describe('game-box dice holder', () => {
       // of the material that has risen 0.05 mm off the wall gives the free
       // length and the top of its bounding box gives the protrusion.
       const reach = makeBox(
-        [
-          frame.bodyWidth / 2 + 0.05,
-          0,
-          frame.height / 2 - 0.5,
-        ],
-        [
-          frame.bodyWidth / 2 + 1,
-          frame.thickness,
-          frame.height / 2 + 0.5,
-        ],
+        [frame.bodyWidth / 2 + 0.05, 0, frame.height / 2 - 0.5],
+        [frame.bodyWidth / 2 + 1, frame.thickness, frame.height / 2 + 0.5],
       ) as Shape3D
       const flapOnly = holder.intersect(reach)
       const flapBounds = boundsOf(flapOnly)
@@ -688,19 +676,11 @@ describe('game-box dice holder', () => {
       // so a probe reaching from the recess floor past the wall face
       // carries the flap alone.
       const probe = makeBox(
-        [
-          frame.bodyWidth / 2 - 0.75,
-          grip.yEnd - 1,
-          frame.height / 2 - 0.5,
-        ],
+        [frame.bodyWidth / 2 - 0.75, grip.yEnd - 1, frame.height / 2 - 0.5],
         [frame.bodyWidth / 2 + 1, grip.yEnd - 0.5, frame.height / 2 + 0.5],
       ) as Shape3D
-      const measuredThickness =
-        volumeOf(holder, probe) / (0.5 * 1)
-      expect(measuredThickness, 'the thickness of the flap').toBeCloseTo(
-        0.4,
-        1,
-      )
+      const measuredThickness = volumeOf(holder, probe) / (0.5 * 1)
+      expect(measuredThickness, 'the thickness of the flap').toBeCloseTo(0.4, 1)
       probe.delete()
       const strain =
         (3 * 0.5 * measuredThickness) / (2 * freeLength * freeLength)
