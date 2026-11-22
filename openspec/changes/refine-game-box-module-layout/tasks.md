@@ -62,3 +62,7 @@
 - [x] 9.3 `filletCorner` 的切點長度改為 `r / tan(θ/2)`（審查 B P3-3）：抽出純函式 `filletCornerArc`，以 60° 與 90° 驗證切點與弧中點；`cosθ` 改名 `cosInterior`（`tests/unit/game-box-grip.test.ts`）。
 - [x] 9.4 `applyGameBoxGrip` 以 `wallInnerHalfWidth` 檢查凹槽後的牆（審查 B P3-4）：少於 0.4 mm（或切進骰槽）時擲出 `GAME_BOX_GEOMETRY_INVALID:grip-wall`；移除 flap 重設計後永不觸發的 `minCutterWidth` 保護（凹槽切刀是固定 0.81 mm 寬的帶）。
 - [x] 9.5 文件與註解清理（審查 B P3-2、審查 A P3-1、P3-2）：任務 2.1 與 design.md 決策 6 改為 flap 常數與實際函式名；design.md 決策 1 的凹槽長度改為 5.4 mm；決策 4 表格的深度範圍標 15–150；`dice-holder.ts`、`game-box.ts` 與 e2e 註解的 fin / tab 用語改為 flap。
+
+## 10. Phase 2：幾何基線更新（lead 核准，2026-11-22）
+
+- [x] 10.1 更新 `tests/worker/cad-geometry-baseline.fixture.ts` 的 `game-box` 條目（只動這一條，其他元件的條目不變）。原因：本變更刻意改變預設參數的 game-box 幾何，phase 1 依指示只跑 `tests/worker/game-box*.test.ts`，完整 CAD 群組在 phase 2 的 `pnpm test:branch` 才首次執行，錄製的舊基線（origin/main 的深度 63 mm、自由葉握持）因此失效。新值以與測試相同的建構路徑（`buildModelBRep` / `buildModelBRepWithParts`、`DEFAULT_MODEL_PARAMETERS['game-box']`）量測：y 跨距 69.05 → **67.9 mm**（即深度 63 → 61.85 mm）、體積 108989.878666 → **109012.841911**（+0.021 %）、solids 2（盒體 + 滑蓋）不變；bounds `[-38.25, -35.45, 0, 38.25, 33.6, 129]` → `[-38.25, -34.875, 0, 38.25, 33.025, 129]`。量測用暫時探針已刪除；fixture 只是測試資料，其餘 2195 項分支測試已全數通過，不需重跑整套。
