@@ -138,7 +138,7 @@ describe('playground store batch parameter input', () => {
     next.setParameters('inst-1', { module2Type: 'dice' })
 
     const instance = instanceOf(next, 'inst-1')
-    expect(Object.keys(instance.rawParameters)).toHaveLength(27)
+    expect(Object.keys(instance.rawParameters)).toHaveLength(51)
     expect(instance.rawParameters.module2Type).toBe('dice')
   })
 })

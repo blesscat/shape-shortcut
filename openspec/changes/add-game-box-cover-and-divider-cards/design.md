@@ -93,7 +93,7 @@ default `''`), `coverSubtitleTextHeight` (3–12, default 5), `coverSvgWidth`
 (`raised`/`flat`, default `raised`), `usesCoverSvg` (default false),
 `coverSvgFingerprint` (required non-empty when `usesCoverSvg`). Everything
 stays a flat scalar so the existing validation, persistence, Worker transport
-and raw-parameter machinery work unchanged; `defaultParameters` gains all 18
+and raw-parameter machinery work unchanged; `defaultParameters` gains all 24
 keys.
 
 **Style is per divider** (owner decision "每片各自設定", 2026-11-21): the
@@ -266,7 +266,7 @@ visible instead of silently shrinking or cropping.
   placement helpers are unchanged; the worker test builds assemblies with
   labelled dividers and cover art at default/min/max card sizes and asserts
   zero intersection volume for every pair.
-- [18 new parameter keys widen the validation surface] → all fields reuse the
+- [24 new parameter keys widen the validation surface] → all fields reuse the
   existing `numberInRange`/enum helpers with field-level attribution; unit
   tests pin every range, default and error field; inactive divider groups
   cannot affect geometry (mirrors the module-group rule and is tested).

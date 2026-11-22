@@ -8,7 +8,7 @@
 
 ## 2. 合約層 `src/cad-contract/units/game-box.ts`
 
-- [ ] 2.1 新增型別與參數鍵：`GameBoxDividerIndex`（1–5）、`dividerNText`／`dividerNTabPosition`／`dividerNStyle` 五組、九個封面欄位，`GameBoxPart` 加入 `cover` 與 `divider1`…`divider5`；全部為扁平單值並納入 `GAME_BOX_PARAMETER_KEYS` 與 `defaultParameters`（18 個新鍵）。
+- [ ] 2.1 新增型別與參數鍵：`GameBoxDividerIndex`（1–5）、`dividerNText`／`dividerNTabPosition`／`dividerNStyle` 五組、九個封面欄位，`GameBoxPart` 加入 `cover` 與 `divider1`…`divider5`；全部為扁平單值並納入 `GAME_BOX_PARAMETER_KEYS` 與 `defaultParameters`（24 個新鍵：15 個分隔卡鍵加 9 個封面鍵）。
 - [ ] 2.2 `GAME_BOX_CONFIGURATION` 加入分隔卡與封面的範圍／預設常數（文字上限 20、封面文字上限 30、文字高 4–20／3–12、SVG 寬 10–58、垂直位置 0–100、Tab 與樣式列舉、預設 `GAME`／`left`／`raised`；封面 SVG 寬超過目前卡片安全區寬時驗證必須拒絕，供 preset 不套用規則使用）。
 - [ ] 2.3 擴充 `validateGameBoxParameters`：新欄位範圍與列舉（欄位級錯誤）、`usesCoverSvg` 缺指紋規則、不存在的 `dividerN` 與 `moduleN` 零件選擇被拒；非啟用分隔卡欄位仍驗範圍但不影響幾何（沿用模組欄位規則）。
 - [ ] 2.4 檔名：`gameBoxFileName`／`gameBoxStlFileName` 支援 `cover` 與 `dividerN`（含邊界編號、Tab、樣式、FNV token，空文字 `blank`；封面含卡片尺寸、推算深度、樣式、圖稿 token），新增 `gameBoxThreeMfFileName`（有 accent 圖稿回傳同名 `.3mf`，否則 null）。
@@ -43,7 +43,7 @@
 
 ## 7. 翻譯
 
-- [ ] 7.1 `en` 與 `zh-Hant` 各新增：`parameter.*`（18 個新欄位標籤）、`panel.gameBox.cover.*`、`panel.gameBox.divider.*`、零件名稱（cover、dividerN）、`validation.gameBox*`（新欄位錯誤）與 `diagnostic.gameBox*`（文字過寬、超出安全區、SVG 拒絕）；驗證兩個 locale 的 key 集合一致，且無未翻譯訊息鍵。
+- [ ] 7.1 `en` 與 `zh-Hant` 各新增：`parameter.*`（24 個新欄位標籤）、`panel.gameBox.cover.*`、`panel.gameBox.divider.*`、零件名稱（cover、dividerN）、`validation.gameBox*`（新欄位錯誤）與 `diagnostic.gameBox*`（文字過寬、超出安全區、SVG 拒絕）；驗證兩個 locale 的 key 集合一致，且無未翻譯訊息鍵。
 
 ## 8. 測試
 

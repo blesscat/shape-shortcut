@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAME_BOX_CONFIGURATION,
+  GAME_BOX_DIVIDER_INDICES,
   GAME_BOX_PARAMETER_KEYS,
   boundsForGameBox,
   gameBoxAvailableParts,
@@ -8,6 +9,9 @@ import {
   gameBoxLayout,
   gameBoxModuleCardDepthKey,
   gameBoxModuleDiceCountKey,
+  gameBoxDividerStyleKey,
+  gameBoxDividerTabPositionKey,
+  gameBoxDividerTextKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
   gameBoxStlFileName,
@@ -82,8 +86,8 @@ function expectIssue(
 }
 
 describe('game-box parameter keys', () => {
-  it('carries 27 flat keys generated from the module groups', () => {
-    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(27)
+  it('carries 51 flat keys generated from the module, divider and cover groups', () => {
+    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(51)
     expect(GAME_BOX_PARAMETER_KEYS).toContain('part')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardWidth')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardHeight')
@@ -96,6 +100,26 @@ describe('game-box parameter keys', () => {
       expect(GAME_BOX_PARAMETER_KEYS).toContain(
         gameBoxModuleDiceCountKey(index),
       )
+    }
+    for (const index of GAME_BOX_DIVIDER_INDICES) {
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(gameBoxDividerTextKey(index))
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(
+        gameBoxDividerTabPositionKey(index),
+      )
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(gameBoxDividerStyleKey(index))
+    }
+    for (const key of [
+      'coverTitle',
+      'coverTitleTextHeight',
+      'coverSubtitle',
+      'coverSubtitleTextHeight',
+      'coverSvgWidth',
+      'coverVerticalPosition',
+      'coverStyle',
+      'usesCoverSvg',
+      'coverSvgFingerprint',
+    ] as const) {
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(key)
     }
   })
 })
@@ -154,7 +178,7 @@ describe('game-box parameter validation', () => {
 
   it('rejects unknown part names', () => {
     expectIssue(
-      snapshot([], { part: 'cover' }),
+      snapshot([], { part: 'tray' }),
       'part',
       'validation.gameBoxPartInvalid',
     )
@@ -257,7 +281,21 @@ describe('game-box parameter validation', () => {
 
   it('rejects a divider part while only one module is active', () => {
     expectIssue(
-      snapshot([{ type: 'cards', cardDepth: 30 }], { part: 'divider' }),
+      snapshot([{ type: 'cards', cardDepth: 30 }], { part: 'divider1' }),
+      'part',
+      'validation.gameBoxDividerUnavailable',
+    )
+  })
+
+  it('rejects a divider part beyond the active boundaries', () => {
+    expectIssue(
+      snapshot(
+        [
+          { type: 'cards', cardDepth: 30 },
+          { type: 'dice', diceSize: 16, diceCount: 9 },
+        ],
+        { part: 'divider2' },
+      ),
       'part',
       'validation.gameBoxDividerUnavailable',
     )
@@ -284,7 +322,7 @@ describe('game-box parameter validation', () => {
           { type: 'cards', cardDepth: 30 },
           { type: 'dice', diceSize: 16, diceCount: 9 },
         ],
-        { part: 'divider' },
+        { part: 'divider1' },
       ),
     )
     expect(validation.valid).toBe(false)
@@ -459,7 +497,7 @@ describe('game-box export file names', () => {
     expect(gameBoxAvailableParts(withInactiveFields)).toEqual(
       gameBoxAvailableParts(active),
     )
-    for (const part of ['box', 'lid', 'divider'] as const) {
+    for (const part of ['box', 'lid', 'divider1'] as const) {
       expect(gameBoxFileName({ ...withInactiveFields, part })).toBe(
         gameBoxFileName({ ...active, part }),
       )
