@@ -122,12 +122,22 @@ describe('game-box module list', () => {
     expect(Object.keys(values).sort()).toEqual(
       [...GAME_BOX_PARAMETER_KEYS].sort(),
     )
+    const enumSuffixes = ['Type', 'TabPosition', 'Style']
+    const textKeys = [
+      'coverTitle',
+      'coverSubtitle',
+      'coverSvgFingerprint',
+      ...[1, 2, 3, 4, 5].map((divider) => `divider${divider}Text`),
+    ]
     const validation = validateGameBoxParameters(
       Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [
-          key,
-          key === 'part' || key.endsWith('Type') ? value : Number(value),
-        ]),
+        Object.entries(values).map(([key, value]) => {
+          if (key === 'usesCoverSvg') return [key, value === 'true']
+          if (key === 'part' || enumSuffixes.some((s) => key.endsWith(s)))
+            return [key, value]
+          if (textKeys.includes(key)) return [key, value]
+          return [key, Number(value)]
+        }),
       ),
     )
     expect(validation.valid).toBe(true)

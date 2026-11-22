@@ -432,8 +432,8 @@ export const messages = {
   'panel.gameBox.part.assembly': 'Assembly',
   'panel.gameBox.part.box': 'Box',
   'panel.gameBox.part.lid': 'Lid',
-  'panel.gameBox.part.divider': 'Divider',
-  'panel.gameBox.part.dividerCount': 'Divider ({count} plates)',
+  'panel.gameBox.part.divider': 'Divider card {divider}',
+  'panel.gameBox.part.cover': 'Cover',
   'panel.gameBox.part.module': 'Dice holder (module {module})',
   'panel.gameBox.pickPartToDownload': 'Select a part to download',
   'panel.gameBox.modules': 'Modules',
@@ -453,4 +453,42 @@ export const messages = {
   'panel.gameBox.interiorSize': 'Interior size',
   'panel.gameBox.outerSize': 'Outer size',
   'panel.gameBox.storageDepth': 'Storage depth',
+  'panel.gameBox.dividerSection': 'Divider cards',
+  'panel.gameBox.dividerLabel': 'Divider card {divider}',
+  'panel.gameBox.dividerText': 'Divider label (optional)',
+  'panel.gameBox.tabPosition': 'Tab position',
+  'panel.gameBox.tab.left': 'Left',
+  'panel.gameBox.tab.center': 'Center',
+  'panel.gameBox.tab.right': 'Right',
+  'panel.gameBox.style.raised': 'Raised',
+  'panel.gameBox.style.flat': 'Flat',
+  'panel.gameBox.dividerStyle': 'Divider style',
+  'panel.gameBox.coverSection': 'Cover',
+  'panel.gameBox.coverStyle': 'Cover style',
+  'panel.gameBox.coverTitle': 'Title',
+  'panel.gameBox.coverSubtitle': 'Subtitle (optional)',
+  'panel.gameBox.coverTitleTextHeight': 'Title text height',
+  'panel.gameBox.coverSubtitleTextHeight': 'Subtitle text height',
+  'panel.gameBox.coverSvgWidth': 'SVG width',
+  'panel.gameBox.coverVerticalPosition': 'Layout position',
+  'panel.gameBox.svgImport': 'Import cover SVG',
+  'panel.gameBox.svgBeta': 'Beta',
+  'panel.gameBox.svgClear': 'Remove SVG',
+  'panel.gameBox.svgLoaded':
+    'Cover art stored. It stays available to this game box until you remove it.',
+  'panel.gameBox.svgSessionOnly':
+    'The cover art is too large to store, so it is only available in this session.',
+  'panel.gameBox.svgMissingFallback':
+    'The stored cover art is missing or unreadable, so the cover falls back to the text-only layout.',
+  'panel.gameBox.svgError.strokeOnly':
+    'This SVG only has stroked paths. Fill the shapes and try again.',
+  'panel.gameBox.svgError.textUnsupported':
+    'This SVG contains <text> elements. Convert the text to paths and try again.',
+  'panel.gameBox.svgError.imageUnsupported':
+    'This SVG contains <image> elements, which cannot be engraved.',
+  'panel.gameBox.svgError.unsupportedElement':
+    'This SVG uses elements this import does not support.',
+  'panel.gameBox.svgError.tooComplex':
+    'This SVG has too many points. Simplify it and try again.',
+  'panel.gameBox.svgError.parseFailed': 'This file could not be read as SVG.',
 }
