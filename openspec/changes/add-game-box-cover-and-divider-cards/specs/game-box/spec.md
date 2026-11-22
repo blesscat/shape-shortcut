@@ -35,12 +35,12 @@
 
 ### Requirement: 封面片參數
 
-面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `CARDS`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）與資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）與資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
 
 #### Scenario: 預設封面參數
 
 - **WHEN** 請求未提供任何封面欄位
-- **THEN** 元件 MUST 使用標題 `CARDS`、文字高 6／5、SVG 寬 40、垂直位置 30 與樣式 `raised`
+- **THEN** 元件 MUST 使用標題 `GAME`、文字高 6／5、SVG 寬 40、垂直位置 30 與樣式 `raised`
 
 #### Scenario: 封面欄位超出範圍
 
@@ -78,7 +78,7 @@
 #### Scenario: 預設封面版面
 
 - **WHEN** 以預設封面參數建構 `cover`
-- **THEN** 版面 MUST 顯示預設標題「CARDS」，無 SVG 與副標題
+- **THEN** 版面 MUST 顯示預設標題「GAME」，無 SVG 與副標題
 - **AND** 垂直位置 MUST 為 30%
 
 #### Scenario: 圖稿超出安全區回報錯誤
@@ -257,12 +257,18 @@
 
 ### Requirement: 匯出檔名
 
-匯出檔名 MUST 以 `game-box-` 開頭並包含零件名稱與足以區分幾何的尺寸：`box` 與 `lid` MUST 包含卡片寬、卡片高與推算收納深度；每片分隔卡 MUST 包含邊界編號、卡片寬、卡片高、推算收納深度、Tab 位置、樣式與文字的短穩定 token（空文字使用 `blank`），使設定相同的不同分隔卡檔名不同；封面片 MUST 包含卡片寬、卡片高、推算收納深度、樣式與圖稿的短穩定 token（由標題、副標題與 SVG 指紋推導）；骰子匣 MUST 包含卡片寬、卡片高、骰子邊長與顆數。3MF 檔名 MUST 與對應 STEP 檔名相同且副檔名為 `.3mf`。不同幾何 MUST NOT 產生相同檔名；`part=assembly` MUST NOT 產生檔名。
+匯出檔名 MUST 以 `game-box-` 開頭並包含零件名稱與足以區分幾何的尺寸：`box` MUST 包含卡片寬、卡片高、推算收納深度與依序的模組清單；`lid` MUST 包含卡片寬、卡片高與推算收納深度；每片分隔卡 MUST 包含邊界編號、卡片寬、卡片高、推算收納深度、Tab 位置、樣式與文字的短穩定 token（空文字使用 `blank`），使設定相同的不同分隔卡檔名不同；封面片 MUST 包含卡片寬、卡片高、推算收納深度、樣式與圖稿的短穩定 token（由標題、副標題與 SVG 指紋推導）；骰子匣 MUST 包含卡片寬、卡片高、骰子邊長與顆數。模組清單 MUST 以每個模組的代號依序串接：`cards` 模組為 `c` 加卡片深度，`dice` 模組為 `d` 加骰子邊長。3MF 檔名 MUST 與對應 STEP 檔名相同且副檔名為 `.3mf`。不同幾何 MUST NOT 產生相同檔名；`part=assembly` MUST NOT 產生檔名。
 
 #### Scenario: 盒體檔名
 
-- **WHEN** 卡片尺寸 70 × 120、推算收納深度 75 且 `part=box`
-- **THEN** STEP 檔名 MUST 為 `game-box-box-70x120x75.step`
+- **WHEN** 卡片尺寸 70 × 120、清單為厚度 30 的 `cards` 模組與邊長 16 的 `dice` 模組，且 `part=box`
+- **THEN** STEP 檔名 MUST 為 `game-box-box-70x120x51.5-c30-d16.step`
+
+#### Scenario: 不同模組清單不得共用檔名
+
+- **WHEN** 卡片尺寸 70 × 120，清單分別為厚度 30 的 `cards` 與邊長 16 的 `dice`、厚度 33 的 `cards` 與邊長 13 的 `dice`
+- **THEN** 兩種清單的收納深度 MUST 都是 51.5 mm
+- **AND** 兩者的盒體檔名 MUST 不同
 
 #### Scenario: 骰子匣檔名
 
@@ -338,3 +344,48 @@
 
 - **WHEN** 分別以 `zh-Hant` 與 `en` 開啟 game-box 面板
 - **THEN** 全部標籤、提示與錯誤 MUST 以該語系顯示
+
+### Requirement: 套用卡片尺寸預設只改變卡片尺寸
+
+套用任一卡片尺寸 preset MUST 以使用者目前的參數為底疊合 overrides，因此只改變 cardWidth 與 cardHeight：模組清單、每個模組的欄位（類型、卡片區厚度、骰子邊長、骰子顆數）、全部分隔卡欄位（每片的文字、Tab 位置與樣式）、全部封面欄位（標題、文字高、副標題、SVG 寬、垂直位置、樣式與 SVG 旗標）、推算出的收納深度與零件選擇 MUST 保持不變。game-box 的可用零件只取決於模組清單，卡片尺寸不會讓任何零件消失。
+
+#### Scenario: 套用 preset 只改變卡片尺寸
+
+- **GIVEN** 使用者已建立一個骰子匣模組與一個卡片區模組
+- **WHEN** 使用者套用任一卡片尺寸 preset
+- **THEN** 卡片寬高 MUST 變成該組 preset 的尺寸
+- **AND** 模組清單與每個模組的欄位值 MUST 保持不變
+- **AND** 推算出的收納深度 MUST 保持不變
+
+#### Scenario: 零件選擇保持不變
+
+- **GIVEN** 使用者已選擇某個骰子匣零件
+- **WHEN** 使用者套用任一卡片尺寸 preset
+- **THEN** 零件選擇 MUST 保持為該骰子匣
+
+#### Scenario: 封面與分隔卡欄位保持不變
+
+- **GIVEN** 使用者已設定某片分隔卡的文字與封面標題且參數有效
+- **WHEN** 使用者套用任一卡片尺寸 preset
+- **THEN** 該分隔卡的文字、Tab 位置與樣式 MUST 保持不變
+- **AND** 封面標題與封面欄位值 MUST 保持不變
+
+### Requirement: 不適用目前模組的預設不套用
+
+若套用 preset 後的參數集無效，MUST NOT 套用該 preset，MUST 保留使用者目前的參數，MUST NOT 改用預設參數取而代之，並 MUST 以本地化訊息（en 與 zh-Hant）告知使用者該預設不適用於目前的模組。套用後封面圖樣確定無法放入安全區（例如 SVG 寬超過較小卡片的安全區寬）時，該參數集 MUST 視為無效並依相同規則不套用。
+
+#### Scenario: 骰子放不下時不套用
+
+- **GIVEN** 使用者的骰子匣模組有 9 顆 16 mm 的骰子
+- **WHEN** 使用者套用「Mini American 41×63」preset
+- **THEN** 該 preset MUST NOT 被套用
+- **AND** 卡片尺寸與模組清單 MUST 保持不變
+- **AND** 面板 MUST 顯示該預設不適用於目前模組的本地化訊息
+
+#### Scenario: 封面圖樣放不下時不套用
+
+- **GIVEN** 使用者已匯入封面 SVG 且 SVG 寬為 40 mm，卡片尺寸 70 × 120
+- **WHEN** 使用者套用「Mini American 41×63」preset（該卡片尺寸的安全區寬約 27.5 mm）
+- **THEN** 該 preset MUST NOT 被套用
+- **AND** 卡片尺寸與全部封面欄位 MUST 保持不變
+- **AND** 面板 MUST 顯示該預設不適用的本地化訊息

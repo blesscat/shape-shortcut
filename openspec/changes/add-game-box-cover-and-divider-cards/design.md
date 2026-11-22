@@ -54,9 +54,11 @@ same interior width from the same fields. The ported pieces keep card-box
 semantics 1:1: safe area `(W−10)×(H−10)` shrunk by the 2 mm margin (defaults
 70.5×120 → x 7..63.5, y 7..113), centred stack (SVG → title → subtitle),
 `coverVerticalPosition` 0–100 % slider (default 30 %), `raised`/`flat` styles
-(0.4 mm proud / flush in a 0.4 mm recess), default title `CARDS`, text height
-ranges (4–20 / 3–12 mm, defaults 6 / 5), SVG width 10–58 mm (default 40),
-text length caps (30 for cover lines, 20 for divider labels), overflow errors
+(0.4 mm proud / flush in a 0.4 mm recess), default title `GAME` (owner
+decision 2026-11-21 — deliberately diverging from card-box's `CARDS`; every
+other cover value keeps card-box parity), text height ranges (4–20 / 3–12 mm,
+defaults 6 / 5), SVG width 10–58 mm (default 40), text length caps (30 for
+cover lines, 20 for divider labels), overflow errors
 (`COVER_ART_OUTSIDE_SAFE_AREA`, `DIVIDER_TEXT_TOO_WIDE` semantics) that never
 shrink or crop.
 
@@ -83,25 +85,26 @@ owns three flat fields:
 | `dividerNTabPosition` | `left` / `center` / `right` | `left` |
 | `dividerNStyle` | `raised` / `flat` | `raised` |
 
-Nine cover fields join the contract with card-box names, ranges and defaults:
-`coverTitle` (≤ 30, default `CARDS`), `coverTitleTextHeight` (4–20, default 6),
-`coverSubtitle` (≤ 30, default `''`), `coverSubtitleTextHeight` (3–12,
-default 5), `coverSvgWidth` (10–58, default 40), `coverVerticalPosition`
-(0–100, default 30), `coverStyle` (`raised`/`flat`, default `raised`),
-`usesCoverSvg` (default false), `coverSvgFingerprint` (required non-empty when
-`usesCoverSvg`). Everything stays a flat scalar so the existing validation,
-persistence, Worker transport and raw-parameter machinery work unchanged;
-`defaultParameters` gains all 18 keys, which also makes card-size presets reset
-them (preset parity with card-box: option flags reset, SVG data survives in the
-dedicated key).
+Nine cover fields join the contract with card-box names and ranges. The
+default cover title is `GAME` (owner decision): `coverTitle` (≤ 30, default
+`GAME`), `coverTitleTextHeight` (4–20, default 6), `coverSubtitle` (≤ 30,
+default `''`), `coverSubtitleTextHeight` (3–12, default 5), `coverSvgWidth`
+(10–58, default 40), `coverVerticalPosition` (0–100, default 30), `coverStyle`
+(`raised`/`flat`, default `raised`), `usesCoverSvg` (default false),
+`coverSvgFingerprint` (required non-empty when `usesCoverSvg`). Everything
+stays a flat scalar so the existing validation, persistence, Worker transport
+and raw-parameter machinery work unchanged; `defaultParameters` gains all 18
+keys.
 
-**Style is per divider** (recommended): the owner set "每片各自設定" for labels
-and tabs; style is the same kind of per-plate decision, it drives per-plate 3MF
-availability, and a shared style mixed with per-piece text would make two
-physically different plates indescribable. *Alternative* — one shared
-`dividerStyle` field (rejected; cheaper by four keys but semantically wrong).
+**Style is per divider** (owner decision "每片各自設定", 2026-11-21): the
+owner set per-piece settings for labels and tabs, style is the same kind of
+per-plate decision, it drives per-plate 3MF availability, and a shared style
+mixed with per-piece text would make two physically different plates
+indescribable. *Alternative* — one shared `dividerStyle` field (rejected;
+cheaper by four keys but contradicts the owner decision).
 
-List-operation semantics mirror the module groups (positional attachment):
+List-operation semantics mirror the module groups (positional attachment;
+boundaries are the computed module boundaries, so no slot grid is involved):
 
 - **Add module**: boundary count grows by one; the new boundary's divider
   appears with default fields; existing boundaries keep their settings.
@@ -111,8 +114,9 @@ List-operation semantics mirror the module groups (positional attachment):
 - **Move module**: boundaries do not move — only module contents swap — so
   divider fields never change on reorder.
 
-Panel presentation: a dedicated "分隔卡" fieldset listing one card per boundary
-(label text input, tab select, style select), errors shown on the owning item.
+Panel presentation (decision, open question 3 resolved): a dedicated
+"分隔卡" fieldset listing one card per boundary (label text input, tab
+select, style select), errors shown on the owning item.
 *Alternative* — interleaving divider cards inside the module list (rejected:
 modules and boundaries are different objects and the counts differ by one;
 interleaving also has no slot for boundary N at the list's end).
@@ -163,6 +167,11 @@ fingerprint is set, `cad-worker-generation.ts` passes it for `game-box`, and
 both definitions read. Snapshots persisted before this change with
 `part: 'divider'` fail validation and fall back to defaults through the
 existing invalid-snapshot rule — no migration code.
+
+**No card-box SVG key migration** (owner decision 2026-11-21, resolving the
+open question): game-box never reads `shape-shortcut:card-box-cover-svg:v1`;
+the old record stays unread and untouched. Migration would add one-time
+read/write code that `retire-card-box` immediately orphans.
 
 ### 6. Code ownership: game-box-owned art code, shell-owned geometry
 
@@ -223,6 +232,31 @@ imports them.
   so raised art never reaches a slot wall; the new assembly intersection test
   covers labelled dividers explicitly.
 
+### 8. Presets keep the cover and divider fields; an unusable preset is not applied
+
+Owner decision 2026-11-22: card-size presets change only `cardWidth` and
+`cardHeight` and must not reset the new fields (the "保留模組清單" rule of
+`add-game-box-card-presets` extends to the cover and divider fields).
+game-box already declares `presetBase: 'current'` and its presets override
+only the card size, so the fields survive as long as they live in the
+parameter record — which they do (flat keys like every other field). No new
+preset machinery; the fields simply behave like the module fields.
+
+A preset whose merged snapshot fails validation is not applied and the
+existing localized not-applicable notice is shown (the shipped
+`resolvePresetParameters` → `validateParameters` gate). To give that rule
+teeth for the cover art, game-box validation gains an exact, font-free fit
+gate: when `usesCoverSvg` is true and `coverSvgWidth` exceeds the safe-area
+width of the current card size (safe width = interior width − 2 ×
+(hidden lip 5 + safe margin 2)), the snapshot is invalid with a field error
+on `coverSvgWidth`. This is decidable without font metrics, has no false
+positives, and is exactly the case a smaller card preset creates (default
+SVG width 40 vs a 27.5 mm safe width at the 41×63 preset). The residual,
+font-dependent overflow (rendered text wider than the safe area) stays a
+kernel build-time localized error that blocks generation and export — it
+cannot be decided synchronously in validation, and the build error keeps it
+visible instead of silently shrinking or cropping.
+
 ## Risks / Trade-offs
 
 - [Temporary duplication of cover/SVG code (card-box + game-box copies) until
@@ -236,6 +270,9 @@ imports them.
   existing `numberInRange`/enum helpers with field-level attribution; unit
   tests pin every range, default and error field; inactive divider groups
   cannot affect geometry (mirrors the module-group rule and is tested).
+- [The validation cover-fit gate decides only the exact, font-free case] →
+  the residual text overflow keeps the kernel's localized build error; unit
+  tests pin both layers so neither shrinks nor crops silently.
 - [Error-prefix wrap could hide a reused builder's error] → the wrap rethrows
   after mapping known strings and rethrows unknown errors unchanged; the
   worker integration tests assert the localized game-box messages.
@@ -283,16 +320,11 @@ New game-box coverage:
   3MF button enabled exactly for art parts, SVG import Beta badge and
   fallback hint, both locales.
 
-## Open Questions
+## Decisions log for the former open questions
 
-1. **Migrate the old card-box SVG key?** Recommended: **no migration**. The
-   old record stays unread (≤ 256 KB, harmless); the spec pins that game-box
-   never reads it. Migration would add one-time read/write code that
-   retirement immediately orphans. (Lead's leaning agrees.)
-2. **Default cover title.** Recommended: **keep `CARDS`** for behaviour parity
-   with card-box (ports the pinned default-geometry tests unchanged); the
-   first module is a card compartment by default. Owner may prefer `GAME` —
-   one string change if so.
-3. **Where divider settings appear in the panel.** Recommended: a dedicated
-   分隔卡 fieldset ordered by boundary (Decision 2). No spec text depends on
-   the placement; changeable at apply time without re-planning.
+1. **Migrate the old card-box SVG key?** — **No migration** (owner decision
+   2026-11-21). See Decision 5.
+2. **Default cover title.** — **`GAME`** (owner decision 2026-11-21). See
+   Decision 1.
+3. **Where divider settings appear in the panel.** — A dedicated 分隔卡
+   fieldset ordered by boundary (Decision 2).

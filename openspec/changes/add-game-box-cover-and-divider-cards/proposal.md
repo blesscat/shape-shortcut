@@ -21,9 +21,12 @@ settings ("每片各自設定"): one divider per module boundary, up to five.
 - Turn the single plain `divider` item into one divider card per module
   boundary: parts `divider1` … `divider5` (boundaries 1 … active modules − 1),
   each with its own label text, tab position (`left`/`center`/`right`) and
-  style (`raised`/`flat`). A divider with blank text and the default tab stays
-  geometrically identical to today's plain divider; box, lid and plain-divider
-  geometry do not change (stop condition checked).
+  style (`raised`/`flat`) — the owner ruled every divider carries its own
+  settings ("每片各自設定"). The boundaries are the computed module
+  boundaries of the current layout (module lengths computed from their
+  contents); no slot grid is assumed. A divider with blank text and the
+  default tab stays geometrically identical to today's plain divider; box,
+  lid and plain-divider geometry do not change (stop condition checked).
 - Extend the assembly: it now also shows the cover piece seated in the front
   channel and every divider with its own label art. Zero-intersection still
   holds.
@@ -32,27 +35,37 @@ settings ("每片各自設定"): one divider per module boundary, up to five.
   `body` + `accent` 3MF like card-box. Box, lid, assembly, dice holders and
   blank plates still MUST NOT offer 3MF; game-box's blanket 3MF ban is replaced
   by this per-part rule.
-- New flat parameters: nine cover fields (card-box names, ranges and defaults)
-  and three fields per divider group (`dividerNText`, `dividerNTabPosition`,
-  `dividerNStyle`). Validation reports field-level errors; text too wide for
-  the tab and art outside the safe area remain localized build-time errors that
-  block generation and export.
+- New flat parameters: nine cover fields (card-box names and ranges; the
+  default cover title is `GAME`, an owner decision that deliberately diverges
+  from card-box's `CARDS`) and three fields per divider group (`dividerNText`,
+  `dividerNTabPosition`, `dividerNStyle`). Validation reports field-level
+  errors. Text too wide for the tab and art outside the safe area remain
+  localized build-time errors that block generation and export; a cover fit
+  that validation can decide exactly without font metrics (the SVG width
+  against the safe area) is rejected at validation time so a card size where
+  the art can never fit is caught before generation.
 - Export file names: `game-box-divider3-…` names carry the divider number so
   identical plain dividers never collide; the cover name follows the card-box
   pattern (card size, style, art token); 3MF reuses the STEP name with the
   `.3mf` extension.
 - game-box gets its own SVG outline storage key
   (`shape-shortcut:game-box-cover-svg:v1`, same 256 KB and single-record rules).
-  The old card-box key is not migrated (open question, recommended: no).
+  The old card-box key is not migrated (owner decision: no migration; the old
+  record stays unread and untouched).
 - Move (port) the cover art, cover layout, SVG outline and SVG import code into
   game-box-owned modules so `retire-card-box` can delete card-box afterwards
   without touching game-box imports; the shell geometry (box, lid, divider
   plate, text shapes) stays on the `card-storage-shell` move planned by
   `retire-card-box`. Existing component IDs are intentionally preserved: no new
   modelId, no route change, no OpenGrid naming impact.
-- Card size presets (separate `add-game-box-card-presets` change) reset the new
-  fields too, because preset application rebuilds the parameter set from
-  `defaultParameters`, which will own every new key.
+- Card size presets (shipped by `add-game-box-card-presets`, merged in PR
+  #215) keep every cover and divider field: game-box declares
+  `presetBase: 'current'` and preset overrides describe only `cardWidth` and
+  `cardHeight`, so the owner's "保留模組清單" rule extends to the new fields.
+  A preset whose merged snapshot fails validation is not applied and the
+  existing not-applicable notice is shown — including the case where the
+  smaller card size makes the current cover art provably unable to fit
+  (validation's exact cover-fit gate).
 
 ## Capabilities
 

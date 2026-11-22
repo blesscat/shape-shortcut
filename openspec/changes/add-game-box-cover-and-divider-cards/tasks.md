@@ -9,7 +9,7 @@
 ## 2. 合約層 `src/cad-contract/units/game-box.ts`
 
 - [ ] 2.1 新增型別與參數鍵：`GameBoxDividerIndex`（1–5）、`dividerNText`／`dividerNTabPosition`／`dividerNStyle` 五組、九個封面欄位，`GameBoxPart` 加入 `cover` 與 `divider1`…`divider5`；全部為扁平單值並納入 `GAME_BOX_PARAMETER_KEYS` 與 `defaultParameters`（18 個新鍵）。
-- [ ] 2.2 `GAME_BOX_CONFIGURATION` 加入分隔卡與封面的範圍／預設常數（文字上限 20、封面文字上限 30、文字高 4–20／3–12、SVG 寬 10–58、垂直位置 0–100、Tab 與樣式列舉、預設 `CARDS`／`left`／`raised`）。
+- [ ] 2.2 `GAME_BOX_CONFIGURATION` 加入分隔卡與封面的範圍／預設常數（文字上限 20、封面文字上限 30、文字高 4–20／3–12、SVG 寬 10–58、垂直位置 0–100、Tab 與樣式列舉、預設 `GAME`／`left`／`raised`；封面 SVG 寬超過目前卡片安全區寬時驗證必須拒絕，供 preset 不套用規則使用）。
 - [ ] 2.3 擴充 `validateGameBoxParameters`：新欄位範圍與列舉（欄位級錯誤）、`usesCoverSvg` 缺指紋規則、不存在的 `dividerN` 與 `moduleN` 零件選擇被拒；非啟用分隔卡欄位仍驗範圍但不影響幾何（沿用模組欄位規則）。
 - [ ] 2.4 檔名：`gameBoxFileName`／`gameBoxStlFileName` 支援 `cover` 與 `dividerN`（含邊界編號、Tab、樣式、FNV token，空文字 `blank`；封面含卡片尺寸、推算深度、樣式、圖稿 token），新增 `gameBoxThreeMfFileName`（有 accent 圖稿回傳同名 `.3mf`，否則 null）。
 - [ ] 2.5 `boundsForGameBox` 支援 `cover`（`W × H × 0.6`）與 `dividerN`（與現行 divider 相同外框）。
@@ -47,7 +47,7 @@
 
 ## 8. 測試
 
-- [ ] 8.1 單元：移植 card-box contract/layout 測試的封面與版面案例至 game-box（欄位範圍、預設、安全區、堆疊、垂直位置）；新增分隔卡欄位組測試（範圍、預設、非啟用群組不影響幾何、清單操作保留規則）。
+- [ ] 8.1 單元：移植 card-box contract/layout 測試的封面與版面案例至 game-box（欄位範圍、預設、安全區、堆疊、垂直位置）；新增分隔卡欄位組測試（範圍、預設、非啟用群組不影響幾何、清單操作保留規則）與 preset 保留封面／分隔卡欄位、封面圖樣放不下時不套用的測試。
 - [ ] 8.2 單元：移植 `card-box-svg-parse`／`card-box-svg-store` 測試至 game-box 版本（新 key、256 KB、session 回退、不讀 card-box key）。
 - [ ] 8.3 Worker：移植 `card-box-art` 案例（raised/flat 分隔卡文字、過寬拒絕、封面標題/SVG/副標題、安全區拒絕、垂直位置）與 `card-box.integration` 的 3MF parts 案例（body/accent、擠出機對應、素板無 3MF）至 game-box 各零件。
 - [ ] 8.4 Worker：以參考幾何釘住空白分隔卡（70.85 × 125 × 0.85 mm、7347.9 mm³）與 `left`/`center`/`right` Tab 外形；組裝（含非空分隔卡文字與封面圖稿）於預設／最小／最大卡片尺寸下任兩零件交集體積為零；新零件的漸進式預覽 bbox 差 ≤ 0.5 mm。
