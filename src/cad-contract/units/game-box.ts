@@ -1113,7 +1113,8 @@ type CoverFieldValues = {
  */
 function validateDividerFields(
   record: Record<string, unknown>,
-): { ok: true; value: DividerFieldValues } | { ok: false; issue: GameBoxIssue } {
+):
+  { ok: true; value: DividerFieldValues } | { ok: false; issue: GameBoxIssue } {
   const text: string[] = []
   const tabPositions: GameBoxTabPosition[] = []
   const styles: GameBoxStyle[] = []
@@ -1262,7 +1263,10 @@ function validateCoverFields(
   ) {
     return {
       ok: false,
-      issue: { field: 'coverStyle', messageId: 'validation.gameBoxStyleInvalid' },
+      issue: {
+        field: 'coverStyle',
+        messageId: 'validation.gameBoxStyleInvalid',
+      },
     }
   }
   const coverStyle =

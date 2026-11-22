@@ -6,17 +6,31 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
-import { measureVolume, type Shape3D as ReplicadShape } from 'replicad'
+import {
+  cast,
+  getOC,
+  measureVolume,
+  type Shape3D as ReplicadShape,
+} from 'replicad'
+import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import { buildGameBox } from '../../src/cad-kernel/components/game-box/builder'
 import {
   loadOpenGridWallCoverFont,
   OPEN_GRID_WALL_COVER_FONT_URL,
 } from '../../src/cad-kernel/components/opengrid-wall-cover/flat-text'
+import { countSolids } from '../../src/cad-kernel/shape-query/solids'
+import {
+  exportThreeMfBytes,
+  isThreeMfPackage,
+  threeMfExpectationFor,
+  threeMfMetaFor,
+} from '../../src/cad-kernel/export'
 import {
   CARD_BOX_CONFIGURATION,
   cardBoxInteriorWidth,
   GAME_BOX_CONFIGURATION,
   gameBoxLayout,
+  gameBoxThreeMfFileName,
   type CardBoxSvgOutlineData,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
@@ -60,6 +74,39 @@ function parameters(
     values[`module${position + 1}Type`] = module.type
   })
   return { ...values, ...overrides } as GameBoxParameters
+}
+
+/** The solids of a (possibly compound) shape. */
+function explorerSolidsOf(shape: ReplicadShape): ReplicadShape[] {
+  const oc = getOC()
+  const solidType = oc.TopAbs_ShapeEnum
+    .TopAbs_SOLID as unknown as TopAbs_ShapeEnum
+  const shapeType = oc.TopAbs_ShapeEnum
+    .TopAbs_SHAPE as unknown as TopAbs_ShapeEnum
+  const explorer = new oc.TopExp_Explorer_2(shape.wrapped, solidType, shapeType)
+  const solids: ReplicadShape[] = []
+  try {
+    while (explorer.More()) {
+      solids.push(cast(explorer.Current()) as ReplicadShape)
+      explorer.Next()
+    }
+  } finally {
+    explorer.delete()
+  }
+  return solids
+}
+
+/** Intersection volume of two shapes (mm³). */
+function intersectionVolume(
+  shape: ReplicadShape,
+  other: ReplicadShape,
+): number {
+  const overlap = shape.intersect(other)
+  try {
+    return measureVolume(overlap)
+  } finally {
+    overlap.delete()
+  }
 }
 
 function shapeBounds(shape: ReplicadShape): number[][] {
@@ -390,4 +437,183 @@ describe('game-box zero intersection with art', () => {
       }
     })
   }
+})
+
+describe('game-box assembly zero intersection with labelled dividers', () => {
+  const OVERLAP_LIMIT = 0.001
+  const SIZES = [
+    ['default', 70, 120],
+    ['minimum', 40, 60],
+    ['maximum', 100, 150],
+  ] as const
+
+  for (const dividerStyle of ['raised', 'flat'] as const) {
+    for (const [label, cardWidth, cardHeight] of SIZES) {
+      it(`keeps every pair apart with a ${dividerStyle} label between two dice modules at the ${label} card size`, async () => {
+        const params = parameters(
+          [
+            { type: 'cards' },
+            { type: 'dice' },
+            { type: 'dice' },
+            { type: 'cards' },
+          ],
+          {
+            part: 'assembly',
+            cardWidth,
+            cardHeight,
+            divider2Style: dividerStyle,
+            // The minimum 40x60 card fits at most 6 of the default dice.
+            ...(label === 'minimum'
+              ? { module2DiceCount: 4, module3DiceCount: 4 }
+              : {}),
+            // The middle boundary faces a holder on both sides.
+            divider2Text: 'BLUE',
+          },
+        )
+        const build = await buildGameBox(params)
+        const solids = explorerSolidsOf(build.shape)
+        try {
+          expect(solids.length).toBeGreaterThan(4)
+          for (let first = 0; first < solids.length; first += 1) {
+            for (let second = first + 1; second < solids.length; second += 1) {
+              expect(
+                intersectionVolume(solids[first]!, solids[second]!),
+                `part ${first} overlaps part ${second}`,
+              ).toBeLessThan(OVERLAP_LIMIT)
+            }
+          }
+        } finally {
+          for (const solid of solids) solid.delete()
+          build.shape.delete()
+        }
+      })
+    }
+  }
+})
+
+describe('game-box two-color 3MF packages', () => {
+  it('exports a raised labelled divider as a body/accent package', async () => {
+    const params = parameters(TWO_MODULES, {
+      part: 'divider1',
+      divider1Text: 'TCG',
+      divider1Style: 'raised',
+    })
+    const build = await buildGameBox(params)
+    try {
+      const body = build.parts?.find((part) => part.name === 'body')
+      const accent = build.parts?.find((part) => part.name === 'accent')
+      if (!body || !accent) throw new Error('expected body/accent parts')
+      const fileName = gameBoxThreeMfFileName(params)
+      expect(fileName).toMatch(/\.3mf$/)
+      const meta = threeMfMetaFor('game-box', fileName!)
+      const bytes = await exportThreeMfBytes(
+        [
+          { name: 'body', shape: body.shape },
+          { name: 'accent', shape: accent.shape },
+        ],
+        {
+          tolerance: 0.001,
+          angularTolerance: 0.1,
+          modelName: 'game-box',
+          sourceFile: fileName!,
+        },
+        meta,
+      )
+      expect(isThreeMfPackage(bytes, threeMfExpectationFor(meta))).toBe(true)
+    } finally {
+      build.shape.delete()
+      for (const part of build.parts ?? []) part.shape.delete()
+    }
+  })
+
+  it('exports a flat cover with art as a body/accent package', async () => {
+    const params = parameters([{ type: 'cards' }], {
+      part: 'cover',
+      coverStyle: 'flat',
+      coverSubtitle: ' collection',
+    })
+    const build = await buildGameBox(params)
+    try {
+      const body = build.parts?.find((part) => part.name === 'body')
+      const accent = build.parts?.find((part) => part.name === 'accent')
+      if (!body || !accent) throw new Error('expected body/accent parts')
+      const fileName = gameBoxThreeMfFileName(params)
+      const meta = threeMfMetaFor('game-box', fileName!)
+      const bytes = await exportThreeMfBytes(
+        [
+          { name: 'body', shape: body.shape },
+          { name: 'accent', shape: accent.shape },
+        ],
+        {
+          tolerance: 0.001,
+          angularTolerance: 0.1,
+          modelName: 'game-box',
+          sourceFile: fileName!,
+        },
+        meta,
+      )
+      expect(isThreeMfPackage(bytes, threeMfExpectationFor(meta))).toBe(true)
+    } finally {
+      build.shape.delete()
+      for (const part of build.parts ?? []) part.shape.delete()
+    }
+  })
+})
+
+describe('game-box cover depth independence and solid count', () => {
+  it('builds the same cover whatever the modules make the depth', async () => {
+    const deep = await buildGameBox(
+      parameters([{ type: 'cards' }], { part: 'cover' }),
+    )
+    const shallow = await buildGameBox(
+      parameters([{ type: 'cards' }, { type: 'cards' }], { part: 'cover' }),
+    )
+    try {
+      expect(gameBoxLayout(parameters([{ type: 'cards' }])).storageDepth).toBe(
+        GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth + 1 + 0.85,
+      )
+      expect(
+        gameBoxLayout(parameters([{ type: 'cards' }, { type: 'cards' }]))
+          .storageDepth,
+      ).toBe(
+        GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth +
+          GAME_BOX_CONFIGURATION.defaults.cardDepth +
+          2 * (1 + 0.85),
+      )
+      expect(measureVolume(deep.shape)).toBeCloseTo(
+        measureVolume(shallow.shape),
+        6,
+      )
+      const deepBounds = shapeBounds(deep.shape)
+      const shallowBounds = shapeBounds(shallow.shape)
+      for (let axis = 0; axis < 3; axis += 1) {
+        expect(deepBounds[0]![axis]).toBeCloseTo(shallowBounds[0]![axis]!, 6)
+        expect(deepBounds[1]![axis]).toBeCloseTo(shallowBounds[1]![axis]!, 6)
+      }
+    } finally {
+      deep.shape.delete()
+      shallow.shape.delete()
+      for (const build of [deep, shallow])
+        for (const part of build.parts ?? []) part.shape.delete()
+    }
+  })
+
+  it('builds an artless cover as a single solid on the bed', async () => {
+    const build = await buildGameBox(
+      parameters([{ type: 'cards' }], {
+        part: 'cover',
+        coverTitle: '',
+        coverSubtitle: '',
+        usesCoverSvg: false,
+      }),
+    )
+    try {
+      expect(build.parts).toBeUndefined()
+      expect(countSolids(build.shape)).toBe(1)
+      // A hair below zero is binary noise; the part lies on the bed.
+      expect(shapeBounds(build.shape)[0]![2]!).toBeGreaterThanOrEqual(-0.001)
+    } finally {
+      build.shape.delete()
+    }
+  })
 })

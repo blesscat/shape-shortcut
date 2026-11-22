@@ -231,7 +231,7 @@
 
 ### Requirement: 組裝預覽與下載限制
 
-`part=assembly` 時，模型 MUST 於組裝座標框架呈現盒體、滑蓋、每個模組邊界上的分隔卡（含各自的文字圖稿）、每個 `dice` 模組位置上的骰子匣，以及置入前緣封面槽的封面片（含其圖稿）。組裝中任兩個零件的交集體積 MUST 為零。`part=assembly` 時 STEP、STL、3MF 下載 MUST 全部停用並 MUST 顯示本地化的「請選擇零件以下載」提示；`part` 為單一零件時 MUST 啟用該零件的 STEP 與 STL 下載。3MF 下載 MUST 僅依「雙色 3MF 輸出」的規則提供；其餘零件 MUST NOT 提供 3MF。
+`part=assembly` 時，模型 MUST 於組裝座標框架呈現盒體、滑蓋、每個模組邊界上的分隔卡（含各自的文字圖稿）、每個 `dice` 模組位置上的骰子匣，以及置入前緣封面槽的封面片（含其圖稿）。凸出的分隔卡標籤（`raised` 樣式，圖稿凸出 0.4 mm）與相鄰骰子匣 MUST 在組裝中交集為零：骰子匣與分隔板相鄰的正面與背面牆在頂部讓位帶內 MUST 內縮 0.3 mm（帶高 1.0 mm，即骰槽上方的自由餘隙），讓位帶 MUST NOT 進入骰槽，且 MUST NOT 改變任何有效輸入的骰子容量。組裝中任兩個零件的交集體積 MUST 為零。`part=assembly` 時 STEP、STL、3MF 下載 MUST 全部停用並 MUST 顯示本地化的「請選擇零件以下載」提示；`part` 為單一零件時 MUST 啟用該零件的 STEP 與 STL 下載。3MF 下載 MUST 僅依「雙色 3MF 輸出」的規則提供；其餘零件 MUST NOT 提供 3MF。
 
 #### Scenario: 組裝呈現全部零件
 
@@ -242,8 +242,9 @@
 
 #### Scenario: 組裝零件不重疊
 
-- **WHEN** 以預設、最小與最大卡片尺寸搭配含 `dice` 模組的清單、非空分隔卡文字與含標題的封面片建構組裝
+- **WHEN** 以預設、最小與最大卡片尺寸搭配兩側皆為 `dice` 模組的清單、`raised` 與 `flat` 兩種樣式的非空分隔卡文字與含標題的封面片建構組裝
 - **THEN** 任兩個零件的交集體積 MUST 為零
+- **AND** 帶 `raised` 標籤的分隔卡與相鄰骰子匣的交集體積 MUST 為零
 
 #### Scenario: Assembly 停用下載
 
@@ -389,3 +390,31 @@
 - **THEN** 該 preset MUST NOT 被套用
 - **AND** 卡片尺寸與全部封面欄位 MUST 保持不變
 - **AND** 面板 MUST 顯示該預設不適用的本地化訊息
+
+### Requirement: 骰子匣幾何
+
+每個 `dice` 模組 MUST 產生一個骰子匣零件：直立放入盒內的單一 solid，高度與卡片同高，上段為頂面開口的骰槽，下段墊高使骰槽靠近盒口。骰子匣 MUST 以直立、開口朝上的列印方位輸出於 z ≥ 0。
+
+骰槽 MUST 能容納 `diceCount` 顆邊長 `diceSize` 的骰子。正面每一排位置 MUST 有一道寬度小於骰子邊長的直向開口，使骰子可見且可被手指推動但不會掉出。
+
+骰子匣的正面與背面牆厚 MUST 為 0.8 mm；兩側牆與底板厚度 MUST NOT 小於 1.2 mm。與分隔板相鄰的正面與背面牆在頂部讓位帶（自頂面向下 1.0 mm）內 MUST 內縮 0.3 mm（該帶內牆厚 0.5 mm），使凸出 0.4 mm 的分隔卡標籤與骰子匣的組裝交集為零；讓位帶 MUST 位於骰槽上方的自由餘隙內，MUST NOT 降低任何有效輸入的骰子容量，且 MUST NOT 改變骰子匣的外形厚度與總高。
+
+#### Scenario: 骰子匣為單一 solid 且可列印
+
+- **WHEN** 以任何有效參數建構骰子匣零件
+- **THEN** 輸出 MUST 恰為一個 solid 且位於 z ≥ 0
+- **AND** 其高度 MUST 等於 `cardHeight`
+- **AND** 骰子匣在骰槽下方 MUST 為實心，且其底面 MUST 為本體完整截面
+
+#### Scenario: 前後牆厚度
+
+- **WHEN** 以邊長 16 顆數 9 建構骰子匣零件
+- **THEN** 骰子匣的正面與背面牆厚 MUST 為 0.8 mm
+- **AND** 骰子匣厚度 MUST 為 18.2 mm（16 mm 骰子 + 0.6 mm 間隙 + 2 × 0.8 mm 前後牆）
+- **AND** 兩側牆與底板厚度 MUST NOT 小於 1.2 mm
+
+#### Scenario: 頂部讓位帶
+
+- **WHEN** 建構任一骰子匣零件
+- **THEN** 正面與背面牆自頂面向下 1.0 mm 的帶內 MUST 內縮 0.3 mm，其餘高度的牆厚 MUST 保持 0.8 mm
+- **AND** 讓位帶下緣 MUST 不低於最高可容納骰子的頂面，任一有效 `diceSize` 與 `cardHeight` 組合的骰子容量 MUST 保持不變

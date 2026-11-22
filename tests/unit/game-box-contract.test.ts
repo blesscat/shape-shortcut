@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CARD_BOX_CONFIGURATION,
   GAME_BOX_CONFIGURATION,
   GAME_BOX_DIVIDER_INDICES,
   GAME_BOX_PARAMETER_KEYS,
@@ -14,6 +15,7 @@ import {
   gameBoxDividerTextKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
+  gameBoxDiceLayout,
   gameBoxStlFileName,
   gameBoxStorageDepth,
   gameBoxThreeMfFileName,
@@ -951,5 +953,53 @@ describe('game-box cover and divider fields survive a card-size preset', () => {
       cardHeight: 63,
     }
     expect(validateGameBoxParameters(merged).valid).toBe(false)
+  })
+})
+
+describe('game-box divider label relief', () => {
+  it('relieves only the free band above the topmost die, for every valid size', () => {
+    const relief = GAME_BOX_CONFIGURATION.dividerLabelRelief
+    // The band may not reach below the top margin: the highest die top is
+    // always cardHeight - diceHolderTopMargin, so the relief never enters
+    // the dice region and capacity is unaffected for every valid input.
+    expect(relief.bandHeight).toBeLessThanOrEqual(
+      GAME_BOX_CONFIGURATION.diceHolderTopMargin,
+    )
+    const topMargin = GAME_BOX_CONFIGURATION.diceHolderTopMargin
+    for (const diceSize of [8, 8.5, 12, 16, 20, 25.5, 30] as const) {
+      for (const cardHeight of [60, 63, 88, 91, 120, 150] as const) {
+        const layout = gameBoxDiceLayout(70, cardHeight, diceSize, 1)
+        // The well floor sits one top margin below the topmost die stack,
+        // so the die ceiling is cardHeight - topMargin for every layout.
+        const dieCeiling =
+          cardHeight -
+          (layout.layers * (diceSize + GAME_BOX_CONFIGURATION.diceClearance) +
+            topMargin) +
+          layout.layers * (diceSize + GAME_BOX_CONFIGURATION.diceClearance)
+        expect(
+          dieCeiling,
+          `die ceiling at ${diceSize}x${cardHeight}`,
+        ).toBeCloseTo(cardHeight - topMargin, 6)
+        expect(
+          relief.bandHeight,
+          `relief band at ${diceSize}x${cardHeight}`,
+        ).toBeLessThanOrEqual(cardHeight - dieCeiling)
+      }
+    }
+  })
+
+  it('clears the raised label: art protrusion plus margin fits the recess', () => {
+    const relief = GAME_BOX_CONFIGURATION.dividerLabelRelief
+    // Raised art reaches 0.4 mm (accentDepth) out of the plate face while
+    // the holder face keeps the 0.3 mm designed gap, so the art penetrates
+    // 0.1 mm; the 0.3 mm recess clears it with the 0.2 mm minimum margin.
+    expect(relief.depth - 0.1).toBeGreaterThanOrEqual(0.2 - 1e-9)
+    // 0.4 mm art depth - 0.3 mm holder gap + the 0.2 mm minimum margin.
+    expect(relief.depth).toBeCloseTo(
+      CARD_BOX_CONFIGURATION.accentDepth -
+        GAME_BOX_CONFIGURATION.diceHolderGap +
+        0.2,
+      9,
+    )
   })
 })

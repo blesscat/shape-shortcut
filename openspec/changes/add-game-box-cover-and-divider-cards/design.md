@@ -257,6 +257,34 @@ kernel build-time localized error that blocks generation and export — it
 cannot be decided synchronously in validation, and the build error keeps it
 visible instead of silently shrinking or cropping.
 
+### 9. Raised divider labels and dice holders: the holder top-edge relief
+
+Review round 1 (finding B P1) measured a real interference: a raised divider
+label sits 0.4 mm proud of the plate face, the label band ends 0.8 mm below
+the holder top, and the holder keeps only the 0.3 mm designed gap to the
+plate face — so the raised art overlaps the holder's grip-flap corner by
+~0.1 mm in y over a 0.8 mm band (≈ 0.83 mm³ total at the default size). The
+lead's criteria, in order: the label stays on the face people read today (no
+flipping), the box length must not change when a label is typed, and the
+holder's accepted front/back play (~0.7 mm) must not grow. The fix therefore
+relieves the holder: the top band of its front and back walls — the faces
+that look at divider plates — recesses 0.3 mm (0.1 mm of art clearance plus
+the 0.2 mm minimum margin) over the top 1.0 mm band (`dividerLabelRelief`).
+
+The relief cannot cost die space: the band is exactly the free height above
+the topmost die (`diceHolderTopMargin = 1` mm — the highest die top is
+always `cardHeight − 1`, the band bottom is `cardHeight − 1`), for every
+valid `diceSize × cardHeight` combination. Capacity math is untouched. The
+relief stays inside the holder body width, so the grip flaps (which never
+face a label) keep their full geometry, and it is part of the printed holder
+(single part and assembly), not only of the pressed preview. `flat` labels
+sit flush and never needed it.
+
+*Alternatives*: flipping the label to the plate's back face (rejected —
+criterion 1); growing the holder gap to the plate (rejected — criterion 3);
+lowering the whole holder top (rejected — the holder height must equal
+`cardHeight` and the relief needs only a 1 mm band).
+
 ## Risks / Trade-offs
 
 - [Temporary duplication of cover/SVG code (card-box + game-box copies) until

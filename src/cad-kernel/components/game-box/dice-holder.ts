@@ -199,6 +199,28 @@ export function buildGameBoxDiceHolder(
     [bodyWidth / 2, thickness, height],
   ) as Shape3D
   try {
+    // The divider label relief: the top band of the front and the back
+    // walls recesses so a raised divider label on the neighbouring plate
+    // clears the holder. The band is the free height above the topmost
+    // die, so no die space is lost; the relief stays inside the body
+    // width, where the label faces the walls (never the grip flaps).
+    const relief = GAME_BOX_CONFIGURATION.dividerLabelRelief
+    for (const wall of [
+      { name: 'front', yMin: -0.01, yMax: relief.depth },
+      {
+        name: 'back',
+        yMin: thickness - relief.depth,
+        yMax: thickness + 0.01,
+      },
+    ] as const) {
+      shape = cutShape(
+        shape,
+        makeBox(
+          [-bodyWidth / 2, wall.yMin, height - relief.bandHeight],
+          [bodyWidth / 2, wall.yMax, height + 1],
+        ) as Shape3D,
+      )
+    }
     // The dice well, open at the top.
     shape = cutShape(
       shape,

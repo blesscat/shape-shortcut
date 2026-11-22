@@ -4,7 +4,7 @@
 
 - [x] 1.1 確認前置條件：`add-game-box-card-presets` 已合併，本分支已 rebase 於其上（`git log --oneline` 可見該 change 的 merge/commit），`gameBoxDefinition` 已有七組卡片尺寸 preset；未滿足時停止並回報 lead。
 - [x] 1.2 對照 `retire-card-box` 的 proposal/design：確認本 change 的協調事項（design.md 決策 6）與其 `card-storage-shell` 搬移清單一致，即該 change 搬移/刪除的檔案集合涵蓋 game-box 將使用的所有 shell 匯出（`buildCardBoxDivider`、`CardBoxArtPartBuild`、`text.ts` 兩個文字函式、`cardBoxToken`、SVG outline 型別、`CARD_BOX_CONFIGURATION` 尺寸函式），且 game-box 不再 import `cover.ts`、`layout.ts`、`svg-outline.ts`、`card-box-svg/`；若有出入，先與 lead 確認再動工。
-- [x] 1.3 命名與目錄檢查（無新 component）：本 change 不新增 modelId、buildKey、route 或 OpenGrid component；既有 ID 全部保留。實作後驗證 `game-box` 的 modelId/buildKey/route 皆為 `game-box`、顯示名稱無 `OpenGrid ` 前綴，且未更動任何 `card-box` 檔案、`package.json` 與 lockfile。
+- [x] 1.3 命名與目錄檢查（無新 component）：本 change 不新增 modelId、buildKey、route 或 OpenGrid component；既有 ID 全部保留。實作後驗證 `game-box` 的 modelId/buildKey/route 皆為 `game-box`、顯示名稱無 `OpenGrid ` 前綴；card-box 行為與輸出不變（card-box 測試原值通過），唯一更動的 card-box 檔案是 `card-box/definition.ts` 的 `context.coverSvg` 讀取名（design.md 決策 5 / 任務 5.1）；`package.json` 與 lockfile 無差異。
 
 ## 2. 合約層 `src/cad-contract/units/game-box.ts`
 
@@ -63,3 +63,7 @@
 
 - 依 `/openspec-to-main-pr` 規則：proposal 完成後由 owner 端（herdr 終端 `t3q`）審核；通過後才進入 apply、獨立 compliance review、`openspec-sync-specs`、`openspec-archive-change`、push 與 `main` 的 draft PR。
 - 本 change 之後才執行 `retire-card-box`；apply 期間若 design.md 決策 6 的協調事項與 retire proposal 有出入，停下回報 lead，不得單方面修改 retire proposal。
+
+## Round-1 gate fixes
+
+- [x] 3.6 骰子匣頂部讓位帶（design.md 決策 9）：正面與背面牆頂部 1.0 mm 帶內縮 0.3 mm，使 `raised` 分隔卡標籤與相鄰骰子匣的組裝交集為零；讓位帶位於骰槽上方自由餘隙（容量不變），X 限制在本體寬度內（不碰握持薄片），並加入帶標籤組裝的成對零交集測試（`raised`＋`flat`、兩側骰子模組、預設／最小／最大卡片尺寸）。
