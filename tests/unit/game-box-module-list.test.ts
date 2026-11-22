@@ -3,14 +3,19 @@ import {
   activeModuleCount,
   addModuleGroup,
   deleteModuleGroup,
+  dividerAndCoverRawValues,
   moduleSnapshot,
   moveModuleGroup,
   readModuleGroups,
+  resetInactiveDividerValues,
   snapshotRawValues,
 } from '../../src/components/cad/component-panels/game-box/module-list'
 import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_PARAMETER_KEYS,
+  gameBoxDividerStyleKey,
+  gameBoxDividerTabPositionKey,
+  gameBoxDividerTextKey,
   gameBoxLayout,
   validateGameBoxParameters,
   type GameBoxParameters,
@@ -222,5 +227,70 @@ describe('game-box module list', () => {
     expect(snapshot.module2CardDepth).toBe(
       GAME_BOX_CONFIGURATION.defaults.cardDepth,
     )
+  })
+})
+
+describe('game-box divider settings across list operations', () => {
+  function rawWithDividerSettings(): RawParameters {
+    const raw = rawFromGroups(
+      ['cards', 'dice', 'cards'],
+      [30, 16, 20],
+    ) as Record<string, string>
+    raw['divider1Text'] = 'RED'
+    raw['divider1TabPosition'] = 'center'
+    raw['divider1Style'] = 'flat'
+    raw['divider2Text'] = 'BLUE'
+    raw['coverTitle'] = 'GO FISH'
+    return raw as RawParameters
+  }
+
+  it('keeps the divider and cover values through a list operation', () => {
+    const groups = readModuleGroups(rawWithDividerSettings())
+    const values = snapshotRawValues(
+      groups,
+      'assembly',
+      70,
+      120,
+      rawWithDividerSettings(),
+    )
+    expect(values.divider1Text).toBe('RED')
+    expect(values.divider1TabPosition).toBe('center')
+    expect(values.divider1Style).toBe('flat')
+    expect(values.divider2Text).toBe('BLUE')
+    expect(values.coverTitle).toBe('GO FISH')
+  })
+
+  it('defaults the divider and cover values when no raw snapshot exists', () => {
+    const groups = readModuleGroups(rawFromGroups(['cards']))
+    const values = snapshotRawValues(groups, 'assembly', 70, 120)
+    expect(values.divider1Text).toBe('')
+    expect(values.divider1TabPosition).toBe('left')
+    expect(values.divider1Style).toBe('raised')
+    expect(values.coverTitle).toBe(GAME_BOX_CONFIGURATION.defaultCoverTitle)
+    expect(values.usesCoverSvg).toBe('false')
+  })
+
+  it('resets the vanished boundary and keeps the surviving ones by index', () => {
+    const values = resetInactiveDividerValues(
+      dividerAndCoverRawValues(rawWithDividerSettings()),
+      1,
+    )
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTabPositionKey(1)]).toBe('center')
+    expect(values[gameBoxDividerStyleKey(1)]).toBe('flat')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+    expect(values[gameBoxDividerTabPositionKey(2)]).toBe('left')
+    expect(values[gameBoxDividerStyleKey(2)]).toBe('raised')
+    // The vanished boundary reset does not touch the cover fields.
+    expect(values.coverTitle).toBe('GO FISH')
+  })
+
+  it('keeps every boundary when the list grows', () => {
+    const values = resetInactiveDividerValues(
+      dividerAndCoverRawValues(rawWithDividerSettings()),
+      2,
+    )
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('BLUE')
   })
 })

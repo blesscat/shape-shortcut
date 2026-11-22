@@ -307,6 +307,10 @@ test.describe('game-box', () => {
       '組裝',
       '盒體',
       '滑蓋',
+      '組裝',
+      '盒體',
+      '滑蓋',
+      '封面片',
       '骰子匣（模組 2）',
     ])
 
@@ -321,7 +325,8 @@ test.describe('game-box', () => {
       '組裝',
       '盒體',
       '滑蓋',
-      '分隔板（1 片）',
+      '封面片',
+      '分隔卡 1',
     ])
   })
 
@@ -607,5 +612,202 @@ test.describe('game-box', () => {
       await expect(page.getByTestId('game-box-part')).toBeVisible()
       await expect(page.locator('body')).not.toContainText('⟦')
     }
+  })
+
+  test('edits a divider label and shows its field error only on that divider', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    // Three modules give the two boundaries divider1 and divider2.
+    await addModule(page, 'cards')
+    await addModule(page, 'cards')
+
+    // A 21-character label fails the contract cap. The input clamps typing
+    // and even fill at the cap, so the value is set directly: validation
+    // owns the rejection and renders the field error inside divider 2's
+    // item only.
+    await page
+      .getByTestId('game-box-divider-2-text')
+      .evaluate((element, value) => {
+        const input = element as HTMLInputElement
+        input.removeAttribute('maxlength')
+        input.value = value
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      }, 'W'.repeat(21))
+    await expect(page.locator('#divider2Text-error')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.locator('#divider1Text-error')).toHaveCount(0)
+
+    // Back under the cap: the error clears and the model regenerates.
+    const viewport = page.getByTestId('cad-viewport')
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+    await page.getByTestId('game-box-divider-2-text').fill('SPELLS')
+    await expect(page.locator('#divider2Text-error')).toHaveCount(0)
+    await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue(
+      'SPELLS',
+    )
+  })
+
+  test('chooses a divider card and the cover part and regenerates', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    // Four modules give the three boundaries divider1..divider3.
+    await addModule(page, 'dice')
+    await addModule(page, 'cards')
+    await addModule(page, 'cards')
+
+    const viewport = page.getByTestId('cad-viewport')
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+    const revision = await viewport.getAttribute('data-model-revision')
+
+    const part = page.getByTestId('game-box-part')
+    await part.selectOption('divider3')
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      revision!,
+      {
+        timeout: 120_000,
+      },
+    )
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+    const dividerRevision = await viewport.getAttribute('data-model-revision')
+
+    await part.selectOption('cover')
+    await expect(viewport).not.toHaveAttribute(
+      'data-model-revision',
+      dividerRevision!,
+      { timeout: 120_000 },
+    )
+    await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
+      timeout: 120_000,
+    })
+  })
+
+  test('keeps the divider and cover settings across list operations', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await addModule(page, 'dice')
+
+    await page.getByTestId('game-box-divider-1-text').fill('RED')
+    await page.getByTestId('game-box-part').selectOption('cover')
+    await page.getByLabel('標題', { exact: true }).fill('GO FISH')
+
+    // Adding a module keeps every existing divider card by index.
+    await addModule(page, 'cards')
+    await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
+    await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue('')
+
+    // Deleting the middle module keeps divider 1 by index and resets the
+    // vanished boundary.
+    await page.getByTestId('game-box-module-2-delete').click()
+    await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
+    await expect(page.getByTestId('game-box-divider-2-text')).toHaveCount(0)
+    await page.getByTestId('game-box-part').selectOption('cover')
+    await expect(page.getByLabel('標題', { exact: true })).toHaveValue(
+      'GO FISH',
+    )
+  })
+
+  test('gates the two-color 3MF to the parts that carry art', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await addModule(page, 'dice')
+
+    const part = page.getByTestId('game-box-part')
+    const threeMfButton = page.getByRole('button', { name: '下載 3MF' })
+
+    // A blank divider plate is STEP/STL only.
+    await part.selectOption('divider1')
+    await expect(page.getByRole('button', { name: '下載 STEP' })).toBeEnabled({
+      timeout: 120_000,
+    })
+    await expect(threeMfButton).toHaveCount(0)
+
+    // The labelled divider gains the two-color 3MF.
+    await page.getByTestId('game-box-divider-1-text').fill('RED')
+    await expect(threeMfButton).toBeEnabled({ timeout: 120_000 })
+
+    // The default cover has the GAME title, so it ships a 3MF; a blank
+    // cover loses it.
+    await part.selectOption('cover')
+    await expect(threeMfButton).toBeEnabled({ timeout: 120_000 })
+    await page.getByLabel('標題', { exact: true }).fill('')
+    await expect(threeMfButton).toBeHidden({ timeout: 120_000 })
+
+    // The box part never offers a 3MF.
+    await part.selectOption('box')
+    await expect(threeMfButton).toHaveCount(0)
+  })
+
+  test('imports a cover SVG behind the Beta badge and falls back when the data is lost', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await page.getByTestId('game-box-part').selectOption('cover')
+
+    const svgImport = page.getByTestId('game-box-svg-import')
+    await expect(svgImport).toBeVisible()
+    await expect(svgImport.getByText('Beta', { exact: true })).toBeVisible()
+
+    await svgImport.locator('input[type="file"]').setInputFiles({
+      name: 'cover.svg',
+      mimeType: 'image/svg+xml',
+      buffer: Buffer.from(
+        [
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">',
+          '  <rect x="10" y="5" width="30" height="20" fill="#ff0000"/>',
+          '</svg>',
+        ].join('\n'),
+      ),
+    })
+    await expect(
+      svgImport.getByText('封面圖稿已保存', { exact: false }),
+    ).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByTestId('game-box-svg-clear')).toBeVisible()
+
+    // Losing the stored outlines falls back to the text-only layout with a
+    // notice, and the SVG flag resets so the export gating matches what the
+    // worker can build.
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        'shape-shortcut:game-box-cover-svg:v1',
+        'not json',
+      )
+    })
+    await page.reload()
+    await expect(page.getByTestId('game-box-part')).toHaveValue('cover', {
+      timeout: 30_000,
+    })
+    await expect(
+      page
+        .getByTestId('game-box-svg-import')
+        .getByText('封面圖稿遺失或無法讀取', { exact: false }),
+    ).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByTestId('game-box-svg-clear')).toHaveCount(0)
   })
 })
