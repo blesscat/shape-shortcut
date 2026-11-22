@@ -79,14 +79,14 @@ describe('parseGameBoxSvg', () => {
   it('rejects stroke-only artwork', () => {
     const source =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="10" height="10" fill="none" stroke="black"/></svg>'
-    expect(() => parseGameBoxSvg(source)).toThrow('CARD_BOX_SVG_STROKE_ONLY')
+    expect(() => parseGameBoxSvg(source)).toThrow('GAME_BOX_SVG_STROKE_ONLY')
   })
 
   it('rejects text elements', () => {
     const source =
       '<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="0">hi</text></svg>'
     expect(() => parseGameBoxSvg(source)).toThrow(
-      'CARD_BOX_SVG_TEXT_UNSUPPORTED',
+      'GAME_BOX_SVG_TEXT_UNSUPPORTED',
     )
   })
 
@@ -94,20 +94,20 @@ describe('parseGameBoxSvg', () => {
     const source =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="a.png"/></svg>'
     expect(() => parseGameBoxSvg(source)).toThrow(
-      'CARD_BOX_SVG_IMAGE_UNSUPPORTED',
+      'GAME_BOX_SVG_IMAGE_UNSUPPORTED',
     )
   })
 
   it('rejects unknown elements', () => {
     const source = '<svg xmlns="http://www.w3.org/2000/svg"><fooBar/></svg>'
     expect(() => parseGameBoxSvg(source)).toThrow(
-      'CARD_BOX_SVG_UNSUPPORTED_ELEMENT',
+      'GAME_BOX_SVG_UNSUPPORTED_ELEMENT',
     )
   })
 
   it('rejects malformed documents', () => {
     expect(() => parseGameBoxSvg('<svg><rect></not-xml')).toThrow(
-      'CARD_BOX_SVG_PARSE_FAILED',
+      'GAME_BOX_SVG_PARSE_FAILED',
     )
   })
 
@@ -123,7 +123,7 @@ describe('parseGameBoxSvg', () => {
       )
     }
     const source = `<svg xmlns="http://www.w3.org/2000/svg">${squares.join('')}</svg>`
-    expect(() => parseGameBoxSvg(source)).toThrow('CARD_BOX_SVG_TOO_COMPLEX')
+    expect(() => parseGameBoxSvg(source)).toThrow('GAME_BOX_SVG_TOO_COMPLEX')
   })
 })
 

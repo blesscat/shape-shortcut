@@ -274,8 +274,8 @@ const IS_CONTAINER_ELEMENT: Record<string, true> = {
 
 /** Stable rejection code per non-printable artwork element. */
 const FORBIDDEN_CODE_BY_ELEMENT: Record<string, string> = {
-  text: 'CARD_BOX_SVG_TEXT_UNSUPPORTED',
-  image: 'CARD_BOX_SVG_IMAGE_UNSUPPORTED',
+  text: 'GAME_BOX_SVG_TEXT_UNSUPPORTED',
+  image: 'GAME_BOX_SVG_IMAGE_UNSUPPORTED',
 }
 
 type CollectedContours = {
@@ -342,7 +342,7 @@ function collect(
   }
   if (IS_SHAPE_ELEMENT[localName] === undefined) {
     if (IS_CONTAINER_ELEMENT[localName] === undefined) {
-      result.unsupported ??= 'CARD_BOX_SVG_UNSUPPORTED_ELEMENT'
+      result.unsupported ??= 'GAME_BOX_SVG_UNSUPPORTED_ELEMENT'
     }
     for (const child of Array.from(element.children)) {
       // defs/clipPath content is never rendered directly; skip it.
@@ -371,7 +371,7 @@ function collect(
       if (polygon.length >= 3) result.contours.push(polygon)
     }
   } catch {
-    throw new Error('CARD_BOX_SVG_PARSE_FAILED')
+    throw new Error('GAME_BOX_SVG_PARSE_FAILED')
   }
 }
 
@@ -406,10 +406,10 @@ function contentBounds(contours: readonly PathPolygon[]): {
 export function parseGameBoxSvg(source: string): CardBoxSvgOutlineData {
   const document = new DOMParser().parseFromString(source, 'image/svg+xml')
   const parseError = document.querySelector('parsererror')
-  if (parseError !== null) throw new Error('CARD_BOX_SVG_PARSE_FAILED')
+  if (parseError !== null) throw new Error('GAME_BOX_SVG_PARSE_FAILED')
   const root = document.documentElement
   if (root === null || root.localName !== 'svg') {
-    throw new Error('CARD_BOX_SVG_PARSE_FAILED')
+    throw new Error('GAME_BOX_SVG_PARSE_FAILED')
   }
   const mapping = viewBoxMapping(root)
   const result: CollectedContours = {
@@ -427,7 +427,7 @@ export function parseGameBoxSvg(source: string): CardBoxSvgOutlineData {
   )
   if (result.forbiddenCode !== null) throw new Error(result.forbiddenCode)
   if (result.unsupported !== null) throw new Error(result.unsupported)
-  if (result.strokeOnly) throw new Error('CARD_BOX_SVG_STROKE_ONLY')
+  if (result.strokeOnly) throw new Error('GAME_BOX_SVG_STROKE_ONLY')
 
   const kept: PathPolygon[] = []
   let totalPoints = 0
@@ -435,11 +435,11 @@ export function parseGameBoxSvg(source: string): CardBoxSvgOutlineData {
     if (Math.abs(signedArea(contour)) < MIN_CONTOUR_AREA) continue
     totalPoints += contour.length
     if (totalPoints > GAME_BOX_SVG_MAX_POINTS) {
-      throw new Error('CARD_BOX_SVG_TOO_COMPLEX')
+      throw new Error('GAME_BOX_SVG_TOO_COMPLEX')
     }
     kept.push(contour)
   }
-  if (kept.length === 0) throw new Error('CARD_BOX_SVG_STROKE_ONLY')
+  if (kept.length === 0) throw new Error('GAME_BOX_SVG_STROKE_ONLY')
 
   const groups: CardBoxSvgOutlineGroup[] = groupPolygonContours(kept).map(
     (group): CardBoxSvgOutlineGroup => ({

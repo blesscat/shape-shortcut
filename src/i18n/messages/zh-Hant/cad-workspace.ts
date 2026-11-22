@@ -219,7 +219,8 @@ export const messages = {
   'diagnostic.workerTimeout': 'CAD Worker 處理超時，請重試。',
   'diagnostic.meshInvalid': '預覽模型資料無效，Worker 將重新啟動。',
   'diagnostic.staleGeneration': '這次建模已被較新的輸入取代。',
-  'diagnostic.gameBoxCoverArtOutsideSafeArea': '封面圖樣放不進這個卡片尺寸的可見區。',
+  'diagnostic.gameBoxCoverArtOutsideSafeArea':
+    '封面圖樣放不進這個卡片尺寸的可見區。',
   'diagnostic.gameBoxSvgUnsupported':
     '匯入的封面 SVG 無法建立。請重新匯入支援的 SVG 或關閉使用。',
   'diagnostic.cardBoxCoverArtOutsideSafeArea':
@@ -281,7 +282,8 @@ export const messages = {
     '這個骰子模組最多只能放 {max} 顆骰子。',
   'validation.gameBoxStorageDepthOutOfRange':
     '模組加總的收納深度為 {depth} mm，超出支援的 {min}–{max} mm 範圍。',
-  'validation.gameBoxTabPositionInvalid': '{field} 必須是 left、center 或 right。',
+  'validation.gameBoxTabPositionInvalid':
+    '{field} 必須是 left、center 或 right。',
   'validation.gameBoxStyleInvalid': '{field} 必須是 flat 或 raised。',
   'validation.gameBoxTextTooLong': '{field} 不能超過 {max} 個字元。',
   'validation.gameBoxSvgFingerprintMissing':

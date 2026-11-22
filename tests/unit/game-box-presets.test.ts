@@ -39,6 +39,13 @@ const CURRENT_WITH_MODULES: GameBoxParameters = {
   module2DiceCount: 6,
   module3Type: 'cards',
   module3CardDepth: 18,
+  // Non-default divider and cover values: the preset must carry them
+  // through the real resolve path, not just the defaults.
+  divider1Text: 'RED',
+  divider1TabPosition: 'center',
+  divider1Style: 'flat',
+  coverTitle: 'GO FISH',
+  coverSvgWidth: 52,
   part: 'box',
 } as GameBoxParameters
 

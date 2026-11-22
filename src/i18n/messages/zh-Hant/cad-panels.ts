@@ -455,14 +455,18 @@ export const messages = {
   'panel.gameBox.svgImport': '匯入封面 SVG',
   'panel.gameBox.svgBeta': 'Beta',
   'panel.gameBox.svgClear': '移除 SVG',
-  'panel.gameBox.svgLoaded': '封面圖稿已保存，移除前都會留給這個 game box 使用。',
-  'panel.gameBox.svgSessionOnly': '封面圖稿太大無法保存，僅在本次工作階段有效。',
+  'panel.gameBox.svgLoaded':
+    '封面圖稿已保存，移除前都會留給這個 game box 使用。',
+  'panel.gameBox.svgSessionOnly':
+    '封面圖稿太大無法保存，僅在本次工作階段有效。',
   'panel.gameBox.svgMissingFallback':
     '保存的封面圖稿遺失或無法讀取，封面回退為純文字版面。',
-  'panel.gameBox.svgError.strokeOnly': '這個 SVG 只有描邊路徑。請將形狀改為填色再試一次。',
+  'panel.gameBox.svgError.strokeOnly':
+    '這個 SVG 只有描邊路徑。請將形狀改為填色再試一次。',
   'panel.gameBox.svgError.textUnsupported':
     '這個 SVG 含有 <text> 元素。請將文字轉為路徑再試一次。',
-  'panel.gameBox.svgError.imageUnsupported': '這個 SVG 含有 <image> 元素，無法用於雕刻。',
+  'panel.gameBox.svgError.imageUnsupported':
+    '這個 SVG 含有 <image> 元素，無法用於雕刻。',
   'panel.gameBox.svgError.unsupportedElement': '這個 SVG 使用了不支援的元素。',
   'panel.gameBox.svgError.tooComplex': '這個 SVG 點數太多。請簡化後再試一次。',
   'panel.gameBox.svgError.parseFailed': '無法以 SVG 讀取這個檔案。',

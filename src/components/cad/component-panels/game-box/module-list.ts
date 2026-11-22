@@ -172,13 +172,14 @@ export function dividerAndCoverRawValues(
   raw: RawParameters | undefined,
 ): Partial<Record<ModelParameterKey, string>> {
   const values: Partial<Record<ModelParameterKey, string>> = {}
+  const cover = GAME_BOX_CONFIGURATION.rangesCover
   const coverTextDefaults: Array<[ModelParameterKey, string]> = [
     ['coverTitle', GAME_BOX_CONFIGURATION.defaultCoverTitle],
-    ['coverTitleTextHeight', '6'],
+    ['coverTitleTextHeight', String(cover.coverTitleTextHeight.default)],
     ['coverSubtitle', ''],
-    ['coverSubtitleTextHeight', '5'],
-    ['coverSvgWidth', '40'],
-    ['coverVerticalPosition', '30'],
+    ['coverSubtitleTextHeight', String(cover.coverSubtitleTextHeight.default)],
+    ['coverSvgWidth', String(cover.coverSvgWidth.default)],
+    ['coverVerticalPosition', String(cover.coverVerticalPosition.default)],
     ['coverStyle', GAME_BOX_CONFIGURATION.defaultStyle],
     ['usesCoverSvg', 'false'],
     ['coverSvgFingerprint', ''],

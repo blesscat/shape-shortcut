@@ -24,12 +24,16 @@ const GAME_BOX_TEXT_KEYS: Record<string, true> = {
   coverSubtitle: true,
   coverSvgFingerprint: true,
   ...Object.fromEntries(
-    GAME_BOX_DIVIDER_INDICES.map((index) => [gameBoxDividerTextKey(index), true]),
+    GAME_BOX_DIVIDER_INDICES.map((index) => [
+      gameBoxDividerTextKey(index),
+      true,
+    ]),
   ),
 }
 
+// `part` is handled with its own default before this map matters; the
+// generic enum branch serves the cover style alone.
 const GAME_BOX_ENUM_KEYS: Record<string, true> = {
-  part: true,
   coverStyle: true,
 }
 
@@ -72,11 +76,19 @@ export function parseGameBoxRawParameters(raw: RawParameters):
       parsed[key] = rawValue ?? ''
       continue
     }
-    if (GAME_BOX_DIVIDER_INDICES.some((index) => gameBoxDividerTabPositionKey(index) === key)) {
+    if (
+      GAME_BOX_DIVIDER_INDICES.some(
+        (index) => gameBoxDividerTabPositionKey(index) === key,
+      )
+    ) {
       parsed[key] = rawValue ?? GAME_BOX_CONFIGURATION.defaultTabPosition
       continue
     }
-    if (GAME_BOX_DIVIDER_INDICES.some((index) => gameBoxDividerStyleKey(index) === key)) {
+    if (
+      GAME_BOX_DIVIDER_INDICES.some(
+        (index) => gameBoxDividerStyleKey(index) === key,
+      )
+    ) {
       parsed[key] = rawValue ?? GAME_BOX_CONFIGURATION.defaultStyle
       continue
     }

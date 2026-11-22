@@ -166,7 +166,10 @@
   function handleDividerTabChange(index: GameBoxDividerIndex) {
     return (event: Event): void => {
       if (!(event.currentTarget instanceof HTMLSelectElement)) return
-      onInputChange(gameBoxDividerTabPositionKey(index), event.currentTarget.value)
+      onInputChange(
+        gameBoxDividerTabPositionKey(index),
+        event.currentTarget.value,
+      )
     }
   }
 
@@ -194,19 +197,19 @@
 
   function svgErrorKeyFor(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error)
-    if (message.includes('CARD_BOX_SVG_STROKE_ONLY') || message.includes('GAME_BOX_SVG_STROKE_ONLY')) {
+    if (message.includes('GAME_BOX_SVG_STROKE_ONLY')) {
       return 'panel.gameBox.svgError.strokeOnly'
     }
-    if (message.includes('CARD_BOX_SVG_TEXT_UNSUPPORTED') || message.includes('GAME_BOX_SVG_TEXT_UNSUPPORTED')) {
+    if (message.includes('GAME_BOX_SVG_TEXT_UNSUPPORTED')) {
       return 'panel.gameBox.svgError.textUnsupported'
     }
-    if (message.includes('CARD_BOX_SVG_IMAGE_UNSUPPORTED') || message.includes('GAME_BOX_SVG_IMAGE_UNSUPPORTED')) {
+    if (message.includes('GAME_BOX_SVG_IMAGE_UNSUPPORTED')) {
       return 'panel.gameBox.svgError.imageUnsupported'
     }
-    if (message.includes('CARD_BOX_SVG_TOO_COMPLEX') || message.includes('GAME_BOX_SVG_TOO_COMPLEX')) {
+    if (message.includes('GAME_BOX_SVG_TOO_COMPLEX')) {
       return 'panel.gameBox.svgError.tooComplex'
     }
-    if (message.includes('CARD_BOX_SVG_UNSUPPORTED_ELEMENT') || message.includes('GAME_BOX_SVG_UNSUPPORTED_ELEMENT')) {
+    if (message.includes('GAME_BOX_SVG_UNSUPPORTED_ELEMENT')) {
       return 'panel.gameBox.svgError.unsupportedElement'
     }
     return 'panel.gameBox.svgError.parseFailed'
@@ -279,9 +282,16 @@
     const nextSnapshot = moduleSnapshot(nextGroups, part, cardWidth, cardHeight)
     const nextParts = gameBoxAvailableParts(nextSnapshot)
     const nextPart = nextParts.includes(part) ? part : 'assembly'
-    const boundaryCount = nextGroups.filter((group) => group.type !== 'none').length - 1
+    const boundaryCount =
+      nextGroups.filter((group) => group.type !== 'none').length - 1
     const values = resetInactiveDividerValues(
-      snapshotRawValues(nextGroups, nextPart, cardWidth, cardHeight, rawParameters),
+      snapshotRawValues(
+        nextGroups,
+        nextPart,
+        cardWidth,
+        cardHeight,
+        rawParameters,
+      ),
       Math.max(boundaryCount, 0),
     )
     onInputsChange(values)
@@ -323,6 +333,8 @@
     }
   }
 
+  const defaultTab = GAME_BOX_CONFIGURATION.defaultTabPosition
+  const defaultStyle = GAME_BOX_CONFIGURATION.defaultStyle
   const cover = GAME_BOX_CONFIGURATION.rangesCover
   const titleTextHeightField = numericField(
     'coverTitleTextHeight',
@@ -452,17 +464,20 @@
         {locale}
         label={t('panel.gameBox.tabPosition')}
         unit="tab"
-        changed={text(gameBoxDividerTabPositionKey(dividerIndex), 'left') !== 'left'}
+        changed={text(
+          gameBoxDividerTabPositionKey(dividerIndex),
+          defaultTab,
+        ) !== defaultTab}
         error={fieldErrors[gameBoxDividerTabPositionKey(dividerIndex)]}
         errorId={`divider${dividerIndex}TabPosition-error`}
         onRestore={() =>
-          onInputChange(gameBoxDividerTabPositionKey(dividerIndex), 'left')}
+          onInputChange(gameBoxDividerTabPositionKey(dividerIndex), defaultTab)}
       >
         <select
           class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
           aria-label={t('panel.gameBox.tabPosition')}
           data-testid={`game-box-divider-${dividerIndex}-tab`}
-          value={text(gameBoxDividerTabPositionKey(dividerIndex), 'left')}
+          value={text(gameBoxDividerTabPositionKey(dividerIndex), defaultTab)}
           onchange={handleDividerTabChange(dividerIndex)}
         >
           {#each GAME_BOX_TAB_POSITIONS as tab (tab)}
@@ -474,17 +489,18 @@
         {locale}
         label={t('panel.gameBox.dividerStyle')}
         unit="style"
-        changed={text(gameBoxDividerStyleKey(dividerIndex), 'raised') !== 'raised'}
+        changed={text(gameBoxDividerStyleKey(dividerIndex), defaultStyle) !==
+          defaultStyle}
         error={fieldErrors[gameBoxDividerStyleKey(dividerIndex)]}
         errorId={`divider${dividerIndex}Style-error`}
         onRestore={() =>
-          onInputChange(gameBoxDividerStyleKey(dividerIndex), 'raised')}
+          onInputChange(gameBoxDividerStyleKey(dividerIndex), defaultStyle)}
       >
         <select
           class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
           aria-label={t('panel.gameBox.dividerStyle')}
           data-testid={`game-box-divider-${dividerIndex}-style`}
-          value={text(gameBoxDividerStyleKey(dividerIndex), 'raised')}
+          value={text(gameBoxDividerStyleKey(dividerIndex), defaultStyle)}
           onchange={handleDividerStyleChange(dividerIndex)}
         >
           {#each GAME_BOX_STYLES as style (style)}
@@ -505,16 +521,16 @@
       {locale}
       label={t('panel.gameBox.coverStyle')}
       unit="style"
-      changed={text('coverStyle', 'raised') !== 'raised'}
+      changed={text('coverStyle', defaultStyle) !== defaultStyle}
       error={fieldErrors.coverStyle}
       errorId="coverStyle-error"
-      onRestore={() => onInputChange('coverStyle', 'raised')}
+      onRestore={() => onInputChange('coverStyle', defaultStyle)}
     >
       <select
         class="w-full min-w-0 rounded-lg border border-border-field bg-panel px-[0.65rem] py-[0.55rem] text-base text-ink"
         aria-label={t('panel.gameBox.coverStyle')}
         data-testid="game-box-cover-style"
-        value={text('coverStyle', 'raised')}
+        value={text('coverStyle', defaultStyle)}
         onchange={handleCoverStyleChange}
       >
         {#each GAME_BOX_STYLES as style (style)}
@@ -598,7 +614,9 @@
       field={verticalPositionField}
       value={text(
         'coverVerticalPosition',
-        String(GAME_BOX_CONFIGURATION.rangesCover.coverVerticalPosition.default),
+        String(
+          GAME_BOX_CONFIGURATION.rangesCover.coverVerticalPosition.default,
+        ),
       )}
       error={fieldErrors.coverVerticalPosition}
       onChange={(nextValue) =>
