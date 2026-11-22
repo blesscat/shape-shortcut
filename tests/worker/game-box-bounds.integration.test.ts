@@ -1,10 +1,15 @@
 import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 import type { Shape3D } from 'replicad'
 import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
 import { buildGameBox } from '../../src/cad-kernel/components/game-box/builder'
+import {
+  loadOpenGridWallCoverFont,
+  OPEN_GRID_WALL_COVER_FONT_URL,
+} from '../../src/cad-kernel/components/opengrid-wall-cover/flat-text'
 import {
   boundsForGameBox,
   GAME_BOX_CONFIGURATION,
@@ -24,6 +29,11 @@ const require = createRequire(import.meta.url)
 beforeAll(async () => {
   await initialiseCadKernel(
     require.resolve('replicad-opencascadejs/src/replicad_single.wasm'),
+  )
+  // The assembly divider cards go through the reused text builder, which
+  // loads the shared font before it skips the blank text.
+  await loadOpenGridWallCoverFont(
+    readFileSync(fileURLToPath(OPEN_GRID_WALL_COVER_FONT_URL)),
   )
 })
 
