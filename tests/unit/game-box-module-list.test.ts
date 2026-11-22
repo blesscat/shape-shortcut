@@ -293,4 +293,31 @@ describe('game-box divider settings across list operations', () => {
     expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
     expect(values[gameBoxDividerTextKey(2)]).toBe('BLUE')
   })
+
+  it('keeps every divider card when a module is moved (調整順序不改變分隔卡)', () => {
+    const raw = rawWithDividerSettings()
+    const groups = readModuleGroups(raw)
+    expect(activeModuleCount(groups)).toBe(3)
+
+    // Move the first module later: only the module contents swap, so every
+    // divider field stays exactly as it was.
+    const moved = moveModuleGroup(groups, 0, 1)
+    const values = snapshotRawValues(moved, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTabPositionKey(1)]).toBe('center')
+    expect(values[gameBoxDividerStyleKey(1)]).toBe('flat')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('BLUE')
+    expect(values.coverTitle).toBe('GO FISH')
+
+    // The module list itself did swap.
+    const movedGroups = readModuleGroups(values as RawParameters)
+    expect(movedGroups[0]?.type).toBe('dice')
+    expect(movedGroups[1]?.type).toBe('cards')
+
+    // Moving earlier behaves the same.
+    const back = moveModuleGroup(groups, 1, -1)
+    const backValues = snapshotRawValues(back, 'assembly', 70, 120, raw)
+    expect(backValues[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(backValues[gameBoxDividerTextKey(2)]).toBe('BLUE')
+  })
 })

@@ -715,6 +715,12 @@ test.describe('game-box', () => {
     await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
     await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue('')
 
+    // Moving a module swaps only the module contents: every divider card
+    // keeps its settings (調整順序不改變分隔卡).
+    await page.getByTestId('game-box-module-1-move-later').click()
+    await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
+    await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue('')
+
     // Deleting the middle module keeps divider 1 by index and resets the
     // vanished boundary.
     await page.getByTestId('game-box-module-2-delete').click()

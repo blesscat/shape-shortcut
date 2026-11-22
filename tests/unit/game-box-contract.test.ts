@@ -28,6 +28,7 @@ import {
   type GameBoxModuleType,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
+import { gameBoxDiceHolderFrame } from '../../src/cad-kernel/components/game-box/dice-holder'
 
 type ModuleSpec = {
   type: GameBoxModuleType
@@ -968,14 +969,16 @@ describe('game-box divider label relief', () => {
     const topMargin = GAME_BOX_CONFIGURATION.diceHolderTopMargin
     for (const diceSize of [8, 8.5, 12, 16, 20, 25.5, 30] as const) {
       for (const cardHeight of [60, 63, 88, 91, 120, 150] as const) {
-        const layout = gameBoxDiceLayout(70, cardHeight, diceSize, 1)
-        // The well floor sits one top margin below the topmost die stack,
-        // so the die ceiling is cardHeight - topMargin for every layout.
-        const dieCeiling =
-          cardHeight -
-          (layout.layers * (diceSize + GAME_BOX_CONFIGURATION.diceClearance) +
-            topMargin) +
-          layout.layers * (diceSize + GAME_BOX_CONFIGURATION.diceClearance)
+        // The ceiling comes from the kernel frame (the built geometry), not
+        // from algebra over the same constants, so a kernel change that
+        // moves the well floor or the die stack breaks this assertion.
+        const frame = gameBoxDiceHolderFrame({
+          cardWidth: 70,
+          cardHeight,
+          diceSize,
+          diceCount: 1,
+        })
+        const dieCeiling = frame.wellFloorZ + frame.layout.layers * frame.pitch
         expect(
           dieCeiling,
           `die ceiling at ${diceSize}x${cardHeight}`,
