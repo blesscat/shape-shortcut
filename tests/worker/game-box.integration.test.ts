@@ -28,6 +28,7 @@ import {
   cardBoxDividerWidth,
   cardBoxInteriorWidth,
   gameBoxDiceHolderThickness,
+  gameBoxDiceHolderWidth,
   gameBoxLayout,
   type GameBoxModuleIndex,
   type GameBoxParameters,
@@ -243,6 +244,76 @@ function tenonBand(
     cut.delete()
     probe.delete()
   }
+}
+
+/**
+ * The open bands of the wall at the depth of the slot: the ranges where the
+ * wall carries no material. The band is measured on the built box, so the
+ * slot is where the wall is really open and not where it is supposed to be.
+ */
+function openBandsOfWall(
+  box: Shape3D,
+  side: 1 | -1,
+  wallX: number,
+  centre: number,
+  cardHeight: number,
+): { start: number; end: number }[] {
+  const reach = 1.4
+  const near = side * (wallX + 0.01)
+  const far = side * (wallX + 0.24)
+  const probe = makeBox(
+    [Math.min(near, far), centre - reach, 3],
+    [Math.max(near, far), centre + reach, cardHeight],
+  ) as Shape3D
+  const cut = box.intersect(probe)
+  try {
+    const pieces = solidsOf(cut)
+      .map((solid) => boundsOf(solid))
+      .sort((first, second) => first.min[1]! - second.min[1]!)
+    const bands: { start: number; end: number }[] = []
+    let cursor = centre - reach
+    for (const piece of pieces) {
+      if (piece.min[1]! > cursor + 1e-6) {
+        bands.push({ start: cursor, end: piece.min[1]! })
+      }
+      cursor = Math.max(cursor, piece.max[1]!)
+    }
+    if (cursor < centre + reach - 1e-6) {
+      bands.push({ start: cursor, end: centre + reach })
+    }
+    return bands
+  } finally {
+    cut.delete()
+    probe.delete()
+  }
+}
+
+/**
+ * The parts of the assembly: the box, the lid, one divider per pair of
+ * card modules and one dice holder per dice module.
+ */
+function expectedPartCount(params: GameBoxParameters): number {
+  const layout = gameBoxLayout(params)
+  const diceModules = layout.modules.filter(
+    (module) => module.type === 'dice',
+  ).length
+  return 2 + layout.dividerCount + diceModules
+}
+
+/**
+ * The holder solids of an assembly: they are as wide as a divider plate
+ * and much deeper than one.
+ */
+function holderSolids(
+  solids: readonly Shape3D[],
+  cardWidth: number,
+): Shape3D[] {
+  const interior = cardBoxInteriorWidth(cardWidth)
+  return solids.filter((solid) => {
+    const bounds = boundsOf(solid)
+    const width = bounds.max[0]! - bounds.min[0]!
+    return width < interior + 1 && bounds.max[1]! - bounds.min[1]! > 1
+  })
 }
 
 describe('game-box box part', () => {
@@ -1021,34 +1092,6 @@ describe('game-box assembly', () => {
     ['maximum', 100, 150],
   ] as const
 
-  /**
-   * The parts of the assembly: the box, the lid, one divider per pair of
-   * card modules and one dice holder per dice module.
-   */
-  function expectedPartCount(params: GameBoxParameters): number {
-    const layout = gameBoxLayout(params)
-    const diceModules = layout.modules.filter(
-      (module) => module.type === 'dice',
-    ).length
-    return 2 + layout.dividerCount + diceModules
-  }
-
-  /**
-   * The holder solids of an assembly: they are as wide as a divider plate
-   * and much deeper than one.
-   */
-  function holderSolids(
-    solids: readonly Shape3D[],
-    cardWidth: number,
-  ): Shape3D[] {
-    const interior = cardBoxInteriorWidth(cardWidth)
-    return solids.filter((solid) => {
-      const bounds = boundsOf(solid)
-      const width = bounds.max[0]! - bounds.min[0]!
-      return width < interior + 1 && bounds.max[1]! - bounds.min[1]! > 1
-    })
-  }
-
   for (const [label, cardWidth, cardHeight] of SIZES) {
     it(`keeps the parts apart at the ${label} card size`, () => {
       const params = moduleParameters(
@@ -1221,4 +1264,138 @@ describe('game-box assembly', () => {
       build.shape.delete()
     }
   })
+})
+
+describe('game-box assembly with a dice module first, last or twice in a row', () => {
+  /**
+   * The module lists the holder may take: first, last, and two dice modules
+   * one behind the other. The middle case is covered by the assembly tests
+   * above.
+   */
+  const LAYOUTS = [
+    {
+      name: 'the dice module first',
+      modules: [
+        { type: 'dice', diceSize: 16, diceCount: 4 },
+        { type: 'cards', cardDepth: 20 },
+      ],
+    },
+    {
+      name: 'the dice module last',
+      modules: [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 4 },
+      ],
+    },
+    {
+      name: 'two dice modules in a row',
+      modules: [
+        { type: 'dice', diceSize: 16, diceCount: 4 },
+        { type: 'dice', diceSize: 18, diceCount: 4 },
+      ],
+    },
+  ] as const
+
+  const SIZES = [
+    ['default', 70, 120],
+    ['minimum', 40, 60],
+  ] as const
+
+  for (const [label, cardWidth, cardHeight] of SIZES) {
+    for (const { name, modules } of LAYOUTS) {
+      it(`keeps the parts apart with ${name} at the ${label} card size`, () => {
+        const params = moduleParameters(modules, {
+          part: 'assembly',
+          cardWidth,
+          cardHeight,
+        })
+        const build = buildGameBox(params)
+        try {
+          const solids = solidsOf(build.shape)
+          expect(solids.length).toBe(expectedPartCount(params))
+          for (let first = 0; first < solids.length; first += 1) {
+            for (let second = first + 1; second < solids.length; second += 1) {
+              expect(
+                volumeOf(solids[first]!, solids[second]!),
+                `part ${first} overlaps part ${second}`,
+              ).toBeLessThan(OVERLAP_LIMIT)
+            }
+          }
+        } finally {
+          build.shape.delete()
+        }
+      })
+
+      it(`locks every tenon into a slot with ${name} at the ${label} card size`, () => {
+        const params = moduleParameters(modules, {
+          part: 'assembly',
+          cardWidth,
+          cardHeight,
+        })
+        const layout = gameBoxLayout(params)
+        const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
+        const wallX = cardBoxInteriorWidth(cardWidth) / 2
+        const bodyHalfWidth = gameBoxDiceHolderWidth(cardWidth) / 2
+        const tenonOuterHalfWidth = cardBoxDividerWidth(cardWidth) / 2
+        const build = buildGameBox(params)
+        const box = buildGameBox({ ...params, part: 'box' })
+        try {
+          const holders = holderSolids(solidsOf(build.shape), cardWidth)
+          const diceModules = layout.modules.filter(
+            (module) => module.type === 'dice',
+          )
+          expect(holders).toHaveLength(diceModules.length)
+          diceModules.forEach((module, position) => {
+            if (module.type !== 'dice') return
+            const holder = holders[position]!
+            for (const centre of module.tenonCentres) {
+              const y = frontWallY + centre
+              for (const side of [1, -1] as const) {
+                // The tenon reaches into the wall: the material between the
+                // interior wall and the reach of the tenon is the tenon.
+                const near = side * (wallX + 0.01)
+                const far = side * (wallX + 0.17)
+                const reach = makeBox(
+                  [Math.min(near, far), y - 0.4, 3],
+                  [Math.max(near, far), y + 0.4, cardHeight],
+                ) as Shape3D
+                expect(
+                  volumeOf(holder, reach),
+                  `the tenon at ${centre} mm on the ${side} side`,
+                ).toBeGreaterThan(0.1)
+                reach.delete()
+                // The tenon band lies in the slot band: the wall is open
+                // around the tenon, so it really stands in a slot.
+                const band = tenonBand(
+                  holder,
+                  bodyHalfWidth,
+                  tenonOuterHalfWidth,
+                  y,
+                  cardHeight,
+                )
+                const slot = openBandsOfWall(
+                  box.shape,
+                  side,
+                  wallX,
+                  y,
+                  cardHeight,
+                ).find(
+                  (candidate) =>
+                    candidate.start <= band.start + 1e-6 &&
+                    candidate.end >= band.end - 1e-6,
+                )
+                expect(
+                  slot,
+                  `the slot band around the tenon at ${centre} mm on the ${side} side`,
+                ).toBeDefined()
+              }
+            }
+          })
+        } finally {
+          build.shape.delete()
+          box.shape.delete()
+        }
+      })
+    }
+  }
 })
