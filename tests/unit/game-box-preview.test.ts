@@ -92,7 +92,7 @@ describe('game-box progressive preview', () => {
     )
   })
 
-  it('keeps the dice holder upright and as wide as its grip flaps', () => {
+  it('keeps the dice holder upright and as wide as its body', () => {
     const snapshot = parameters({
       part: 'module2',
       ...moduleGroups(['cards', 'dice']),
@@ -103,14 +103,25 @@ describe('game-box progressive preview', () => {
     expect(solids[0]!.depth).toBeGreaterThan(0)
   })
 
-  it('draws one divider per module boundary in the assembly', () => {
+  it('draws no divider next to a dice holder in the assembly', () => {
     const snapshot = parameters({
       part: 'assembly',
       ...moduleGroups(['cards', 'dice', 'cards']),
     })
     const solids = gameBoxPreview(snapshot)
-    // Box body (5 slabs), lid roof (1), 2 dividers, 1 dice holder.
-    expect(solids).toHaveLength(9)
+    // Box body (5 slabs), lid roof (1), 1 dice holder. The holder is its
+    // own divider, so no plate stands next to it.
+    expect(solids).toHaveLength(7)
+  })
+
+  it('draws a divider between two card modules in the assembly', () => {
+    const snapshot = parameters({
+      part: 'assembly',
+      ...moduleGroups(['cards', 'cards']),
+    })
+    const solids = gameBoxPreview(snapshot)
+    // Box body (5 slabs), lid roof (1), 1 divider.
+    expect(solids).toHaveLength(7)
   })
 
   it('rejects parameters that are not a valid game-box snapshot', () => {

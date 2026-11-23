@@ -19,14 +19,14 @@ import {
   buildGameBoxDiceHolder,
   gameBoxDiceCenters,
   gameBoxDiceHolderFrame,
-  gameBoxDiceHolderGripFrame,
+  gameBoxDiceHolderTenonCenters,
 } from '../../src/cad-kernel/components/game-box/dice-holder'
 import { gameBoxCardBoxGeometry } from '../../src/cad-kernel/components/game-box/geometry'
 import {
   CARD_BOX_CONFIGURATION,
   GAME_BOX_CONFIGURATION,
+  cardBoxDividerWidth,
   cardBoxInteriorWidth,
-  gameBoxDiceHolderOuterWidth,
   gameBoxDiceHolderThickness,
   gameBoxLayout,
   type GameBoxModuleIndex,
@@ -220,6 +220,31 @@ function openingSpan(
   return { start, end, center: (start + end) / 2, width: end - start }
 }
 
+/**
+ * The y band of one tenon of a holder, measured on the solid: the tenons
+ * are the only material outside the holder body.
+ */
+function tenonBand(
+  holder: Shape3D,
+  bodyHalfWidth: number,
+  tenonOuterHalfWidth: number,
+  centre: number,
+  height: number,
+): { start: number; end: number } {
+  const probe = makeBox(
+    [bodyHalfWidth + 0.01, centre - 1.5, 0],
+    [tenonOuterHalfWidth - 0.01, centre + 1.5, height],
+  ) as Shape3D
+  const cut = holder.intersect(probe)
+  try {
+    const bounds = boundsOf(cut)
+    return { start: bounds.min[1]!, end: bounds.max[1]! }
+  } finally {
+    cut.delete()
+    probe.delete()
+  }
+}
+
 describe('game-box box part', () => {
   it('builds one solid on the bed', () => {
     const build = buildGameBox(
@@ -240,7 +265,7 @@ describe('game-box box part', () => {
     }
   })
 
-  it('cuts a slot into both side walls on every module boundary', () => {
+  it('cuts a slot every 3 mm into both side walls', () => {
     const params = moduleParameters([
       { type: 'cards', cardDepth: 30 },
       { type: 'dice', diceSize: 16, diceCount: 9 },
@@ -252,8 +277,9 @@ describe('game-box box part', () => {
     const wallX = cardBoxInteriorWidth(params.cardWidth) / 2
     const build = buildGameBox({ ...params, part: 'box' })
     try {
+      expect(layout.slotCenters).toHaveLength(layout.storageDepth / 3 - 1)
       for (const side of [1, -1] as const) {
-        for (const distance of layout.dividerCenters) {
+        for (const distance of layout.slotCenters) {
           const y = frontWallY + distance
           const probe = makeBox(
             [side * (wallX + 0.05), y - 0.1, 3],
@@ -266,14 +292,46 @@ describe('game-box box part', () => {
           probe.delete()
         }
       }
-      // Between two boundaries the side wall stays solid.
-      const between = frontWallY + layout.dividerCenters[0]! + 1.5
+      // Between two slots the side wall stays solid.
+      const between = frontWallY + layout.slotCenters[0]! + 1.5
       const probe = makeBox(
         [wallX + 0.05, between - 0.1, 3],
         [wallX + 0.2, between + 0.1, 100],
       ) as Shape3D
       expect(volumeOf(build.shape, probe)).toBeGreaterThan(0.1)
       probe.delete()
+    } finally {
+      build.shape.delete()
+    }
+  })
+
+  it('keeps the first and the last slot 3 mm clear of the box ends', () => {
+    const params = moduleParameters([{ type: 'cards', cardDepth: 60 }])
+    const layout = gameBoxLayout(params)
+    const geometry = gameBoxCardBoxGeometry(params)
+    const frontWallY = cardBoxInnerFrontY(geometry)
+    const wallX = cardBoxInteriorWidth(params.cardWidth) / 2
+    const build = buildGameBox({ ...params, part: 'box' })
+    try {
+      // The front wall face and the back wall face carry no slot.
+      for (const distance of [0, layout.storageDepth]) {
+        const y = frontWallY + distance
+        const probe = makeBox(
+          [wallX + 0.05, y - 0.1, 3],
+          [wallX + 0.2, y + 0.1, 100],
+        ) as Shape3D
+        expect(
+          volumeOf(build.shape, probe),
+          `the wall at ${distance} mm`,
+        ).toBeGreaterThan(0.1)
+        probe.delete()
+      }
+      // The first slot is 3 mm behind the front wall face.
+      const first = frontWallY + layout.slotCenters[0]!
+      expect(first - frontWallY).toBeCloseTo(3, 6)
+      // The last slot is 3 mm in front of the back wall face.
+      const last = frontWallY + layout.slotCenters.at(-1)!
+      expect(frontWallY + layout.storageDepth - last).toBeCloseTo(3, 6)
     } finally {
       build.shape.delete()
     }
@@ -286,7 +344,7 @@ describe('game-box lid and divider against the card box', () => {
       part: 'lid',
     })
     const depth = gameBoxLayout(params).storageDepth
-    expect(depth).toBeCloseTo(72.85, 6)
+    expect(depth).toBeCloseTo(72, 6)
     const gameBoxBuild = buildGameBox(params)
     const cardBoxBuild = await buildCardBox({
       ...CARD_BOX_CONFIGURATION.defaultParameters,
@@ -384,7 +442,7 @@ describe('game-box dice holder', () => {
             [-frame.wellWidth / 2, frame.frontWall, 0],
             [
               frame.wellWidth / 2,
-              frame.thickness - frame.frontWall,
+              frame.thickness - frame.backWall,
               frame.wellFloorZ,
             ],
           ) as Shape3D,
@@ -412,22 +470,20 @@ describe('game-box dice holder', () => {
     }
   })
 
-  it('is narrower than the box interior and wider in its natural state', () => {
+  it('keeps the body narrower than the box interior and reaches out with its tenons', () => {
     const interior = cardBoxInteriorWidth(options.cardWidth)
+    const frame = gameBoxDiceHolderFrame(options)
     const holder = buildGameBoxDiceHolder(options)
     try {
       const bounds = boundsOf(holder)
-      // The natural outer width (with the grip flaps) exceeds the interior.
-      expect(bounds.max[0]! - bounds.min[0]!).toBeGreaterThan(interior)
+      // The tenons reach exactly as far out as a divider plate does.
       expect(bounds.max[0]! - bounds.min[0]!).toBeCloseTo(
-        gameBoxDiceHolderOuterWidth(options.cardWidth),
+        cardBoxDividerWidth(options.cardWidth),
         3,
       )
-      // The surplus over the interior is the grip allowance confirmed by
-      // the test print: it sets how hard the flaps press into the walls.
-      expect(bounds.max[0]! - bounds.min[0]! - interior).toBeCloseTo(0.4, 3)
-      // The body itself stays clear of the box walls: no material reaches
-      // the interior wall, neither beside nor above the grip flaps.
+      // The body itself stays 0.3 mm clear of the interior wall on each
+      // side: only the tenons reach the wall.
+      expect(frame.bodyWidth).toBeCloseTo(interior - 0.6, 3)
       for (const side of [1, -1] as const) {
         const probe = makeBox(
           [side * (interior - 0.05), 0, 0],
@@ -441,7 +497,7 @@ describe('game-box dice holder', () => {
     }
   })
 
-  it('thins the front and the back wall to 0.8 mm', () => {
+  it('thickens the front wall to 1.6 mm and the back wall to 1.2 mm', () => {
     const frame = gameBoxDiceHolderFrame(options)
     const holder = buildGameBoxDiceHolder(options)
     try {
@@ -454,8 +510,12 @@ describe('game-box dice holder', () => {
       const bandWidth = 0.2
       const z = frame.wellFloorZ + 1
       const walls = [
-        { name: 'the front wall', y: [0, 1.5] },
-        { name: 'the back wall', y: [frame.thickness - 1.5, frame.thickness] },
+        { name: 'the front wall', y: [0, 2], expected: 1.6 },
+        {
+          name: 'the back wall',
+          y: [frame.thickness - 2, frame.thickness],
+          expected: 1.2,
+        },
       ] as const
       for (const wall of walls) {
         const probe = makeBox(
@@ -465,14 +525,12 @@ describe('game-box dice holder', () => {
         expect(
           volumeOf(holder, probe) / (bandWidth * bandHeight),
           wall.name,
-        ).toBeCloseTo(0.8, 2)
+        ).toBeCloseTo(wall.expected, 2)
         probe.delete()
       }
       // The side wall and the floor keep their own minimum, measured on the
       // solid: the probe bands next to the well and under its floor are
       // full material.
-      // Measured above the well floor, where the side wall stands beside
-      // the well, in front of the recess of the grip flap.
       const wallZ = frame.wellFloorZ + 0.5
       for (const side of [1, -1] as const) {
         const probe = makeBox(
@@ -493,7 +551,7 @@ describe('game-box dice holder', () => {
         ],
         [
           frame.wellWidth / 2 - 0.01,
-          frame.thickness - frame.frontWall - 0.01,
+          frame.thickness - frame.backWall - 0.01,
           frame.wellFloorZ,
         ],
       ) as Shape3D
@@ -520,8 +578,8 @@ describe('game-box dice holder', () => {
     const frame = gameBoxDiceHolderFrame(holderOptions)
     const holder = buildGameBoxDiceHolder(holderOptions)
     try {
-      // Measured above the well floor and below the grip zone, in front
-      // of the recess of the grip flap.
+      // Measured above the well floor, where the side wall stands beside
+      // the well.
       const z = frame.wellFloorZ + 0.5
       for (const side of [1, -1] as const) {
         const wall = span(
@@ -574,7 +632,7 @@ describe('game-box dice holder', () => {
     try {
       const wellY: [number, number] = [
         frame.frontWall + 0.01,
-        frame.thickness - frame.frontWall - 0.01,
+        frame.thickness - frame.backWall - 0.01,
       ]
       const floorProbe = makeBox(
         [-frame.wellWidth / 2 + 0.01, wellY[0], 0.02],
@@ -625,335 +683,158 @@ describe('game-box dice holder', () => {
     ).toThrow(/dice-capacity/)
   })
 
-  it('joins the flap to the body along its whole height', () => {
-    const cases = [
-      { name: 'default', holderOptions: options },
-      {
-        name: 'minimum side wall',
-        holderOptions: {
-          cardWidth: 63,
-          cardHeight: 88,
-          diceSize: 11.5,
-          diceCount: 5,
-        },
-      },
-      {
-        name: 'smallest holder',
-        holderOptions: {
-          cardWidth: 40,
-          cardHeight: 60,
-          diceSize: 8,
-          diceCount: 4,
-        },
-      },
-      {
-        name: 'widest dice',
-        holderOptions: {
-          cardWidth: 100,
-          cardHeight: 150,
-          diceSize: 30,
-          diceCount: 6,
-        },
-      },
-    ]
-    for (const scenario of cases) {
-      const frame = gameBoxDiceHolderFrame(scenario.holderOptions)
-      const grip = gameBoxDiceHolderGripFrame(frame)
-      const holder = buildGameBoxDiceHolder(scenario.holderOptions)
-      try {
-        // The front wall carries a vertical opening in front of every row
-        // position, so a slice through the dice well falls into several
-        // solids. The reference slices outside the grip zone count them;
-        // the grip must not add a solid of its own at any height — in
-        // particular within one print layer of either end of the grip
-        // zone, where a rounded root would leave the flap as an island.
-        const lowReference = sliceSolidCount(holder, grip.zStart - 2)
-        const highReference = sliceSolidCount(holder, grip.zEnd + 2)
-        const samples = [
-          grip.zStart + 0.02,
-          grip.zStart + 0.2,
-          (grip.zStart + grip.zEnd) / 2,
-          grip.zEnd - 0.2,
-          grip.zEnd - 0.02,
-        ]
-        for (const z of samples) {
-          const reference = z < frame.wellFloorZ ? lowReference : highReference
-          expect(
-            sliceSolidCount(holder, z),
-            `${scenario.name}: the solids of the slice at ${z} mm`,
-          ).toBe(reference)
-        }
-      } finally {
-        holder.delete()
-      }
-    }
-  })
-
-  it('keeps the grip zone inside the end margins', () => {
+  it('carries two tenons on each side', () => {
     const frame = gameBoxDiceHolderFrame(options)
-    const grip = gameBoxDiceHolderGripFrame(frame)
-    // The 2026-11-19 test print confirmed the end margins: the grip zone
-    // is capped at the height minus 2 × 4 mm.
-    expect(grip.zEnd - grip.zStart).toBeCloseTo(60, 6)
-    const shortFrame = gameBoxDiceHolderFrame({
-      ...options,
-      cardHeight: 60,
-      diceSize: 18,
-      diceCount: 9,
-    })
-    const shortGrip = gameBoxDiceHolderGripFrame(shortFrame)
-    expect(shortGrip.zEnd - shortGrip.zStart).toBeCloseTo(52, 6)
-  })
-
-  it('leaves a recess behind the grip flap with a wall behind it', () => {
-    const frame = gameBoxDiceHolderFrame(options)
-    const grip = gameBoxDiceHolderGripFrame(frame)
     const holder = buildGameBoxDiceHolder(options)
     try {
+      const centres = gameBoxDiceHolderTenonCenters(frame)
+      expect(centres).toHaveLength(2)
+      // Every side of the holder carries the two tenons.
       for (const side of [1, -1] as const) {
-        // The recess is cut 0.8 mm into the wall and the flap never hangs
-        // deeper than 0.4 mm below the wall face, so the band between the
-        // recess floor and the flap's lowest reach is empty over the whole
-        // length of the recess: the flap is free over its whole free
-        // length and has room to fold in.
-        const recess = span(
-          side * (frame.bodyWidth / 2 - 0.8),
-          side * (frame.bodyWidth / 2 - 0.45),
-        )
-        const recessProbe = makeBox(
-          [recess[0], grip.recessYStart + 0.05, frame.height / 2 - 0.5],
-          [recess[1], grip.recessYEnd - 0.05, frame.height / 2 + 0.5],
-        ) as Shape3D
-        expect(
-          volumeOf(holder, recessProbe),
-          `the recess on the ${side} side`,
-        ).toBeLessThan(OVERLAP_LIMIT)
-        recessProbe.delete()
-        // The wall behind the recess is still there: the band from the
-        // well face to the recess floor is full material, so the recess
-        // never reaches the dice well.
-        const behind = span(
-          side * (frame.wellWidth / 2 + 0.01),
-          side * (frame.bodyWidth / 2 - 0.8),
-        )
-        const behindProbe = makeBox(
-          [behind[0], grip.recessYStart + 0.05, frame.height / 2 - 0.5],
-          [behind[1], grip.recessYEnd - 0.05, frame.height / 2 + 0.5],
-        ) as Shape3D
-        expect(
-          volumeOf(holder, behindProbe) / measureVolume(behindProbe),
-          `the wall behind the recess on the ${side} side`,
-        ).toBeCloseTo(1, 2)
-        behindProbe.delete()
+        for (const centre of centres) {
+          const band = tenonBand(
+            holder,
+            frame.bodyHalfWidth,
+            frame.tenonOuterHalfWidth,
+            centre,
+            frame.height,
+          )
+          // The tenon is a plate as thick as a divider plate.
+          expect(
+            band.end - band.start,
+            `the tenon at ${centre} mm on the ${side} side`,
+          ).toBeCloseTo(CARD_BOX_CONFIGURATION.dividerPlateThickness, 3)
+          // It sits where the layout puts it.
+          expect(
+            (band.start + band.end) / 2,
+            `the centre of the tenon at ${centre} mm on the ${side} side`,
+          ).toBeCloseTo(centre, 3)
+        }
       }
     } finally {
       holder.delete()
     }
   })
 
-  it('leaves the recess open past the ends of the flap', () => {
+  it('spreads the two tenons a whole number of slots apart', () => {
+    // The die count stays inside the capacity of every case.
     const cases = [
-      { name: 'default', holderOptions: options },
-      {
-        name: 'minimum side wall',
-        holderOptions: {
-          cardWidth: 63,
-          cardHeight: 88,
-          diceSize: 11.5,
-          diceCount: 5,
-        },
-      },
-      {
-        name: 'smallest holder',
-        holderOptions: {
-          cardWidth: 40,
-          cardHeight: 60,
-          diceSize: 8,
-          diceCount: 4,
-        },
-      },
+      { diceSize: 8, diceCount: 9 },
+      { diceSize: 16, diceCount: 9 },
+      { diceSize: 18, diceCount: 9 },
+      { diceSize: 30, diceCount: 6 },
     ]
     for (const scenario of cases) {
-      const frame = gameBoxDiceHolderFrame(scenario.holderOptions)
-      const grip = gameBoxDiceHolderGripFrame(frame)
-      const holder = buildGameBoxDiceHolder(scenario.holderOptions)
+      const holderOptions = { ...options, ...scenario }
+      const frame = gameBoxDiceHolderFrame(holderOptions)
+      const holder = buildGameBoxDiceHolder(holderOptions)
       try {
-        for (const side of [1, -1] as const) {
-          // The recess runs 0.4 mm past each end of the flap, so the
-          // bands just above and below the flap are empty across the
-          // whole recess footprint: the flap's end faces touch nothing.
-          for (const band of [grip.zStart, grip.zEnd]) {
-            const [zLow, zHigh] =
-              band === grip.zStart
-                ? [band - 0.35, band - 0.05]
-                : [band + 0.05, band + 0.35]
-            const reach = span(
-              side * (frame.bodyWidth / 2 - 0.75),
-              side * (frame.bodyWidth / 2 + 0.6),
-            )
-            const reachProbe = makeBox(
-              [reach[0], grip.recessYStart + 0.05, zLow],
-              [reach[1], grip.recessYEnd - 0.05, zHigh],
-            ) as Shape3D
-            expect(
-              volumeOf(holder, reachProbe),
-              `${scenario.name}: the band past the flap end on the ${side} side at ${band} mm`,
-            ).toBeLessThan(OVERLAP_LIMIT)
-            reachProbe.delete()
-            // The wall behind the extended recess is still there: the
-            // band from the well face to the recess floor is full
-            // material, so the recess still never reaches the well.
-            const behind = span(
-              side * (frame.wellWidth / 2 + 0.01),
-              side * (frame.bodyWidth / 2 - 0.8),
-            )
-            const behindProbe = makeBox(
-              [behind[0], grip.recessYStart + 0.05, zLow],
-              [behind[1], grip.recessYEnd - 0.05, zHigh],
-            ) as Shape3D
-            expect(
-              volumeOf(holder, behindProbe) / measureVolume(behindProbe),
-              `${scenario.name}: the wall behind the band on the ${side} side at ${band} mm`,
-            ).toBeCloseTo(1, 2)
-            behindProbe.delete()
-          }
-        }
-      } finally {
-        holder.delete()
-      }
-    }
-  })
-
-  it('holds the flap on its root alone', () => {
-    const cases = [
-      { name: 'default', holderOptions: options },
-      {
-        name: 'minimum side wall',
-        holderOptions: {
-          cardWidth: 63,
-          cardHeight: 88,
-          diceSize: 11.5,
-          diceCount: 5,
-        },
-      },
-      {
-        name: 'smallest holder',
-        holderOptions: {
-          cardWidth: 40,
-          cardHeight: 60,
-          diceSize: 8,
-          diceCount: 4,
-        },
-      },
-    ]
-    for (const scenario of cases) {
-      const frame = gameBoxDiceHolderFrame(scenario.holderOptions)
-      const grip = gameBoxDiceHolderGripFrame(frame)
-      const holder = buildGameBoxDiceHolder(scenario.holderOptions)
-      try {
-        expect(countSolids(holder), `${scenario.name}: the built holder`).toBe(
-          1,
+        const [first, second] = gameBoxDiceHolderTenonCenters(frame)
+        const firstBand = tenonBand(
+          holder,
+          frame.bodyHalfWidth,
+          frame.tenonOuterHalfWidth,
+          first!,
+          frame.height,
         )
-        for (const side of [1, -1] as const) {
-          // Sever the flap 0.5 mm past its root edge: a 0.2 mm cut along
-          // the whole height whose inner face stays inside the void of
-          // the recess (its floor lies 0.8 mm into the wall), so the cut
-          // only crosses the flap. If the flap were fused to the wall
-          // anywhere else — at its end faces — the tip would stay
-          // attached and the holder would still be one solid.
-          const cut = span(
-            side * (frame.bodyWidth / 2 - 0.7),
-            side * (frame.bodyWidth / 2 + 1),
-          )
-          const cutter = makeBox(
-            [cut[0], grip.yStart + 0.5, -1],
-            [cut[1], grip.yStart + 0.7, frame.height + 1],
-          ) as Shape3D
-          const severed = holder.cut(cutter)
-          try {
-            expect(
-              countSolids(severed),
-              `${scenario.name}: the solids after severing the ${side} flap`,
-            ).toBe(2)
-          } finally {
-            severed.delete()
-            cutter.delete()
-          }
-        }
+        const secondBand = tenonBand(
+          holder,
+          frame.bodyHalfWidth,
+          frame.tenonOuterHalfWidth,
+          second!,
+          frame.height,
+        )
+        const distance =
+          (secondBand.start + secondBand.end) / 2 -
+          (firstBand.start + firstBand.end) / 2
+        // The distance is a whole number of slots; the measurement carries
+        // the tolerance of the bounding box, so the remainder is measured
+        // against the nearer end of the slot pitch.
+        const pitch = CARD_BOX_CONFIGURATION.dividerSlotPitch
+        const remainder = distance % pitch
+        expect(
+          Math.min(remainder, pitch - remainder),
+          `the tenon distance of a ${scenario.diceSize} mm die`,
+        ).toBeCloseTo(0, 3)
+        expect(distance).toBeLessThanOrEqual(frame.thickness)
       } finally {
         holder.delete()
       }
     }
   })
 
-  it('pins the flap dimensions that keep the full press elastic', () => {
+  it('reaches into the slot as far as a divider plate does', () => {
     const frame = gameBoxDiceHolderFrame(options)
-    const grip = gameBoxDiceHolderGripFrame(frame)
-    // The flap is a cantilever: its peak strain at the full press is about
-    // 3·δ·t / (2·L²), with δ = 0.5 mm (natural outer width down to the
-    // body width), t the plate thickness and L the free length. PLA and
-    // PETG stay elastic up to roughly 2 %, so this test measures t and L
-    // on the solid and holds the strain against that limit.
+    const holder = buildGameBoxDiceHolder(options)
+    const interior = cardBoxInteriorWidth(options.cardWidth)
+    try {
+      // The tenon's outer face is the divider plate's outer face.
+      const bounds = boundsOf(holder)
+      expect(bounds.max[0]!).toBeCloseTo(
+        cardBoxDividerWidth(options.cardWidth) / 2,
+        3,
+      )
+      // The slot is 0.25 mm deep, so the tenon stops 0.075 mm short of its
+      // bottom.
+      expect(
+        bounds.max[0]! - interior / 2,
+        'the reach of the tenon into the slot',
+      ).toBeCloseTo(CARD_BOX_CONFIGURATION.dividerSlotDepth - 0.075, 3)
+    } finally {
+      holder.delete()
+    }
+  })
+
+  it('has no grip flap or rib', () => {
+    const frame = gameBoxDiceHolderFrame(options)
     const holder = buildGameBoxDiceHolder(options)
     try {
-      // Beyond the wall face the material is the flap alone, so the y span
-      // of the material that has risen 0.05 mm off the wall gives the free
-      // length and the top of its bounding box gives the protrusion.
-      const reach = makeBox(
-        [frame.bodyWidth / 2 + 0.05, 0, frame.height / 2 - 0.5],
-        [frame.bodyWidth / 2 + 1, frame.thickness, frame.height / 2 + 0.5],
+      // Outside the body the only material is the two tenons: the volume of
+      // the band beside the body is the two tenons and nothing else.
+      const z = frame.wellFloorZ + 0.5
+      const bandHeight = 0.5
+      const outside = makeBox(
+        [frame.bodyHalfWidth + 0.01, 0, z],
+        [frame.tenonOuterHalfWidth - 0.01, frame.thickness, z + bandHeight],
       ) as Shape3D
-      const flapOnly = holder.intersect(reach)
-      const flapBounds = boundsOf(flapOnly)
-      flapOnly.delete()
-      reach.delete()
-      const risen = 0.05
-      // The material beyond the wall face + 0.05 mm starts where the flap
-      // has risen 0.05 mm off the wall, 10 % of the way along its free
-      // length (the natural protrusion is 0.5 mm, the fit the 2026-11-19
-      // test print confirmed).
-      const naturalProtrusion = 0.5
-      const freeLength =
-        (flapBounds.max[1]! - flapBounds.min[1]!) /
-        (1 - risen / naturalProtrusion)
+      const material = volumeOf(holder, outside)
       expect(
-        freeLength,
-        'the free length of the flap along the thickness',
-      ).toBeCloseTo(5, 1)
-      expect(
-        flapBounds.max[0]! - frame.bodyWidth / 2,
-        'the protrusion of the flap',
-      ).toBeCloseTo(naturalProtrusion, 2)
-      // The thickness: near the tip the flap is separated from the wall,
-      // so a probe reaching from the recess floor past the wall face
-      // carries the flap alone.
-      const probe = makeBox(
-        [frame.bodyWidth / 2 - 0.75, grip.yEnd - 1, frame.height / 2 - 0.5],
-        [frame.bodyWidth / 2 + 1, grip.yEnd - 0.5, frame.height / 2 + 0.5],
-      ) as Shape3D
-      const measuredThickness = volumeOf(holder, probe) / (0.5 * 1)
-      expect(measuredThickness, 'the thickness of the flap').toBeCloseTo(0.4, 1)
-      probe.delete()
-      const strain =
-        (3 * 0.5 * measuredThickness) / (2 * freeLength * freeLength)
-      expect(strain, 'the peak strain at the full press').toBeLessThan(0.02)
+        material /
+          ((frame.tenonOuterHalfWidth - frame.bodyHalfWidth - 0.02) *
+            bandHeight),
+        'the material beside the holder body',
+      ).toBeCloseTo(2 * CARD_BOX_CONFIGURATION.dividerPlateThickness, 2)
+      outside.delete()
     } finally {
       holder.delete()
     }
   })
 
-  it('presses the grip flaps in to the body width', () => {
+  it('keeps the wall between the tenon and the dice well', () => {
     const frame = gameBoxDiceHolderFrame(options)
-    const pressed = buildGameBoxDiceHolder({
-      ...options,
-      outerWidth: frame.bodyWidth,
-    })
+    const holder = buildGameBoxDiceHolder(options)
     try {
-      expect(countSolids(pressed)).toBe(1)
-      const bounds = boundsOf(pressed)
-      expect(bounds.max[0]! - bounds.min[0]!).toBeCloseTo(frame.bodyWidth, 3)
+      // The tenon's root ends 0.5 mm inside the body, so at least 0.7 mm
+      // of wall stand between the tenon and the well.
+      const z = frame.wellFloorZ + 0.5
+      for (const side of [1, -1] as const) {
+        const probe = makeBox(
+          [
+            side *
+              (frame.bodyHalfWidth - GAME_BOX_CONFIGURATION.tenonRootDepth),
+            frame.frontWall + 0.5,
+            z,
+          ],
+          [side * (frame.wellWidth / 2 + 0.01), frame.frontWall + 1, z + 0.5],
+        ) as Shape3D
+        expect(
+          volumeOf(holder, probe) / measureVolume(probe),
+          `the wall between the tenon and the well on the ${side} side`,
+        ).toBeCloseTo(1, 2)
+        probe.delete()
+      }
     } finally {
-      pressed.delete()
+      holder.delete()
     }
   })
 
@@ -1073,8 +954,8 @@ describe('game-box holder with a minimum side wall', () => {
       cardHeight: 120,
       diceSize: 8.5,
       diceCount: 10,
-      // The lone dice module is 12.15 mm deep, below the supported depth,
-      // so the assembly pairs it with a cards module.
+      // The lone dice module needs 13.2 mm of cavity, so the assembly pairs
+      // it with a cards module.
       modules: [
         { type: 'dice', diceSize: 8.5, diceCount: 10 },
         { type: 'cards', cardDepth: 20 },
@@ -1117,8 +998,8 @@ describe('game-box holder with a minimum side wall', () => {
       })
       const build = buildGameBox(params)
       try {
-        // The box, the lid, one divider per module boundary and one holder
-        // per dice module.
+        // The box, the lid, one divider per pair of card modules and one
+        // holder per dice module.
         const layout = gameBoxLayout(params)
         const diceModules = layout.modules.filter(
           (module) => module.type === 'dice',
@@ -1141,8 +1022,8 @@ describe('game-box assembly', () => {
   ] as const
 
   /**
-   * The parts of the assembly: the box, the lid, one divider per module
-   * boundary and one dice holder per dice module.
+   * The parts of the assembly: the box, the lid, one divider per pair of
+   * card modules and one dice holder per dice module.
    */
   function expectedPartCount(params: GameBoxParameters): number {
     const layout = gameBoxLayout(params)
@@ -1150,6 +1031,22 @@ describe('game-box assembly', () => {
       (module) => module.type === 'dice',
     ).length
     return 2 + layout.dividerCount + diceModules
+  }
+
+  /**
+   * The holder solids of an assembly: they are as wide as a divider plate
+   * and much deeper than one.
+   */
+  function holderSolids(
+    solids: readonly Shape3D[],
+    cardWidth: number,
+  ): Shape3D[] {
+    const interior = cardBoxInteriorWidth(cardWidth)
+    return solids.filter((solid) => {
+      const bounds = boundsOf(solid)
+      const width = bounds.max[0]! - bounds.min[0]!
+      return width < interior + 1 && bounds.max[1]! - bounds.min[1]! > 1
+    })
   }
 
   for (const [label, cardWidth, cardHeight] of SIZES) {
@@ -1179,7 +1076,7 @@ describe('game-box assembly', () => {
       }
     })
 
-    it(`seats the dice holder between its dividers at the ${label} card size`, () => {
+    it(`locks every tenon into a slot at the ${label} card size`, () => {
       const params = moduleParameters(
         [
           { type: 'cards', cardDepth: 30 },
@@ -1188,41 +1085,113 @@ describe('game-box assembly', () => {
         ],
         { part: 'assembly', cardWidth, cardHeight },
       )
+      const layout = gameBoxLayout(params)
+      const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
+      const wallX = cardBoxInteriorWidth(cardWidth) / 2
       const build = buildGameBox(params)
       try {
         const solids = solidsOf(build.shape)
-        const holders = solids.filter((solid) => {
-          const bounds = boundsOf(solid)
-          return (
-            bounds.max[0]! - bounds.min[0]! <
-            cardBoxInteriorWidth(cardWidth) - 0.1
-          )
+        const holders = holderSolids(solids, cardWidth)
+        const diceModules = layout.modules.filter(
+          (module) => module.type === 'dice',
+        )
+        expect(holders).toHaveLength(diceModules.length)
+        diceModules.forEach((module, position) => {
+          if (module.type !== 'dice') return
+          const holder = holders[position]!
+          for (const centre of module.tenonCentres) {
+            const y = frontWallY + centre
+            for (const side of [1, -1] as const) {
+              // The tenon stands in the slot: the material between the
+              // interior wall and the reach of the tenon is the tenon.
+              const tenon = makeBox(
+                [side * (wallX + 0.01), y - 0.4, 3],
+                [side * (wallX + 0.17), y + 0.4, cardHeight],
+              ) as Shape3D
+              expect(
+                volumeOf(holder, tenon),
+                `the tenon at ${centre} mm on the ${side} side`,
+              ).toBeGreaterThan(0.1)
+              tenon.delete()
+              // The slot is wider than the tenon: beside the tenon the wall
+              // is open, so the tenon really sits in a slot.
+              const beside = makeBox(
+                [side * (wallX + 0.01), y + 0.43, 3],
+                [side * (wallX + 0.24), y + 0.49, cardHeight],
+              ) as Shape3D
+              expect(
+                volumeOf(build.shape, beside),
+                `the slot beside the tenon at ${centre} mm on the ${side} side`,
+              ).toBeLessThan(OVERLAP_LIMIT)
+              beside.delete()
+            }
+          }
         })
+      } finally {
+        build.shape.delete()
+      }
+    })
+
+    it(`seats the dice holder on its own tenons at the ${label} card size`, () => {
+      const params = moduleParameters(
+        [
+          { type: 'cards', cardDepth: 30 },
+          { type: 'dice', diceSize: 16, diceCount: 4 },
+          { type: 'cards', cardDepth: 20 },
+        ],
+        { part: 'assembly', cardWidth, cardHeight },
+      )
+      const layout = gameBoxLayout(params)
+      const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
+      const build = buildGameBox(params)
+      try {
+        const solids = solidsOf(build.shape)
+        const holders = holderSolids(solids, cardWidth)
         expect(holders).toHaveLength(1)
-        const holder = holders[0]!
-        const holderBounds = boundsOf(holder)
-        const dividers = solids
-          .filter((solid) => {
-            const bounds = boundsOf(solid)
-            return bounds.max[1]! - bounds.min[1]! < 1
-          })
-          .map((solid) => {
-            const bounds = boundsOf(solid)
-            return (bounds.min[1]! + bounds.max[1]!) / 2
-          })
-          .sort((a, b) => a - b)
-        expect(dividers).toHaveLength(2)
-        // The holder sits between the two dividers, clear of both plates.
-        const halfPlate = CARD_BOX_CONFIGURATION.dividerPlateThickness / 2
-        expect(holderBounds.min[1]!).toBeGreaterThan(dividers[0]! + halfPlate)
-        expect(holderBounds.max[1]!).toBeLessThan(dividers[1]! - halfPlate)
+        const holderBounds = boundsOf(holders[0]!)
+        const module = layout.modules[1]
+        if (!module || module.type !== 'dice') throw new Error('a dice module')
+        // The holder stands where the layout puts it.
+        expect(holderBounds.min[1]!).toBeCloseTo(
+          frontWallY + module.holderStart,
+          3,
+        )
+        expect(holderBounds.max[1]! - holderBounds.min[1]!).toBeCloseTo(
+          gameBoxDiceHolderThickness(16),
+          3,
+        )
       } finally {
         build.shape.delete()
       }
     })
   }
 
-  it('seats a first module holder between the front wall and the divider', () => {
+  it('puts no divider next to a dice holder', () => {
+    const params = moduleParameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 4 },
+        { type: 'cards', cardDepth: 20 },
+      ],
+      { part: 'assembly' },
+    )
+    const layout = gameBoxLayout(params)
+    const build = buildGameBox(params)
+    try {
+      // The holder is its own divider: the cards lean on its wall.
+      expect(layout.dividerCount).toBe(0)
+      const solids = solidsOf(build.shape)
+      const dividers = solids.filter((solid) => {
+        const bounds = boundsOf(solid)
+        return bounds.max[1]! - bounds.min[1]! < 1
+      })
+      expect(dividers).toHaveLength(0)
+    } finally {
+      build.shape.delete()
+    }
+  })
+
+  it('seats a first module holder behind the front wall', () => {
     const params = moduleParameters(
       [
         { type: 'dice', diceSize: 16, diceCount: 4 },
@@ -1234,23 +1203,20 @@ describe('game-box assembly', () => {
     try {
       const solids = solidsOf(build.shape)
       expect(solids.length).toBe(expectedPartCount(params))
-      const holders = solids.filter((solid) => {
-        const bounds = boundsOf(solid)
-        return (
-          bounds.max[0]! - bounds.min[0]! <
-          cardBoxInteriorWidth(params.cardWidth) - 0.1
-        )
-      })
+      const holders = holderSolids(solids, params.cardWidth)
       expect(holders).toHaveLength(1)
       const holderBounds = boundsOf(holders[0]!)
       const layout = gameBoxLayout(params)
       const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
-      const halfPlate = CARD_BOX_CONFIGURATION.dividerPlateThickness / 2
-      // The holder fills the module in front of the only divider.
-      expect(holderBounds.min[1]!).toBeGreaterThan(frontWallY)
-      expect(holderBounds.max[1]!).toBeLessThan(
-        frontWallY + layout.dividerCenters[0]! - halfPlate,
+      const module = layout.modules[0]
+      if (!module || module.type !== 'dice') throw new Error('a dice module')
+      // The holder waits for the first slot, so it stands behind the front
+      // wall face instead of against it.
+      expect(holderBounds.min[1]!).toBeCloseTo(
+        frontWallY + module.holderStart,
+        3,
       )
+      expect(holderBounds.min[1]!).toBeGreaterThan(frontWallY)
     } finally {
       build.shape.delete()
     }

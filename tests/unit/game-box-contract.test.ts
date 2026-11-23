@@ -263,7 +263,21 @@ describe('game-box parameter validation', () => {
     )
   })
 
-  it('accepts a divider part once two modules are active', () => {
+  it('accepts a divider part once two card modules are adjacent', () => {
+    const validation = validateGameBoxParameters(
+      snapshot(
+        [
+          { type: 'cards', cardDepth: 30 },
+          { type: 'cards', cardDepth: 20 },
+        ],
+        { part: 'divider' },
+      ),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('refuses a divider part when a dice holder stands between the cards', () => {
+    // The holder is its own divider, so no plate is printed next to it.
     const validation = validateGameBoxParameters(
       snapshot(
         [
@@ -273,7 +287,11 @@ describe('game-box parameter validation', () => {
         { part: 'divider' },
       ),
     )
-    expect(validation.valid).toBe(true)
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.messageId).toBe(
+      'validation.gameBoxDividerUnavailable',
+    )
   })
 
   it('accepts a dice holder part of a dice module', () => {
@@ -308,11 +326,9 @@ describe('game-box export file names', () => {
       ],
       { part: 'box' },
     )
-    expect(gameBoxFileName(box)).toBe(
-      'game-box-box-70x120x73.35-c30-d16-c20.step',
-    )
+    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x75-c30-d16-c20.step')
     expect(gameBoxStlFileName(box)).toBe(
-      'game-box-box-70x120x73.35-c30-d16-c20.stl',
+      'game-box-box-70x120x75-c30-d16-c20.stl',
     )
   })
 
@@ -324,7 +340,7 @@ describe('game-box export file names', () => {
       ],
       { part: 'box' },
     )
-    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x51.5-c30-d16.step')
+    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x54-c30-d16.step')
   })
 
   it('never lets two module lists share a box file name', () => {
@@ -369,8 +385,8 @@ describe('game-box export file names', () => {
     const divider = parameters([{ type: 'cards', cardDepth: 30 }], {
       part: 'divider',
     })
-    expect(gameBoxFileName(lid)).toBe('game-box-lid-70x120x31.85.step')
-    expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x31.85.step')
+    expect(gameBoxFileName(lid)).toBe('game-box-lid-70x120x33.step')
+    expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x33.step')
   })
 
   it('gives card depths within a hundredth of a millimetre one name', () => {
@@ -468,11 +484,9 @@ describe('game-box export file names', () => {
         { part: 'box' },
       ),
     } as const
-    expect(modelFileName(model)).toBe(
-      'game-box-box-70x120x73.35-c30-d16-c20.step',
-    )
+    expect(modelFileName(model)).toBe('game-box-box-70x120x75-c30-d16-c20.step')
     expect(modelStlFileName(model)).toBe(
-      'game-box-box-70x120x73.35-c30-d16-c20.stl',
+      'game-box-box-70x120x75-c30-d16-c20.stl',
     )
   })
 })

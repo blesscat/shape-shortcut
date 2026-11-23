@@ -76,9 +76,10 @@ function expectBoundsMatch(actual: Bounds, expected: Bounds): void {
 }
 
 /**
- * The module list of the test: a card module, a dice module and a second
- * card module, so the assembly carries a divider on every module boundary.
- * The dice count is the smallest one the smallest card size can hold.
+ * The module list of the test: a card module, a dice module and two more
+ * card modules, so the assembly carries a divider between the two card
+ * modules and a dice holder in the dice module. The dice count is the
+ * smallest one the smallest card size can hold.
  */
 function moduleParameters(
   overrides: Partial<GameBoxParameters>,
@@ -93,6 +94,7 @@ function moduleParameters(
     { type: 'cards', cardDepth: 30, diceSize: 16, diceCount: 6 },
     { type: 'dice', cardDepth: 30, diceSize: 16, diceCount: 6 },
     { type: 'cards', cardDepth: 20, diceSize: 16, diceCount: 6 },
+    { type: 'cards', cardDepth: 15, diceSize: 16, diceCount: 6 },
   ]
   modules.forEach((module, position) => {
     const index = (position + 1) as GameBoxModuleIndex

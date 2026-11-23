@@ -401,10 +401,10 @@ describe('CAD component catalog', () => {
     // The box file name carries the derived depth and the module list, so
     // two different module lists never share one.
     expect(gameBox?.exportFileName({ ...defaults, part: 'box' })).toBe(
-      'game-box-box-70x120x61.85-c60.step',
+      'game-box-box-70x120x63-c60.step',
     )
     expect(gameBox?.stlFileName({ ...defaults, part: 'box' })).toBe(
-      'game-box-box-70x120x61.85-c60.stl',
+      'game-box-box-70x120x63-c60.stl',
     )
     expect(
       gameBox?.exportFileName({

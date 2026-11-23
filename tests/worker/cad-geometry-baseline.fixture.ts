@@ -183,18 +183,17 @@ export const GEOMETRY_BASELINE: Record<ModelId, GeometryBaselineEntry> = {
     },
   },
   'game-box': {
-    // Recorded after refine-game-box-module-layout: the default design's
-    // depth is now the directly computed 61.85 mm (was the slot-rounded
-    // 63 mm) and the grip is a wall-rooted flap, so the y span narrows
-    // from 69.05 to 67.9 mm and the volume changes by +0.021 %.
+    // The default design is slot-rounded again: the storage depth is a whole
+    // multiple of the 3 mm slot pitch (63 mm) and the grip flap is gone, so
+    // the geometry matches the values origin/main records.
     build: {
-      volume: 109012.841911,
-      bounds: [-38.25, -34.875, 0, 38.25, 33.025, 129],
+      volume: 108989.878666,
+      bounds: [-38.25, -35.45, 0, 38.25, 33.6, 129],
       solids: 2,
     },
     buildWithParts: {
-      volume: 109012.841911,
-      bounds: [-38.25, -34.875, 0, 38.25, 33.025, 129],
+      volume: 108989.878666,
+      bounds: [-38.25, -35.45, 0, 38.25, 33.6, 129],
       solids: 2,
     },
   },
