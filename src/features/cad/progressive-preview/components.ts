@@ -45,7 +45,7 @@ import {
 } from '../../../cad-contract/units/opengrid-label-card'
 import {
   boundsForGameBox,
-  gameBoxDiceHolderWidth,
+  gameBoxDiceHolderOuterWidth,
   gameBoxFrontWallY,
   gameBoxLayout,
   validateGameBoxParameters,
@@ -456,8 +456,8 @@ function gameBoxAssemblySolids(
     solids.push(
       slab(
         // The holder reaches into the wall slots with its tenons, so the
-        // preview draws its body width.
-        gameBoxDiceHolderWidth(p.cardWidth),
+        // preview draws its outer width, the same as the single part.
+        gameBoxDiceHolderOuterWidth(p.cardWidth),
         thickness,
         p.cardHeight,
         0,
