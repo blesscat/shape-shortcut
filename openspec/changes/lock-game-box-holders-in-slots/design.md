@@ -80,9 +80,9 @@ The modules are laid out front to back. Every module owns a **region** `[start, 
 Rules:
 
 1. A **card** module needs `cardDepth + 1.0 mm` of free space for the stack and the finger clearance. A divider plate standing at a boundary eats 0.425 mm of each of its two neighbours, so a card module's *allocated* length is `cardDepth + 1.0 + 0.85` between two plates, `cardDepth + 1.0 + 0.425` next to one plate, and `cardDepth + 1.0` at a box end.
-2. A **dice** module needs `T`; the holder stands flush at the front of its region so that a neighbouring card module leans on the holder's wall.
+2. A **dice** module needs `T`. The holder stands at the first position in its region that puts its two tenons on slots. Behind a **card** module that position is the front of the region, so the neighbouring card module leans on the holder's wall. Behind another **dice** module the position can be up to just under 3 mm behind the front of the region, and the two holders leave that gap empty (example: `dice(16) + dice(18)` → the second holder stands at 24.3 mm while its region starts at 21.7 mm). The region of a dice module therefore starts at the previous module's end, and the holder stands inside it.
 3. A **divider plate** stands at a boundary only when **both** neighbours are card modules. Its centre is a slot centre, so a card–card boundary is always a multiple of 3.
-4. A **holder** needs both of its tenons on slots. Its first tenon is at `start + first`, so `start ≡ −first (mod 3)`.
+4. A **holder** needs both of its tenons on slots. Its first tenon is at `holderStart + first`, so `holderStart ≡ −first (mod 3)`.
 
 The algorithm walks the modules front to back and takes, for every boundary, **the first feasible position** that gives the module at least its required length:
 
@@ -91,8 +91,8 @@ cursor = 0
 for each module:
   cards: required = cardDepth + 1.0 + plate halves at this module's two boundaries
          end = first position ≥ cursor + required that is feasible for the next module
-  dice:  start = first position ≥ cursor with start ≡ −first (mod 3)
-         end   = start + T
+  dice:  holderStart = first position ≥ cursor with holderStart ≡ −first (mod 3)
+         end   = holderStart + T          # the region still starts at cursor
   cursor = end
 depth = ceil(minimum length / 3) × 3
 ```
@@ -158,6 +158,8 @@ Every saved game-box design changes: the depth is different, and the depth is in
 | `cards(30) + cards(30)` | 63.7 | **66** |
 | `cards(30) + dice(16) + cards(20)` | 73.35 | **75** |
 
+**A design saved with `part: 'divider'` loses more than the selected part.** Under #215 a divider plate stood between *every* pair of modules, so a design such as `cards + dice + cards` could be saved with the divider selected. The new layout has no divider plate in that list, so the snapshot fails validation (`validation.gameBoxDividerUnavailable`), and the store drops the whole entry: the component falls back to its defaults, so the card size and the module list are lost as well. A design whose list still has two card modules side by side keeps its divider and only sees its depth change. This follows from the owner's "the holder is its own divider" decision, and it is the one saved design that does not come back as it was.
+
 The minimum depth stays 15 mm. The smallest design that still builds is a lone 8 mm dice module: it needs 13.2 mm and rounds up to 15 mm, so it is valid again — the old layout rejected it (11.65 mm) and the saved design falls back to the defaults. A design whose minimum length exceeds 150 mm is still rejected, now with the rounded depth in the message (five 30 mm dice modules need 178.7 mm and are refused with `180`).
 
 The rounding carries a tolerance of 1e-9 mm, so a length that is a whole number of slots by a fraction of a nanometre does not round up to the next slot.
@@ -182,6 +184,7 @@ The rounding carries a tolerance of 1e-9 mm, so a length that is a whole number 
 | `src/cad-kernel/components/game-box/geometry.ts` | the rack, the divider centres and the holder positions |
 | `src/cad-kernel/components/game-box/builder.ts` | the assembly uses the rack positions; no pressed holder |
 | `src/cad-kernel/scene/proxy.ts`, `src/features/cad/progressive-preview/components.ts` | the holder's outer width without the flaps |
-| `src/components/cad/component-panels/game-box/` | the module length and storage depth read-outs |
+
+`src/components/cad/component-panels/game-box/` is **not changed**: the panel reads the region length and the storage depth from `gameBoxLayout`, so the rack layout shows up in the existing read-outs.
 
 `shape-ops.ts` (the shared `cutShape` / `fuseShape`) stays: the tenons are fused onto the holder body with it.
