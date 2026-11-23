@@ -64,16 +64,20 @@
   | 分隔板放回骰子匣旁 | `tests/worker/game-box.integration.test.ts` | 7 failed / 25 passed：`puts no divider next to a dice holder`、`keeps the parts apart at the ... card size` 等 |
 
   還原方式：工作樹尚未提交，`git checkout --` 會還原成 HEAD 而丟掉本次實作，因此改用 `/tmp` 的備份副本還原，`cmp` 確認兩個來源檔與備份完全相同。
+- [x] 6.10 更新因新規則而失效的既有測試：
+  - `tests/worker/game-box-bounds.integration.test.ts`：原本用「卡片 + 骰子 + 卡片」的清單驗證 `divider` 零件，但分隔板只存在於**兩個卡片模組之間**，該清單沒有分隔板；清單改為「卡片 + 骰子 + 卡片 + 卡片」，`divider` 零件仍可選、模組 2 仍是骰子匣。
+  - `tests/worker/game-box-preview-placement.integration.test.ts`：原本用「比空腔窄」認出組裝裡的骰子匣，但榫讓骰子匣的外寬比空腔多 0.35 mm；改用「與卡片同高」認出，與預覽側的認法一致。
+  - `tests/e2e/game-box.spec.ts`：分隔板選項（兩個卡片模組之間才有）與各模組的區間長度期望改依新排版推算。
 
 ## 7. 整合檢查
 
-- [ ] 7.1 `pnpm check`（`tsc --noEmit` + `svelte-check`）0 錯誤 0 警告。
-- [ ] 7.2 對每一個更動的檔案執行 `pnpm exec prettier --check`。
-- [ ] 7.3 `pnpm exec openspec validate lock-game-box-holders-in-slots --strict` 與 `pnpm exec openspec validate --specs`。
-- [ ] 7.4 `pnpm vitest run --project fast`。
-- [ ] 7.5 game-box 與 card-box 的 `cad` 測試檔，以及 `tests/worker/cad-geometry-baseline.test.ts`。
-- [ ] 7.6 `PLAYWRIGHT_PORT=<空閒埠> pnpm exec playwright test tests/e2e/game-box.spec.ts tests/e2e/card-box.spec.ts --project=chromium`。
-- [ ] 7.7 確認 `package.json` 與 lockfile 未變更，`card-box` 與其他元件的幾何與行為未受影響。
+- [x] 7.1 `pnpm check`（`tsc --noEmit` + `svelte-check`）0 錯誤 0 警告。實測：`svelte-check found 0 errors and 0 warnings`。
+- [x] 7.2 對每一個更動的檔案執行 `pnpm exec prettier --check`。實測：`All matched files use Prettier code style!`（20 個檔案）。
+- [x] 7.3 `pnpm exec openspec validate lock-game-box-holders-in-slots --strict` 與 `pnpm exec openspec validate --specs`。實測：`Change 'lock-game-box-holders-in-slots' is valid`；`Totals: 65 passed, 0 failed (65 items)`（長文字警告是既有的其他 spec，與本次變更無關）。
+- [x] 7.4 `pnpm vitest run --project fast`。實測：`Test Files 162 passed (162)`、`Tests 1760 passed (1760)`。
+- [x] 7.5 game-box 與 card-box 的 `cad` 測試檔，以及 `tests/worker/cad-geometry-baseline.test.ts`。實測（12 個檔案）：`Test Files 12 passed (12)`、`Tests 175 passed (175)`。
+- [x] 7.6 `PLAYWRIGHT_PORT=3487 pnpm exec playwright test tests/e2e/game-box.spec.ts tests/e2e/card-box.spec.ts --project=chromium`。實測：`18 passed (13.8s)`。第一次執行時 dev server 的 `astro dev` 會 fork 出 daemon 而讓 Playwright 誤判「exited early」；daemon 起來後重跑即通過。
+- [x] 7.7 確認 `package.json` 與 lockfile 未變更，`card-box` 與其他元件的幾何與行為未受影響。實測：`git diff origin/main -- package.json pnpm-lock.yaml` 與 `git diff HEAD -- src/cad-kernel/components/card-box/ src/cad-contract/units/card-box.ts` 皆為空；card-box 的 `cad` 測試檔與基線條目全數通過。
 
 ## 8. 試印（owner）
 
