@@ -107,7 +107,9 @@ export function parseGameBoxRawParameters(raw: RawParameters):
       continue
     }
     if (GAME_BOX_DECIMAL_KEYS[key]) {
-      parsed[key] = parseFiniteDecimalInput(rawValue ?? '') ?? Number.NaN
+      // A missing ratio is unknown (0), like the contract default; only a
+      // present but unreadable value fails validation.
+      parsed[key] = parseFiniteDecimalInput(rawValue ?? '') ?? 0
       continue
     }
     parsed[key] = parseGameBoxNumber(key, rawValue)

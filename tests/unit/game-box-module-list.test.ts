@@ -337,7 +337,7 @@ describe('game-box divider settings across list operations', () => {
     expect(values[gameBoxDividerTextKey(2)]).toBe('')
   })
 
-  it('a delete behind a dice module lowers the pair count', () => {
+  it('a delete behind a dice module leaves the pair count unchanged', () => {
     // cards/cards/dice -> delete the dice: the pair count is unchanged, so
     // divider 1 keeps its fields.
     const raw = rawWithDividerSettings(['cards', 'cards', 'dice'])
@@ -382,15 +382,60 @@ describe('game-box divider settings across list operations', () => {
     expect(values[gameBoxDividerTextKey(1)]).toBe('')
   })
 
-  it('a move that removes a pair resets the vanished ordinal', () => {
-    // cards/cards/cards -> move the last earlier: cards/cards/cards (count
-    // unchanged) keeps both; with dice between, cards/cards/dice -> move
-    // the dice earlier: cards/dice/cards has no pair at all, so every
-    // divider resets.
+  it('a state with no pair keeps every ordinal reset', () => {
+    // cards/dice/dice has no cards pair at all, so every divider ordinal
+    // stays at its defaults no matter what was stored.
     const raw = rawWithDividerSettings(['cards', 'dice', 'dice'])
     const groups = readModuleGroups(raw)
-    // no pair to begin with: values stay reset
     const values = listOperationValues(groups, 'assembly', 70, 120, raw)
     expect(values[gameBoxDividerTextKey(1)]).toBe('')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+  })
+
+  it('a delete that lowers the count with a dice module behind the pair (round-3 e2e-2)', () => {
+    // cards/cards/dice/cards/cards with RED on divider 1 and BLUE on
+    // divider 2 -> delete module 5 (the trailing cards): the pair count
+    // drops 2 -> 1, so divider 2 resets while divider 1 keeps RED.
+    const raw = rawWithDividerSettings([
+      'cards',
+      'cards',
+      'dice',
+      'cards',
+      'cards',
+    ])
+    const groups = readModuleGroups(raw)
+    const afterDelete = deleteModuleGroup(groups, 4)
+    const values = listOperationValues(afterDelete, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+  })
+
+  it('an add that appends a cards module behind the pair keeps both ordinals', () => {
+    // addModuleGroup appends at the end: cards/cards/dice -> cards/cards/
+    // dice/cards adds no cards pair, so both ordinals keep their fields.
+    const raw = rawWithDividerSettings(['cards', 'cards', 'dice'])
+    const groups = readModuleGroups(raw)
+    const afterAdd = addModuleGroup(groups, 'cards')
+    expect(activeModuleCount(afterAdd)).toBe(4)
+    const values = listOperationValues(afterAdd, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+
+    // Appending a cards module to a list that already ends in cards grows
+    // the pair count: cards/cards -> cards/cards/cards. The new ordinal
+    // starts from defaults and the existing one keeps its fields.
+    const rawPair = rawWithDividerSettings(['cards', 'cards'])
+    const pairGroups = readModuleGroups(rawPair)
+    const afterAddPair = addModuleGroup(pairGroups, 'cards')
+    expect(activeModuleCount(afterAddPair)).toBe(3)
+    const pairValues = listOperationValues(
+      afterAddPair,
+      'assembly',
+      70,
+      120,
+      rawPair,
+    )
+    expect(pairValues[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(pairValues[gameBoxDividerTextKey(2)]).toBe('')
   })
 })

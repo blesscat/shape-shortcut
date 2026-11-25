@@ -1202,6 +1202,17 @@ function validateDividerFields(
   return { ok: true, value: { text, tabPositions, styles } }
 }
 
+/** The height/width ratio of an imported cover: 0 means unknown, and a
+ * stored value that is not a positive finite number (negative, NaN) counts
+ * as unknown too - the ratio has no control on the panel, so it never
+ * carries a field error of its own. */
+function coverSvgAspectValue(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) {
+    return 0
+  }
+  return raw
+}
+
 function validStringOrDefault(value: unknown, fallback: string): string {
   if (value === undefined) return fallback
   return typeof value === 'string' ? value : fallback
@@ -1330,23 +1341,7 @@ function validateCoverFields(
   // The height/width ratio the import wrote into the parameter record: 0
   // means unknown (the outlines were imported before the ratio existed),
   // and an unknown ratio cannot be judged here.
-  const rawAspect = record.coverSvgAspect
-  const aspect =
-    rawAspect === undefined
-      ? 0
-      : typeof rawAspect === 'number' && Number.isFinite(rawAspect)
-        ? rawAspect
-        : Number.NaN
-  if (aspect !== 0 && (!(aspect > 0) || aspect > 10)) {
-    return {
-      ok: false,
-      issue: {
-        field: 'coverSvgAspect',
-        messageId: 'validation.invalid',
-        params: { min: 0.01, max: 10 },
-      },
-    }
-  }
+  const aspect = coverSvgAspectValue(record.coverSvgAspect)
 
   if (
     usesCoverSvg &&

@@ -105,7 +105,7 @@ export const messages = {
   'cad.presets.game-box.mini-american-41x63': 'Mini American 41×63',
   'cad.presets.game-box.mini-euro-44x68': 'Mini Euro 44×68',
   'cad.presets.game-box.notApplicable':
-    'This card size does not fit the current modules. Adjust the modules or their dice settings, then apply the preset again.',
+    'This card size does not fit the current modules or cover art. Adjust the modules, their dice settings or the cover, then apply the preset again.',
   'cad.drawer.title': 'Parameters',
   'cad.drawer.open': 'Open parameter drawer',
   'cad.drawer.close': 'Close parameter drawer',
