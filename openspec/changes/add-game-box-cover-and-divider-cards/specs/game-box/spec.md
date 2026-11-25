@@ -36,8 +36,26 @@
 
 #### Scenario: 調整順序不改變分隔卡
 
-- **WHEN** 使用者將任一模組前移或後移
+- **WHEN** 使用者將任一模組前移或後移，且該操作未改變「兩個 `cards` 模組相鄰」的邊界數
 - **THEN** 每個存在的分隔卡欄位 MUST 保持不變
+
+#### Scenario: 清單操作新建的邊界從預設開始
+
+- **WHEN** 任一清單操作（新增、刪除、移動）使某個序號的分隔卡從不存在變為存在（例如刪除 `cards`、`dice`、`cards` 中間的骰子模組，或移動骰子模組使兩個 `cards` 模組相鄰）
+- **THEN** 該序號的分隔卡 MUST 以預設欄位出現
+- **AND** MUST NOT 帶有任何先前的欄位值
+
+#### Scenario: 清單操作移除的邊界重置為預設
+
+- **WHEN** 任一清單操作使某個序號的分隔卡從存在變為不存在（例如刪除或移動骰子模組拆開原本相鄰的兩個 `cards` 模組）
+- **THEN** 該序號的分隔卡欄位 MUST 回到預設值
+- **AND** 之後任何操作重建該序號時 MUST 以預設欄位出現
+
+#### Scenario: 移動使序號換到不同的實體邊界
+
+- **WHEN** 清單為 `cards`、`dice`、`cards`、`cards`（分隔卡 1 在模組 3|4 之間），使用者將骰子模組後移，清單變為 `cards`、`cards`、`dice`、`cards`（分隔卡 1 在模組 1|2 之間）
+- **THEN** 邊界數 MUST 保持 1
+- **AND** 分隔卡 1 MUST 保留其全部欄位值，即使它所在的實體邊界已不同
 
 ### Requirement: 封面片參數
 
@@ -227,13 +245,13 @@
 #### Scenario: 骰子模組產生零件項目
 
 - **WHEN** 清單為 `cards`、`dice`、`cards`
-- **THEN** 零件選擇器 MUST 列出 `assembly`、`box`、`lid`、`divider` 與模組 2 的骰子匣
-- **AND** `divider` 項目 MUST 標示 0 片
+- **THEN** 零件選擇器 MUST 列出 `assembly`、`box`、`lid`、`cover` 與模組 2 的骰子匣
+- **AND** MUST NOT 列出任何 `dividerN` 項目（沒有任何兩個 `cards` 模組相鄰）
 
 #### Scenario: 沒有分隔板時分隔板不可選
 
 - **WHEN** 清單為 `cards`、`dice`
-- **THEN** 零件選擇器 MUST NOT 列出 `divider`
+- **THEN** 零件選擇器 MUST NOT 列出任何 `dividerN` 項目
 
 #### Scenario: 指向無效零件被拒絕
 

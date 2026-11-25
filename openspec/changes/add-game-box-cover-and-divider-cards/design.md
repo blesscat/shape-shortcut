@@ -85,7 +85,7 @@ the cover is a physical part of the product rather than an option.
 
 Dividers exist only where two adjacent `cards` modules meet (the merged
 #215 rule: a dice holder is its own divider, so a holder boundary carries no
-plate). `dividerN` is the **Nth such boundary**, front to back, N = 1 … activeModules − 1 (max 5). Each group
+plate). `dividerN` is the **Nth such boundary**, front to back, N = 1 … (cards-pair count, at most 5). Each group
 owns three flat fields:
 
 | Field | Range / values | Default |
@@ -112,18 +112,25 @@ mixed with per-piece text would make two physically different plates
 indescribable. *Alternative* — one shared `dividerStyle` field (rejected;
 cheaper by four keys but contradicts the owner decision).
 
-List-operation semantics follow the cards-pair boundaries (positional
-attachment over the plates that actually exist):
+List-operation semantics follow the lead decision on `dividerN` (round 3):
+the fields belong to the ordinal N, and **after every list operation (add,
+delete, move), every ordinal greater than `min(old pair count, new pair
+count)` resets to its defaults** - both the vanished ordinals and the ones
+a newly created pair brings into existence. Consequences:
 
-- **Add module**: the cards-pair count can only stay equal or grow by one
-  (a new `cards` next to a `cards` adds a plate; a new `dice` removes the
-  plate of the boundary it splits, if any). New boundaries appear with
-  default fields; the surviving boundaries keep their settings by ordinal.
-- **Delete module**: boundary count shrinks by one; surviving boundaries keep
-  their settings by index; the vanished boundary's fields reset to defaults
-  (same re-pack rule as deleted modules).
-- **Move module**: boundaries do not move — only module contents swap — so
-  divider fields never change on reorder.
+- **Add module** (append-only in the panel): appending `cards` behind a
+  `cards` module creates a pair beyond the old count, and that ordinal
+  starts from defaults; appending `dice` leaves the count alone.
+- **Delete module**: deleting a `cards` module lowers the count and the
+  vanished ordinal resets; deleting a `dice` module that joins two `cards`
+  modules **raises** the count, and the joined boundary starts from
+  defaults; deleting a `dice` elsewhere leaves the count alone.
+- **Move module**: a move can create, remove or relocate a pair. Creating
+  resets the new ordinal; removing resets the vanished one; relocating
+  (same count) keeps the ordinal's fields even though the physical boundary
+  it sits on changes - `cards, dice, cards, cards` to `cards, cards, dice,
+  cards` moves divider 1 from between stacks 3|4 to between stacks 1|2 and
+  keeps its fields, by decision, not by accident.
 
 Panel presentation (decision, open question 3 resolved): a dedicated
 "分隔卡" fieldset listing one card per boundary (label text input, tab
@@ -136,7 +143,7 @@ interleaving also has no slot for boundary N at the list's end).
 
 `part` values become `assembly | box | lid | cover | divider1…divider5 |
 module1…module6 (dice modules only)`. `dividerN` is offered only while
-N ≤ activeModules − 1; pointing elsewhere is a validation error, and list
+a cards pair with that ordinal exists; pointing elsewhere is a validation error, and list
 operations that invalidate the current selection fall back to `assembly` (the
 existing rule). Identical plain dividers stay **separately listed items**:
 they are distinct physical plates, the count per plate is gone (no more
