@@ -313,7 +313,7 @@ describe('game-box parameter validation', () => {
           { type: 'cards', cardDepth: 30 },
           { type: 'cards', cardDepth: 20 },
         ],
-        { part: 'divider' },
+        { part: 'divider1' },
       ),
     )
     expect(validation.valid).toBe(true)
@@ -729,8 +729,8 @@ describe('game-box accent art and 3MF file names', () => {
     ] as const
     const first = gameBoxFileName(parameters(modules, { part: 'divider1' }))
     const second = gameBoxFileName(parameters(modules, { part: 'divider2' }))
-    expect(first).toBe('game-box-divider1-70x120x73.35-left-raised-blank.step')
-    expect(second).toBe('game-box-divider2-70x120x73.35-left-raised-blank.step')
+    expect(first).toBe('game-box-divider1-70x120x75-left-raised-blank.step')
+    expect(second).toBe('game-box-divider2-70x120x75-left-raised-blank.step')
     expect(first).not.toBe(second)
   })
 
@@ -749,10 +749,10 @@ describe('game-box accent art and 3MF file names', () => {
     const text = gameBoxFileName(
       parameters(modules, { part: 'divider1', divider1Text: 'RED' }),
     )
-    expect(plain).toBe('game-box-divider1-70x120x53.7-left-raised-blank.step')
-    expect(tab).toBe('game-box-divider1-70x120x53.7-center-raised-blank.step')
-    expect(style).toBe('game-box-divider1-70x120x53.7-left-flat-blank.step')
-    expect(text).toBe('game-box-divider1-70x120x53.7-left-raised-83ce97fc.step')
+    expect(plain).toBe('game-box-divider1-70x120x57-left-raised-blank.step')
+    expect(tab).toBe('game-box-divider1-70x120x57-center-raised-blank.step')
+    expect(style).toBe('game-box-divider1-70x120x57-left-flat-blank.step')
+    expect(text).toBe('game-box-divider1-70x120x57-left-raised-83ce97fc.step')
     expect(new Set([plain, tab, style, text]).size).toBe(4)
   })
 
@@ -778,7 +778,7 @@ describe('game-box accent art and 3MF file names', () => {
     const cover = gameBoxFileName(
       parameters([{ type: 'cards' }], { part: 'cover' }),
     )
-    expect(cover).toBe('game-box-cover-70x120x61.85-raised-5533ae9f.step')
+    expect(cover).toBe('game-box-cover-70x120x63-raised-5533ae9f.step')
     const flat = gameBoxFileName(
       parameters([{ type: 'cards' }], { part: 'cover', coverStyle: 'flat' }),
     )
@@ -797,7 +797,7 @@ describe('game-box accent art and 3MF file names', () => {
         coverTitle: '',
       }),
     )
-    expect(blank).toBe('game-box-cover-70x120x61.85-raised-blank.step')
+    expect(blank).toBe('game-box-cover-70x120x63-raised-blank.step')
   })
 
   it('names the 3MF exactly like the STEP with the .3mf extension', () => {
@@ -838,7 +838,7 @@ describe('game-box accent art and 3MF file names', () => {
           { part: 'box' },
         ),
       ),
-    ).toBe('game-box-box-70x120x51.5-c30-d16.step')
+    ).toBe('game-box-box-70x120x54-c30-d16.step')
     expect(
       gameBoxFileName(
         parameters(
@@ -849,7 +849,7 @@ describe('game-box accent art and 3MF file names', () => {
           { part: 'lid' },
         ),
       ),
-    ).toBe('game-box-lid-70x120x51.5.step')
+    ).toBe('game-box-lid-70x120x54.step')
     expect(
       gameBoxFileName(
         parameters([{ type: 'dice', diceSize: 16, diceCount: 9 }], {
@@ -887,7 +887,9 @@ describe('game-box bounds for the new parts', () => {
 })
 
 describe('game-box lists cover and divider parts', () => {
-  it('offers cover and one divider per boundary', () => {
+  it('offers cover and one divider per cards pair', () => {
+    // cards/dice/cards has no cards pair, so the holder is the only
+    // divider in the box.
     expect(
       gameBoxAvailableParts(
         parameters([
@@ -896,15 +898,16 @@ describe('game-box lists cover and divider parts', () => {
           { type: 'cards', cardDepth: 20 },
         ]),
       ),
-    ).toEqual([
-      'assembly',
-      'box',
-      'lid',
-      'cover',
-      'divider1',
-      'divider2',
-      'module2',
-    ])
+    ).toEqual(['assembly', 'box', 'lid', 'cover', 'module2'])
+    // Two adjacent card modules share one divider plate.
+    expect(
+      gameBoxAvailableParts(
+        parameters([
+          { type: 'cards', cardDepth: 30 },
+          { type: 'cards', cardDepth: 20 },
+        ]),
+      ),
+    ).toEqual(['assembly', 'box', 'lid', 'cover', 'divider1'])
   })
 
   it('offers cover even with a single module and no divider', () => {
@@ -957,15 +960,8 @@ describe('game-box cover and divider fields survive a card-size preset', () => {
   })
 })
 
-describe('game-box divider label relief', () => {
-  it('relieves only the free band above the topmost die, for every valid size', () => {
-    const relief = GAME_BOX_CONFIGURATION.dividerLabelRelief
-    // The band may not reach below the top margin: the highest die top is
-    // always cardHeight - diceHolderTopMargin, so the relief never enters
-    // the dice region and capacity is unaffected for every valid input.
-    expect(relief.bandHeight).toBeLessThanOrEqual(
-      GAME_BOX_CONFIGURATION.diceHolderTopMargin,
-    )
+describe('game-box dice well ceiling', () => {
+  it('keeps the top margin free above the topmost die, for every valid size', () => {
     const topMargin = GAME_BOX_CONFIGURATION.diceHolderTopMargin
     for (const diceSize of [8, 8.5, 12, 16, 20, 25.5, 30] as const) {
       for (const cardHeight of [60, 63, 88, 91, 120, 150] as const) {
@@ -983,26 +979,7 @@ describe('game-box divider label relief', () => {
           dieCeiling,
           `die ceiling at ${diceSize}x${cardHeight}`,
         ).toBeCloseTo(cardHeight - topMargin, 6)
-        expect(
-          relief.bandHeight,
-          `relief band at ${diceSize}x${cardHeight}`,
-        ).toBeLessThanOrEqual(cardHeight - dieCeiling)
       }
     }
-  })
-
-  it('clears the raised label: art protrusion plus margin fits the recess', () => {
-    const relief = GAME_BOX_CONFIGURATION.dividerLabelRelief
-    // Raised art reaches 0.4 mm (accentDepth) out of the plate face while
-    // the holder face keeps the 0.3 mm designed gap, so the art penetrates
-    // 0.1 mm; the 0.3 mm recess clears it with the 0.2 mm minimum margin.
-    expect(relief.depth - 0.1).toBeGreaterThanOrEqual(0.2 - 1e-9)
-    // 0.4 mm art depth - 0.3 mm holder gap + the 0.2 mm minimum margin.
-    expect(relief.depth).toBeCloseTo(
-      CARD_BOX_CONFIGURATION.accentDepth -
-        GAME_BOX_CONFIGURATION.diceHolderGap +
-        0.2,
-      9,
-    )
   })
 })

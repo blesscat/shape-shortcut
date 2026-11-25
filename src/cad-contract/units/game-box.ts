@@ -197,7 +197,9 @@ export function gameBoxPartDividerOrdinal(
 ): GameBoxDividerIndex | null {
   if (!part.startsWith('divider')) return null
   const index = Number(part.slice('divider'.length))
-  const match = GAME_BOX_DIVIDER_INDICES.find((candidate) => candidate === index)
+  const match = GAME_BOX_DIVIDER_INDICES.find(
+    (candidate) => candidate === index,
+  )
   return (match as GameBoxDividerIndex | undefined) ?? null
 }
 
@@ -778,8 +780,9 @@ export function gameBoxHasAccentArt(parameters: GameBoxParameters): boolean {
 export function gameBoxCoverSafeAreaWidth(cardWidth: number): number {
   return (
     cardBoxInteriorWidth(cardWidth) -
-    2 * (CARD_BOX_CONFIGURATION.hiddenLipWidth +
-      CARD_BOX_CONFIGURATION.coverSafeAreaMargin)
+    2 *
+      (CARD_BOX_CONFIGURATION.hiddenLipWidth +
+        CARD_BOX_CONFIGURATION.coverSafeAreaMargin)
   )
 }
 
