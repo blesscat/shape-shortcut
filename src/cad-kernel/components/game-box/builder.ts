@@ -146,6 +146,24 @@ function artPartExport(build: CardBoxArtPartBuild): GameBoxBuild {
   }
 }
 
+/**
+ * A blank card on the default tab is the plain plate, built from the
+ * geometry alone; any other card goes through the reused labelled builder.
+ */
+async function buildDividerCardForBoundary(
+  parameters: GameBoxParameters,
+  geometry: GameBoxGeometry,
+  dividerIndex: GameBoxDividerIndex,
+): Promise<CardBoxArtPartBuild> {
+  if (isPlainDivider(parameters, dividerIndex)) {
+    return {
+      kind: 'single',
+      shape: buildCardBoxDividerFromGeometry(geometry.cardBox),
+    }
+  }
+  return buildDividerCard(parameters, dividerIndex)
+}
+
 async function buildDividerCard(
   parameters: GameBoxParameters,
   dividerIndex: GameBoxDividerIndex,
@@ -300,12 +318,11 @@ async function buildAssembly(
     parts.push(buildCardBoxLidFromGeometry(geometry.cardBox))
     for (const [position, y] of geometry.dividerCentres.entries()) {
       const ordinal = (position + 1) as GameBoxDividerIndex
-      const build = isPlainDivider(parameters, ordinal)
-        ? ({
-            kind: 'single',
-            shape: buildCardBoxDividerFromGeometry(geometry.cardBox),
-          } as CardBoxArtPartBuild)
-        : await buildDividerCard(parameters, ordinal)
+      const build = await buildDividerCardForBoundary(
+        parameters,
+        geometry,
+        ordinal,
+      )
       artBuilds.push(build)
       parts.push(placeDividerInAssembly(build, y))
     }
@@ -362,12 +379,11 @@ export async function buildGameBox(
   }
   const dividerOrdinal = gameBoxPartDividerOrdinal(parameters.part)
   if (dividerOrdinal !== null) {
-    const build = isPlainDivider(parameters, dividerOrdinal)
-      ? ({
-          kind: 'single',
-          shape: buildCardBoxDividerFromGeometry(geometry.cardBox),
-        } as CardBoxArtPartBuild)
-      : await buildDividerCard(parameters, dividerOrdinal)
+    const build = await buildDividerCardForBoundary(
+      parameters,
+      geometry,
+      dividerOrdinal,
+    )
     return artPartExport(build)
   }
   switch (parameters.part) {

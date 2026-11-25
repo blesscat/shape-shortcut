@@ -9,6 +9,7 @@ import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
 import {
   cast,
   getOC,
+  makeBox,
   measureVolume,
   type Shape3D as ReplicadShape,
 } from 'replicad'
@@ -27,6 +28,8 @@ import {
 } from '../../src/cad-kernel/export'
 import {
   CARD_BOX_CONFIGURATION,
+  cardBoxDividerTabCenterX,
+  cardBoxDividerWidth,
   cardBoxInteriorWidth,
   GAME_BOX_CONFIGURATION,
   gameBoxLayout,
@@ -107,6 +110,13 @@ function intersectionVolume(
   } finally {
     overlap.delete()
   }
+}
+
+function makeBoxForSlice(
+  corner1: [number, number, number],
+  corner2: [number, number, number],
+): ReplicadShape {
+  return makeBox(corner1, corner2) as ReplicadShape
 }
 
 function shapeBounds(shape: ReplicadShape): number[][] {
@@ -408,7 +418,7 @@ describe('game-box zero intersection with art', () => {
   ] as const
 
   for (const [label, cardWidth, cardHeight] of SIZES) {
-    it(`keeps the cover art clear of the box at the ${label} card size`, async () => {
+    it(`rebuilds the assembly with labels at the ${label} card size`, async () => {
       const build = await buildGameBox(
         parameters([{ type: 'cards' }, { type: 'dice' }], {
           part: 'assembly',
@@ -595,6 +605,77 @@ describe('game-box cover depth independence and solid count', () => {
       // A hair below zero is binary noise; the part lies on the bed.
       expect(shapeBounds(build.shape)[0]![2]!).toBeGreaterThanOrEqual(-0.001)
     } finally {
+      build.shape.delete()
+    }
+  })
+})
+describe('game-box assembly divider ordinals', () => {
+  it('gives every plate its own divider fields in boundary order', async () => {
+    // Three card modules make two plates; each divider carries a different
+    // tab so the plates are tellable apart by their tab centres alone.
+    const params = parameters(
+      [{ type: 'cards' }, { type: 'cards' }, { type: 'cards' }],
+      {
+        part: 'assembly',
+        divider1TabPosition: 'left',
+        divider2TabPosition: 'center',
+      },
+    )
+    const build = await buildGameBox(params)
+    const solids = explorerSolidsOf(build.shape)
+    const c = CARD_BOX_CONFIGURATION
+    try {
+      // The plates: 0.85 mm deep in Y and taller than the card (the tab
+      // rises above the body); the cover plate is thinner and shorter.
+      const plateBounds = new Map<ReplicadShape, number[][]>()
+      const plates = solids
+        .filter((solid) => {
+          const bounds = shapeBounds(solid)
+          const matches =
+            bounds[1]![1]! - bounds[0]![1]! < 1 &&
+            bounds[1]![2]! - bounds[0]![2]! >
+              GAME_BOX_CONFIGURATION.defaults.cardHeight + 1
+          if (matches) plateBounds.set(solid, bounds)
+          return matches
+        })
+        .sort(
+          (first, second) =>
+            plateBounds.get(first)![0]![1]! - plateBounds.get(second)![0]![1]!,
+        )
+      expect(plates).toHaveLength(2)
+
+      // The tab centre of a plate: slice it at the tab height and measure
+      // the x centre of the band that remains.
+      const tabCentre = (plate: ReplicadShape): number => {
+        const bounds = shapeBounds(plate)
+        const z = bounds[1]![2]! - c.dividerTabHeight / 2
+        const slice = plate.intersect(
+          makeBoxForSlice(
+            [-200, bounds[0]![1]! - 0.01, z - 0.1],
+            [200, bounds[1]![1]! + 0.01, z + 0.1],
+          ),
+        )
+        try {
+          const sliceBounds = shapeBounds(slice)
+          return (sliceBounds[0]![0]! + sliceBounds[1]![0]!) / 2
+        } finally {
+          slice.delete()
+        }
+      }
+
+      const width = cardBoxDividerWidth(params.cardWidth)
+      const expected = [
+        cardBoxDividerTabCenterX('left', width),
+        cardBoxDividerTabCenterX('center', width),
+      ]
+      for (const [index, plate] of plates.entries()) {
+        expect(tabCentre(plate), `plate ${index + 1} tab`).toBeCloseTo(
+          expected[index]!,
+          0,
+        )
+      }
+    } finally {
+      for (const solid of solids) solid.delete()
       build.shape.delete()
     }
   })

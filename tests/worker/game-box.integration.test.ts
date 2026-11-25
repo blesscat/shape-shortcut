@@ -1014,8 +1014,8 @@ describe('game-box dice holder', () => {
 
 describe('game-box holder with a minimum side wall', () => {
   // A dice row that exactly fills the usable width leaves a side wall of
-  // exactly 1.2 mm; these inputs used to crash the holder build when the
-  // relief cutters were derived from the wall thickness.
+  // exactly 1.2 mm; these inputs used to crash the holder build when its
+  // cutters were derived from the wall thickness.
   const CASES = [
     {
       name: '63 x 88 with five 11.5 mm dice',

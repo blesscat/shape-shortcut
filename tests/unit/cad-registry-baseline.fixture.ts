@@ -113,6 +113,9 @@ export const KERNEL_MODEL_WITH_PARTS_MISMATCH_IDS: ReadonlySet<ModelId> =
     'opengrid-divider',
     'opengrid-openconnect-organizer',
     'opengrid-label-card',
+    // game-box owns buildWithParts (the cover and labelled dividers export
+    // separated body/accent parts), so its with-parts guard throws its own
+    // mismatch error like every other multipart model.
     'game-box',
     'card-box',
   ])
