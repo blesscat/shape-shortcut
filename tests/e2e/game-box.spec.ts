@@ -736,6 +736,65 @@ test.describe('game-box', () => {
     )
   })
 
+  test('a cover too tall for the card shows the localized reason', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await page.getByTestId('game-box-part').selectOption('cover')
+
+    // Import a tall SVG (aspect 2) at width 25: at card height 63 the art
+    // stacks 50 mm past the 49 mm safe area, so validation names the SVG
+    // width field and shows the localized reason as text.
+    await page
+      .getByTestId('game-box-svg-import')
+      .locator('input[type="file"]')
+      .setInputFiles({
+        name: 'tall.svg',
+        mimeType: 'image/svg+xml',
+        buffer: Buffer.from(
+          [
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200">',
+            '  <rect x="40" y="10" width="20" height="180" fill="#00ff00"/>',
+            '</svg>',
+          ].join('\n'),
+        ),
+      })
+    await expect(
+      page
+        .getByTestId('game-box-svg-import')
+        .getByText('封面圖稿已保存', { exact: false }),
+    ).toBeVisible({ timeout: 30_000 })
+
+    await page.getByRole('textbox', { name: '卡片高（Z）' }).fill('63')
+    await expect(page.locator('#coverSvgWidth-error')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.locator('#coverSvgWidth-error')).toContainText('堆疊高度')
+    await expect(page.locator('#coverSvgWidth-error')).not.toContainText('⟦')
+  })
+
+  test('a too-long divider label names its plate in the error', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await addModule(page, 'cards')
+    await addModule(page, 'cards')
+
+    // A 20-character W label cannot fit the tab: the build fails and the
+    // localized error names divider 2 with no unresolved placeholder.
+    await page.getByTestId('game-box-divider-2-text').fill('W'.repeat(20))
+    const alert = page.getByRole('alert').filter({ hasText: '分隔卡' })
+    await expect(alert).toBeVisible({ timeout: 120_000 })
+    await expect(alert).toContainText('分隔卡 2')
+    await expect(alert).not.toContainText('⟦')
+  })
+
   test('a list operation that creates a pair starts it from the defaults', async ({
     page,
     browserName,

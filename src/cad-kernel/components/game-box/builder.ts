@@ -76,10 +76,16 @@ function combinedArtShape(body: Shape3D, accent: Shape3D): Shape3D {
  * `retire-card-box` can delete card-box's rules untouched. Unknown errors
  * are rethrown unchanged.
  */
-function wrapGameBoxArtError(error: unknown): never {
+function wrapGameBoxArtError(error: unknown, context?: string): never {
   const message = error instanceof Error ? error.message : String(error)
   if (message.includes('CARD_BOX_DIVIDER_TEXT_TOO_WIDE')) {
-    throw new Error('GAME_BOX_DIVIDER_TEXT_TOO_WIDE')
+    // The ordinal lets the localized message name the plate that does not
+    // fit.
+    throw new Error(
+      context
+        ? `GAME_BOX_DIVIDER_TEXT_TOO_WIDE:${context}`
+        : 'GAME_BOX_DIVIDER_TEXT_TOO_WIDE',
+    )
   }
   if (message.includes('CARD_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
     throw new Error('GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA')
@@ -173,7 +179,7 @@ async function buildDividerCard(
       cardBoxArtParameters(parameters, 'divider', dividerIndex),
     )
   } catch (error) {
-    wrapGameBoxArtError(error)
+    wrapGameBoxArtError(error, String(dividerIndex))
   }
 }
 
