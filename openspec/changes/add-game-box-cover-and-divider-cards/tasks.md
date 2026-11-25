@@ -67,3 +67,8 @@
 ## Round-1 gate fixes
 
 - [x] 3.6 骰子匣頂部讓位帶（design.md 決策 9）：正面與背面牆頂部 1.0 mm 帶內縮 0.3 mm，使 `raised` 分隔卡標籤與相鄰骰子匣的組裝交集為零；讓位帶位於骰槽上方自由餘隙（容量不變），X 限制在本體寬度內（不碰握持薄片），並加入帶標籤組裝的成對零交集測試（`raised`＋`flat`、兩側骰子模組、預設／最小／最大卡片尺寸）。
+
+## Rework after #215 (2026-11-25)
+
+- [x] 3.7 重做後適配：分支以 `git rebase --onto origin/main 4b0b2df` 改基於合併後的 `f3976c9`；`dividerN` 改為「兩個 `cards` 模組相鄰」邊界的序號（holder 邊界無分隔卡）；移除骰子匣頂部讓位帶及其測試（決策 9）；零件選擇器、檔名、3MF、preset 規則與 delta spec 全部改寫在合併後的 main 文本上（7 ADDED + 8 MODIFIED，--strict 通過）。
+- [x] 8.7 幾何 baseline：game-box 項目由 origin/main 的 108989.878666 mm³（2 solids）更新為 114090.238551 mm³（7 solids：盒體＋滑蓋＋封面片＋4 個 GAME 字形；bounds 不變），僅 game-box 項目變更，以測試自身的 build 路徑量測。
