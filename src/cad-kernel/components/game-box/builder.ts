@@ -1,8 +1,4 @@
-import {
-  deserializeShape,
-  makeCompound,
-  type Shape3D,
-} from 'replicad'
+import { deserializeShape, makeCompound, type Shape3D } from 'replicad'
 import {
   CARD_BOX_CONFIGURATION,
   cardBoxOuterDepth,

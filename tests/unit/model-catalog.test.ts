@@ -388,14 +388,14 @@ describe('CAD component catalog', () => {
     expect(
       gameBox?.threeMfFileName?.({
         ...gameBox.defaultParameters,
-        module2Type: 'dice',
+        module2Type: 'cards',
         part: 'divider1',
       }),
     ).toBeNull()
     expect(
       gameBox?.threeMfFileName?.({
         ...gameBox.defaultParameters,
-        module2Type: 'dice',
+        module2Type: 'cards',
         divider1Text: 'A',
         part: 'divider1',
       }),

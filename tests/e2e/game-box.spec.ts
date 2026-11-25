@@ -307,9 +307,6 @@ test.describe('game-box', () => {
       '組裝',
       '盒體',
       '滑蓋',
-      '組裝',
-      '盒體',
-      '滑蓋',
       '封面片',
       '骰子匣（模組 2）',
     ])
@@ -661,10 +658,17 @@ test.describe('game-box', () => {
     test.setTimeout(240_000)
     skipHeadlessFirefoxWithoutWebGL(browserName)
     await openGameBox(page)
-    // Four modules give the three boundaries divider1..divider3.
-    await addModule(page, 'dice')
+    // Four card modules give the three cards pairs divider1..divider3.
     await addModule(page, 'cards')
     await addModule(page, 'cards')
+    await addModule(page, 'cards')
+    // The compartments shrink to 24 mm so the depth stays inside the range.
+    for (let position = 1; position <= 4; position += 1) {
+      await page
+        .getByTestId(`game-box-module-${position}`)
+        .getByRole('textbox', { name: '卡片區厚度' })
+        .fill('24')
+    }
 
     const viewport = page.getByTestId('cad-viewport')
     await expect(viewport).toHaveAttribute('data-model-revision', /.+/, {
@@ -704,28 +708,28 @@ test.describe('game-box', () => {
     test.setTimeout(240_000)
     skipHeadlessFirefoxWithoutWebGL(browserName)
     await openGameBox(page)
-    await addModule(page, 'dice')
+    // The default list is one cards module; adding a second one creates
+    // the first cards pair and its divider card.
+    await addModule(page, 'cards')
 
     await page.getByTestId('game-box-divider-1-text').fill('RED')
     await page.getByTestId('game-box-part').selectOption('cover')
     await page.getByLabel('標題', { exact: true }).fill('GO FISH')
 
-    // Adding a module keeps every existing divider card by index.
-    await addModule(page, 'cards')
+    // Adding a dice module leaves the cards pair alone, so divider 1 keeps
+    // its settings.
+    await addModule(page, 'dice')
     await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
-    await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue('')
+    await expect(page.getByTestId('game-box-divider-2-text')).toHaveCount(0)
 
     // Moving a module swaps only the module contents: every divider card
     // keeps its settings (調整順序不改變分隔卡).
     await page.getByTestId('game-box-module-1-move-later').click()
     await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
-    await expect(page.getByTestId('game-box-divider-2-text')).toHaveValue('')
 
-    // Deleting the middle module keeps divider 1 by index and resets the
-    // vanished boundary.
-    await page.getByTestId('game-box-module-2-delete').click()
+    // Deleting the dice module keeps the cards pair, so divider 1 stays.
+    await page.getByTestId('game-box-module-3-delete').click()
     await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('RED')
-    await expect(page.getByTestId('game-box-divider-2-text')).toHaveCount(0)
     await page.getByTestId('game-box-part').selectOption('cover')
     await expect(page.getByLabel('標題', { exact: true })).toHaveValue(
       'GO FISH',
@@ -739,7 +743,7 @@ test.describe('game-box', () => {
     test.setTimeout(240_000)
     skipHeadlessFirefoxWithoutWebGL(browserName)
     await openGameBox(page)
-    await addModule(page, 'dice')
+    await addModule(page, 'cards')
 
     const part = page.getByTestId('game-box-part')
     const threeMfButton = page.getByRole('button', { name: '下載 3MF' })

@@ -11,7 +11,7 @@
     gameBoxDividerTabPositionKey,
     gameBoxDividerTextKey,
     gameBoxModuleTypeKey,
-    gameBoxPartDividerIndex,
+    gameBoxPartDividerOrdinal,
     type GameBoxDividerIndex,
     type GameBoxModuleIndex,
     type GameBoxModuleType,
@@ -124,7 +124,7 @@
 
   /** Part names carry the print count of the dividers and the module number. */
   function partLabel(option: GameBoxPart): string {
-    const dividerIndex = gameBoxPartDividerIndex(option)
+    const dividerIndex = gameBoxPartDividerOrdinal(option)
     if (dividerIndex !== null) {
       return t('panel.gameBox.part.divider', { divider: dividerIndex })
     }

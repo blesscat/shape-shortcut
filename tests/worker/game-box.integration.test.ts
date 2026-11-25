@@ -1075,14 +1075,10 @@ describe('game-box holder with a minimum side wall', () => {
       })
       const build = await buildGameBox(params)
       try {
-        // The box, the lid, one divider per pair of card modules and one
-        // holder per dice module.
-        const layout = gameBoxLayout(params)
-        const diceModules = layout.modules.filter(
-          (module) => module.type === 'dice',
-        ).length
+        // The box, the lid, one divider per pair of card modules, one
+        // holder per dice module and the seated cover.
         expect(solidsOf(build.shape).length, scenario.name).toBe(
-          2 + layout.dividerCount + diceModules,
+          await expectedPartCount(params),
         )
       } finally {
         build.shape.delete()
@@ -1232,7 +1228,12 @@ describe('game-box assembly', () => {
       const solids = solidsOf(build.shape)
       const dividers = solids.filter((solid) => {
         const bounds = boundsOf(solid)
-        return bounds.max[1]! - bounds.min[1]! < 1
+        // A divider plate rises cardHeight + tab; the cover plate and its
+        // raised glyphs stay at or below cardHeight.
+        return (
+          bounds.max[1]! - bounds.min[1]! < 1 &&
+          bounds.max[2]! - bounds.min[2]! > params.cardHeight + 1
+        )
       })
       expect(dividers).toHaveLength(0)
     } finally {

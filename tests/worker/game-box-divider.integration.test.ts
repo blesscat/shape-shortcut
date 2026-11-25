@@ -84,7 +84,7 @@ async function buildBlankDivider(
   part: 'divider1' | 'divider2',
 ): Promise<Shape3D> {
   const build = await buildGameBox(
-    parameters(['cards', 'dice', 'cards'], { part }),
+    parameters(['cards', 'cards', 'cards'], { part }),
   )
   if (build.parts !== undefined) throw new Error('expected a plain divider')
   return build.shape
@@ -145,7 +145,7 @@ describe('game-box blank divider reference geometry', () => {
     'rises to H + 5 only inside the %s tab when the divider asks for it',
     async (position) => {
       const build = await buildGameBox(
-        parameters(['cards', 'dice', 'cards'], {
+        parameters(['cards', 'cards', 'cards'], {
           part: 'divider1',
           divider1TabPosition: position,
         }),
@@ -186,7 +186,7 @@ describe('game-box blank divider reference geometry', () => {
 describe('game-box divider text placement', () => {
   it('starts the left-tab text 2.25 mm from the plate edge, 0.8 mm below the tab top', async () => {
     const build = await buildGameBox(
-      parameters(['cards', 'dice', 'cards'], {
+      parameters(['cards', 'cards', 'cards'], {
         part: 'divider1',
         divider1Text: 'Special',
       }),

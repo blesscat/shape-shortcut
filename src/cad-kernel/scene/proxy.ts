@@ -300,32 +300,6 @@ function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
     for (const holder of gameBoxProxyHolders(parameters, moduleIndex)) {
       shapes.push(holder)
     }
-  } else if (proxyDividerIndex !== null) {
-    // Single-part scene preview: flat on the bed, matching the
-    // print-orientation contract bounds. The tab follows the divider
-    // card's own tab position.
-    const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
-    const bodyHeight = parameters.cardHeight
-    const tabHeight = c.dividerTabHeight
-    const dividerIndex: GameBoxDividerIndex = proxyDividerIndex
-    const tabX = cardBoxDividerTabCenterX(
-      parameters[gameBoxDividerTabPositionKey(dividerIndex)],
-      halfPlate * 2,
-    )
-    shapes.push(
-      makeBox(
-        [-halfPlate, 0, 0],
-        [halfPlate, bodyHeight, c.dividerPlateThickness],
-      ) as Shape3D,
-      makeBox(
-        [tabX - c.dividerTabBaseWidth / 2, bodyHeight, 0],
-        [
-          tabX + c.dividerTabBaseWidth / 2,
-          bodyHeight + tabHeight,
-          c.dividerPlateThickness,
-        ],
-      ) as Shape3D,
-    )
   }
   if (parameters.part === 'assembly' || parameters.part === 'cover') {
     // Assembly: the cover stands in the front channel, art facing the

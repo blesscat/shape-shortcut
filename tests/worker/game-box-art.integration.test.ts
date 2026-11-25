@@ -129,12 +129,12 @@ beforeAll(async () => {
   )
 })
 
-const TWO_MODULES = [{ type: 'cards' }, { type: 'dice' }] as const
+const TWO_CARDS = [{ type: 'cards' }, { type: 'cards' }] as const
 
 describe('game-box divider card art', () => {
   it('builds a raised labelled divider with a separate proud accent', async () => {
     const build = await buildGameBox(
-      parameters(TWO_MODULES, { part: 'divider1', divider1Text: 'ABC' }),
+      parameters(TWO_CARDS, { part: 'divider1', divider1Text: 'ABC' }),
     )
     expect(build.parts).toHaveLength(2)
     try {
@@ -165,7 +165,7 @@ describe('game-box divider card art', () => {
 
   it('builds a flat labelled divider with the accent flush in the recess', async () => {
     const build = await buildGameBox(
-      parameters(TWO_MODULES, {
+      parameters(TWO_CARDS, {
         part: 'divider1',
         divider1Text: 'ABC',
         divider1Style: 'flat',
@@ -192,7 +192,8 @@ describe('game-box divider card art', () => {
   })
 
   it('builds the second boundary from its own fields', async () => {
-    // Two boundaries need three modules.
+    // Two dividers need three card modules: every pair of neighbours
+    // carries one labelled plate.
     const modules = [
       { type: 'cards' },
       { type: 'cards' },
@@ -225,7 +226,7 @@ describe('game-box divider card art', () => {
   it('rejects divider text wider than the tab as a game-box error', async () => {
     await expect(
       buildGameBox(
-        parameters(TWO_MODULES, {
+        parameters(TWO_CARDS, {
           part: 'divider1',
           divider1Text: 'W'.repeat(20),
         }),
@@ -235,7 +236,7 @@ describe('game-box divider card art', () => {
 
   it('returns no separated parts for a blank plate', async () => {
     const build = await buildGameBox(
-      parameters(TWO_MODULES, { part: 'divider1' }),
+      parameters(TWO_CARDS, { part: 'divider1' }),
     )
     expect(build.parts).toBeUndefined()
     try {
@@ -358,7 +359,7 @@ describe('game-box assembly with art', () => {
   it('shows every divider with its own art and the seated cover', async () => {
     const modules = [
       { type: 'cards' },
-      { type: 'dice' },
+      { type: 'cards' },
       { type: 'cards' },
     ] as const
     const build = await buildGameBox(
@@ -376,14 +377,9 @@ describe('game-box assembly with art', () => {
   })
 
   it('rejects a labelled divider in the assembly when the text is too wide', async () => {
-    const modules = [
-      { type: 'cards' },
-      { type: 'dice' },
-      { type: 'cards' },
-    ] as const
     await expect(
       buildGameBox(
-        parameters(modules, {
+        parameters(TWO_CARDS, {
           part: 'assembly',
           divider1Text: 'W'.repeat(20),
         }),
@@ -420,7 +416,6 @@ describe('game-box zero intersection with art', () => {
           cardHeight,
           // The minimum 40x60 card fits at most 6 of the default 16 mm dice.
           ...(label === 'minimum' ? { module2DiceCount: 4 } : {}),
-          divider1Text: 'ABC',
         }),
       )
       try {
@@ -431,7 +426,7 @@ describe('game-box zero intersection with art', () => {
             cardHeight,
           }),
         )
-        expect(layout.dividerCount).toBe(1)
+        expect(layout.dividerCount).toBe(0)
       } finally {
         build.shape.delete()
       }
@@ -449,24 +444,15 @@ describe('game-box assembly zero intersection with labelled dividers', () => {
 
   for (const dividerStyle of ['raised', 'flat'] as const) {
     for (const [label, cardWidth, cardHeight] of SIZES) {
-      it(`keeps every pair apart with a ${dividerStyle} label between two dice modules at the ${label} card size`, async () => {
+      it(`keeps every pair apart with a ${dividerStyle} label between two card modules at the ${label} card size`, async () => {
         const params = parameters(
-          [
-            { type: 'cards' },
-            { type: 'dice' },
-            { type: 'dice' },
-            { type: 'cards' },
-          ],
+          [{ type: 'cards' }, { type: 'cards' }, { type: 'cards' }],
           {
             part: 'assembly',
             cardWidth,
             cardHeight,
             divider2Style: dividerStyle,
-            // The minimum 40x60 card fits at most 6 of the default dice.
-            ...(label === 'minimum'
-              ? { module2DiceCount: 4, module3DiceCount: 4 }
-              : {}),
-            // The middle boundary faces a holder on both sides.
+            // The middle boundary carries the labelled plate.
             divider2Text: 'BLUE',
           },
         )
@@ -493,7 +479,7 @@ describe('game-box assembly zero intersection with labelled dividers', () => {
 
 describe('game-box two-color 3MF packages', () => {
   it('exports a raised labelled divider as a body/accent package', async () => {
-    const params = parameters(TWO_MODULES, {
+    const params = parameters(TWO_CARDS, {
       part: 'divider1',
       divider1Text: 'TCG',
       divider1Style: 'raised',
@@ -570,16 +556,12 @@ describe('game-box cover depth independence and solid count', () => {
     )
     try {
       expect(gameBoxLayout(parameters([{ type: 'cards' }])).storageDepth).toBe(
-        GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth + 1 + 0.85,
+        63,
       )
       expect(
         gameBoxLayout(parameters([{ type: 'cards' }, { type: 'cards' }]))
           .storageDepth,
-      ).toBe(
-        GAME_BOX_CONFIGURATION.defaults.firstModuleCardDepth +
-          GAME_BOX_CONFIGURATION.defaults.cardDepth +
-          2 * (1 + 0.85),
-      )
+      ).toBe(96)
       expect(measureVolume(deep.shape)).toBeCloseTo(
         measureVolume(shallow.shape),
         6,
