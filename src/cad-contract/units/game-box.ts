@@ -105,6 +105,7 @@ export type GameBoxParameterKey =
   | 'coverStyle'
   | 'usesCoverSvg'
   | 'coverSvgFingerprint'
+  | 'coverSvgAspect'
 
 export type GameBoxParameters = {
   part: GameBoxPart
@@ -119,6 +120,7 @@ export type GameBoxParameters = {
   coverStyle: GameBoxStyle
   usesCoverSvg: boolean
   coverSvgFingerprint: string
+  coverSvgAspect: number
 } & {
   [Key in GameBoxModuleTypeKey]: GameBoxModuleType
 } & {
@@ -237,6 +239,7 @@ function buildGameBoxParameterKeys(): GameBoxParameterKey[] {
     'coverStyle',
     'usesCoverSvg',
     'coverSvgFingerprint',
+    'coverSvgAspect',
   )
   return keys
 }
@@ -349,6 +352,10 @@ function buildDefaultParameters(): GameBoxParameters {
     coverStyle: CARD_BOX_CONFIGURATION.defaultStyle,
     usesCoverSvg: false,
     coverSvgFingerprint: '',
+    // 0 = unknown aspect: an imported cover always writes the height/width
+    // ratio of its cleaned outlines, so the font-free fit gate can judge the
+    // scaled SVG height without the outline data.
+    coverSvgAspect: 0,
     ...modules,
     ...dividers,
   } as GameBoxParameters
@@ -786,6 +793,20 @@ export function gameBoxCoverSafeAreaWidth(cardWidth: number): number {
   )
 }
 
+/**
+ * The safe-area height the cover art must fit: the visible window
+ * (card height - 2 x 5 mm hidden lips) shrunk by the 2 mm safe margin on
+ * every side.
+ */
+export function gameBoxCoverSafeAreaHeight(cardHeight: number): number {
+  return (
+    cardHeight -
+    2 *
+      (CARD_BOX_CONFIGURATION.hiddenLipWidth +
+        CARD_BOX_CONFIGURATION.coverSafeAreaMargin)
+  )
+}
+
 export type GameBoxIssue = {
   field: GameBoxParameterKey | 'parameters'
   messageId: string
@@ -954,7 +975,11 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
   const dividerFields = validateDividerFields(record)
   if (!dividerFields.ok) return { valid: false, issues: [dividerFields.issue] }
 
-  const coverFields = validateCoverFields(record, cardWidth.value)
+  const coverFields = validateCoverFields(
+    record,
+    cardWidth.value,
+    cardHeight.value,
+  )
   if (!coverFields.ok) return { valid: false, issues: [coverFields.issue] }
 
   for (let position = 0; position < types.length; position += 1) {
@@ -1107,6 +1132,7 @@ type CoverFieldValues = {
   coverStyle: GameBoxStyle
   usesCoverSvg: boolean
   coverSvgFingerprint: string
+  coverSvgAspect: number
 }
 
 /**
@@ -1191,6 +1217,7 @@ function validStringOrDefault(value: unknown, fallback: string): string {
 function validateCoverFields(
   record: Record<string, unknown>,
   cardWidth: number,
+  cardHeight: number,
 ): { ok: true; value: CoverFieldValues } | { ok: false; issue: GameBoxIssue } {
   const cover = GAME_BOX_CONFIGURATION.rangesCover
   const coverTitle = validStringOrDefault(
@@ -1300,6 +1327,27 @@ function validateCoverFields(
     }
   }
 
+  // The height/width ratio the import wrote into the parameter record: 0
+  // means unknown (the outlines were imported before the ratio existed),
+  // and an unknown ratio cannot be judged here.
+  const rawAspect = record.coverSvgAspect
+  const aspect =
+    rawAspect === undefined
+      ? 0
+      : typeof rawAspect === 'number' && Number.isFinite(rawAspect)
+        ? rawAspect
+        : Number.NaN
+  if (aspect !== 0 && (!(aspect > 0) || aspect > 10)) {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverSvgAspect',
+        messageId: 'validation.invalid',
+        params: { min: 0.01, max: 10 },
+      },
+    }
+  }
+
   if (
     usesCoverSvg &&
     svgWidth.value > gameBoxCoverSafeAreaWidth(cardWidth) + TOLERANCE
@@ -1310,6 +1358,28 @@ function validateCoverFields(
         field: 'coverSvgWidth',
         messageId: 'validation.gameBoxCoverArtOutsideSafeArea',
       },
+    }
+  }
+
+  // Font-free vertical fit: the scaled SVG height plus the configured text
+  // heights stack inside the safe area of the current card size. Text-only
+  // stacks cannot overflow within the legal ranges, so an overflow always
+  // names the SVG width as the owning field. The rendered text width stays
+  // a kernel build-time check (it needs font metrics).
+  if (usesCoverSvg && aspect > 0) {
+    const svgHeight = svgWidth.value * aspect
+    const stackHeight =
+      svgHeight +
+      (coverTitle.trim() === '' ? 0 : titleHeight.value) +
+      (coverSubtitle.trim() === '' ? 0 : subtitleHeight.value)
+    if (stackHeight > gameBoxCoverSafeAreaHeight(cardHeight) + TOLERANCE) {
+      return {
+        ok: false,
+        issue: {
+          field: 'coverSvgWidth',
+          messageId: 'validation.gameBoxCoverArtTooTall',
+        },
+      }
     }
   }
 
@@ -1325,6 +1395,7 @@ function validateCoverFields(
       coverStyle,
       usesCoverSvg,
       coverSvgFingerprint,
+      coverSvgAspect: aspect,
     },
   }
 }
@@ -1486,23 +1557,28 @@ function gameBoxModuleList(parameters: GameBoxParameters): string {
     .join('-')
 }
 
-/**
- * Export file name. The assembly has no file name; the box parts carry the
- * card size, the derived storage depth and the module list, the dice holder
- * carries the card size, the die size and the die count.
- */
 /** Short stable token for file names (FNV-1a, hex) over the divider label. */
 function gameBoxTextToken(value: string): string {
   return cardBoxToken(value)
 }
 
-/** File-name token over the cover art: title, subtitle and SVG fingerprint. */
+/** File-name token over every cover geometry input, so two different
+ * covers never share a name: title, subtitle, both text heights, SVG width,
+ * vertical position, style and the SVG fingerprint. */
 function gameBoxCoverArtToken(parameters: GameBoxParameters): string {
   if (!gameBoxHasAccentArt(parameters)) return 'blank'
   return gameBoxTextToken(
-    `${parameters.coverTitle}\u0000${parameters.coverSubtitle}\u0000${
-      parameters.usesCoverSvg ? parameters.coverSvgFingerprint : ''
-    }`,
+    [
+      parameters.coverTitle,
+      parameters.coverSubtitle,
+      parameters.coverTitleTextHeight,
+      parameters.coverSubtitleTextHeight,
+      parameters.usesCoverSvg ? parameters.coverSvgFingerprint : '',
+      parameters.usesCoverSvg ? parameters.coverSvgWidth : '',
+      parameters.usesCoverSvg ? parameters.coverSvgAspect : '',
+      parameters.coverVerticalPosition,
+      parameters.coverStyle,
+    ].join('\u0000'),
   )
 }
 

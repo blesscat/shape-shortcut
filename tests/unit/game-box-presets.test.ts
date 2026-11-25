@@ -129,6 +129,46 @@ describe('game-box card size presets', () => {
     })
   })
 
+  it('does not apply a preset when the imported SVG is wider than the safe area', () => {
+    const preset = presetById('mini-american-41x63')
+    const current: GameBoxParameters = {
+      ...CURRENT_WITH_MODULES,
+      usesCoverSvg: true,
+      coverSvgFingerprint: 'abc',
+      coverSvgWidth: 40,
+    }
+    // The 41x63 card has a 27.5 mm safe width; a 40 mm SVG cannot fit.
+    expect(resolvedParameters(preset, current)).toBeNull()
+  })
+
+  it('does not apply a preset when the scaled SVG is taller than the safe area', () => {
+    const preset = presetById('mini-american-41x63')
+    // Aspect 2 at width 25 draws the SVG 50 mm tall; the 41x63 safe area is
+    // 49 mm tall, and the GAME title adds 6 mm on top.
+    const current: GameBoxParameters = {
+      ...CURRENT_WITH_MODULES,
+      usesCoverSvg: true,
+      coverSvgFingerprint: 'abc',
+      coverSvgWidth: 25,
+      coverSvgAspect: 2,
+    }
+    expect(resolvedParameters(preset, current)).toBeNull()
+  })
+
+  it('does not apply a preset when the art stack is taller than the safe area', () => {
+    const preset = presetById('mini-american-41x63')
+    // Aspect 1.6 at width 30 draws the SVG 48 mm tall; with the 6 mm title
+    // the stack is 54 mm, past the 49 mm safe area.
+    const current: GameBoxParameters = {
+      ...CURRENT_WITH_MODULES,
+      usesCoverSvg: true,
+      coverSvgFingerprint: 'abc',
+      coverSvgWidth: 30,
+      coverSvgAspect: 1.6,
+    }
+    expect(resolvedParameters(preset, current)).toBeNull()
+  })
+
   it('keeps the selected part while it still exists', () => {
     const preset = presetById('standard-tcg-63x88')
     const current = {

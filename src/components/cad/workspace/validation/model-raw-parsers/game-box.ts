@@ -9,6 +9,7 @@ import {
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
   parseDimensionInput,
+  parseFiniteDecimalInput,
   parseHalfStepInput,
   validateModelParameters,
   type GameBoxModuleType,
@@ -18,6 +19,11 @@ import {
 import type { DiagnosticParams } from '../../../../../cad-contract/diagnostics'
 import type { RawParameters } from '../../types'
 import { modelParameterFieldFromDiagnostic } from '../raw-input-parsers'
+
+// The imported cover's height/width ratio is a finite decimal.
+const GAME_BOX_DECIMAL_KEYS: Record<string, true> = {
+  coverSvgAspect: true,
+}
 
 const GAME_BOX_TEXT_KEYS: Record<string, true> = {
   coverTitle: true,
@@ -98,6 +104,10 @@ export function parseGameBoxRawParameters(raw: RawParameters):
     }
     if (GAME_BOX_BOOLEAN_KEYS[key]) {
       parsed[key] = rawValue === 'true'
+      continue
+    }
+    if (GAME_BOX_DECIMAL_KEYS[key]) {
+      parsed[key] = parseFiniteDecimalInput(rawValue ?? '') ?? Number.NaN
       continue
     }
     parsed[key] = parseGameBoxNumber(key, rawValue)

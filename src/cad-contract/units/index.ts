@@ -475,6 +475,7 @@ export {
   gameBoxDividerStyleKey,
   gameBoxDividerTabPositionKey,
   gameBoxDividerTextKey,
+  gameBoxCoverSafeAreaHeight,
   gameBoxCoverSafeAreaWidth,
   gameBoxStlFileName,
   gameBoxStorageDepth,

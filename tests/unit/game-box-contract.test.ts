@@ -91,8 +91,8 @@ function expectIssue(
 }
 
 describe('game-box parameter keys', () => {
-  it('carries 51 flat keys generated from the module, divider and cover groups', () => {
-    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(51)
+  it('carries 52 flat keys generated from the module, divider and cover groups', () => {
+    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(52)
     expect(GAME_BOX_PARAMETER_KEYS).toContain('part')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardWidth')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardHeight')
@@ -123,6 +123,7 @@ describe('game-box parameter keys', () => {
       'coverStyle',
       'usesCoverSvg',
       'coverSvgFingerprint',
+      'coverSvgAspect',
     ] as const) {
       expect(GAME_BOX_PARAMETER_KEYS).toContain(key)
     }
@@ -778,7 +779,7 @@ describe('game-box accent art and 3MF file names', () => {
     const cover = gameBoxFileName(
       parameters([{ type: 'cards' }], { part: 'cover' }),
     )
-    expect(cover).toBe('game-box-cover-70x120x63-raised-5533ae9f.step')
+    expect(cover).toBe('game-box-cover-70x120x63-raised-77fd2fc5.step')
     const flat = gameBoxFileName(
       parameters([{ type: 'cards' }], { part: 'cover', coverStyle: 'flat' }),
     )
@@ -798,6 +799,38 @@ describe('game-box accent art and 3MF file names', () => {
       }),
     )
     expect(blank).toBe('game-box-cover-70x120x63-raised-blank.step')
+  })
+
+  it('gives different cover geometry different names', () => {
+    // Every cover geometry input rides in the token: title, subtitle, both
+    // text heights, SVG width, vertical position, style and fingerprint.
+    const variants = [
+      { part: 'cover' } as Partial<GameBoxParameters>,
+      { part: 'cover', coverTitleTextHeight: 12 } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        coverVerticalPosition: 90,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        coverSubtitle: 'S',
+        coverSubtitleTextHeight: 8,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        usesCoverSvg: true,
+        coverSvgFingerprint: 'abc',
+        coverSvgWidth: 25,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        usesCoverSvg: true,
+        coverSvgFingerprint: 'abc',
+        coverSvgWidth: 40,
+      } as Partial<GameBoxParameters>,
+      { part: 'cover', coverStyle: 'flat' } as Partial<GameBoxParameters>,
+    ].map((overrides) => gameBoxFileName(parameters([], overrides)))
+    expect(new Set(variants).size).toBe(variants.length)
   })
 
   it('names the 3MF exactly like the STEP with the .3mf extension', () => {
