@@ -271,7 +271,7 @@ export const messages = {
   'validation.gameBoxPartUnavailable':
     '模組 {module} 不是骰子模組，沒有對應的骰子匣零件。',
   'validation.gameBoxDividerUnavailable':
-    '該分隔卡的邊界後面還需要一個模組。請新增模組或改選其他零件。',
+    '該分隔卡需要兩個相鄰的卡片模組。請新增卡片區或改選其他零件。',
   'validation.gameBoxModuleTypeInvalid': '{field} 必須是 none、cards 或 dice。',
   'validation.gameBoxModuleRequired':
     '模組 1 必須啟用；收納盒至少需要一個模組。',
@@ -290,7 +290,10 @@ export const messages = {
     '封面設定為使用匯入的 SVG，但資料遺失。請重新匯入 SVG 或關閉使用。',
   'validation.gameBoxCoverArtOutsideSafeArea':
     '封面圖樣寬度超過這個卡片尺寸的可見區。請縮小 SVG 寬或改用更大的卡片尺寸。',
-  'validation.gameBoxDividerTextTooWide': '分隔卡文字放不進 Tab。請縮短文字。',
+  'validation.gameBoxCoverArtTooTall':
+    '封面圖樣堆疊高度超過這個卡片尺寸的可見區。請縮小 SVG 寬或調降文字高。',
+  'validation.gameBoxDividerTextTooWide':
+    '分隔卡 {divider} 文字放不進 Tab。請縮短文字。',
   'validation.parameter': '參數',
   'validation.invalidNumber': '{field} 必須是有效數字。',
   'validation.requiredDimension': '{axis} 尺寸不可空白。',

@@ -299,7 +299,7 @@ export const messages = {
   'validation.gameBoxPartUnavailable':
     'Module {module} is not a dice module, so it has no dice holder part.',
   'validation.gameBoxDividerUnavailable':
-    'That divider card needs one more module behind its boundary. Add a module or pick another part.',
+    'That divider card needs two adjacent card modules. Add a card compartment or pick another part.',
   'validation.gameBoxModuleTypeInvalid': '{field} must be none, cards or dice.',
   'validation.gameBoxModuleRequired':
     'Module 1 must be enabled; a game box needs at least one module.',
@@ -318,8 +318,10 @@ export const messages = {
     'The cover is set to use an imported SVG but its data is missing. Re-import the SVG or turn it off.',
   'validation.gameBoxCoverArtOutsideSafeArea':
     'The cover art is wider than the visible window of this card size. Reduce the SVG width or pick a larger card size.',
+  'validation.gameBoxCoverArtTooTall':
+    'The cover art stacks taller than the visible window of this card size. Reduce the SVG width or the text heights.',
   'validation.gameBoxDividerTextTooWide':
-    'A divider label does not fit its tab. Shorten the text.',
+    'Divider {divider} label does not fit its tab. Shorten the text.',
   'validation.parameter': 'Parameter',
   'validation.invalidNumber': '{field} must be a valid number.',
   'validation.requiredDimension': '{axis} dimension is required.',
