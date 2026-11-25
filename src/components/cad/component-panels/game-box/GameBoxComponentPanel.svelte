@@ -269,6 +269,7 @@
       svgStatusKey = 'panel.gameBox.svgMissingFallback'
       onInputChange('usesCoverSvg', 'false')
       onInputChange('coverSvgFingerprint', '')
+      onInputChange('coverSvgAspect', '0')
     }
   })
 
@@ -280,10 +281,12 @@
 
   /**
    * Writes the complete module list back as one snapshot: the groups are
-   * re-packed, the divider cards beyond the cards-pair count of the new
-   * layout fall back to their defaults, and a selection that no longer
-   * exists falls back to the assembly. The count comes from the layout in
-   * {@file ./module-list.ts} - the same definition the part selector uses.
+   * re-packed, every divider ordinal above min(old pair count, new pair
+   * count) falls back to its defaults (created pairs start fresh, vanished
+   * ones are wiped, relocated ones keep their fields), and a selection that
+   * no longer exists falls back to the assembly. The counts come from the
+   * layout in {@file ./module-list.ts} - the same definition the part
+   * selector uses.
    */
   function applyGroups(nextGroups: GameBoxModuleGroup[]): void {
     const nextSnapshot = moduleSnapshot(nextGroups, part, cardWidth, cardHeight)
@@ -324,6 +327,7 @@
     return {
       key,
       label: labelKey,
+      labelFormat: 'label' as const,
       axis: '',
       unit: 'mm' as const,
       control: 'range-text' as const,
@@ -561,16 +565,35 @@
         oninput={handleCoverTitleInput}
       />
     </ParameterField>
-    <ParameterControl
+    <ParameterField
       {locale}
-      field={titleTextHeightField}
-      value={text(
-        'coverTitleTextHeight',
-        String(GAME_BOX_CONFIGURATION.rangesCover.coverTitleTextHeight.default),
-      )}
+      label={t('panel.gameBox.coverTitleTextHeight')}
+      unit={unitLabelFor(locale, 'mm')}
+      changed={text('coverTitleTextHeight', '6') !== '6'}
       error={fieldErrors.coverTitleTextHeight}
-      onChange={(nextValue) => onInputChange('coverTitleTextHeight', nextValue)}
-    />
+      errorId="coverTitleTextHeight-error"
+      onRestore={() =>
+        onInputChange(
+          'coverTitleTextHeight',
+          String(
+            GAME_BOX_CONFIGURATION.rangesCover.coverTitleTextHeight.default,
+          ),
+        )}
+    >
+      <ParameterControl
+        {locale}
+        field={titleTextHeightField}
+        value={text(
+          'coverTitleTextHeight',
+          String(
+            GAME_BOX_CONFIGURATION.rangesCover.coverTitleTextHeight.default,
+          ),
+        )}
+        error={fieldErrors.coverTitleTextHeight}
+        onChange={(nextValue) =>
+          onInputChange('coverTitleTextHeight', nextValue)}
+      />
+    </ParameterField>
     <ParameterField
       {locale}
       label={t('panel.gameBox.coverSubtitle')}
@@ -589,29 +612,59 @@
         oninput={handleCoverSubtitleInput}
       />
     </ParameterField>
-    <ParameterControl
+    <ParameterField
       {locale}
-      field={subtitleTextHeightField}
-      value={text(
-        'coverSubtitleTextHeight',
-        String(
-          GAME_BOX_CONFIGURATION.rangesCover.coverSubtitleTextHeight.default,
-        ),
-      )}
+      label={t('panel.gameBox.coverSubtitleTextHeight')}
+      unit={unitLabelFor(locale, 'mm')}
+      changed={text('coverSubtitleTextHeight', '5') !== '5'}
       error={fieldErrors.coverSubtitleTextHeight}
-      onChange={(nextValue) =>
-        onInputChange('coverSubtitleTextHeight', nextValue)}
-    />
-    <ParameterControl
+      errorId="coverSubtitleTextHeight-error"
+      onRestore={() =>
+        onInputChange(
+          'coverSubtitleTextHeight',
+          String(
+            GAME_BOX_CONFIGURATION.rangesCover.coverSubtitleTextHeight.default,
+          ),
+        )}
+    >
+      <ParameterControl
+        {locale}
+        field={subtitleTextHeightField}
+        value={text(
+          'coverSubtitleTextHeight',
+          String(
+            GAME_BOX_CONFIGURATION.rangesCover.coverSubtitleTextHeight.default,
+          ),
+        )}
+        error={fieldErrors.coverSubtitleTextHeight}
+        onChange={(nextValue) =>
+          onInputChange('coverSubtitleTextHeight', nextValue)}
+      />
+    </ParameterField>
+    <ParameterField
       {locale}
-      field={svgWidthField}
-      value={text(
-        'coverSvgWidth',
-        String(GAME_BOX_CONFIGURATION.rangesCover.coverSvgWidth.default),
-      )}
+      label={t('panel.gameBox.coverSvgWidth')}
+      unit={unitLabelFor(locale, 'mm')}
+      changed={text('coverSvgWidth', '40') !== '40'}
       error={fieldErrors.coverSvgWidth}
-      onChange={(nextValue) => onInputChange('coverSvgWidth', nextValue)}
-    />
+      errorId="coverSvgWidth-error"
+      onRestore={() =>
+        onInputChange(
+          'coverSvgWidth',
+          String(GAME_BOX_CONFIGURATION.rangesCover.coverSvgWidth.default),
+        )}
+    >
+      <ParameterControl
+        {locale}
+        field={svgWidthField}
+        value={text(
+          'coverSvgWidth',
+          String(GAME_BOX_CONFIGURATION.rangesCover.coverSvgWidth.default),
+        )}
+        error={fieldErrors.coverSvgWidth}
+        onChange={(nextValue) => onInputChange('coverSvgWidth', nextValue)}
+      />
+    </ParameterField>
     <ParameterControl
       {locale}
       field={verticalPositionField}
