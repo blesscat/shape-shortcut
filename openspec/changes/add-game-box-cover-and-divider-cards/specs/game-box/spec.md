@@ -59,7 +59,7 @@
 
 ### Requirement: 封面片參數
 
-面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）、資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）與高寬比 `coverSvgAspect`（預設 0 代表未知）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）、資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）與高寬比 `coverSvgAspect`（預設 0 代表未知，規則見下方 scenario）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
 
 #### Scenario: 高寬比隨匯入寫入並隨移除重置
 
@@ -67,7 +67,12 @@
 - **THEN** 參數紀錄 MUST 以清理後輪廓的高度除以寬度寫入 `coverSvgAspect`
 - **WHEN** 使用者移除 SVG，或專屬 key 資料遺失或損毀而回退純文字版面
 - **THEN** `coverSvgAspect` MUST 重置為 0（未知）
-- **AND** `coverSvgAspect` MUST NOT 成為任何驗證錯誤的歸屬欄位；其無效值或未知值 MUST 以 0 處理
+- **WHEN** 參數快照的 `coverSvgAspect` 為正的有限數
+- **THEN** 該值 MUST 用於「封面圖樣堆疊過高」判斷與檔名 token
+- **WHEN** `coverSvgAspect` 為 0、負數、非有限數或非數值
+- **THEN** 其值 MUST 以 0（未知）處理
+- **AND** `coverSvgAspect` MUST NOT 成為任何驗證錯誤的歸屬欄位
+- **AND** `usesCoverSvg` 為 false 時，`coverSvgAspect` MUST 不參與驗證與檔名 token
 
 #### Scenario: 預設封面參數
 
@@ -345,7 +350,7 @@
 #### Scenario: 分隔卡文字過寬回報錯誤
 
 - **WHEN** 某片分隔卡的文字無法放入其 Tab 寬度
-- **THEN** 生成 MUST 失敗並回報本地化錯誤
+- **THEN** 生成 MUST 失敗並回報本地化錯誤，錯誤訊息 MUST 以該分隔卡的序號指出是哪一片（例如「分隔卡 2」）
 - **AND** 系統 MUST NOT 縮小文字或靜默省略文字
 
 #### Scenario: 分隔卡與 card-box 相容

@@ -569,7 +569,10 @@
       {locale}
       label={t('panel.gameBox.coverTitleTextHeight')}
       unit={unitLabelFor(locale, 'mm')}
-      changed={text('coverTitleTextHeight', '6') !== '6'}
+      changed={text(
+        'coverTitleTextHeight',
+        String(cover.coverTitleTextHeight.default),
+      ) !== String(cover.coverTitleTextHeight.default)}
       error={fieldErrors.coverTitleTextHeight}
       errorId="coverTitleTextHeight-error"
       onRestore={() =>
@@ -616,7 +619,10 @@
       {locale}
       label={t('panel.gameBox.coverSubtitleTextHeight')}
       unit={unitLabelFor(locale, 'mm')}
-      changed={text('coverSubtitleTextHeight', '5') !== '5'}
+      changed={text(
+        'coverSubtitleTextHeight',
+        String(cover.coverSubtitleTextHeight.default),
+      ) !== String(cover.coverSubtitleTextHeight.default)}
       error={fieldErrors.coverSubtitleTextHeight}
       errorId="coverSubtitleTextHeight-error"
       onRestore={() =>
@@ -645,7 +651,8 @@
       {locale}
       label={t('panel.gameBox.coverSvgWidth')}
       unit={unitLabelFor(locale, 'mm')}
-      changed={text('coverSvgWidth', '40') !== '40'}
+      changed={text('coverSvgWidth', String(cover.coverSvgWidth.default)) !==
+        String(cover.coverSvgWidth.default)}
       error={fieldErrors.coverSvgWidth}
       errorId="coverSvgWidth-error"
       onRestore={() =>
@@ -665,19 +672,36 @@
         onChange={(nextValue) => onInputChange('coverSvgWidth', nextValue)}
       />
     </ParameterField>
-    <ParameterControl
+    <ParameterField
       {locale}
-      field={verticalPositionField}
-      value={text(
+      label={t('panel.gameBox.coverVerticalPosition')}
+      unit="%"
+      changed={text(
         'coverVerticalPosition',
-        String(
-          GAME_BOX_CONFIGURATION.rangesCover.coverVerticalPosition.default,
-        ),
-      )}
+        String(cover.coverVerticalPosition.default),
+      ) !== String(cover.coverVerticalPosition.default)}
       error={fieldErrors.coverVerticalPosition}
-      onChange={(nextValue) =>
-        onInputChange('coverVerticalPosition', nextValue)}
-    />
+      errorId="coverVerticalPosition-error"
+      onRestore={() =>
+        onInputChange(
+          'coverVerticalPosition',
+          String(cover.coverVerticalPosition.default),
+        )}
+    >
+      <ParameterControl
+        {locale}
+        field={verticalPositionField}
+        value={text(
+          'coverVerticalPosition',
+          String(
+            GAME_BOX_CONFIGURATION.rangesCover.coverVerticalPosition.default,
+          ),
+        )}
+        error={fieldErrors.coverVerticalPosition}
+        onChange={(nextValue) =>
+          onInputChange('coverVerticalPosition', nextValue)}
+      />
+    </ParameterField>
 
     <div class="grid gap-1" data-testid="game-box-svg-import">
       <label

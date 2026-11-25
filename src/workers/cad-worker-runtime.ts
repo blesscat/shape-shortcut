@@ -28,6 +28,19 @@ import {
   sceneInstanceGenerateCommand,
 } from './cad-worker-scene'
 import { CadWorkerLifecycle } from './cad-worker-lifecycle'
+
+/**
+ * Reads the divider ordinal the game-box builder suffixes onto the
+ * too-wide error (`GAME_BOX_DIVIDER_TEXT_TOO_WIDE:<n>`), so the localized
+ * message can name the plate that does not fit. Undefined when the error
+ * carries no ordinal.
+ */
+export function gameBoxTooWideDividerOrdinal(
+  message: string,
+): number | undefined {
+  const match = message.match(/GAME_BOX_DIVIDER_TEXT_TOO_WIDE:(\d+)/)
+  return match ? Number(match[1]) : undefined
+}
 import type {
   CadWorkerBuildOptions,
   EventSink,
@@ -465,14 +478,12 @@ export class CadWorkerRuntime {
     }
     if (code === 'GAME_BOX_GEOMETRY_INVALID') {
       if (message.includes('GAME_BOX_DIVIDER_TEXT_TOO_WIDE')) {
-        // The builder suffixes the divider ordinal, so the message can name
-        // the plate that does not fit.
-        const ordinal = message.match(/GAME_BOX_DIVIDER_TEXT_TOO_WIDE:(\d+)/)
+        const ordinal = gameBoxTooWideDividerOrdinal(message)
         return makeError(
           'building',
           code,
           diagnostic('validation.gameBoxDividerTextTooWide', {
-            ...(ordinal ? { divider: Number(ordinal[1]) } : {}),
+            ...(ordinal !== undefined ? { divider: ordinal } : {}),
           }),
           true,
         )

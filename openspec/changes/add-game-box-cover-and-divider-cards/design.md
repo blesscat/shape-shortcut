@@ -181,7 +181,8 @@ only new storage is the dedicated SVG key
 `shape-shortcut:game-box-cover-svg:v1` with card-box's rules (256 KB cap,
 single record, new import replaces old, oversized payloads session-only,
 loss/corruption falls back to text layout with a hint). The parameter record
-keeps only `usesCoverSvg` + `coverSvgFingerprint`. The Worker command's
+keeps `usesCoverSvg`, `coverSvgFingerprint` and `coverSvgAspect` (the
+outlines' height/width ratio; 0 = unknown). The Worker command's
 existing `coverSvg` field carries the outlines for game-box too:
 `model-generation.ts` loads from the game-box store when the game-box
 fingerprint is set, `cad-worker-generation.ts` passes it for `game-box`, and

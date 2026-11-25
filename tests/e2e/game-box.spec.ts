@@ -736,6 +736,34 @@ test.describe('game-box', () => {
     )
   })
 
+  test('the cover vertical position shows its range error and restores', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await page.getByTestId('game-box-part').selectOption('cover')
+
+    // 150 is outside the 0-100 range: the localized error text shows next
+    // to the field.
+    await page.getByRole('textbox', { name: '版面位置' }).fill('150')
+    await expect(page.locator('#coverVerticalPosition-error')).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.locator('#coverVerticalPosition-error')).toContainText(
+      '版面位置',
+    )
+
+    // The restore button brings the control back to the default 30 and
+    // clears the error.
+    await page.getByRole('button', { name: '復原版面位置' }).click()
+    await expect(page.locator('#coverVerticalPosition-error')).toHaveCount(0)
+    await expect(page.getByRole('textbox', { name: '版面位置' })).toHaveValue(
+      '30',
+    )
+  })
+
   test('a cover too tall for the card shows the localized reason', async ({
     page,
     browserName,

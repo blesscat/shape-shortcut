@@ -107,8 +107,9 @@ export function parseGameBoxRawParameters(raw: RawParameters):
       continue
     }
     if (GAME_BOX_DECIMAL_KEYS[key]) {
-      // A missing ratio is unknown (0), like the contract default; only a
-      // present but unreadable value fails validation.
+      // A missing ratio is unknown (0), like the contract default; an
+      // unreadable value also becomes 0, because the ratio has no panel
+      // control to carry an error.
       parsed[key] = parseFiniteDecimalInput(rawValue ?? '') ?? 0
       continue
     }
