@@ -29,6 +29,13 @@ import {
 } from './cad-worker-scene'
 import { CadWorkerLifecycle } from './cad-worker-lifecycle'
 
+import type {
+  CadWorkerBuildOptions,
+  EventSink,
+  ProgressEmitter,
+} from './cad-worker-types'
+import { cadErrorCodeFor, cadErrorStageFor } from './error-mapping'
+
 /**
  * Reads the divider ordinal the game-box builder suffixes onto the
  * too-wide error (`GAME_BOX_DIVIDER_TEXT_TOO_WIDE:<n>`), so the localized
@@ -41,12 +48,6 @@ export function gameBoxTooWideDividerOrdinal(
   const match = message.match(/GAME_BOX_DIVIDER_TEXT_TOO_WIDE:(\d+)/)
   return match ? Number(match[1]) : undefined
 }
-import type {
-  CadWorkerBuildOptions,
-  EventSink,
-  ProgressEmitter,
-} from './cad-worker-types'
-import { cadErrorCodeFor, cadErrorStageFor } from './error-mapping'
 
 export type { CadWorkerBuildOptions } from './cad-worker-types'
 

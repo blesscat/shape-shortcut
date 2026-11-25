@@ -412,7 +412,8 @@ describe('game-box divider settings across list operations', () => {
 
   it('an add behind a dice module keeps the existing ordinal and resets the rest', () => {
     // addModuleGroup appends at the end: cards/cards/dice -> cards/cards/
-    // dice/cards adds no cards pair, so both ordinals keep their fields.
+    // dice/cards adds no cards pair, so divider 1 keeps its fields and
+    // divider 2 stays reset.
     const raw = rawWithDividerSettings(['cards', 'cards', 'dice'])
     const groups = readModuleGroups(raw)
     const afterAdd = addModuleGroup(groups, 'cards')
