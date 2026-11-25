@@ -12,7 +12,6 @@ import {
   cardBoxOuterDepth,
   cardBoxDividerTabCenterX,
   cardBoxDividerWidth,
-  cardBoxInteriorWidth,
   cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
@@ -29,7 +28,6 @@ import {
   type ModelParameterValues,
 } from '../../cad-contract/units'
 import { buildModelBRep, type KernelBuildContext } from '../model'
-import { GAME_BOX_DICE_HOLDER } from '../components/game-box/dice-holder'
 import {
   gameBoxGeometryOf,
   gameBoxModulePlacements,
@@ -342,8 +340,8 @@ function gameBoxProxyLid(parameters: GameBoxParameters): Shape3D[] {
 }
 
 /**
- * The dice holders of the preview: in the assembly they stand between the
- * dividers of their module, the single part stands on the bed in its print
+ * The dice holders of the preview: in the assembly they stand where the
+ * layout puts them, the single part stands on the bed in its print
  * orientation.
  */
 function gameBoxProxyHolders(
@@ -357,15 +355,9 @@ function gameBoxProxyHolders(
     if (moduleIndex !== null && placement.index !== moduleIndex) continue
     const diceSize = parameters[gameBoxModuleDiceSizeKey(placement.index)]
     const thickness = gameBoxDiceHolderThickness(diceSize)
-    const outerWidth =
-      moduleIndex === null
-        ? gameBoxDiceHolderOuterWidth(parameters.cardWidth)
-        : cardBoxInteriorWidth(parameters.cardWidth) -
-          GAME_BOX_DICE_HOLDER.pressedClearance
-    const halfHolder = outerWidth / 2
+    const halfHolder = gameBoxDiceHolderOuterWidth(parameters.cardWidth) / 2
     if (moduleIndex === null) {
-      const y =
-        placement.frontY + (placement.backY - placement.frontY - thickness) / 2
+      const y = placement.holderFrontY
       holders.push(
         makeBox(
           [-halfHolder, y, c.floorThickness],

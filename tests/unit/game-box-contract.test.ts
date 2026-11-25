@@ -263,7 +263,21 @@ describe('game-box parameter validation', () => {
     )
   })
 
-  it('accepts a divider part once two modules are active', () => {
+  it('accepts a divider part once two card modules are adjacent', () => {
+    const validation = validateGameBoxParameters(
+      snapshot(
+        [
+          { type: 'cards', cardDepth: 30 },
+          { type: 'cards', cardDepth: 20 },
+        ],
+        { part: 'divider' },
+      ),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('refuses a divider part when a dice holder stands between the cards', () => {
+    // The holder is its own divider, so no plate is printed next to it.
     const validation = validateGameBoxParameters(
       snapshot(
         [
@@ -273,7 +287,11 @@ describe('game-box parameter validation', () => {
         { part: 'divider' },
       ),
     )
-    expect(validation.valid).toBe(true)
+    expect(validation.valid).toBe(false)
+    if (validation.valid) return
+    expect(validation.issues[0]?.messageId).toBe(
+      'validation.gameBoxDividerUnavailable',
+    )
   })
 
   it('accepts a dice holder part of a dice module', () => {
@@ -299,7 +317,7 @@ describe('game-box parameter validation', () => {
 })
 
 describe('game-box export file names', () => {
-  it('names the box after the card size and the derived storage depth', () => {
+  it('names the box after the card size, the depth and the module list', () => {
     const box = parameters(
       [
         { type: 'cards', cardDepth: 30 },
@@ -308,8 +326,45 @@ describe('game-box export file names', () => {
       ],
       { part: 'box' },
     )
-    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x75.step')
-    expect(gameBoxStlFileName(box)).toBe('game-box-box-70x120x75.stl')
+    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x75-c30-d16-c20.step')
+    expect(gameBoxStlFileName(box)).toBe(
+      'game-box-box-70x120x75-c30-d16-c20.stl',
+    )
+  })
+
+  it('names the box of a mixed module list with its depth and its modules', () => {
+    const box = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    expect(gameBoxFileName(box)).toBe('game-box-box-70x120x54-c30-d16.step')
+  })
+
+  it('never lets two module lists share a box file name', () => {
+    const first = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    const second = parameters(
+      [
+        { type: 'cards', cardDepth: 33 },
+        { type: 'dice', diceSize: 13, diceCount: 9 },
+      ],
+      { part: 'box' },
+    )
+    // Both module lists occupy the same depth, but their divider boundaries
+    // differ, so the box file names have to tell them apart.
+    expect(gameBoxStorageDepth(first)).toBeCloseTo(
+      gameBoxStorageDepth(second),
+      6,
+    )
+    expect(gameBoxFileName(first)).not.toBe(gameBoxFileName(second))
   })
 
   it('names the dice holder after the card size, the die size and the count', () => {
@@ -332,6 +387,23 @@ describe('game-box export file names', () => {
     })
     expect(gameBoxFileName(lid)).toBe('game-box-lid-70x120x33.step')
     expect(gameBoxFileName(divider)).toBe('game-box-divider-70x120x33.step')
+  })
+
+  it('gives card depths within a hundredth of a millimetre one name', () => {
+    // The lid and the divider are named after the derived depth rounded to
+    // two decimals, so validation reads the card depth back to a hundredth
+    // of a millimetre: depths that round to the same name also build the
+    // same geometry.
+    const names = new Set<string>()
+    for (const cardDepth of [30, 30.001, 30.004]) {
+      const validation = validateGameBoxParameters(
+        parameters([{ type: 'cards', cardDepth }], { part: 'lid' }),
+      )
+      expect(validation.valid).toBe(true)
+      if (!validation.valid) return
+      names.add(gameBoxFileName(validation.value))
+    }
+    expect(names.size).toBe(1)
   })
 
   it('never lets two sizes share a file name', () => {
@@ -412,8 +484,10 @@ describe('game-box export file names', () => {
         { part: 'box' },
       ),
     } as const
-    expect(modelFileName(model)).toBe('game-box-box-70x120x75.step')
-    expect(modelStlFileName(model)).toBe('game-box-box-70x120x75.stl')
+    expect(modelFileName(model)).toBe('game-box-box-70x120x75-c30-d16-c20.step')
+    expect(modelStlFileName(model)).toBe(
+      'game-box-box-70x120x75-c30-d16-c20.stl',
+    )
   })
 })
 

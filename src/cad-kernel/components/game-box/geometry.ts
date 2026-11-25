@@ -1,9 +1,7 @@
 import {
-  CARD_BOX_CONFIGURATION,
   gameBoxLayout,
   gameBoxStorageDepth,
   type GameBoxModuleIndex,
-  type GameBoxModuleType,
   type GameBoxParameters,
 } from '../../../cad-contract/units'
 import { cardBoxInnerFrontY } from '../card-box/box'
@@ -13,29 +11,43 @@ import type { CardBoxGeometry } from '../card-box/geometry'
  * Geometry input of the game-box part builders.
  *
  * The game box reuses the card-box geometry: only the storage depth (derived
- * from the module list) and the divider slot grid differ. The slot grid of a
- * game box starts at the front inner wall, so every module boundary lands on
- * a slot; the card box centres its slots on the box instead.
+ * from the module list) and the divider slots differ. The side walls carry
+ * a divider slot every 3 mm, so a dice holder can lock itself into the rack
+ * wherever it stands and a divider plate finds a slot of its own.
  */
 export type GameBoxGeometry = {
   /** The card-box geometry the box, lid and divider builders read. */
   cardBox: CardBoxGeometry
-  /** Divider slot centres in the box frame (y from the box centre). */
+  /** Divider slot centres of the whole rack (box frame, y from the centre). */
   slotCentres: number[]
-  /** Divider centres in the box frame (y from the box centre). */
+  /** The boundaries that carry a divider plate (box frame). */
   dividerCentres: number[]
   /** y of the cavity front wall face in the box frame. */
   frontWallY: number
 }
 
-/** A module and the cavity length it may use in the assembly. */
-export type GameBoxModulePlacement = {
+/** A module and the cavity it may use in the assembly. */
+export type GameBoxModulePlacement =
+  | {
+      index: GameBoxModuleIndex
+      type: 'cards'
+      /** y of the free space in front of the module in the box frame. */
+      frontY: number
+      /** y of the free space behind the module in the box frame. */
+      backY: number
+    }
+  | GameBoxDicePlacement
+
+/** A dice module and the holder that stands in it. */
+export type GameBoxDicePlacement = {
   index: GameBoxModuleIndex
-  type: GameBoxModuleType
+  type: 'dice'
   /** y of the free space in front of the module in the box frame. */
   frontY: number
   /** y of the free space behind the module in the box frame. */
   backY: number
+  /** y of the holder's front face: where the first tenon starts. */
+  holderFrontY: number
 }
 
 /** The card-box geometry of a game-box snapshot. */
@@ -51,8 +63,8 @@ export function gameBoxCardBoxGeometry(
 
 /**
  * Derives the geometry input of the game-box builders: the card-box
- * geometry, the wall slot grid counted from the front inner wall and the
- * divider centres on the module boundaries.
+ * geometry, the whole slot rack and the divider positions between two card
+ * modules. The side walls carry a slot at every rack centre.
  */
 export function gameBoxGeometryOf(
   parameters: GameBoxParameters,
@@ -71,32 +83,28 @@ export function gameBoxGeometryOf(
 }
 
 /**
- * The cavity length every module may use: the module length minus the
- * divider plates that bound it. The first module starts at the front wall
- * and the last one ends at the back wall.
+ * Where every module stands in the assembly: the region it owns in the
+ * cavity. A dice holder stands at the front of its region, so the card
+ * module next to it leans on the holder's wall.
  */
 export function gameBoxModulePlacements(
   parameters: GameBoxParameters,
 ): GameBoxModulePlacement[] {
   const layout = gameBoxLayout(parameters)
   const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(parameters))
-  const halfPlate = CARD_BOX_CONFIGURATION.dividerPlateThickness / 2
-  const depth = layout.storageDepth
 
-  return layout.modules.map((module, position) => {
-    const boundaryBefore =
-      position === 0 ? 0 : layout.dividerCenters[position - 1]!
-    const boundaryAfter =
-      position === layout.modules.length - 1
-        ? depth
-        : layout.dividerCenters[position]!
-    const start = boundaryBefore === 0 ? 0 : boundaryBefore + halfPlate
-    const end = boundaryAfter === depth ? depth : boundaryAfter - halfPlate
-    return {
-      index: module.index,
-      type: module.type,
-      frontY: frontWallY + start,
-      backY: frontWallY + end,
+  return layout.modules.map((module) => {
+    const frontY = frontWallY + module.start
+    const backY = frontWallY + module.end
+    if (module.type === 'dice') {
+      return {
+        index: module.index,
+        type: module.type,
+        frontY,
+        backY,
+        holderFrontY: frontWallY + module.holderStart,
+      }
     }
+    return { index: module.index, type: module.type, frontY, backY }
   })
 }

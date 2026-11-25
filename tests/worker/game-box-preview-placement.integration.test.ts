@@ -7,7 +7,6 @@ import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
 import { buildGameBox } from '../../src/cad-kernel/components/game-box/builder'
 import {
-  cardBoxInteriorWidth,
   GAME_BOX_CONFIGURATION,
   type GameBoxModuleIndex,
   type GameBoxParameters,
@@ -95,15 +94,14 @@ function axisInterval(solid: PreviewSolid, axis: number): Interval {
 }
 
 /**
- * The dice holder of the built assembly: the only solid that is narrower
- * than the cavity of the box.
+ * The dice holder of the built assembly: the only solid that stands on the
+ * floor and is as tall as a card. Its tenons reach into the wall slots, so
+ * it is no longer narrower than the cavity of the box.
  */
-function builtHolderOf(solids: readonly Shape3D[], cardWidth: number) {
+function builtHolderOf(solids: readonly Shape3D[], cardHeight: number) {
   const holders = solids.filter((solid) => {
     const bounds = boundsOf(solid)
-    return (
-      bounds.max[0]! - bounds.min[0]! < cardBoxInteriorWidth(cardWidth) - 0.1
-    )
+    return Math.abs(bounds.max[2]! - bounds.min[2]! - cardHeight) < 1e-3
   })
   expect(holders).toHaveLength(1)
   const bounds = boundsOf(holders[0]!)
@@ -138,7 +136,7 @@ describe('game-box preview placement', () => {
       const snapshot = parameters(modules)
       const build = buildGameBox(snapshot)
       try {
-        const built = builtHolderOf(solidsOf(build.shape), snapshot.cardWidth)
+        const built = builtHolderOf(solidsOf(build.shape), snapshot.cardHeight)
         const preview = previewHolderOf(
           gameBoxPreview(snapshot),
           snapshot.cardHeight,

@@ -45,7 +45,7 @@ import {
 } from '../../../cad-contract/units/opengrid-label-card'
 import {
   boundsForGameBox,
-  gameBoxDiceHolderWidth,
+  gameBoxDiceHolderOuterWidth,
   gameBoxFrontWallY,
   gameBoxLayout,
   validateGameBoxParameters,
@@ -412,7 +412,7 @@ function gameBoxDividerSolids(bounds: ModelBounds): PreviewSolid[] {
   ]
 }
 
-/** The dice holder standing on the bed, as wide as its grip tabs. */
+/** The dice holder standing on the bed, as wide as its tenons. */
 function gameBoxDiceHolderSolids(bounds: ModelBounds): PreviewSolid[] {
   const width = bounds.max[0] - bounds.min[0]
   const depth = bounds.max[1] - bounds.min[1]
@@ -450,37 +450,24 @@ function gameBoxAssemblySolids(
   // The dividers stand on the module boundaries, the holders fill the dice
   // modules between them.
   const frontWallY = gameBoxFrontWallY(p)
-  const halfPlate = c.dividerPlateThickness / 2
-  let boundaryBefore = 0
-  layout.modules.forEach((module, position) => {
-    const boundaryAfter =
-      position === layout.modules.length - 1
-        ? layout.storageDepth
-        : layout.dividerCenters[position]!
-    if (module.type === 'dice') {
-      const start = boundaryBefore === 0 ? 0 : boundaryBefore + halfPlate
-      const end =
-        boundaryAfter === layout.storageDepth
-          ? layout.storageDepth
-          : boundaryAfter - halfPlate
-      const thickness = module.holderThickness
-      solids.push(
-        slab(
-          // The installed holder is pressed into the box, so the preview
-          // draws its body width rather than the printed width.
-          gameBoxDiceHolderWidth(p.cardWidth),
-          thickness,
-          p.cardHeight,
-          0,
-          // The slab is centred on the free space of the module, the same
-          // place the kernel installs the holder in.
-          frontWallY + (start + end) / 2,
-          c.floorThickness,
-        ),
-      )
-    }
-    boundaryBefore = boundaryAfter
-  })
+  for (const module of layout.modules) {
+    if (module.type !== 'dice') continue
+    const thickness = module.holderThickness
+    solids.push(
+      slab(
+        // The holder reaches into the wall slots with its tenons, so the
+        // preview draws its outer width, the same as the single part.
+        gameBoxDiceHolderOuterWidth(p.cardWidth),
+        thickness,
+        p.cardHeight,
+        0,
+        // The slab stands where the layout puts the holder: at the front
+        // of its module, with its first tenon in a slot.
+        frontWallY + module.holderStart + thickness / 2,
+        c.floorThickness,
+      ),
+    )
+  }
   for (const center of layout.dividerCenters) {
     solids.push(
       slab(

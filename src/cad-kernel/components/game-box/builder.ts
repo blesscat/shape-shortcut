@@ -1,8 +1,6 @@
 import { makeCompound, type Shape3D } from 'replicad'
 import {
   CARD_BOX_CONFIGURATION,
-  cardBoxInteriorWidth,
-  gameBoxDiceHolderThickness,
   gameBoxModuleDiceCountKey,
   gameBoxModuleDiceSizeKey,
   gameBoxPartModuleIndex,
@@ -14,12 +12,12 @@ import { buildCardBoxBoxFromGeometry } from '../card-box/box'
 import { flipLidForPrint } from '../card-box/builder'
 import { buildCardBoxDividerFromGeometry } from '../card-box/divider'
 import { buildCardBoxLidFromGeometry } from '../card-box/lid'
-import { buildGameBoxDiceHolder, GAME_BOX_DICE_HOLDER } from './dice-holder'
+import { buildGameBoxDiceHolder } from './dice-holder'
 import {
   gameBoxGeometryOf,
   gameBoxModulePlacements,
+  type GameBoxDicePlacement,
   type GameBoxGeometry,
-  type GameBoxModulePlacement,
 } from './geometry'
 
 /**
@@ -46,36 +44,33 @@ function placeDividerInAssembly(plate: Shape3D, y: number): Shape3D {
 }
 
 /**
- * Builds the dice holder in its installed state: the grip strips are
- * pressed in so that the holder fits between the box walls. The single part
- * export keeps the natural, wider strips.
+ * Builds the dice holder in its installed state: the tenons stand in the
+ * divider slots of the box walls, so the holder is built at its natural
+ * width.
  */
 function buildInstalledDiceHolder(
   parameters: GameBoxParameters,
-  placement: GameBoxModulePlacement,
+  placement: GameBoxDicePlacement,
 ): Shape3D {
   const diceSize = parameters[gameBoxModuleDiceSizeKey(placement.index)]
   const diceCount = parameters[gameBoxModuleDiceCountKey(placement.index)]
-  const thickness = gameBoxDiceHolderThickness(diceSize)
-  const pressedOuterWidth =
-    cardBoxInteriorWidth(parameters.cardWidth) -
-    GAME_BOX_DICE_HOLDER.pressedClearance
   const holder = buildGameBoxDiceHolder({
     cardWidth: parameters.cardWidth,
     cardHeight: parameters.cardHeight,
     diceSize,
     diceCount,
-    outerWidth: pressedOuterWidth,
   })
-  const y =
-    placement.frontY + (placement.backY - placement.frontY - thickness) / 2
-  return holder.translate(0, y, CARD_BOX_CONFIGURATION.floorThickness)
+  return holder.translate(
+    0,
+    placement.holderFrontY,
+    CARD_BOX_CONFIGURATION.floorThickness,
+  )
 }
 
 /**
  * The assembly in the assembled frame: the box, the lid, one divider per
- * module boundary and one dice holder per dice module. The holders stand on
- * the floor between the dividers that bound their module.
+ * pair of neighbouring card modules and one dice holder per dice module.
+ * The holders stand on the floor, their tenons in the slots of the rack.
  *
  * Every part is built inside the guarded region, so a failing build frees
  * the parts it already created.

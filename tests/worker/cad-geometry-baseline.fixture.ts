@@ -183,6 +183,9 @@ export const GEOMETRY_BASELINE: Record<ModelId, GeometryBaselineEntry> = {
     },
   },
   'game-box': {
+    // The default design is slot-rounded again: the storage depth is a whole
+    // multiple of the 3 mm slot pitch (63 mm) and the grip flap is gone, so
+    // the geometry matches the values origin/main records.
     build: {
       volume: 108989.878666,
       bounds: [-38.25, -35.45, 0, 38.25, 33.6, 129],

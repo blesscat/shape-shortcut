@@ -15,13 +15,24 @@ const DEFAULT_CARD_WIDTH = GAME_BOX_CONFIGURATION.defaults.cardWidth
 const DEFAULT_CARD_HEIGHT = GAME_BOX_CONFIGURATION.defaults.cardHeight
 const DEFAULT_LAYOUT = gameBoxLayout(DEFAULTS)
 const DICE_LAYOUT = gameBoxLayout({ ...DEFAULTS, module2Type: 'dice' })
-const CARD_DEPTH_20_LAYOUT = gameBoxLayout({
-  ...DEFAULTS,
-  module1CardDepth: 20,
-})
 const CARD_DEPTH_30_LAYOUT = gameBoxLayout({
   ...DEFAULTS,
   module1CardDepth: 30,
+})
+/** A card module, a dice module and a card module of 20 mm. */
+const CARD_DICE_CARD_LAYOUT = gameBoxLayout({
+  ...DEFAULTS,
+  module1CardDepth: 30,
+  module2Type: 'dice',
+  module3Type: 'cards',
+  module3CardDepth: 20,
+})
+/** The same list without the dice module: two card modules side by side. */
+const TWO_CARD_MODULES_LAYOUT = gameBoxLayout({
+  ...DEFAULTS,
+  module1CardDepth: 30,
+  module2Type: 'cards',
+  module2CardDepth: 20,
 })
 
 /** The panel shows a length rounded to two decimals, without trailing zeros. */
@@ -72,7 +83,7 @@ test.describe('game-box', () => {
     await expect(page.getByTestId('game-box-module-1')).toBeVisible()
     await expect(page.getByTestId('game-box-module-2')).toHaveCount(0)
     await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
-      `${DEFAULT_LAYOUT.storageDepth} mm`,
+      `${shownLength(DEFAULT_LAYOUT.storageDepth)} mm`,
     )
     await expect(page.getByTestId('game-box-interior-size')).toHaveText(
       interiorSizeText(DEFAULT_LAYOUT),
@@ -84,18 +95,18 @@ test.describe('game-box', () => {
       '佔用長度',
     )
     await expect(page.getByTestId('game-box-module-1-length')).toHaveText(
-      `${DEFAULT_LAYOUT.modules[0]?.length} mm`,
+      `${shownLength(DEFAULT_LAYOUT.modules[0]?.length ?? Number.NaN)} mm`,
     )
 
-    // A dice module adds its own slots to the storage depth.
+    // A dice module adds its own length to the storage depth.
     await addModule(page, 'dice')
     await expect(page.getByTestId('game-box-module-2')).toBeVisible()
     await expect(page.getByTestId('game-box-module-2')).toContainText('骰子匣')
     await expect(page.getByTestId('game-box-module-2-length')).toHaveText(
-      `${DICE_LAYOUT.modules[1]?.length} mm`,
+      `${shownLength(DICE_LAYOUT.modules[1]?.length ?? Number.NaN)} mm`,
     )
     await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
-      `${DICE_LAYOUT.storageDepth} mm`,
+      `${shownLength(DICE_LAYOUT.storageDepth)} mm`,
     )
     await expect(page.getByTestId('game-box-interior-size')).toHaveText(
       interiorSizeText(DICE_LAYOUT),
@@ -193,10 +204,10 @@ test.describe('game-box', () => {
       .fill('30')
     // The derived depth follows the module thickness.
     await expect(page.getByTestId('game-box-module-1-length')).toHaveText(
-      `${CARD_DEPTH_30_LAYOUT.modules[0]?.length} mm`,
+      `${shownLength(CARD_DEPTH_30_LAYOUT.modules[0]?.length ?? Number.NaN)} mm`,
     )
     await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
-      `${CARD_DEPTH_30_LAYOUT.storageDepth} mm`,
+      `${shownLength(CARD_DEPTH_30_LAYOUT.storageDepth)} mm`,
     )
 
     await addModule(page, 'dice')
@@ -206,7 +217,7 @@ test.describe('game-box', () => {
       .getByRole('textbox', { name: '卡片區厚度' })
       .fill('20')
     await expect(page.getByTestId('game-box-module-3-length')).toHaveText(
-      `${CARD_DEPTH_20_LAYOUT.modules[0]?.length} mm`,
+      `${shownLength(CARD_DICE_CARD_LAYOUT.modules[2]?.length ?? Number.NaN)} mm`,
     )
 
     // Removing the middle module closes the gap: the third module keeps its
@@ -220,7 +231,7 @@ test.describe('game-box', () => {
         .getByRole('textbox', { name: '卡片區厚度' }),
     ).toHaveValue('20')
     await expect(page.getByTestId('game-box-module-2-length')).toHaveText(
-      `${CARD_DEPTH_20_LAYOUT.modules[0]?.length} mm`,
+      `${shownLength(TWO_CARD_MODULES_LAYOUT.modules[1]?.length ?? Number.NaN)} mm`,
     )
   })
 
@@ -289,11 +300,13 @@ test.describe('game-box', () => {
     await addModule(page, 'dice')
     await addModule(page, 'cards')
     const part = page.getByTestId('game-box-part')
+    // The dice module sits between the two card modules, so no two card
+    // modules touch: the holder is its own divider and no divider plate is
+    // printed.
     await expect(part.locator('option')).toHaveText([
       '組裝',
       '盒體',
       '滑蓋',
-      '分隔板（2 片）',
       '骰子匣（模組 2）',
     ])
 
@@ -374,8 +387,10 @@ test.describe('game-box', () => {
       page.getByRole('textbox', { name: '卡片高（Z）' }),
     ).toHaveValue('88')
     // The default module list is unchanged, so the derived depth stays the
-    // default depth.
-    await expect(page.getByTestId('game-box-storage-depth')).toHaveText('63 mm')
+    // default depth (derived from the module list, not a preset constant).
+    await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
+      `${shownLength(DEFAULT_LAYOUT.storageDepth)} mm`,
+    )
     // The model is rebuilt with the new card size.
     await expect(viewport).not.toHaveAttribute(
       'data-model-revision',
@@ -530,7 +545,7 @@ test.describe('game-box', () => {
     })
     await expect(page.getByTestId('game-box-module-2')).toHaveCount(0)
     await expect(page.getByTestId('game-box-storage-depth')).toHaveText(
-      `${DEFAULT_LAYOUT.storageDepth} mm`,
+      `${shownLength(DEFAULT_LAYOUT.storageDepth)} mm`,
     )
   })
 
