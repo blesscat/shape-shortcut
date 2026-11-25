@@ -2,6 +2,14 @@
 
 ## Context
 
+**Rework after #215 (2026-11-25).** PR #215 merged in a reworked form
+(`f3976c9`): the dice holder locks into the box's 3 mm slot rack with two
+tenons per side (the grip flap is gone), the storage depth rounds up to a
+whole multiple of 3 mm with the slack going to the last module, and **the
+holder is its own divider** - divider plates exist only where two adjacent
+`cards` modules meet. This change was rebased onto that layout; everything
+below is written against it.
+
 game-box reuses card-box kernel code directly: `builder.ts` imports
 `buildCardBoxBoxFromGeometry`, `flipLidForPrint`, `buildCardBoxDividerFromGeometry`
 and `buildCardBoxLidFromGeometry`; `geometry.ts` imports `cardBoxInnerFrontY` and
@@ -73,10 +81,11 @@ In the assembly the cover sits in the front channel via the card-box placement
 depth), always present, art included — matching the card-box assembly, where
 the cover is a physical part of the product rather than an option.
 
-### 2. Divider cards: one settings group per module boundary
+### 2. Divider cards: one settings group per cards pair
 
-Dividers stay boundary-indexed: boundary *n* sits between module *n* and
-module *n+1* (front-to-back), n = 1 … activeModules − 1 (max 5). Each group
+Dividers exist only where two adjacent `cards` modules meet (the merged
+#215 rule: a dice holder is its own divider, so a holder boundary carries no
+plate). `dividerN` is the **Nth such boundary**, front to back, N = 1 … activeModules − 1 (max 5). Each group
 owns three flat fields:
 
 | Field | Range / values | Default |
@@ -103,11 +112,13 @@ mixed with per-piece text would make two physically different plates
 indescribable. *Alternative* — one shared `dividerStyle` field (rejected;
 cheaper by four keys but contradicts the owner decision).
 
-List-operation semantics mirror the module groups (positional attachment;
-boundaries are the computed module boundaries, so no slot grid is involved):
+List-operation semantics follow the cards-pair boundaries (positional
+attachment over the plates that actually exist):
 
-- **Add module**: boundary count grows by one; the new boundary's divider
-  appears with default fields; existing boundaries keep their settings.
+- **Add module**: the cards-pair count can only stay equal or grow by one
+  (a new `cards` next to a `cards` adds a plate; a new `dice` removes the
+  plate of the boundary it splits, if any). New boundaries appear with
+  default fields; the surviving boundaries keep their settings by ordinal.
 - **Delete module**: boundary count shrinks by one; surviving boundaries keep
   their settings by index; the vanished boundary's fields reset to defaults
   (same re-pack rule as deleted modules).
@@ -257,33 +268,16 @@ kernel build-time localized error that blocks generation and export — it
 cannot be decided synchronously in validation, and the build error keeps it
 visible instead of silently shrinking or cropping.
 
-### 9. Raised divider labels and dice holders: the holder top-edge relief
+### 9. The round-1 label relief is gone with the rework
 
-Review round 1 (finding B P1) measured a real interference: a raised divider
-label sits 0.4 mm proud of the plate face, the label band ends 0.8 mm below
-the holder top, and the holder keeps only the 0.3 mm designed gap to the
-plate face — so the raised art overlaps the holder's grip-flap corner by
-~0.1 mm in y over a 0.8 mm band (≈ 0.83 mm³ total at the default size). The
-lead's criteria, in order: the label stays on the face people read today (no
-flipping), the box length must not change when a label is typed, and the
-holder's accepted front/back play (~0.7 mm) must not grow. The fix therefore
-relieves the holder: the top band of its front and back walls — the faces
-that look at divider plates — recesses 0.3 mm (0.1 mm of art clearance plus
-the 0.2 mm minimum margin) over the top 1.0 mm band (`dividerLabelRelief`).
-
-The relief cannot cost die space: the band is exactly the free height above
-the topmost die (`diceHolderTopMargin = 1` mm — the highest die top is
-always `cardHeight − 1`, the band bottom is `cardHeight − 1`), for every
-valid `diceSize × cardHeight` combination. Capacity math is untouched. The
-relief stays inside the holder body width, so the grip flaps (which never
-face a label) keep their full geometry, and it is part of the printed holder
-(single part and assembly), not only of the pressed preview. `flat` labels
-sit flush and never needed it.
-
-*Alternatives*: flipping the label to the plate's back face (rejected —
-criterion 1); growing the holder gap to the plate (rejected — criterion 3);
-lowering the whole holder top (rejected — the holder height must equal
-`cardHeight` and the relief needs only a 1 mm band).
+Round 1 added a 0.3 mm top-band relief to the dice holder because a raised
+label overlapped the holder's grip-flap corner. The merged #215 removes the
+grip flap and makes the holder its own divider, so **no labelled divider
+ever faces a holder** - every label faces the 1.0 mm card-stack clearance of
+a `cards` module, which absorbs the 0.4 mm raised art. The relief (and its
+tests) is therefore removed; the holder geometry is exactly the merged
+#215's. No labelled-divider-vs-holder case exists any more, which the
+assembly intersection tests confirm.
 
 ## Risks / Trade-offs
 

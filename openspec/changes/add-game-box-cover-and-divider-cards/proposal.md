@@ -2,6 +2,11 @@
 
 ## Why
 
+**Rebased on the reworked #215 (2026-11-25)**: the storage depth is a
+multiple of the 3 mm slot rack, and divider plates exist only between two
+adjacent `cards` modules (the dice holder is its own divider); the divider
+cards below follow that rule.
+
 `card-box` is being retired (`retire-card-box`, applied last), and the owner has
 decided that its cover card (封面片) and its labelled divider cards (分隔卡) must
 first become game-box features ("封面卡跟分隔卡也要加入"). game-box today only
@@ -18,15 +23,15 @@ settings ("每片各自設定"): one divider per module boundary, up to five.
   same `raised`/`flat` styles, the same vertical-position slider, and the same
   SVG import (Beta). The plate size follows game-box's `cardWidth`/`cardHeight`;
   the storage depth stays derived from the module list.
-- Turn the single plain `divider` item into one divider card per module
-  boundary: parts `divider1` … `divider5` (boundaries 1 … active modules − 1),
+- Turn the single plain `divider` item into one divider card per **cards
+  pair**: parts `divider1` … `dividerN`, numbered by their order among the
+  boundaries where two adjacent `cards` modules meet (a dice holder is its
+  own divider in the merged #215, so a holder boundary carries no plate),
   each with its own label text, tab position (`left`/`center`/`right`) and
   style (`raised`/`flat`) — the owner ruled every divider carries its own
-  settings ("每片各自設定"). The boundaries are the computed module
-  boundaries of the current layout (module lengths computed from their
-  contents); no slot grid is assumed. A divider with blank text and the
-  default tab stays geometrically identical to today's plain divider; box,
-  lid and plain-divider geometry do not change (stop condition checked).
+  settings ("每片各自設定"). A divider with blank text and the default
+  tab stays geometrically identical to the plain divider; box, lid, holder
+  and plain-divider geometry do not change (stop condition checked).
 - Extend the assembly: it now also shows the cover piece seated in the front
   channel and every divider with its own label art. Zero-intersection still
   holds.
