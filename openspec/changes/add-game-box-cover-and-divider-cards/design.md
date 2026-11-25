@@ -94,16 +94,18 @@ owns three flat fields:
 | `dividerNTabPosition` | `left` / `center` / `right` | `left` |
 | `dividerNStyle` | `raised` / `flat` | `raised` |
 
-Nine cover fields join the contract with card-box names and ranges. The
+Ten cover fields join the contract with card-box names and ranges. The
 default cover title is `GAME` (owner decision): `coverTitle` (≤ 30, default
 `GAME`), `coverTitleTextHeight` (4–20, default 6), `coverSubtitle` (≤ 30,
 default `''`), `coverSubtitleTextHeight` (3–12, default 5), `coverSvgWidth`
 (10–58, default 40), `coverVerticalPosition` (0–100, default 30), `coverStyle`
 (`raised`/`flat`, default `raised`), `usesCoverSvg` (default false),
-`coverSvgFingerprint` (required non-empty when `usesCoverSvg`). Everything
-stays a flat scalar so the existing validation, persistence, Worker transport
-and raw-parameter machinery work unchanged; `defaultParameters` gains all 24
-keys.
+`coverSvgFingerprint` (required non-empty when `usesCoverSvg`) and
+`coverSvgAspect` (the imported outlines' height/width ratio, written on
+import and reset to 0 — unknown — on removal or data loss; validation never
+reports on it). Everything stays a flat scalar so the existing validation,
+persistence, Worker transport and raw-parameter machinery work unchanged;
+`defaultParameters` gains all 25 keys (15 divider + 10 cover).
 
 **Style is per divider** (owner decision "每片各自設定", 2026-11-21): the
 owner set per-piece settings for labels and tabs, style is the same kind of
@@ -154,8 +156,10 @@ File names carry that identity: `game-box-divider3-70x120x75-left-raised-<token>
 card-box). Two dividers with identical settings therefore never collide, and
 two revisions differing only in text never collide either. Cover names follow
 card-box: `game-box-cover-70x120x75-<style>-<art-token>.step`, art token
-derived from `title\0subtitle\0svgFingerprint`. 3MF reuses the STEP name with
-`.3mf`. Box/lid/dice-holder names stay exactly as pinned by the current spec
+derived from every cover geometry input — title, subtitle, both text
+heights, SVG width and aspect, vertical position, style and the SVG
+fingerprint — so different covers never share a name. 3MF reuses the STEP
+name with `.3mf`. Box/lid/dice-holder names stay exactly as pinned by the current spec
 scenarios.
 
 ### 4. Two-colour 3MF: exactly the card-box rule, applied per part
@@ -263,17 +267,24 @@ preset machinery; the fields simply behave like the module fields.
 A preset whose merged snapshot fails validation is not applied and the
 existing localized not-applicable notice is shown (the shipped
 `resolvePresetParameters` → `validateParameters` gate). To give that rule
-teeth for the cover art, game-box validation gains an exact, font-free fit
-gate: when `usesCoverSvg` is true and `coverSvgWidth` exceeds the safe-area
-width of the current card size (safe width = interior width − 2 ×
-(hidden lip 5 + safe margin 2)), the snapshot is invalid with a field error
-on `coverSvgWidth`. This is decidable without font metrics, has no false
-positives, and is exactly the case a smaller card preset creates (default
-SVG width 40 vs a 27.5 mm safe width at the 41×63 preset). The residual,
-font-dependent overflow (rendered text wider than the safe area) stays a
-kernel build-time localized error that blocks generation and export — it
-cannot be decided synchronously in validation, and the build error keeps it
-visible instead of silently shrinking or cropping.
+teeth for the cover art, game-box validation runs exact, font-free fit
+gates on the current card size (safe width/height = the visible window
+shrunk by the 2 mm margins; the imported cover writes its height/width
+ratio into the new flat parameter `coverSvgAspect`, and 0 means unknown):
+
+- `coverSvgWidth` above the safe width → field error on `coverSvgWidth`.
+- the scaled SVG height (`coverSvgWidth × coverSvgAspect`) plus the
+  configured title and subtitle text heights above the safe height → field
+  error on `coverSvgWidth` (`validation.gameBoxCoverArtTooTall`). An
+  unknown aspect (0) skips this check, and the kernel stays the backstop.
+
+Both are decidable without font metrics, have no false positives (the
+kernel stack check is the same sum), and are exactly what a smaller card
+preset creates. **Owner decision 2026-11-26 (option A)**: the
+font-dependent rendered text width stays out of these gates — a preset
+that leaves the title or subtitle too wide is applied, and generation then
+fails with the localized cover error; no field is lost. The not-applicable
+notice copy names the cover alongside the modules.
 
 ### 9. The round-1 label relief is gone with the rework
 
@@ -295,7 +306,7 @@ assembly intersection tests confirm.
   placement helpers are unchanged; the worker test builds assemblies with
   labelled dividers and cover art at default/min/max card sizes and asserts
   zero intersection volume for every pair.
-- [24 new parameter keys widen the validation surface] → all fields reuse the
+- [25 new parameter keys widen the validation surface] → all fields reuse the
   existing `numberInRange`/enum helpers with field-level attribution; unit
   tests pin every range, default and error field; inactive divider groups
   cannot affect geometry (mirrors the module-group rule and is tested).

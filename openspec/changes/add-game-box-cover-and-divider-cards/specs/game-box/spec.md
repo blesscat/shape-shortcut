@@ -59,7 +59,15 @@
 
 ### Requirement: 封面片參數
 
-面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）與資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）、資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）與高寬比 `coverSvgAspect`（預設 0 代表未知）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+
+#### Scenario: 高寬比隨匯入寫入並隨移除重置
+
+- **WHEN** 使用者匯入封面 SVG
+- **THEN** 參數紀錄 MUST 以清理後輪廓的高度除以寬度寫入 `coverSvgAspect`
+- **WHEN** 使用者移除 SVG，或專屬 key 資料遺失或損毀而回退純文字版面
+- **THEN** `coverSvgAspect` MUST 重置為 0（未知）
+- **AND** `coverSvgAspect` MUST NOT 成為任何驗證錯誤的歸屬欄位；其無效值或未知值 MUST 以 0 處理
 
 #### Scenario: 預設封面參數
 
@@ -75,6 +83,18 @@
 
 - **WHEN** 參數快照的 `usesCoverSvg` 為 true 而 `coverSvgFingerprint` 為空字串
 - **THEN** 驗證 MUST 回報欄位錯誤並阻止生成與匯出
+
+#### Scenario: SVG 高度無法放入安全區
+
+- **WHEN** `usesCoverSvg` 為 true、`coverSvgAspect` 為 2、`coverSvgWidth` 為 25，而卡片高 63（安全區高 49 mm；圖稿堆疊 50 mm 加標題 6 mm 超出）
+- **THEN** 驗證 MUST 回報歸屬於 `coverSvgWidth` 的欄位錯誤並阻止生成與匯出
+- **AND** 堆疊恰好等於安全區高 MUST 視為可放
+
+#### Scenario: 未知高寬比不進行高度判斷
+
+- **WHEN** `usesCoverSvg` 為 true 而 `coverSvgAspect` 為 0（未知）
+- **THEN** 驗證 MUST NOT 因 SVG 高度回報錯誤
+- **AND** 該佈局若實際放不下，生成 MUST 以本地化錯誤失敗（MUST NOT 縮小或裁切）
 
 ### Requirement: 封面片幾何
 
@@ -151,7 +171,7 @@
 
 ### Requirement: 封面 SVG 匯入（Beta）
 
-封面 MUST 支援使用者 SVG 匯入，控制項 MUST 帶「Beta」徽章。系統 MUST 在主執行緒以 DOMParser 僅作 XML 解析，MUST NOT 將使用者 SVG 插入頁面 DOM；MUST 保留填色形狀、套用 transform 與 viewBox、攤平曲線；MUST 以清楚訊息拒絕僅描邊路徑、`<text>`、`<image>` 與超過點數上限的輸入。清理後的輪廓資料（非原始 SVG）MUST 存在 game-box 專屬的 localStorage key（`shape-shortcut:game-box-cover-svg:v1`），上限 256 KB，僅保存一組，新匯入 MUST 取代舊資料。參數紀錄 MUST 只保存 `usesCoverSvg` 旗標與資料指紋。資料遺失或損毀時 MUST 回退純文字版面並顯示提示；超過大小上限時資料 MUST 僅當前工作階段有效並告知使用者。Worker 建構請求 MUST 收到輪廓資料。game-box MUST NOT 讀取 card-box 的 SVG key。
+封面 MUST 支援使用者 SVG 匯入，控制項 MUST 帶「Beta」徽章。系統 MUST 在主執行緒以 DOMParser 僅作 XML 解析，MUST NOT 將使用者 SVG 插入頁面 DOM；MUST 保留填色形狀、套用 transform 與 viewBox、攤平曲線；MUST 以清楚訊息拒絕僅描邊路徑、`<text>`、`<image>` 與超過點數上限的輸入。清理後的輪廓資料（非原始 SVG）MUST 存在 game-box 專屬的 localStorage key（`shape-shortcut:game-box-cover-svg:v1`），上限 256 KB，僅保存一組，新匯入 MUST 取代舊資料。參數紀錄 MUST 保存 `usesCoverSvg` 旗標、資料指紋與高寬比 `coverSvgAspect`。資料遺失或損毀時 MUST 回退純文字版面並顯示提示；超過大小上限時資料 MUST 僅當前工作階段有效並告知使用者。Worker 建構請求 MUST 收到輪廓資料。game-box MUST NOT 讀取 card-box 的 SVG key。
 
 #### Scenario: Beta 徽章顯示
 
@@ -162,7 +182,7 @@
 
 - **WHEN** 使用者匯入只含填色形狀的有效 SVG
 - **THEN** 系統 MUST 產生清理後的輪廓資料並存入 game-box 專屬 key
-- **AND** 參數紀錄 MUST 只更新 `usesCoverSvg` 旗標與指紋
+- **AND** 參數紀錄 MUST 只更新 `usesCoverSvg` 旗標、指紋與高寬比
 
 #### Scenario: 不支援內容被拒絕
 
@@ -218,7 +238,7 @@
 
 ### Requirement: 不適用目前模組的預設不套用
 
-若套用 preset 後的參數集無效，MUST NOT 套用該 preset，MUST 保留使用者目前的參數，MUST NOT 改用預設參數取而代之，並 MUST 以本地化訊息（en 與 zh-Hant）告知使用者該預設不適用於目前的模組。套用後封面圖樣確定無法放入安全區（例如 SVG 寬超過較小卡片的安全區寬）時，該參數集 MUST 視為無效並依相同規則不套用。
+若套用 preset 後的參數集無效，MUST NOT 套用該 preset，MUST 保留使用者目前的參數，MUST NOT 改用預設參數取而代之，並 MUST 以本地化訊息（en 與 zh-Hant）告知使用者該預設不適用於目前的模組。套用後封面圖樣確定無法放入安全區時（SVG 寬超過安全區寬、或依 `coverSvgAspect` 推算的 SVG 高度加上標題與副標題文字高堆疊超過安全區高），該參數集 MUST 視為無效並依相同規則不套用。相對地，套用後封面標題或副標題的**算繪寬度**（需要字型度量）放不下較小卡片時，該 preset MUST 照常套用，生成 MUST 以本地化錯誤失敗且不遺失任何欄位值（owner 決策 2026-11-26，選項 A）。
 
 #### Scenario: 骰子放不下時不套用
 
@@ -235,6 +255,21 @@
 - **THEN** 該 preset MUST NOT 被套用
 - **AND** 卡片尺寸與全部封面欄位 MUST 保持不變
 - **AND** 面板 MUST 顯示該預設不適用的本地化訊息
+
+#### Scenario: 封面圖樣堆疊過高時不套用
+
+- **GIVEN** 使用者已匯入高寬比 2 的封面 SVG 且 SVG 寬為 25 mm，卡片尺寸 70 × 120
+- **WHEN** 使用者套用「Mini American 41×63」preset（安全區高 49 mm；堆疊 50 mm 加標題超出）
+- **THEN** 該 preset MUST NOT 被套用
+- **AND** 卡片尺寸與全部封面欄位 MUST 保持不變
+
+#### Scenario: 文字寬度放不下時照常套用
+
+- **GIVEN** 使用者的封面標題在 70 × 120 下算繪後無法放入 41 × 63 的安全區寬
+- **WHEN** 使用者套用「Mini American 41×63」preset
+- **THEN** 該 preset MUST 照常套用（owner 決策，選項 A）
+- **AND** 生成 MUST 以本地化錯誤失敗，MUST NOT 縮小或裁切文字
+- **AND** 全部欄位值 MUST 保留
 
 ### Requirement: 零件選擇器
 
@@ -351,7 +386,7 @@
 
 ### Requirement: 匯出檔名
 
-匯出檔名 MUST 以 `game-box-` 開頭並包含零件名稱與足以區分幾何的尺寸：`box` MUST 包含卡片寬、卡片高、推算收納深度與依序的模組清單；`lid` MUST 包含卡片寬、卡片高與推算收納深度；每片分隔卡 MUST 包含邊界序號、卡片寬、卡片高、推算收納深度、Tab 位置、樣式與文字的短穩定 token（空文字使用 `blank`），使設定相同的不同分隔卡檔名不同；封面片 MUST 包含卡片寬、卡片高、推算收納深度、樣式與圖稿的短穩定 token（由標題、副標題與 SVG 指紋推導）；骰子匣 MUST 包含卡片寬、卡片高、骰子邊長與顆數。模組清單 MUST 以每個模組的代號依序串接：`cards` 模組為 `c` 加卡片深度，`dice` 模組為 `d` 加骰子邊長。不同幾何 MUST NOT 產生相同檔名；`part=assembly` MUST NOT 產生檔名。
+匯出檔名 MUST 以 `game-box-` 開頭並包含零件名稱與足以區分幾何的尺寸：`box` MUST 包含卡片寬、卡片高、推算收納深度與依序的模組清單；`lid` MUST 包含卡片寬、卡片高與推算收納深度；每片分隔卡 MUST 包含邊界序號、卡片寬、卡片高、推算收納深度、Tab 位置、樣式與文字的短穩定 token（空文字使用 `blank`），使設定相同的不同分隔卡檔名不同；封面片 MUST 包含卡片寬、卡片高、推算收納深度、樣式與圖稿的短穩定 token（由標題、副標題、兩個文字高、SVG 寬與高寬比、垂直位置與 SVG 指紋推導，使不同幾何的封面 MUST NOT 共用檔名）；骰子匣 MUST 包含卡片寬、卡片高、骰子邊長與顆數。模組清單 MUST 以每個模組的代號依序串接：`cards` 模組為 `c` 加卡片深度，`dice` 模組為 `d` 加骰子邊長。不同幾何 MUST NOT 產生相同檔名；`part=assembly` MUST NOT 產生檔名。
 
 #### Scenario: 盒體檔名
 

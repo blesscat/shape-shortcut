@@ -8,7 +8,7 @@
 
 ## 2. 合約層 `src/cad-contract/units/game-box.ts`
 
-- [x] 2.1 新增型別與參數鍵：`GameBoxDividerIndex`（1–5）、`dividerNText`／`dividerNTabPosition`／`dividerNStyle` 五組、九個封面欄位，`GameBoxPart` 加入 `cover` 與 `divider1`…`divider5`；全部為扁平單值並納入 `GAME_BOX_PARAMETER_KEYS` 與 `defaultParameters`（24 個新鍵：15 個分隔卡鍵加 9 個封面鍵）。
+- [x] 2.1 新增型別與參數鍵：`GameBoxDividerIndex`（1–5）、`dividerNText`／`dividerNTabPosition`／`dividerNStyle` 五組、九個封面欄位，`GameBoxPart` 加入 `cover` 與 `divider1`…`divider5`；全部為扁平單值並納入 `GAME_BOX_PARAMETER_KEYS` 與 `defaultParameters`（25 個新鍵：15 個分隔卡鍵加 10 個封面鍵，含 round-4 新增的 `coverSvgAspect`）。
 - [x] 2.2 `GAME_BOX_CONFIGURATION` 加入分隔卡與封面的範圍／預設常數（文字上限 20、封面文字上限 30、文字高 4–20／3–12、SVG 寬 10–58、垂直位置 0–100、Tab 與樣式列舉、預設 `GAME`／`left`／`raised`；封面 SVG 寬超過目前卡片安全區寬時驗證必須拒絕，供 preset 不套用規則使用）。
 - [x] 2.3 擴充 `validateGameBoxParameters`：新欄位範圍與列舉（欄位級錯誤）、`usesCoverSvg` 缺指紋規則、不存在的 `dividerN` 與 `moduleN` 零件選擇被拒；非啟用分隔卡欄位仍驗範圍但不影響幾何（沿用模組欄位規則）。
 - [x] 2.4 檔名：`gameBoxFileName`／`gameBoxStlFileName` 支援 `cover` 與 `dividerN`（含邊界編號、Tab、樣式、FNV token，空文字 `blank`；封面含卡片尺寸、推算深度、樣式、圖稿 token），新增 `gameBoxThreeMfFileName`（有 accent 圖稿回傳同名 `.3mf`，否則 null）。
@@ -43,7 +43,7 @@
 
 ## 7. 翻譯
 
-- [x] 7.1 `en` 與 `zh-Hant` 各新增：`parameter.*`（24 個新欄位標籤）、`panel.gameBox.cover.*`、`panel.gameBox.divider.*`、零件名稱（cover、dividerN）、`validation.gameBox*`（新欄位錯誤）與 `diagnostic.gameBox*`（文字過寬、超出安全區、SVG 拒絕）；驗證兩個 locale 的 key 集合一致，且無未翻譯訊息鍵。
+- [x] 7.1 `en` 與 `zh-Hant` 各新增：`parameter.*`（25 個新欄位標籤，含 `coverSvgAspect`）、`panel.gameBox.cover.*`、`panel.gameBox.divider.*`、零件名稱（cover、dividerN）、`validation.gameBox*`（新欄位錯誤）與 `diagnostic.gameBox*`（文字過寬、超出安全區、SVG 拒絕）；驗證兩個 locale 的 key 集合一致，且無未翻譯訊息鍵。
 
 ## 8. 測試
 
@@ -72,3 +72,4 @@
 
 - [x] 3.7 重做後適配：分支以 `git rebase --onto origin/main 4b0b2df` 改基於合併後的 `f3976c9`；`dividerN` 改為「兩個 `cards` 模組相鄰」邊界的序號（holder 邊界無分隔卡）；移除骰子匣頂部讓位帶及其測試（決策 9）；零件選擇器、檔名、3MF、preset 規則與 delta spec 全部改寫在合併後的 main 文本上（7 ADDED + 8 MODIFIED，--strict 通過）。
 - [x] 8.7 幾何 baseline：game-box 項目由 origin/main 的 108989.878666 mm³（2 solids）更新為 114090.238551 mm³（7 solids：盒體＋滑蓋＋封面片＋4 個 GAME 字形；bounds 不變），僅 game-box 項目變更，以測試自身的 build 路徑量測。
+- [x] 8.8 預設封面檔名隨 token 規則改變：`game-box-cover-70x120x63-raised-5533ae9f.step` → `game-box-cover-70x120x63-raised-77fd2fc5.step`（token 由 card-box 的 3 輸入擴大為本 change 的 9 輸入；單元測試 `game-box-contract.test.ts` 已釘住新值，幾何與 baseline 不變）。
