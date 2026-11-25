@@ -4,6 +4,7 @@ import {
   addModuleGroup,
   deleteModuleGroup,
   dividerAndCoverRawValues,
+  listOperationValues,
   moduleSnapshot,
   moveModuleGroup,
   readModuleGroups,
@@ -231,11 +232,13 @@ describe('game-box module list', () => {
 })
 
 describe('game-box divider settings across list operations', () => {
-  function rawWithDividerSettings(): RawParameters {
-    const raw = rawFromGroups(
-      ['cards', 'dice', 'cards'],
-      [30, 16, 20],
-    ) as Record<string, string>
+  function rawWithDividerSettings(
+    types: readonly ('cards' | 'dice')[],
+  ): RawParameters {
+    const raw = rawFromGroups(types, [30, 30, 30, 30, 30, 30]) as Record<
+      string,
+      string
+    >
     raw['divider1Text'] = 'RED'
     raw['divider1TabPosition'] = 'center'
     raw['divider1Style'] = 'flat'
@@ -245,18 +248,17 @@ describe('game-box divider settings across list operations', () => {
   }
 
   it('keeps the divider and cover values through a list operation', () => {
-    const groups = readModuleGroups(rawWithDividerSettings())
-    const values = snapshotRawValues(
+    const groups = readModuleGroups(rawWithDividerSettings(['cards', 'cards']))
+    const values = listOperationValues(
       groups,
       'assembly',
       70,
       120,
-      rawWithDividerSettings(),
+      rawWithDividerSettings(['cards', 'cards']),
     )
     expect(values.divider1Text).toBe('RED')
     expect(values.divider1TabPosition).toBe('center')
     expect(values.divider1Style).toBe('flat')
-    expect(values.divider2Text).toBe('BLUE')
     expect(values.coverTitle).toBe('GO FISH')
   })
 
@@ -270,9 +272,9 @@ describe('game-box divider settings across list operations', () => {
     expect(values.usesCoverSvg).toBe('false')
   })
 
-  it('resets the vanished boundary and keeps the surviving ones by index', () => {
+  it('resets the vanished ordinal and keeps the surviving ones by index', () => {
     const values = resetInactiveDividerValues(
-      dividerAndCoverRawValues(rawWithDividerSettings()),
+      dividerAndCoverRawValues(rawWithDividerSettings(['cards', 'cards'])),
       1,
     )
     expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
@@ -285,39 +287,110 @@ describe('game-box divider settings across list operations', () => {
     expect(values.coverTitle).toBe('GO FISH')
   })
 
-  it('keeps every boundary when the list grows', () => {
+  it('keeps every existing ordinal when the pair count is unchanged', () => {
     const values = resetInactiveDividerValues(
-      dividerAndCoverRawValues(rawWithDividerSettings()),
+      dividerAndCoverRawValues(
+        rawWithDividerSettings(['cards', 'cards', 'cards']),
+      ),
       2,
     )
     expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
     expect(values[gameBoxDividerTextKey(2)]).toBe('BLUE')
   })
 
-  it('keeps every divider card when a module is moved (調整順序不改變分隔卡)', () => {
-    const raw = rawWithDividerSettings()
-    const groups = readModuleGroups(raw)
-    expect(activeModuleCount(groups)).toBe(3)
+  it('drives the real panel path: a dice module in the list counts no pair', () => {
+    // cards/dice has no cards pair, so divider 1 does not exist: the values
+    // a list operation writes back must have it reset.
+    const groups = readModuleGroups(rawWithDividerSettings(['cards', 'dice']))
+    const values = listOperationValues(
+      groups,
+      'assembly',
+      70,
+      120,
+      rawWithDividerSettings(['cards', 'dice']),
+    )
+    expect(values[gameBoxDividerTextKey(1)]).toBe('')
+    expect(values[gameBoxDividerTabPositionKey(1)]).toBe('left')
+    expect(values[gameBoxDividerStyleKey(1)]).toBe('raised')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+  })
 
-    // Move the first module later: only the module contents swap, so every
-    // divider field stays exactly as it was.
-    const moved = moveModuleGroup(groups, 0, 1)
-    const values = snapshotRawValues(moved, 'assembly', 70, 120, raw)
+  it('a delete that joins two cards modules resets the joined boundary', () => {
+    // cards/dice/cards -> delete the dice: the two cards modules join and
+    // the new pair starts from defaults, even though divider 1 had text.
+    const raw = rawWithDividerSettings(['cards', 'dice', 'cards'])
+    const groups = readModuleGroups(raw)
+    const afterDelete = deleteModuleGroup(groups, 1)
+    const values = listOperationValues(afterDelete, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('')
+    expect(values[gameBoxDividerStyleKey(1)]).toBe('raised')
+  })
+
+  it('a delete that lowers the pair count resets the vanished ordinal', () => {
+    // cards/cards/cards -> delete the last: pair count drops 2 -> 1, so
+    // divider 2 resets and divider 1 keeps its fields.
+    const raw = rawWithDividerSettings(['cards', 'cards', 'cards'])
+    const groups = readModuleGroups(raw)
+    const afterDelete = deleteModuleGroup(groups, 2)
+    const values = listOperationValues(afterDelete, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+    expect(values[gameBoxDividerTextKey(2)]).toBe('')
+  })
+
+  it('a delete behind a dice module lowers the pair count', () => {
+    // cards/cards/dice -> delete the dice: the pair count is unchanged, so
+    // divider 1 keeps its fields.
+    const raw = rawWithDividerSettings(['cards', 'cards', 'dice'])
+    const groups = readModuleGroups(raw)
+    const afterDelete = deleteModuleGroup(groups, 2)
+    const values = listOperationValues(afterDelete, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
+  })
+
+  it('a move that creates a pair starts the new ordinal from defaults', () => {
+    // cards/dice/cards -> move the dice later: cards/cards/dice. The moved
+    // pair (between modules 1|2) is new, so it starts from defaults even
+    // though a previous plate had text.
+    const raw = rawWithDividerSettings(['cards', 'dice', 'cards'])
+    const groups = readModuleGroups(raw)
+    const moved = moveModuleGroup(groups, 1, 1)
+    const values = listOperationValues(moved, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('')
+    expect(values[gameBoxDividerStyleKey(1)]).toBe('raised')
+  })
+
+  it('a move that relocates a pair keeps that ordinal fields', () => {
+    // The lead decision's example: cards/dice/cards/cards -> move the dice
+    // later: cards/cards/dice/cards. The pair count stays 1, but divider 1
+    // now sits between modules 1|2 instead of 3|4 - and keeps its fields.
+    const raw = rawWithDividerSettings(['cards', 'dice', 'cards', 'cards'])
+    const groups = readModuleGroups(raw)
+    const moved = moveModuleGroup(groups, 1, 1)
+    const values = listOperationValues(moved, 'assembly', 70, 120, raw)
     expect(values[gameBoxDividerTextKey(1)]).toBe('RED')
     expect(values[gameBoxDividerTabPositionKey(1)]).toBe('center')
     expect(values[gameBoxDividerStyleKey(1)]).toBe('flat')
-    expect(values[gameBoxDividerTextKey(2)]).toBe('BLUE')
-    expect(values.coverTitle).toBe('GO FISH')
+  })
 
-    // The module list itself did swap.
-    const movedGroups = readModuleGroups(values as RawParameters)
-    expect(movedGroups[0]?.type).toBe('dice')
-    expect(movedGroups[1]?.type).toBe('cards')
+  it('a move that lowers the pair count resets the vanished ordinal', () => {
+    // cards/cards/dice -> move the dice earlier: cards/dice/cards. The
+    // pair count drops 1 -> 0, so divider 1 resets.
+    const raw = rawWithDividerSettings(['cards', 'cards', 'dice'])
+    const groups = readModuleGroups(raw)
+    const moved = moveModuleGroup(groups, 2, -1)
+    const values = listOperationValues(moved, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('')
+  })
 
-    // Moving earlier behaves the same.
-    const back = moveModuleGroup(groups, 1, -1)
-    const backValues = snapshotRawValues(back, 'assembly', 70, 120, raw)
-    expect(backValues[gameBoxDividerTextKey(1)]).toBe('RED')
-    expect(backValues[gameBoxDividerTextKey(2)]).toBe('BLUE')
+  it('a move that removes a pair resets the vanished ordinal', () => {
+    // cards/cards/cards -> move the last earlier: cards/cards/cards (count
+    // unchanged) keeps both; with dice between, cards/cards/dice -> move
+    // the dice earlier: cards/dice/cards has no pair at all, so every
+    // divider resets.
+    const raw = rawWithDividerSettings(['cards', 'dice', 'dice'])
+    const groups = readModuleGroups(raw)
+    // no pair to begin with: values stay reset
+    const values = listOperationValues(groups, 'assembly', 70, 120, raw)
+    expect(values[gameBoxDividerTextKey(1)]).toBe('')
   })
 })

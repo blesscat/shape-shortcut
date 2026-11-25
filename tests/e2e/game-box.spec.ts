@@ -736,6 +736,32 @@ test.describe('game-box', () => {
     )
   })
 
+  test('a list operation that creates a pair starts it from the defaults', async ({
+    page,
+    browserName,
+  }) => {
+    test.setTimeout(240_000)
+    skipHeadlessFirefoxWithoutWebGL(browserName)
+    await openGameBox(page)
+    await addModule(page, 'cards')
+    await addModule(page, 'dice')
+
+    // The pair between modules 1|2 carries the user's label.
+    await page.getByTestId('game-box-divider-1-text').fill('RED')
+
+    // Moving the dice behind the cards pair removes that pair: the ordinal
+    // resets, so the input disappears from the panel.
+    await page.getByTestId('game-box-module-2-move-later').click()
+    await expect(page.getByTestId('game-box-divider-1-text')).toHaveCount(0)
+
+    // Adding a cards module creates a brand-new pair: it must start from
+    // the defaults, not resurrect the old label.
+    await addModule(page, 'cards')
+    await expect(page.getByTestId('game-box-divider-1-text')).toHaveValue('', {
+      timeout: 5_000,
+    })
+  })
+
   test('gates the two-color 3MF to the parts that carry art', async ({
     page,
     browserName,

@@ -2,6 +2,7 @@ import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_DIVIDER_INDICES,
   GAME_BOX_MODULE_INDICES,
+  gameBoxLayout,
   gameBoxDividerStyleKey,
   gameBoxDividerTabPositionKey,
   gameBoxDividerTextKey,
@@ -183,6 +184,7 @@ export function dividerAndCoverRawValues(
     ['coverStyle', GAME_BOX_CONFIGURATION.defaultStyle],
     ['usesCoverSvg', 'false'],
     ['coverSvgFingerprint', ''],
+    ['coverSvgAspect', '0'],
   ]
   for (const [key, fallback] of coverTextDefaults) {
     values[key] = raw?.[key] ?? fallback
@@ -198,6 +200,36 @@ export function dividerAndCoverRawValues(
       GAME_BOX_CONFIGURATION.defaultStyle
   }
   return values
+}
+
+/**
+ * The raw values a list operation writes back, in one place so every caller
+ * applies the same rule (the lead decision on `dividerN`): the fields belong
+ * to the ordinal N, so every ordinal above `min(old pair count, new pair
+ * count)` falls back to its defaults - both the vanished ones and the ones a
+ * newly created pair brings into existence - and the surviving ordinals keep
+ * their fields even when a move relocates the physical boundary they sit on.
+ */
+export function listOperationValues(
+  groups: readonly GameBoxModuleGroup[],
+  part: GameBoxPart,
+  cardWidth: number,
+  cardHeight: number,
+  previousRaw: RawParameters,
+): Partial<Record<ModelParameterKey, string>> {
+  const snapshot = moduleSnapshot(groups, part, cardWidth, cardHeight)
+  const newPairCount = gameBoxLayout(snapshot).dividerCount
+  const oldSnapshot = moduleSnapshot(
+    readModuleGroups(previousRaw),
+    part,
+    cardWidth,
+    cardHeight,
+  )
+  const oldPairCount = gameBoxLayout(oldSnapshot).dividerCount
+  return resetInactiveDividerValues(
+    snapshotRawValues(groups, part, cardWidth, cardHeight, previousRaw),
+    Math.min(oldPairCount, newPairCount),
+  )
 }
 
 /**

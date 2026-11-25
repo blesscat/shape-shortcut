@@ -50,9 +50,8 @@
     deleteModuleGroup,
     moduleSnapshot,
     moveModuleGroup,
+    listOperationValues,
     readModuleGroups,
-    resetInactiveDividerValues,
-    snapshotRawValues,
     type GameBoxModuleGroup,
   } from './module-list'
 
@@ -122,7 +121,7 @@
     })),
   )
 
-  /** Part names carry the print count of the dividers and the module number. */
+  /** Part names carry the divider ordinal and the module number. */
   function partLabel(option: GameBoxPart): string {
     const dividerIndex = gameBoxPartDividerOrdinal(option)
     if (dividerIndex !== null) {
@@ -221,6 +220,12 @@
   ): void {
     onInputChange('usesCoverSvg', 'true')
     onInputChange('coverSvgFingerprint', record.fingerprint)
+    // The height/width ratio of the cleaned outlines: validation judges the
+    // scaled SVG height from it, font-free.
+    onInputChange(
+      'coverSvgAspect',
+      String(record.outlines.height / record.outlines.width),
+    )
     svgErrorKey = null
     svgStatusKey = sessionOnly
       ? 'panel.gameBox.svgSessionOnly'
@@ -249,6 +254,7 @@
     svgStorage.clear()
     onInputChange('usesCoverSvg', 'false')
     onInputChange('coverSvgFingerprint', '')
+    onInputChange('coverSvgAspect', '0')
     svgStatusKey = null
     svgErrorKey = null
   }
@@ -274,27 +280,24 @@
 
   /**
    * Writes the complete module list back as one snapshot: the groups are
-   * re-packed, the inactive ones are reset, divider cards beyond the new
-   * boundary count fall back to their defaults, and a selection that no
-   * longer exists falls back to the assembly.
+   * re-packed, the divider cards beyond the cards-pair count of the new
+   * layout fall back to their defaults, and a selection that no longer
+   * exists falls back to the assembly. The count comes from the layout in
+   * {@file ./module-list.ts} - the same definition the part selector uses.
    */
   function applyGroups(nextGroups: GameBoxModuleGroup[]): void {
     const nextSnapshot = moduleSnapshot(nextGroups, part, cardWidth, cardHeight)
     const nextParts = gameBoxAvailableParts(nextSnapshot)
     const nextPart = nextParts.includes(part) ? part : 'assembly'
-    const boundaryCount =
-      nextGroups.filter((group) => group.type !== 'none').length - 1
-    const values = resetInactiveDividerValues(
-      snapshotRawValues(
+    onInputsChange(
+      listOperationValues(
         nextGroups,
         nextPart,
         cardWidth,
         cardHeight,
         rawParameters,
       ),
-      Math.max(boundaryCount, 0),
     )
-    onInputsChange(values)
   }
 
   function addModule(type: GameBoxModuleType): void {
