@@ -183,18 +183,20 @@ export const GEOMETRY_BASELINE: Record<ModelId, GeometryBaselineEntry> = {
     },
   },
   'game-box': {
-    // The default design is slot-rounded again: the storage depth is a whole
-    // multiple of the 3 mm slot pitch (63 mm) and the grip flap is gone, so
-    // the geometry matches the values origin/main records.
+    // Recorded after add-game-box-cover-and-divider-cards on top of the
+    // reworked #215: the assembly now also carries the seated cover plate
+    // with its raised GAME title (5076 mm3 plate + four glyph solids on
+    // top of the 108989.878666 mm3 box+lid of origin/main; the bounds are
+    // the origin/main ones because the cover sits inside the front lip).
     build: {
-      volume: 108989.878666,
+      volume: 114090.238551,
       bounds: [-38.25, -35.45, 0, 38.25, 33.6, 129],
-      solids: 2,
+      solids: 7,
     },
     buildWithParts: {
-      volume: 108989.878666,
+      volume: 114090.238551,
       bounds: [-38.25, -35.45, 0, 38.25, 33.6, 129],
-      solids: 2,
+      solids: 7,
     },
   },
   opengrid: {

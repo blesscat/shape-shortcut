@@ -11,12 +11,15 @@ import {
   validateOpenGridGenerationSupport,
   validateOpenGridParameters,
   validateModelParameters,
+  isGameBoxParameters,
+  type CardBoxSvgOutlineData,
   type ModelId,
   type ModelParameterKey,
   type ModelParameterValues,
   type OpenGridParameters,
 } from '../../../../cad-contract/units'
 import { loadCardBoxCoverSvgForRequest } from '../../../../features/cad/card-box-svg/store'
+import { loadGameBoxCoverSvgForRequest } from '../../../../features/cad/game-box-cover-svg/store'
 import { newOperationId } from '../../../../features/cad/worker-client'
 import {
   errorForInput,
@@ -34,6 +37,28 @@ function previewConfigForModel(modelId: ModelId) {
     tolerance: PROTOTYPE_CONFIGURATION.boundsTolerance,
     angularTolerance: 0.1,
   }
+}
+
+/**
+ * The cleaned cover-SVG outlines for a generate request: only a component
+ * whose parameters say they use imported art carries the payload, loaded
+ * from that component's own store when the fingerprint still matches.
+ */
+function coverSvgForRequest(
+  modelId: ModelId,
+  parameters: ModelParameterValues,
+): CardBoxSvgOutlineData | undefined {
+  if (modelId === 'card-box' && isCardBoxParameters(parameters)) {
+    return parameters.usesCoverSvg
+      ? loadCardBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
+      : undefined
+  }
+  if (modelId === 'game-box' && isGameBoxParameters(parameters)) {
+    return parameters.usesCoverSvg
+      ? loadGameBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
+      : undefined
+  }
+  return undefined
 }
 
 function isOpenConnectShelfGridCount(value: number): boolean {
@@ -126,12 +151,7 @@ export function createModelGenerationHandlers(
         return
       }
     }
-    const coverSvg =
-      modelId === 'card-box' &&
-      isCardBoxParameters(parameters) &&
-      parameters.usesCoverSvg
-        ? loadCardBoxCoverSvgForRequest(parameters.coverSvgFingerprint)
-        : undefined
+    const coverSvg = coverSvgForRequest(modelId, parameters)
     const requestId = client.send({
       kind: 'model.generate',
       operationId,

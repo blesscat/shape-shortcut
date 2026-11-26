@@ -28,12 +28,26 @@ import {
   sceneInstanceGenerateCommand,
 } from './cad-worker-scene'
 import { CadWorkerLifecycle } from './cad-worker-lifecycle'
+
 import type {
   CadWorkerBuildOptions,
   EventSink,
   ProgressEmitter,
 } from './cad-worker-types'
 import { cadErrorCodeFor, cadErrorStageFor } from './error-mapping'
+
+/**
+ * Reads the divider ordinal the game-box builder suffixes onto the
+ * too-wide error (`GAME_BOX_DIVIDER_TEXT_TOO_WIDE:<n>`), so the localized
+ * message can name the plate that does not fit. Undefined when the error
+ * carries no ordinal.
+ */
+export function gameBoxTooWideDividerOrdinal(
+  message: string,
+): number | undefined {
+  const match = message.match(/GAME_BOX_DIVIDER_TEXT_TOO_WIDE:(\d+)/)
+  return match ? Number(match[1]) : undefined
+}
 
 export type { CadWorkerBuildOptions } from './cad-worker-types'
 
@@ -464,6 +478,33 @@ export class CadWorkerRuntime {
       )
     }
     if (code === 'GAME_BOX_GEOMETRY_INVALID') {
+      if (message.includes('GAME_BOX_DIVIDER_TEXT_TOO_WIDE')) {
+        const ordinal = gameBoxTooWideDividerOrdinal(message)
+        return makeError(
+          'building',
+          code,
+          diagnostic('validation.gameBoxDividerTextTooWide', {
+            ...(ordinal !== undefined ? { divider: ordinal } : {}),
+          }),
+          true,
+        )
+      }
+      if (message.includes('GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA')) {
+        return makeError(
+          'building',
+          code,
+          diagnostic('diagnostic.gameBoxCoverArtOutsideSafeArea'),
+          true,
+        )
+      }
+      if (message.includes('GAME_BOX_SVG_')) {
+        return makeError(
+          'building',
+          code,
+          diagnostic('diagnostic.gameBoxSvgUnsupported'),
+          true,
+        )
+      }
       return makeError(
         'building',
         code,

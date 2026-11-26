@@ -5,6 +5,9 @@ import {
   cardBoxInteriorWidth,
   cardBoxOuterDepth,
   cardBoxOuterWidth,
+  cardBoxToken,
+  type CardBoxStyle,
+  type CardBoxTabPosition,
 } from './card-box'
 import { PROTOTYPE_CONFIGURATION } from './prototype-configuration'
 
@@ -36,14 +39,39 @@ export const GAME_BOX_MODULE_TYPES: readonly GameBoxModuleType[] = [
   'dice',
 ]
 
+/** Module boundaries that carry a divider plate: up to five cards pairs. */
+export const GAME_BOX_DIVIDER_INDICES = [1, 2, 3, 4, 5] as const
+
+export type GameBoxDividerIndex = (typeof GAME_BOX_DIVIDER_INDICES)[number]
+
+/** Tab position of one divider card; the values are the card-box values. */
+export type GameBoxTabPosition = CardBoxTabPosition
+
+export const GAME_BOX_TAB_POSITIONS: readonly GameBoxTabPosition[] = [
+  'left',
+  'center',
+  'right',
+]
+
+/** Art style of one divider card or of the cover; card-box values. */
+export type GameBoxStyle = CardBoxStyle
+
+export const GAME_BOX_STYLES: readonly GameBoxStyle[] = ['raised', 'flat']
+
 export type GameBoxPart =
-  'assembly' | 'box' | 'lid' | 'divider' | `module${GameBoxModuleIndex}`
+  | 'assembly'
+  | 'box'
+  | 'lid'
+  | 'cover'
+  | `divider${GameBoxDividerIndex}`
+  | `module${GameBoxModuleIndex}`
 
 export const GAME_BOX_PARTS: readonly GameBoxPart[] = [
   'assembly',
   'box',
   'lid',
-  'divider',
+  'cover',
+  ...GAME_BOX_DIVIDER_INDICES.map((index) => `divider${index}` as GameBoxPart),
   ...GAME_BOX_MODULE_INDICES.map((index) => `module${index}` as GameBoxPart),
 ]
 
@@ -51,6 +79,11 @@ export type GameBoxModuleTypeKey = `module${GameBoxModuleIndex}Type`
 export type GameBoxModuleCardDepthKey = `module${GameBoxModuleIndex}CardDepth`
 export type GameBoxModuleDiceSizeKey = `module${GameBoxModuleIndex}DiceSize`
 export type GameBoxModuleDiceCountKey = `module${GameBoxModuleIndex}DiceCount`
+
+export type GameBoxDividerTextKey = `divider${GameBoxDividerIndex}Text`
+export type GameBoxDividerTabPositionKey =
+  `divider${GameBoxDividerIndex}TabPosition`
+export type GameBoxDividerStyleKey = `divider${GameBoxDividerIndex}Style`
 
 export type GameBoxParameterKey =
   | 'part'
@@ -60,11 +93,34 @@ export type GameBoxParameterKey =
   | GameBoxModuleCardDepthKey
   | GameBoxModuleDiceSizeKey
   | GameBoxModuleDiceCountKey
+  | GameBoxDividerTextKey
+  | GameBoxDividerTabPositionKey
+  | GameBoxDividerStyleKey
+  | 'coverTitle'
+  | 'coverTitleTextHeight'
+  | 'coverSubtitle'
+  | 'coverSubtitleTextHeight'
+  | 'coverSvgWidth'
+  | 'coverVerticalPosition'
+  | 'coverStyle'
+  | 'usesCoverSvg'
+  | 'coverSvgFingerprint'
+  | 'coverSvgAspect'
 
 export type GameBoxParameters = {
   part: GameBoxPart
   cardWidth: number
   cardHeight: number
+  coverTitle: string
+  coverTitleTextHeight: number
+  coverSubtitle: string
+  coverSubtitleTextHeight: number
+  coverSvgWidth: number
+  coverVerticalPosition: number
+  coverStyle: GameBoxStyle
+  usesCoverSvg: boolean
+  coverSvgFingerprint: string
+  coverSvgAspect: number
 } & {
   [Key in GameBoxModuleTypeKey]: GameBoxModuleType
 } & {
@@ -73,6 +129,12 @@ export type GameBoxParameters = {
   [Key in GameBoxModuleDiceSizeKey]: number
 } & {
   [Key in GameBoxModuleDiceCountKey]: number
+} & {
+  [Key in GameBoxDividerTextKey]: string
+} & {
+  [Key in GameBoxDividerTabPositionKey]: GameBoxTabPosition
+} & {
+  [Key in GameBoxDividerStyleKey]: GameBoxStyle
 }
 
 /** Parameter key of the module type field of the given module. */
@@ -104,6 +166,46 @@ export function gameBoxModuleDiceCountKey(
 }
 
 /**
+ * Parameter key of the label text field of the given divider card. `dividerN`
+ * is the Nth boundary that carries a divider plate (the Nth boundary between
+ * two adjacent `cards` modules), front to back.
+ */
+export function gameBoxDividerTextKey(
+  index: GameBoxDividerIndex,
+): GameBoxDividerTextKey {
+  return `divider${index}Text` as GameBoxDividerTextKey
+}
+
+/** Parameter key of the tab position field of the given divider card. */
+export function gameBoxDividerTabPositionKey(
+  index: GameBoxDividerIndex,
+): GameBoxDividerTabPositionKey {
+  return `divider${index}TabPosition` as GameBoxDividerTabPositionKey
+}
+
+/** Parameter key of the style field of the given divider card. */
+export function gameBoxDividerStyleKey(
+  index: GameBoxDividerIndex,
+): GameBoxDividerStyleKey {
+  return `divider${index}Style` as GameBoxDividerStyleKey
+}
+
+/**
+ * Divider ordinal of a divider part (`divider3` is the third divider plate),
+ * or null for the parts that are not divider cards.
+ */
+export function gameBoxPartDividerOrdinal(
+  part: GameBoxPart,
+): GameBoxDividerIndex | null {
+  if (!part.startsWith('divider')) return null
+  const index = Number(part.slice('divider'.length))
+  const match = GAME_BOX_DIVIDER_INDICES.find(
+    (candidate) => candidate === index,
+  )
+  return (match as GameBoxDividerIndex | undefined) ?? null
+}
+
+/**
  * The 27 flat parameter keys of the component: `part`, the two card size
  * fields and four fields per module group.
  */
@@ -120,6 +222,25 @@ function buildGameBoxParameterKeys(): GameBoxParameterKey[] {
       gameBoxModuleDiceCountKey(index),
     )
   }
+  for (const index of GAME_BOX_DIVIDER_INDICES) {
+    keys.push(
+      gameBoxDividerTextKey(index),
+      gameBoxDividerTabPositionKey(index),
+      gameBoxDividerStyleKey(index),
+    )
+  }
+  keys.push(
+    'coverTitle',
+    'coverTitleTextHeight',
+    'coverSubtitle',
+    'coverSubtitleTextHeight',
+    'coverSvgWidth',
+    'coverVerticalPosition',
+    'coverStyle',
+    'usesCoverSvg',
+    'coverSvgFingerprint',
+    'coverSvgAspect',
+  )
   return keys
 }
 
@@ -133,6 +254,9 @@ const GAME_BOX_DEFAULTS = {
   diceCount: 9,
   moduleType: 'cards' as GameBoxModuleType,
   firstModuleCardDepth: 60,
+  dividerText: '',
+  coverTitle: 'GAME',
+  coverSubtitle: '',
 } as const
 
 /**
@@ -160,6 +284,31 @@ export const GAME_BOX_CONFIGURATION = {
   diceHolderTopMargin: 1,
   /** How deep a tenon is buried in the holder body. */
   tenonRootDepth: 0.5,
+  /** Label cap per divider card; the same value the card-box divider uses. */
+  dividerTextMaxLength: CARD_BOX_CONFIGURATION.dividerTextMaxLength,
+  /** Label cap per cover line; the same value the card-box cover uses. */
+  coverTextMaxLength: CARD_BOX_CONFIGURATION.coverTextMaxLength,
+  rangesCover: {
+    // Owner decision 2026-11-26 (whole millimetres): the two cover text
+    // heights take whole millimetres only, so the slider cannot stop on a
+    // half value the raw parser would reject. Everything else stays
+    // card-box's range.
+    coverTitleTextHeight: {
+      ...CARD_BOX_CONFIGURATION.coverTitleTextHeight,
+      step: 1,
+    },
+    coverSubtitleTextHeight: {
+      ...CARD_BOX_CONFIGURATION.coverSubtitleTextHeight,
+      step: 1,
+    },
+    coverSvgWidth: CARD_BOX_CONFIGURATION.coverSvgWidth,
+    coverVerticalPosition: CARD_BOX_CONFIGURATION.coverVerticalPosition,
+  },
+  defaultTabPosition: CARD_BOX_CONFIGURATION.defaultTabPosition,
+  defaultStyle: CARD_BOX_CONFIGURATION.defaultStyle,
+  // Owner decision 2026-11-21: the game-box cover reads GAME, deliberately
+  // diverging from the card-box cover's CARDS.
+  defaultCoverTitle: 'GAME',
   ranges: {
     cardWidth: { min: 40, max: 100 },
     cardHeight: { min: 60, max: 150 },
@@ -191,11 +340,34 @@ function buildDefaultParameters(): GameBoxParameters {
     modules[gameBoxModuleDiceSizeKey(index)] = GAME_BOX_DEFAULTS.diceSize
     modules[gameBoxModuleDiceCountKey(index)] = GAME_BOX_DEFAULTS.diceCount
   }
+  const dividers: Record<string, unknown> = {}
+  for (const index of GAME_BOX_DIVIDER_INDICES) {
+    dividers[gameBoxDividerTextKey(index)] = GAME_BOX_DEFAULTS.dividerText
+    dividers[gameBoxDividerTabPositionKey(index)] =
+      CARD_BOX_CONFIGURATION.defaultTabPosition
+    dividers[gameBoxDividerStyleKey(index)] =
+      CARD_BOX_CONFIGURATION.defaultStyle
+  }
   return {
     part: GAME_BOX_DEFAULTS.part,
     cardWidth: GAME_BOX_DEFAULTS.cardWidth,
     cardHeight: GAME_BOX_DEFAULTS.cardHeight,
+    coverTitle: GAME_BOX_DEFAULTS.coverTitle,
+    coverTitleTextHeight: CARD_BOX_CONFIGURATION.coverTitleTextHeight.default,
+    coverSubtitle: GAME_BOX_DEFAULTS.coverSubtitle,
+    coverSubtitleTextHeight:
+      CARD_BOX_CONFIGURATION.coverSubtitleTextHeight.default,
+    coverSvgWidth: CARD_BOX_CONFIGURATION.coverSvgWidth.default,
+    coverVerticalPosition: CARD_BOX_CONFIGURATION.coverVerticalPosition.default,
+    coverStyle: CARD_BOX_CONFIGURATION.defaultStyle,
+    usesCoverSvg: false,
+    coverSvgFingerprint: '',
+    // 0 = unknown aspect: an imported cover always writes the height/width
+    // ratio of its cleaned outlines, so the font-free fit gate can judge the
+    // scaled SVG height without the outline data.
+    coverSvgAspect: 0,
     ...modules,
+    ...dividers,
   } as GameBoxParameters
 }
 
@@ -585,13 +757,64 @@ export function gameBoxAvailableParts(
   parameters: GameBoxParameters,
 ): GameBoxPart[] {
   const layout = gameBoxLayout(parameters)
-  const parts: GameBoxPart[] = ['assembly', 'box', 'lid']
-  if (layout.dividerCount > 0) parts.push('divider')
+  const parts: GameBoxPart[] = ['assembly', 'box', 'lid', 'cover']
+  for (let divider = 1; divider <= layout.dividerCount; divider += 1) {
+    parts.push(`divider${divider}` as GameBoxPart)
+  }
   for (const module of layout.modules) {
     if (module.type === 'dice')
       parts.push(`module${module.index}` as GameBoxPart)
   }
   return parts
+}
+
+/**
+ * Whether the selected part carries accent art and therefore exports a
+ * two-color 3MF: a labelled divider card with non-empty text, or a cover
+ * with title, subtitle or imported SVG. Blank plates and the box parts do
+ * not.
+ */
+export function gameBoxHasAccentArt(parameters: GameBoxParameters): boolean {
+  const dividerIndex = gameBoxPartDividerOrdinal(parameters.part)
+  if (dividerIndex !== null) {
+    return parameters[gameBoxDividerTextKey(dividerIndex)].trim() !== ''
+  }
+  if (parameters.part === 'cover') {
+    return (
+      parameters.coverTitle.trim() !== '' ||
+      parameters.coverSubtitle.trim() !== '' ||
+      parameters.usesCoverSvg
+    )
+  }
+  return false
+}
+
+/**
+ * The safe-area width the cover art must fit: the visible window
+ * (interior width - 2 x 5 mm hidden lips) shrunk by the 2 mm safe margin on
+ * every side. Validation uses it for the exact, font-free cover-fit gate.
+ */
+export function gameBoxCoverSafeAreaWidth(cardWidth: number): number {
+  return (
+    cardBoxInteriorWidth(cardWidth) -
+    2 *
+      (CARD_BOX_CONFIGURATION.hiddenLipWidth +
+        CARD_BOX_CONFIGURATION.coverSafeAreaMargin)
+  )
+}
+
+/**
+ * The safe-area height the cover art must fit: the visible window
+ * (card height - 2 x 5 mm hidden lips) shrunk by the 2 mm safe margin on
+ * every side.
+ */
+export function gameBoxCoverSafeAreaHeight(cardHeight: number): number {
+  return (
+    cardHeight -
+    2 *
+      (CARD_BOX_CONFIGURATION.hiddenLipWidth +
+        CARD_BOX_CONFIGURATION.coverSafeAreaMargin)
+  )
 }
 
 export type GameBoxIssue = {
@@ -759,6 +982,16 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
   const arrangementIssue = moduleArrangementIssue(types)
   if (arrangementIssue) return { valid: false, issues: [arrangementIssue] }
 
+  const dividerFields = validateDividerFields(record)
+  if (!dividerFields.ok) return { valid: false, issues: [dividerFields.issue] }
+
+  const coverFields = validateCoverFields(
+    record,
+    cardWidth.value,
+    cardHeight.value,
+  )
+  if (!coverFields.ok) return { valid: false, issues: [coverFields.issue] }
+
   for (let position = 0; position < types.length; position += 1) {
     if (types[position] !== 'dice') continue
     const index = GAME_BOX_MODULE_INDICES[position]
@@ -785,6 +1018,8 @@ export function validateGameBoxParameters(value: unknown): GameBoxValidation {
     cardDepths,
     diceSizes,
     diceCounts,
+    dividerFields.value,
+    coverFields.value,
   )
   const layout = gameBoxLayout(parameters)
   const depth = layout.storageDepth
@@ -862,11 +1097,14 @@ function buildParameters(
   cardDepths: readonly number[],
   diceSizes: readonly number[],
   diceCounts: readonly number[],
+  dividers: DividerFieldValues,
+  cover: CoverFieldValues,
 ): GameBoxParameters {
   const parameters: Record<string, unknown> = {
     part,
     cardWidth,
     cardHeight,
+    ...cover,
   }
   for (
     let position = 0;
@@ -879,7 +1117,292 @@ function buildParameters(
     parameters[gameBoxModuleDiceSizeKey(index)] = diceSizes[position]
     parameters[gameBoxModuleDiceCountKey(index)] = diceCounts[position]
   }
+  for (const index of GAME_BOX_DIVIDER_INDICES) {
+    parameters[gameBoxDividerTextKey(index)] = dividers.text[index - 1]
+    parameters[gameBoxDividerTabPositionKey(index)] =
+      dividers.tabPositions[index - 1]
+    parameters[gameBoxDividerStyleKey(index)] = dividers.styles[index - 1]
+  }
   return parameters as GameBoxParameters
+}
+
+type DividerFieldValues = {
+  text: readonly string[]
+  tabPositions: readonly GameBoxTabPosition[]
+  styles: readonly GameBoxStyle[]
+}
+
+type CoverFieldValues = {
+  coverTitle: string
+  coverTitleTextHeight: number
+  coverSubtitle: string
+  coverSubtitleTextHeight: number
+  coverSvgWidth: number
+  coverVerticalPosition: number
+  coverStyle: GameBoxStyle
+  usesCoverSvg: boolean
+  coverSvgFingerprint: string
+  coverSvgAspect: number
+}
+
+/**
+ * Validates the five divider-card field groups. Every group validates its
+ * ranges and enums even when its boundary does not exist; a divider card
+ * whose boundary is not one of the cards pairs never reaches the geometry.
+ */
+function validateDividerFields(
+  record: Record<string, unknown>,
+):
+  { ok: true; value: DividerFieldValues } | { ok: false; issue: GameBoxIssue } {
+  const text: string[] = []
+  const tabPositions: GameBoxTabPosition[] = []
+  const styles: GameBoxStyle[] = []
+  for (const index of GAME_BOX_DIVIDER_INDICES) {
+    const textKey = gameBoxDividerTextKey(index)
+    const dividerText = validStringOrDefault(record[textKey], '')
+    if (dividerText.length > GAME_BOX_CONFIGURATION.dividerTextMaxLength) {
+      return {
+        ok: false,
+        issue: {
+          field: textKey,
+          messageId: 'validation.gameBoxTextTooLong',
+          params: { max: GAME_BOX_CONFIGURATION.dividerTextMaxLength },
+        },
+      }
+    }
+    text.push(dividerText)
+
+    const tabKey = gameBoxDividerTabPositionKey(index)
+    const rawTab = record[tabKey]
+    if (
+      rawTab !== undefined &&
+      !GAME_BOX_TAB_POSITIONS.includes(rawTab as GameBoxTabPosition)
+    ) {
+      return {
+        ok: false,
+        issue: {
+          field: tabKey,
+          messageId: 'validation.gameBoxTabPositionInvalid',
+        },
+      }
+    }
+    tabPositions.push(
+      rawTab === undefined
+        ? GAME_BOX_CONFIGURATION.defaultTabPosition
+        : (rawTab as GameBoxTabPosition),
+    )
+
+    const styleKey = gameBoxDividerStyleKey(index)
+    const rawStyle = record[styleKey]
+    if (
+      rawStyle !== undefined &&
+      !GAME_BOX_STYLES.includes(rawStyle as GameBoxStyle)
+    ) {
+      return {
+        ok: false,
+        issue: { field: styleKey, messageId: 'validation.gameBoxStyleInvalid' },
+      }
+    }
+    styles.push(
+      rawStyle === undefined
+        ? GAME_BOX_CONFIGURATION.defaultStyle
+        : (rawStyle as GameBoxStyle),
+    )
+  }
+  return { ok: true, value: { text, tabPositions, styles } }
+}
+
+/** The height/width ratio of an imported cover: 0 means unknown, and a
+ * stored value that is not a positive finite number (negative, NaN) counts
+ * as unknown too - the ratio has no control on the panel, so it never
+ * carries a field error of its own. */
+function coverSvgAspectValue(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) {
+    return 0
+  }
+  return raw
+}
+
+function validStringOrDefault(value: unknown, fallback: string): string {
+  if (value === undefined) return fallback
+  return typeof value === 'string' ? value : fallback
+}
+
+/**
+ * Validates the nine cover fields, then the exact, font-free cover-fit
+ * gate: imported SVG wider than the safe area of the current card size can
+ * never render, so the snapshot is invalid (a smaller card size preset is
+ * not applied, by the not-applicable rule). The font-dependent overflow of
+ * rendered text stays a kernel build-time error.
+ */
+function validateCoverFields(
+  record: Record<string, unknown>,
+  cardWidth: number,
+  cardHeight: number,
+): { ok: true; value: CoverFieldValues } | { ok: false; issue: GameBoxIssue } {
+  const cover = GAME_BOX_CONFIGURATION.rangesCover
+  const coverTitle = validStringOrDefault(
+    record.coverTitle,
+    GAME_BOX_CONFIGURATION.defaultCoverTitle,
+  )
+  if (coverTitle.length > GAME_BOX_CONFIGURATION.coverTextMaxLength) {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverTitle',
+        messageId: 'validation.gameBoxTextTooLong',
+        params: { max: GAME_BOX_CONFIGURATION.coverTextMaxLength },
+      },
+    }
+  }
+
+  const titleHeight = numberInRange(
+    record.coverTitleTextHeight,
+    'coverTitleTextHeight',
+    cover.coverTitleTextHeight.min,
+    cover.coverTitleTextHeight.max,
+    cover.coverTitleTextHeight.default,
+    'mm',
+  )
+  if (!titleHeight.ok) return { ok: false, issue: titleHeight.issue }
+
+  const coverSubtitle = validStringOrDefault(record.coverSubtitle, '')
+  if (coverSubtitle.length > GAME_BOX_CONFIGURATION.coverTextMaxLength) {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverSubtitle',
+        messageId: 'validation.gameBoxTextTooLong',
+        params: { max: GAME_BOX_CONFIGURATION.coverTextMaxLength },
+      },
+    }
+  }
+
+  const subtitleHeight = numberInRange(
+    record.coverSubtitleTextHeight,
+    'coverSubtitleTextHeight',
+    cover.coverSubtitleTextHeight.min,
+    cover.coverSubtitleTextHeight.max,
+    cover.coverSubtitleTextHeight.default,
+    'mm',
+  )
+  if (!subtitleHeight.ok) return { ok: false, issue: subtitleHeight.issue }
+
+  const svgWidth = numberInRange(
+    record.coverSvgWidth,
+    'coverSvgWidth',
+    cover.coverSvgWidth.min,
+    cover.coverSvgWidth.max,
+    cover.coverSvgWidth.default,
+    'mm',
+  )
+  if (!svgWidth.ok) return { ok: false, issue: svgWidth.issue }
+
+  const verticalPosition = numberInRange(
+    record.coverVerticalPosition,
+    'coverVerticalPosition',
+    cover.coverVerticalPosition.min,
+    cover.coverVerticalPosition.max,
+    cover.coverVerticalPosition.default,
+  )
+  if (!verticalPosition.ok) return { ok: false, issue: verticalPosition.issue }
+
+  const rawCoverStyle = record.coverStyle
+  if (
+    rawCoverStyle !== undefined &&
+    !GAME_BOX_STYLES.includes(rawCoverStyle as GameBoxStyle)
+  ) {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverStyle',
+        messageId: 'validation.gameBoxStyleInvalid',
+      },
+    }
+  }
+  const coverStyle =
+    rawCoverStyle === undefined
+      ? GAME_BOX_CONFIGURATION.defaultStyle
+      : (rawCoverStyle as GameBoxStyle)
+
+  const rawUsesSvg = record.usesCoverSvg
+  if (rawUsesSvg !== undefined && typeof rawUsesSvg !== 'boolean') {
+    return {
+      ok: false,
+      issue: { field: 'usesCoverSvg', messageId: 'validation.invalid' },
+    }
+  }
+  const usesCoverSvg = rawUsesSvg === undefined ? false : rawUsesSvg
+
+  const coverSvgFingerprint = validStringOrDefault(
+    record.coverSvgFingerprint,
+    '',
+  )
+  if (usesCoverSvg && coverSvgFingerprint === '') {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverSvgFingerprint',
+        messageId: 'validation.gameBoxSvgFingerprintMissing',
+      },
+    }
+  }
+
+  // The height/width ratio the import wrote into the parameter record: 0
+  // means unknown (the outlines were imported before the ratio existed),
+  // and an unknown ratio cannot be judged here.
+  const aspect = coverSvgAspectValue(record.coverSvgAspect)
+
+  if (
+    usesCoverSvg &&
+    svgWidth.value > gameBoxCoverSafeAreaWidth(cardWidth) + TOLERANCE
+  ) {
+    return {
+      ok: false,
+      issue: {
+        field: 'coverSvgWidth',
+        messageId: 'validation.gameBoxCoverArtOutsideSafeArea',
+      },
+    }
+  }
+
+  // Font-free vertical fit: the scaled SVG height plus the configured text
+  // heights stack inside the safe area of the current card size. Text-only
+  // stacks cannot overflow within the legal ranges, so an overflow always
+  // names the SVG width as the owning field. The rendered text width stays
+  // a kernel build-time check (it needs font metrics).
+  if (usesCoverSvg && aspect > 0) {
+    const svgHeight = svgWidth.value * aspect
+    const stackHeight =
+      svgHeight +
+      (coverTitle.trim() === '' ? 0 : titleHeight.value) +
+      (coverSubtitle.trim() === '' ? 0 : subtitleHeight.value)
+    if (stackHeight > gameBoxCoverSafeAreaHeight(cardHeight) + TOLERANCE) {
+      return {
+        ok: false,
+        issue: {
+          field: 'coverSvgWidth',
+          messageId: 'validation.gameBoxCoverArtTooTall',
+        },
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    value: {
+      coverTitle,
+      coverTitleTextHeight: titleHeight.value,
+      coverSubtitle,
+      coverSubtitleTextHeight: subtitleHeight.value,
+      coverSvgWidth: svgWidth.value,
+      coverVerticalPosition: verticalPosition.value,
+      coverStyle,
+      usesCoverSvg,
+      coverSvgFingerprint,
+      coverSvgAspect: aspect,
+    },
+  }
 }
 
 export function isGameBoxParameters(
@@ -956,7 +1479,7 @@ export function boundsForGameBox(parameters: GameBoxParameters): {
       ],
     }
   }
-  if (parameters.part === 'divider') {
+  if (gameBoxPartDividerOrdinal(parameters.part) !== null) {
     // The plain divider carries no art, so it is only as thick as the plate.
     const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
     return {
@@ -965,6 +1488,18 @@ export function boundsForGameBox(parameters: GameBoxParameters): {
         halfPlate,
         parameters.cardHeight + CARD_BOX_CONFIGURATION.dividerTabHeight,
         CARD_BOX_CONFIGURATION.dividerPlateThickness,
+      ],
+    }
+  }
+  if (parameters.part === 'cover') {
+    // The cover plate: interior width x card height x 0.6 mm.
+    const halfInterior = cardBoxInteriorWidth(parameters.cardWidth) / 2
+    return {
+      min: [-halfInterior, 0, 0],
+      max: [
+        halfInterior,
+        parameters.cardHeight,
+        CARD_BOX_CONFIGURATION.coverPlateThickness,
       ],
     }
   }
@@ -1027,10 +1562,39 @@ function gameBoxModuleList(parameters: GameBoxParameters): string {
     .join('-')
 }
 
+/** Short stable token for file names (FNV-1a, hex) over the divider label. */
+function gameBoxTextToken(value: string): string {
+  return cardBoxToken(value)
+}
+
+/** File-name token over every cover geometry input, so two different
+ * covers never share a name: title, subtitle, both text heights, SVG width,
+ * vertical position, style and the SVG fingerprint. */
+function gameBoxCoverArtToken(parameters: GameBoxParameters): string {
+  if (!gameBoxHasAccentArt(parameters)) return 'blank'
+  return gameBoxTextToken(
+    [
+      parameters.coverTitle,
+      parameters.coverSubtitle,
+      parameters.coverTitleTextHeight,
+      parameters.coverSubtitleTextHeight,
+      parameters.usesCoverSvg ? parameters.coverSvgFingerprint : '',
+      parameters.usesCoverSvg ? parameters.coverSvgWidth : '',
+      parameters.usesCoverSvg ? parameters.coverSvgAspect : '',
+      parameters.coverVerticalPosition,
+      parameters.coverStyle,
+    ].join('\u0000'),
+  )
+}
+
 /**
- * Export file name. The assembly has no file name; the box parts carry the
- * card size, the derived storage depth and the module list, the dice holder
- * carries the card size, the die size and the die count.
+ * Export file name. The assembly has no file name; the box carries the card
+ * size, the derived storage depth and the module list; the lid follows the
+ * depth alone; every divider card carries its ordinal among the boundaries
+ * that carry a plate (so identical plates never collide) plus tab, style and
+ * text token; the cover carries the card size, the depth, the style and the
+ * art token; the dice holder carries the card size, the die size and the die
+ * count.
  */
 export function gameBoxFileName(parameters: GameBoxParameters): string {
   if (parameters.part === 'assembly') {
@@ -1040,8 +1604,18 @@ export function gameBoxFileName(parameters: GameBoxParameters): string {
   const partModule = gameBoxPartModuleIndex(parameters.part)
   if (partModule === null) {
     const depth = formatDepth(gameBoxStorageDepth(parameters))
-    // Only the box depends on the module list; the lid and the divider
-    // follow the depth alone.
+    const dividerIndex = gameBoxPartDividerOrdinal(parameters.part)
+    if (dividerIndex !== null) {
+      const tab = parameters[gameBoxDividerTabPositionKey(dividerIndex)]
+      const style = parameters[gameBoxDividerStyleKey(dividerIndex)]
+      const text = parameters[gameBoxDividerTextKey(dividerIndex)]
+      return `game-box-divider${dividerIndex}-${size}x${depth}-${tab}-${style}-${gameBoxTextToken(text)}${PROTOTYPE_CONFIGURATION.stepExtension}`
+    }
+    if (parameters.part === 'cover') {
+      return `game-box-cover-${size}x${depth}-${parameters.coverStyle}-${gameBoxCoverArtToken(parameters)}${PROTOTYPE_CONFIGURATION.stepExtension}`
+    }
+    // Only the box depends on the module list; the lid follows the depth
+    // alone.
     const modules =
       parameters.part === 'box' ? gameBoxModuleList(parameters) : ''
     const suffix = modules ? `-${modules}` : ''
@@ -1056,5 +1630,20 @@ export function gameBoxStlFileName(parameters: GameBoxParameters): string {
   return gameBoxFileName(parameters).replace(
     PROTOTYPE_CONFIGURATION.stepExtension,
     PROTOTYPE_CONFIGURATION.stlExtension,
+  )
+}
+
+/**
+ * File name of the two-color 3MF export: exactly the STEP name with the
+ * `.3mf` extension, and only for the parts that carry accent art. Blank
+ * plates, box, lid, dice holders and the assembly return null.
+ */
+export function gameBoxThreeMfFileName(
+  parameters: GameBoxParameters,
+): string | null {
+  if (!gameBoxHasAccentArt(parameters)) return null
+  return gameBoxFileName(parameters).replace(
+    PROTOTYPE_CONFIGURATION.stepExtension,
+    PROTOTYPE_CONFIGURATION.threeMfExtension,
   )
 }

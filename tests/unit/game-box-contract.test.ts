@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CARD_BOX_CONFIGURATION,
   GAME_BOX_CONFIGURATION,
+  GAME_BOX_DIVIDER_INDICES,
   GAME_BOX_PARAMETER_KEYS,
   boundsForGameBox,
   gameBoxAvailableParts,
@@ -8,10 +10,16 @@ import {
   gameBoxLayout,
   gameBoxModuleCardDepthKey,
   gameBoxModuleDiceCountKey,
+  gameBoxDividerStyleKey,
+  gameBoxDividerTabPositionKey,
+  gameBoxDividerTextKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
+  gameBoxDiceLayout,
   gameBoxStlFileName,
   gameBoxStorageDepth,
+  gameBoxThreeMfFileName,
+  gameBoxHasAccentArt,
   isGameBoxParameters,
   modelFileName,
   modelStlFileName,
@@ -20,6 +28,7 @@ import {
   type GameBoxModuleType,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
+import { gameBoxDiceHolderFrame } from '../../src/cad-kernel/components/game-box/dice-holder'
 
 type ModuleSpec = {
   type: GameBoxModuleType
@@ -82,8 +91,8 @@ function expectIssue(
 }
 
 describe('game-box parameter keys', () => {
-  it('carries 27 flat keys generated from the module groups', () => {
-    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(27)
+  it('carries 52 flat keys generated from the module, divider and cover groups', () => {
+    expect(GAME_BOX_PARAMETER_KEYS).toHaveLength(52)
     expect(GAME_BOX_PARAMETER_KEYS).toContain('part')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardWidth')
     expect(GAME_BOX_PARAMETER_KEYS).toContain('cardHeight')
@@ -96,6 +105,27 @@ describe('game-box parameter keys', () => {
       expect(GAME_BOX_PARAMETER_KEYS).toContain(
         gameBoxModuleDiceCountKey(index),
       )
+    }
+    for (const index of GAME_BOX_DIVIDER_INDICES) {
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(gameBoxDividerTextKey(index))
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(
+        gameBoxDividerTabPositionKey(index),
+      )
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(gameBoxDividerStyleKey(index))
+    }
+    for (const key of [
+      'coverTitle',
+      'coverTitleTextHeight',
+      'coverSubtitle',
+      'coverSubtitleTextHeight',
+      'coverSvgWidth',
+      'coverVerticalPosition',
+      'coverStyle',
+      'usesCoverSvg',
+      'coverSvgFingerprint',
+      'coverSvgAspect',
+    ] as const) {
+      expect(GAME_BOX_PARAMETER_KEYS).toContain(key)
     }
   })
 })
@@ -154,7 +184,7 @@ describe('game-box parameter validation', () => {
 
   it('rejects unknown part names', () => {
     expectIssue(
-      snapshot([], { part: 'cover' }),
+      snapshot([], { part: 'tray' }),
       'part',
       'validation.gameBoxPartInvalid',
     )
@@ -257,7 +287,21 @@ describe('game-box parameter validation', () => {
 
   it('rejects a divider part while only one module is active', () => {
     expectIssue(
-      snapshot([{ type: 'cards', cardDepth: 30 }], { part: 'divider' }),
+      snapshot([{ type: 'cards', cardDepth: 30 }], { part: 'divider1' }),
+      'part',
+      'validation.gameBoxDividerUnavailable',
+    )
+  })
+
+  it('rejects a divider part beyond the active boundaries', () => {
+    expectIssue(
+      snapshot(
+        [
+          { type: 'cards', cardDepth: 30 },
+          { type: 'dice', diceSize: 16, diceCount: 9 },
+        ],
+        { part: 'divider2' },
+      ),
       'part',
       'validation.gameBoxDividerUnavailable',
     )
@@ -270,7 +314,7 @@ describe('game-box parameter validation', () => {
           { type: 'cards', cardDepth: 30 },
           { type: 'cards', cardDepth: 20 },
         ],
-        { part: 'divider' },
+        { part: 'divider1' },
       ),
     )
     expect(validation.valid).toBe(true)
@@ -284,7 +328,7 @@ describe('game-box parameter validation', () => {
           { type: 'cards', cardDepth: 30 },
           { type: 'dice', diceSize: 16, diceCount: 9 },
         ],
-        { part: 'divider' },
+        { part: 'divider1' },
       ),
     )
     expect(validation.valid).toBe(false)
@@ -459,7 +503,7 @@ describe('game-box export file names', () => {
     expect(gameBoxAvailableParts(withInactiveFields)).toEqual(
       gameBoxAvailableParts(active),
     )
-    for (const part of ['box', 'lid', 'divider'] as const) {
+    for (const part of ['box', 'lid', 'divider1'] as const) {
       expect(gameBoxFileName({ ...withInactiveFields, part })).toBe(
         gameBoxFileName({ ...active, part }),
       )
@@ -521,5 +565,454 @@ describe('game-box bounds', () => {
     const boxWidth =
       boundsForGameBox(parameters([{ type: 'cards' }])).max[0] * 2
     expect(holderWidth).toBeLessThan(boxWidth)
+  })
+})
+
+describe('game-box divider card fields', () => {
+  it('defaults every divider to a blank left raised card', () => {
+    const validation = validateGameBoxParameters({})
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) return
+    for (const index of [1, 2, 3, 4, 5] as const) {
+      expect(validation.value[gameBoxDividerTextKey(index)]).toBe('')
+      expect(validation.value[gameBoxDividerTabPositionKey(index)]).toBe('left')
+      expect(validation.value[gameBoxDividerStyleKey(index)]).toBe('raised')
+    }
+  })
+
+  it('rejects a label over 20 characters on the owning field', () => {
+    expectIssue(
+      snapshot([], { divider2Text: 'x'.repeat(21) }),
+      'divider2Text',
+      'validation.gameBoxTextTooLong',
+      { max: 20 },
+    )
+  })
+
+  it('accepts a 20-character label', () => {
+    const validation = validateGameBoxParameters(
+      snapshot([], { divider2Text: 'x'.repeat(20) }),
+    )
+    expect(validation.valid).toBe(true)
+  })
+
+  it('rejects an unknown tab position and an unknown style', () => {
+    expectIssue(
+      snapshot([], { divider1TabPosition: 'middle' }),
+      'divider1TabPosition',
+      'validation.gameBoxTabPositionInvalid',
+    )
+    expectIssue(
+      snapshot([], { divider3Style: 'embossed' }),
+      'divider3Style',
+      'validation.gameBoxStyleInvalid',
+    )
+  })
+
+  it('keeps inactive divider groups out of the geometry results', () => {
+    const active = parameters([
+      { type: 'cards', cardDepth: 30 },
+      { type: 'dice', diceSize: 16, diceCount: 9 },
+    ])
+    const withInactiveFields = {
+      ...active,
+      divider3Text: 'unused',
+      divider3TabPosition: 'right',
+      divider3Style: 'flat',
+    } as GameBoxParameters
+    expect(gameBoxLayout(withInactiveFields)).toEqual(gameBoxLayout(active))
+    expect(gameBoxStorageDepth(withInactiveFields)).toBe(
+      gameBoxStorageDepth(active),
+    )
+  })
+})
+
+describe('game-box cover fields', () => {
+  it('defaults the cover to GAME with the agreed numbers', () => {
+    const validation = validateGameBoxParameters({})
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) return
+    expect(validation.value.coverTitle).toBe('GAME')
+    expect(validation.value.coverTitleTextHeight).toBe(6)
+    expect(validation.value.coverSubtitle).toBe('')
+    expect(validation.value.coverSubtitleTextHeight).toBe(5)
+    expect(validation.value.coverSvgWidth).toBe(40)
+    expect(validation.value.coverVerticalPosition).toBe(30)
+    expect(validation.value.coverStyle).toBe('raised')
+    expect(validation.value.usesCoverSvg).toBe(false)
+    expect(validation.value.coverSvgFingerprint).toBe('')
+  })
+
+  it('rejects cover fields outside their ranges on the owning field', () => {
+    expectIssue(
+      snapshot([], { coverTitleTextHeight: 25 }),
+      'coverTitleTextHeight',
+      'validation.invalid',
+      { min: 4, max: 20, unit: 'mm' },
+    )
+    expectIssue(
+      snapshot([], { coverSubtitleTextHeight: 2 }),
+      'coverSubtitleTextHeight',
+      'validation.invalid',
+      { min: 3, max: 12, unit: 'mm' },
+    )
+    expectIssue(
+      snapshot([], { coverSvgWidth: 60 }),
+      'coverSvgWidth',
+      'validation.invalid',
+      { min: 10, max: 58, unit: 'mm' },
+    )
+    expectIssue(
+      snapshot([], { coverVerticalPosition: 101 }),
+      'coverVerticalPosition',
+      'validation.invalid',
+      { min: 0, max: 100 },
+    )
+  })
+
+  it('rejects cover lines over 30 characters', () => {
+    expectIssue(
+      snapshot([], { coverTitle: 'x'.repeat(31) }),
+      'coverTitle',
+      'validation.gameBoxTextTooLong',
+      { max: 30 },
+    )
+    expectIssue(
+      snapshot([], { coverSubtitle: 'x'.repeat(31) }),
+      'coverSubtitle',
+      'validation.gameBoxTextTooLong',
+      { max: 30 },
+    )
+  })
+
+  it('rejects a missing SVG fingerprint when the SVG flag is on', () => {
+    expectIssue(
+      snapshot([], { usesCoverSvg: true, coverSvgFingerprint: '' }),
+      'coverSvgFingerprint',
+      'validation.gameBoxSvgFingerprintMissing',
+    )
+  })
+})
+
+describe('game-box accent art and 3MF file names', () => {
+  it('marks a labelled divider and a decorated cover as art parts', () => {
+    const labelled = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'divider1', divider1Text: 'CATCH' },
+    )
+    const blank = { ...labelled, divider1Text: '' } as GameBoxParameters
+    expect(gameBoxHasAccentArt(labelled)).toBe(true)
+    expect(gameBoxHasAccentArt(blank)).toBe(false)
+    const cover = parameters([{ type: 'cards' }], { part: 'cover' })
+    expect(gameBoxHasAccentArt(cover)).toBe(true)
+    expect(gameBoxHasAccentArt({ ...cover, coverTitle: '  ' })).toBe(false)
+    expect(
+      gameBoxHasAccentArt({ ...cover, coverTitle: '', usesCoverSvg: true }),
+    ).toBe(true)
+    expect(gameBoxHasAccentArt(parameters([{ type: 'cards' }]))).toBe(false)
+    expect(
+      gameBoxHasAccentArt(
+        parameters([{ type: 'dice', diceSize: 16, diceCount: 9 }], {
+          part: 'module1',
+        }),
+      ),
+    ).toBe(false)
+  })
+
+  it('names divider cards by boundary so identical plates never collide', () => {
+    const modules = [
+      { type: 'cards', cardDepth: 30 },
+      { type: 'dice', diceSize: 16, diceCount: 9 },
+      { type: 'cards', cardDepth: 20 },
+    ] as const
+    const first = gameBoxFileName(parameters(modules, { part: 'divider1' }))
+    const second = gameBoxFileName(parameters(modules, { part: 'divider2' }))
+    expect(first).toBe('game-box-divider1-70x120x75-left-raised-blank.step')
+    expect(second).toBe('game-box-divider2-70x120x75-left-raised-blank.step')
+    expect(first).not.toBe(second)
+  })
+
+  it('names divider cards by tab, style and text token', () => {
+    const modules = [
+      { type: 'cards', cardDepth: 30 },
+      { type: 'cards', cardDepth: 20 },
+    ] as const
+    const plain = gameBoxFileName(parameters(modules, { part: 'divider1' }))
+    const tab = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1TabPosition: 'center' }),
+    )
+    const style = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1Style: 'flat' }),
+    )
+    const text = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1Text: 'RED' }),
+    )
+    expect(plain).toBe('game-box-divider1-70x120x57-left-raised-blank.step')
+    expect(tab).toBe('game-box-divider1-70x120x57-center-raised-blank.step')
+    expect(style).toBe('game-box-divider1-70x120x57-left-flat-blank.step')
+    expect(text).toBe('game-box-divider1-70x120x57-left-raised-83ce97fc.step')
+    expect(new Set([plain, tab, style, text]).size).toBe(4)
+  })
+
+  it('derives a stable FNV-1a token for the divider text', () => {
+    const modules = [
+      { type: 'cards', cardDepth: 30 },
+      { type: 'cards', cardDepth: 20 },
+    ] as const
+    const red = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1Text: 'RED' }),
+    )
+    const redAgain = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1Text: 'RED' }),
+    )
+    const blue = gameBoxFileName(
+      parameters(modules, { part: 'divider1', divider1Text: 'BLUE' }),
+    )
+    expect(red).toBe(redAgain)
+    expect(red).not.toBe(blue)
+  })
+
+  it('names the cover after card size, depth, style and art token', () => {
+    const cover = gameBoxFileName(
+      parameters([{ type: 'cards' }], { part: 'cover' }),
+    )
+    expect(cover).toBe('game-box-cover-70x120x63-raised-77fd2fc5.step')
+    const flat = gameBoxFileName(
+      parameters([{ type: 'cards' }], { part: 'cover', coverStyle: 'flat' }),
+    )
+    expect(flat).toContain('-flat-')
+    const titled = gameBoxFileName(
+      parameters([{ type: 'cards' }], {
+        part: 'cover',
+        coverTitle: 'GO FISH',
+      }),
+    )
+    expect(titled).not.toBe(cover)
+    // A blank cover (no title, subtitle or SVG) reads blank.
+    const blank = gameBoxFileName(
+      parameters([{ type: 'cards' }], {
+        part: 'cover',
+        coverTitle: '',
+      }),
+    )
+    expect(blank).toBe('game-box-cover-70x120x63-raised-blank.step')
+  })
+
+  it('gives different cover geometry different names', () => {
+    // Every cover geometry input rides in the token: title, subtitle, both
+    // text heights, SVG width, vertical position, style and fingerprint.
+    const variants = [
+      { part: 'cover' } as Partial<GameBoxParameters>,
+      { part: 'cover', coverTitleTextHeight: 12 } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        coverVerticalPosition: 90,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        coverSubtitle: 'S',
+        coverSubtitleTextHeight: 8,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        usesCoverSvg: true,
+        coverSvgFingerprint: 'abc',
+        coverSvgWidth: 25,
+      } as Partial<GameBoxParameters>,
+      {
+        part: 'cover',
+        usesCoverSvg: true,
+        coverSvgFingerprint: 'abc',
+        coverSvgWidth: 40,
+      } as Partial<GameBoxParameters>,
+      { part: 'cover', coverStyle: 'flat' } as Partial<GameBoxParameters>,
+    ].map((overrides) => gameBoxFileName(parameters([], overrides)))
+    expect(new Set(variants).size).toBe(variants.length)
+  })
+
+  it('names the 3MF exactly like the STEP with the .3mf extension', () => {
+    const labelled = parameters(
+      [
+        { type: 'cards', cardDepth: 30 },
+        { type: 'dice', diceSize: 16, diceCount: 9 },
+      ],
+      { part: 'divider1', divider1Text: 'CATCH' },
+    )
+    expect(gameBoxThreeMfFileName(labelled)).toBe(
+      gameBoxFileName(labelled).replace(/\.step$/, '.3mf'),
+    )
+    const cover = parameters([{ type: 'cards' }], { part: 'cover' })
+    expect(gameBoxThreeMfFileName(cover)).toBe(
+      gameBoxFileName(cover).replace(/\.step$/, '.3mf'),
+    )
+    // Blank plates and the box parts have no 3MF.
+    expect(gameBoxThreeMfFileName({ ...labelled, divider1Text: '' })).toBeNull()
+    expect(gameBoxThreeMfFileName(parameters([{ type: 'cards' }]))).toBeNull()
+    expect(
+      gameBoxThreeMfFileName(
+        parameters([{ type: 'dice', diceSize: 16, diceCount: 9 }], {
+          part: 'module1',
+        }),
+      ),
+    ).toBeNull()
+  })
+
+  it('keeps the box, lid and dice holder names unchanged', () => {
+    expect(
+      gameBoxFileName(
+        parameters(
+          [
+            { type: 'cards', cardDepth: 30 },
+            { type: 'dice', diceSize: 16, diceCount: 9 },
+          ],
+          { part: 'box' },
+        ),
+      ),
+    ).toBe('game-box-box-70x120x54-c30-d16.step')
+    expect(
+      gameBoxFileName(
+        parameters(
+          [
+            { type: 'cards', cardDepth: 30 },
+            { type: 'dice', diceSize: 16, diceCount: 9 },
+          ],
+          { part: 'lid' },
+        ),
+      ),
+    ).toBe('game-box-lid-70x120x54.step')
+    expect(
+      gameBoxFileName(
+        parameters([{ type: 'dice', diceSize: 16, diceCount: 9 }], {
+          part: 'module1',
+        }),
+      ),
+    ).toBe('game-box-dice-holder-70x120-d16x9.step')
+  })
+})
+
+describe('game-box bounds for the new parts', () => {
+  it('frames the cover plate as interior width x card height x 0.6', () => {
+    const bounds = boundsForGameBox(
+      parameters([{ type: 'cards' }], { part: 'cover' }),
+    )
+    expect(bounds.min[2]).toBe(0)
+    expect(bounds.max[2]).toBeCloseTo(0.6, 6)
+    expect(bounds.max[1]).toBe(120)
+    expect(bounds.max[0] - bounds.min[0]).toBeCloseTo(70.5, 6)
+  })
+
+  it('frames every divider card like the plain divider outline', () => {
+    const modules = [
+      { type: 'cards', cardDepth: 30 },
+      { type: 'dice', diceSize: 16, diceCount: 9 },
+    ] as const
+    for (const part of ['divider1', 'divider2'] as const) {
+      const bounds = boundsForGameBox(parameters(modules, { part }))
+      expect(bounds.min[2]).toBe(0)
+      expect(bounds.max[2]).toBeCloseTo(0.85, 6)
+      expect(bounds.max[1]).toBeCloseTo(125, 6)
+      expect(bounds.max[0] - bounds.min[0]).toBeCloseTo(70.85, 6)
+    }
+  })
+})
+
+describe('game-box lists cover and divider parts', () => {
+  it('offers cover and one divider per cards pair', () => {
+    // cards/dice/cards has no cards pair, so the holder is the only
+    // divider in the box.
+    expect(
+      gameBoxAvailableParts(
+        parameters([
+          { type: 'cards', cardDepth: 30 },
+          { type: 'dice', diceSize: 16, diceCount: 9 },
+          { type: 'cards', cardDepth: 20 },
+        ]),
+      ),
+    ).toEqual(['assembly', 'box', 'lid', 'cover', 'module2'])
+    // Two adjacent card modules share one divider plate.
+    expect(
+      gameBoxAvailableParts(
+        parameters([
+          { type: 'cards', cardDepth: 30 },
+          { type: 'cards', cardDepth: 20 },
+        ]),
+      ),
+    ).toEqual(['assembly', 'box', 'lid', 'cover', 'divider1'])
+  })
+
+  it('offers cover even with a single module and no divider', () => {
+    expect(gameBoxAvailableParts(parameters([{ type: 'cards' }]))).toEqual([
+      'assembly',
+      'box',
+      'lid',
+      'cover',
+    ])
+  })
+})
+
+describe('game-box cover and divider fields survive a card-size preset', () => {
+  it('a merged snapshot that only changes the card size keeps every new field', () => {
+    const presetOverrides = { cardWidth: 63, cardHeight: 88 }
+    const merged = {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      divider2Text: 'SPELLS',
+      divider2TabPosition: 'center',
+      divider2Style: 'flat',
+      coverTitle: 'GO FISH',
+      usesCoverSvg: true,
+      coverSvgFingerprint: 'abc',
+      ...presetOverrides,
+    }
+    const validation = validateGameBoxParameters(merged)
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) return
+    expect(validation.value.cardWidth).toBe(63)
+    expect(validation.value.cardHeight).toBe(88)
+    expect(validation.value[gameBoxDividerTextKey(2)]).toBe('SPELLS')
+    expect(validation.value[gameBoxDividerTabPositionKey(2)]).toBe('center')
+    expect(validation.value[gameBoxDividerStyleKey(2)]).toBe('flat')
+    expect(validation.value.coverTitle).toBe('GO FISH')
+    expect(validation.value.usesCoverSvg).toBe(true)
+  })
+
+  it('a preset that provably cannot fit the cover art is not applicable', () => {
+    // The 41x63 card has a 27.5 mm safe area; a 40 mm SVG cannot fit, so the
+    // merged snapshot is invalid and the preset is not applied.
+    const merged = {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      usesCoverSvg: true,
+      coverSvgFingerprint: 'abc',
+      coverSvgWidth: 40,
+      cardWidth: 41,
+      cardHeight: 63,
+    }
+    expect(validateGameBoxParameters(merged).valid).toBe(false)
+  })
+})
+
+describe('game-box dice well ceiling', () => {
+  it('keeps the top margin free above the topmost die, for every valid size', () => {
+    const topMargin = GAME_BOX_CONFIGURATION.diceHolderTopMargin
+    for (const diceSize of [8, 8.5, 12, 16, 20, 25.5, 30] as const) {
+      for (const cardHeight of [60, 63, 88, 91, 120, 150] as const) {
+        // The ceiling comes from the kernel frame (the built geometry), not
+        // from algebra over the same constants, so a kernel change that
+        // moves the well floor or the die stack breaks this assertion.
+        const frame = gameBoxDiceHolderFrame({
+          cardWidth: 70,
+          cardHeight,
+          diceSize,
+          diceCount: 1,
+        })
+        const dieCeiling = frame.wellFloorZ + frame.layout.layers * frame.pitch
+        expect(
+          dieCeiling,
+          `die ceiling at ${diceSize}x${cardHeight}`,
+        ).toBeCloseTo(cardHeight - topMargin, 6)
+      }
+    }
   })
 })

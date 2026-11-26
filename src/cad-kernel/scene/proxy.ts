@@ -12,21 +12,27 @@ import {
   cardBoxOuterDepth,
   cardBoxDividerTabCenterX,
   cardBoxDividerWidth,
+  cardBoxInteriorWidth,
   cardBoxOuterWidth,
   CARD_BOX_CONFIGURATION,
   HEXAGONAL_COLUMN_CONFIGURATION,
   gameBoxDiceHolderOuterWidth,
   gameBoxDiceHolderThickness,
+  gameBoxDividerTabPositionKey,
   gameBoxModuleDiceSizeKey,
+  gameBoxPartDividerOrdinal,
   gameBoxPartModuleIndex,
+  gameBoxStorageDepth,
   validateModelParameters,
   type CardBoxParameters,
+  type GameBoxDividerIndex,
   type GameBoxModuleIndex,
   type GameBoxParameters,
   type HexagonalColumnParameters,
   type ModelId,
   type ModelParameterValues,
 } from '../../cad-contract/units'
+import { CARD_BOX_CHANNEL_SLOT_DEPTH } from '../components/card-box/box'
 import { buildModelBRep, type KernelBuildContext } from '../model'
 import {
   gameBoxGeometryOf,
@@ -248,45 +254,79 @@ function gameBoxProxy(parameters: GameBoxParameters): Shape3D {
   if (parameters.part === 'assembly' || parameters.part === 'lid') {
     shapes.push(...gameBoxProxyLid(parameters))
   }
-  if (parameters.part === 'assembly' || parameters.part === 'divider') {
+  const proxyDividerOrdinal = gameBoxPartDividerOrdinal(parameters.part)
+  if (parameters.part === 'assembly') {
+    // The dividers stand on the boundaries that carry a plate.
     const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
     const bodyHeight = parameters.cardHeight
-    const tabHeight = c.dividerTabHeight
     const halfThickness = c.dividerPlateThickness / 2
-    if (parameters.part === 'assembly') {
-      // The dividers stand on the module boundaries.
-      for (const y of gameBoxGeometryOf(parameters).dividerCentres) {
-        shapes.push(
-          makeBox(
-            [-halfPlate, y - halfThickness, c.floorThickness],
-            [halfPlate, y + halfThickness, c.floorThickness + bodyHeight],
-          ) as Shape3D,
-        )
-      }
-    } else {
-      // Single-part scene preview: flat on the bed, matching the
-      // print-orientation contract bounds.
-      const tabX = cardBoxDividerTabCenterX(c.defaultTabPosition, halfPlate * 2)
+    for (const y of gameBoxGeometryOf(parameters).dividerCentres) {
       shapes.push(
         makeBox(
-          [-halfPlate, 0, 0],
-          [halfPlate, bodyHeight, c.dividerPlateThickness],
-        ) as Shape3D,
-        makeBox(
-          [tabX - c.dividerTabBaseWidth / 2, bodyHeight, 0],
-          [
-            tabX + c.dividerTabBaseWidth / 2,
-            bodyHeight + tabHeight,
-            c.dividerPlateThickness,
-          ],
+          [-halfPlate, y - halfThickness, c.floorThickness],
+          [halfPlate, y + halfThickness, c.floorThickness + bodyHeight],
         ) as Shape3D,
       )
     }
+  } else if (proxyDividerOrdinal !== null) {
+    const halfPlate = cardBoxDividerWidth(parameters.cardWidth) / 2
+    const bodyHeight = parameters.cardHeight
+    const tabHeight = c.dividerTabHeight
+    // Single-part scene preview: flat on the bed, matching the
+    // print-orientation contract bounds. The tab follows the divider
+    // card's own tab position.
+    const dividerOrdinal: GameBoxDividerIndex = proxyDividerOrdinal
+    const tabX = cardBoxDividerTabCenterX(
+      parameters[gameBoxDividerTabPositionKey(dividerOrdinal)],
+      halfPlate * 2,
+    )
+    shapes.push(
+      makeBox(
+        [-halfPlate, 0, 0],
+        [halfPlate, bodyHeight, c.dividerPlateThickness],
+      ) as Shape3D,
+      makeBox(
+        [tabX - c.dividerTabBaseWidth / 2, bodyHeight, 0],
+        [
+          tabX + c.dividerTabBaseWidth / 2,
+          bodyHeight + tabHeight,
+          c.dividerPlateThickness,
+        ],
+      ) as Shape3D,
+    )
   }
   const moduleIndex = gameBoxPartModuleIndex(parameters.part)
   if (parameters.part === 'assembly' || moduleIndex !== null) {
     for (const holder of gameBoxProxyHolders(parameters, moduleIndex)) {
       shapes.push(holder)
+    }
+  }
+  if (parameters.part === 'assembly' || parameters.part === 'cover') {
+    // Assembly: the cover stands in the front channel, art facing the
+    // front. Single-part scene preview: flat on the bed, matching the
+    // print-orientation contract bounds.
+    if (parameters.part === 'assembly') {
+      const halfSketchY = cardBoxOuterDepth(gameBoxStorageDepth(parameters)) / 2
+      const channelOuterY = -(halfSketchY + CARD_BOX_CHANNEL_SLOT_DEPTH)
+      const halfInterior = cardBoxInteriorWidth(parameters.cardWidth) / 2
+      shapes.push(
+        makeBox(
+          [-halfInterior, channelOuterY, c.floorThickness],
+          [
+            halfInterior,
+            channelOuterY + c.coverPlateThickness,
+            c.floorThickness + parameters.cardHeight,
+          ],
+        ) as Shape3D,
+      )
+    } else {
+      const halfInterior = cardBoxInteriorWidth(parameters.cardWidth) / 2
+      shapes.push(
+        makeBox(
+          [-halfInterior, 0, 0],
+          [halfInterior, parameters.cardHeight, c.coverPlateThickness],
+        ) as Shape3D,
+      )
     }
   }
   return compoundShapes(shapes)

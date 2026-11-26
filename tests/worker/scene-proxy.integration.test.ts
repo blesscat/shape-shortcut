@@ -129,14 +129,23 @@ const CASES: Array<{ modelId: ModelId; parameters: ModelParameterValues }> = [
   },
   {
     modelId: 'game-box',
+    parameters: {
+      ...GAME_BOX_CONFIGURATION.defaultParameters,
+      part: 'divider1',
+      module2Type: 'cards',
+    },
+  },
+  {
+    modelId: 'game-box',
     parameters: { ...GAME_BOX_CONFIGURATION.defaultParameters },
   },
   {
     modelId: 'game-box',
     parameters: {
       ...GAME_BOX_CONFIGURATION.defaultParameters,
-      part: 'divider',
+      part: 'divider2',
       module2Type: 'cards',
+      module3Type: 'cards',
     },
   },
   {

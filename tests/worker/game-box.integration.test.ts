@@ -290,14 +290,20 @@ function openBandsOfWall(
 
 /**
  * The parts of the assembly: the box, the lid, one divider per pair of
- * card modules and one dice holder per dice module.
+ * card modules, one dice holder per dice module and the seated cover. The
+ * cover contributes the solids its own build produces (the plate plus one
+ * solid per raised glyph of the GAME title).
  */
-function expectedPartCount(params: GameBoxParameters): number {
+async function expectedPartCount(params: GameBoxParameters): Promise<number> {
   const layout = gameBoxLayout(params)
   const diceModules = layout.modules.filter(
     (module) => module.type === 'dice',
   ).length
-  return 2 + layout.dividerCount + diceModules
+  const coverBuild = await buildGameBox({ ...params, part: 'cover' })
+  const coverSolids = solidsOf(coverBuild.shape).length
+  for (const solid of solidsOf(coverBuild.shape)) solid.delete()
+  coverBuild.shape.delete()
+  return 2 + layout.dividerCount + diceModules + coverSolids
 }
 
 /**
@@ -317,8 +323,8 @@ function holderSolids(
 }
 
 describe('game-box box part', () => {
-  it('builds one solid on the bed', () => {
-    const build = buildGameBox(
+  it('builds one solid on the bed', async () => {
+    const build = await buildGameBox(
       moduleParameters(
         [
           { type: 'cards', cardDepth: 30 },
@@ -336,7 +342,7 @@ describe('game-box box part', () => {
     }
   })
 
-  it('cuts a slot every 3 mm into both side walls', () => {
+  it('cuts a slot every 3 mm into both side walls', async () => {
     const params = moduleParameters([
       { type: 'cards', cardDepth: 30 },
       { type: 'dice', diceSize: 16, diceCount: 9 },
@@ -346,7 +352,7 @@ describe('game-box box part', () => {
     const geometry = gameBoxCardBoxGeometry(params)
     const frontWallY = cardBoxInnerFrontY(geometry)
     const wallX = cardBoxInteriorWidth(params.cardWidth) / 2
-    const build = buildGameBox({ ...params, part: 'box' })
+    const build = await buildGameBox({ ...params, part: 'box' })
     try {
       expect(layout.slotCenters).toHaveLength(layout.storageDepth / 3 - 1)
       for (const side of [1, -1] as const) {
@@ -376,13 +382,13 @@ describe('game-box box part', () => {
     }
   })
 
-  it('keeps the first and the last slot 3 mm clear of the box ends', () => {
+  it('keeps the first and the last slot 3 mm clear of the box ends', async () => {
     const params = moduleParameters([{ type: 'cards', cardDepth: 60 }])
     const layout = gameBoxLayout(params)
     const geometry = gameBoxCardBoxGeometry(params)
     const frontWallY = cardBoxInnerFrontY(geometry)
     const wallX = cardBoxInteriorWidth(params.cardWidth) / 2
-    const build = buildGameBox({ ...params, part: 'box' })
+    const build = await buildGameBox({ ...params, part: 'box' })
     try {
       // The front wall face and the back wall face carry no slot.
       for (const distance of [0, layout.storageDepth]) {
@@ -416,7 +422,7 @@ describe('game-box lid and divider against the card box', () => {
     })
     const depth = gameBoxLayout(params).storageDepth
     expect(depth).toBeCloseTo(72, 6)
-    const gameBoxBuild = buildGameBox(params)
+    const gameBoxBuild = await buildGameBox(params)
     const cardBoxBuild = await buildCardBox({
       ...CARD_BOX_CONFIGURATION.defaultParameters,
       part: 'lid',
@@ -444,9 +450,9 @@ describe('game-box lid and divider against the card box', () => {
         { type: 'cards', cardDepth: 30 },
         { type: 'cards', cardDepth: 20 },
       ],
-      { part: 'divider' },
+      { part: 'divider1' },
     )
-    const gameBoxBuild = buildGameBox(params)
+    const gameBoxBuild = await buildGameBox(params)
     const cardBoxBuild = await buildCardBoxDivider({
       ...CARD_BOX_CONFIGURATION.defaultParameters,
       dividerText: '',
@@ -1008,8 +1014,8 @@ describe('game-box dice holder', () => {
 
 describe('game-box holder with a minimum side wall', () => {
   // A dice row that exactly fills the usable width leaves a side wall of
-  // exactly 1.2 mm; these inputs used to crash the holder build when the
-  // relief cutters were derived from the wall thickness.
+  // exactly 1.2 mm; these inputs used to crash the holder build when its
+  // cutters were derived from the wall thickness.
   const CASES = [
     {
       name: '63 x 88 with five 11.5 mm dice',
@@ -1042,7 +1048,7 @@ describe('game-box holder with a minimum side wall', () => {
     },
   ] as const
 
-  it('builds the holder when the side wall is exactly the minimum thickness', () => {
+  it('builds the holder when the side wall is exactly the minimum thickness', async () => {
     for (const scenario of CASES) {
       const holder = buildGameBoxDiceHolder({
         cardWidth: scenario.cardWidth,
@@ -1060,23 +1066,19 @@ describe('game-box holder with a minimum side wall', () => {
     }
   })
 
-  it('builds the assembly when the side wall is exactly the minimum thickness', () => {
+  it('builds the assembly when the side wall is exactly the minimum thickness', async () => {
     for (const scenario of CASES) {
       const params = moduleParameters(scenario.modules, {
         part: 'assembly',
         cardWidth: scenario.cardWidth,
         cardHeight: scenario.cardHeight,
       })
-      const build = buildGameBox(params)
+      const build = await buildGameBox(params)
       try {
-        // The box, the lid, one divider per pair of card modules and one
-        // holder per dice module.
-        const layout = gameBoxLayout(params)
-        const diceModules = layout.modules.filter(
-          (module) => module.type === 'dice',
-        ).length
+        // The box, the lid, one divider per pair of card modules, one
+        // holder per dice module and the seated cover.
         expect(solidsOf(build.shape).length, scenario.name).toBe(
-          2 + layout.dividerCount + diceModules,
+          await expectedPartCount(params),
         )
       } finally {
         build.shape.delete()
@@ -1093,7 +1095,7 @@ describe('game-box assembly', () => {
   ] as const
 
   for (const [label, cardWidth, cardHeight] of SIZES) {
-    it(`keeps the parts apart at the ${label} card size`, () => {
+    it(`keeps the parts apart at the ${label} card size`, async () => {
       const params = moduleParameters(
         [
           { type: 'cards', cardDepth: 30 },
@@ -1102,10 +1104,10 @@ describe('game-box assembly', () => {
         ],
         { part: 'assembly', cardWidth, cardHeight },
       )
-      const build = buildGameBox(params)
+      const build = await buildGameBox(params)
       try {
         const solids = solidsOf(build.shape)
-        expect(solids.length).toBe(expectedPartCount(params))
+        expect(solids.length).toBe(await expectedPartCount(params))
         for (let first = 0; first < solids.length; first += 1) {
           for (let second = first + 1; second < solids.length; second += 1) {
             expect(
@@ -1119,7 +1121,7 @@ describe('game-box assembly', () => {
       }
     })
 
-    it(`locks every tenon into a slot at the ${label} card size`, () => {
+    it(`locks every tenon into a slot at the ${label} card size`, async () => {
       const params = moduleParameters(
         [
           { type: 'cards', cardDepth: 30 },
@@ -1131,7 +1133,7 @@ describe('game-box assembly', () => {
       const layout = gameBoxLayout(params)
       const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
       const wallX = cardBoxInteriorWidth(cardWidth) / 2
-      const build = buildGameBox(params)
+      const build = await buildGameBox(params)
       try {
         const solids = solidsOf(build.shape)
         const holders = holderSolids(solids, cardWidth)
@@ -1175,7 +1177,7 @@ describe('game-box assembly', () => {
       }
     })
 
-    it(`seats the dice holder on its own tenons at the ${label} card size`, () => {
+    it(`seats the dice holder on its own tenons at the ${label} card size`, async () => {
       const params = moduleParameters(
         [
           { type: 'cards', cardDepth: 30 },
@@ -1186,7 +1188,7 @@ describe('game-box assembly', () => {
       )
       const layout = gameBoxLayout(params)
       const frontWallY = cardBoxInnerFrontY(gameBoxCardBoxGeometry(params))
-      const build = buildGameBox(params)
+      const build = await buildGameBox(params)
       try {
         const solids = solidsOf(build.shape)
         const holders = holderSolids(solids, cardWidth)
@@ -1209,7 +1211,7 @@ describe('game-box assembly', () => {
     })
   }
 
-  it('puts no divider next to a dice holder', () => {
+  it('puts no divider next to a dice holder', async () => {
     const params = moduleParameters(
       [
         { type: 'cards', cardDepth: 30 },
@@ -1219,14 +1221,19 @@ describe('game-box assembly', () => {
       { part: 'assembly' },
     )
     const layout = gameBoxLayout(params)
-    const build = buildGameBox(params)
+    const build = await buildGameBox(params)
     try {
       // The holder is its own divider: the cards lean on its wall.
       expect(layout.dividerCount).toBe(0)
       const solids = solidsOf(build.shape)
       const dividers = solids.filter((solid) => {
         const bounds = boundsOf(solid)
-        return bounds.max[1]! - bounds.min[1]! < 1
+        // A divider plate rises cardHeight + tab; the cover plate and its
+        // raised glyphs stay at or below cardHeight.
+        return (
+          bounds.max[1]! - bounds.min[1]! < 1 &&
+          bounds.max[2]! - bounds.min[2]! > params.cardHeight + 1
+        )
       })
       expect(dividers).toHaveLength(0)
     } finally {
@@ -1234,7 +1241,7 @@ describe('game-box assembly', () => {
     }
   })
 
-  it('seats a first module holder behind the front wall', () => {
+  it('seats a first module holder behind the front wall', async () => {
     const params = moduleParameters(
       [
         { type: 'dice', diceSize: 16, diceCount: 4 },
@@ -1242,10 +1249,10 @@ describe('game-box assembly', () => {
       ],
       { part: 'assembly' },
     )
-    const build = buildGameBox(params)
+    const build = await buildGameBox(params)
     try {
       const solids = solidsOf(build.shape)
-      expect(solids.length).toBe(expectedPartCount(params))
+      expect(solids.length).toBe(await expectedPartCount(params))
       const holders = holderSolids(solids, params.cardWidth)
       expect(holders).toHaveLength(1)
       const holderBounds = boundsOf(holders[0]!)
@@ -1303,16 +1310,16 @@ describe('game-box assembly with a dice module first, last or twice in a row', (
 
   for (const [label, cardWidth, cardHeight] of SIZES) {
     for (const { name, modules } of LAYOUTS) {
-      it(`keeps the parts apart with ${name} at the ${label} card size`, () => {
+      it(`keeps the parts apart with ${name} at the ${label} card size`, async () => {
         const params = moduleParameters(modules, {
           part: 'assembly',
           cardWidth,
           cardHeight,
         })
-        const build = buildGameBox(params)
+        const build = await buildGameBox(params)
         try {
           const solids = solidsOf(build.shape)
-          expect(solids.length).toBe(expectedPartCount(params))
+          expect(solids.length).toBe(await expectedPartCount(params))
           for (let first = 0; first < solids.length; first += 1) {
             for (let second = first + 1; second < solids.length; second += 1) {
               expect(
@@ -1326,7 +1333,7 @@ describe('game-box assembly with a dice module first, last or twice in a row', (
         }
       })
 
-      it(`locks every tenon into a slot with ${name} at the ${label} card size`, () => {
+      it(`locks every tenon into a slot with ${name} at the ${label} card size`, async () => {
         const params = moduleParameters(modules, {
           part: 'assembly',
           cardWidth,
@@ -1337,8 +1344,8 @@ describe('game-box assembly with a dice module first, last or twice in a row', (
         const wallX = cardBoxInteriorWidth(cardWidth) / 2
         const bodyHalfWidth = gameBoxDiceHolderWidth(cardWidth) / 2
         const tenonOuterHalfWidth = cardBoxDividerWidth(cardWidth) / 2
-        const build = buildGameBox(params)
-        const box = buildGameBox({ ...params, part: 'box' })
+        const build = await buildGameBox(params)
+        const box = await buildGameBox({ ...params, part: 'box' })
         try {
           const holders = holderSolids(solidsOf(build.shape), cardWidth)
           const diceModules = layout.modules.filter(

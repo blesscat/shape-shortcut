@@ -1,10 +1,15 @@
 import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { cast, getOC, type Shape3D } from 'replicad'
 import type { TopAbs_ShapeEnum } from 'replicad-opencascadejs'
 import { initialiseCadKernel } from '../../src/cad-kernel/initialise'
+import {
+  loadOpenGridWallCoverFont,
+  OPEN_GRID_WALL_COVER_FONT_URL,
+} from '../../src/cad-kernel/components/opengrid-wall-cover/flat-text'
 import { buildGameBox } from '../../src/cad-kernel/components/game-box/builder'
 import {
   GAME_BOX_CONFIGURATION,
@@ -24,6 +29,10 @@ const require = createRequire(import.meta.url)
 beforeAll(async () => {
   await initialiseCadKernel(
     require.resolve('replicad-opencascadejs/src/replicad_single.wasm'),
+  )
+  // The assembly cover art goes through the shared text builders.
+  await loadOpenGridWallCoverFont(
+    readFileSync(fileURLToPath(OPEN_GRID_WALL_COVER_FONT_URL)),
   )
 })
 
@@ -101,7 +110,12 @@ function axisInterval(solid: PreviewSolid, axis: number): Interval {
 function builtHolderOf(solids: readonly Shape3D[], cardHeight: number) {
   const holders = solids.filter((solid) => {
     const bounds = boundsOf(solid)
-    return Math.abs(bounds.max[2]! - bounds.min[2]! - cardHeight) < 1e-3
+    // The cover body is also card-height tall but only 0.6 mm deep in Y;
+    // the holder is deeper than any dice plus its walls.
+    return (
+      Math.abs(bounds.max[2]! - bounds.min[2]! - cardHeight) < 1e-3 &&
+      bounds.max[1]! - bounds.min[1]! > 1
+    )
   })
   expect(holders).toHaveLength(1)
   const bounds = boundsOf(holders[0]!)
@@ -115,7 +129,12 @@ function builtHolderOf(solids: readonly Shape3D[], cardHeight: number) {
 function previewHolderOf(solids: readonly PreviewSolid[], cardHeight: number) {
   const holders = solids.filter((solid) => {
     const interval = axisInterval(solid, 2)
-    return Math.abs(interval.max - interval.min - cardHeight) < 1e-6
+    // The cover plate is also card-height tall but only 0.6 mm deep in Y.
+    const depth = axisInterval(solid, 1)
+    return (
+      Math.abs(interval.max - interval.min - cardHeight) < 1e-6 &&
+      depth.max - depth.min > 1
+    )
   })
   expect(holders).toHaveLength(1)
   return axisInterval(holders[0]!, 1)
@@ -132,9 +151,9 @@ const MODULE_LISTS = [
 
 describe('game-box preview placement', () => {
   for (const { name, modules } of MODULE_LISTS) {
-    it(`places the holder like the built one with ${name}`, () => {
+    it(`places the holder like the built one with ${name}`, async () => {
       const snapshot = parameters(modules)
-      const build = buildGameBox(snapshot)
+      const build = await buildGameBox(snapshot)
       try {
         const built = builtHolderOf(solidsOf(build.shape), snapshot.cardHeight)
         const preview = previewHolderOf(

@@ -185,8 +185,10 @@ export async function generateCadCandidate(
     } = context.buildOptions
     const buildContext: KernelBuildContext = {
       ...openGridBuildOptions,
-      cardBoxCoverSvg:
-        command.modelId === 'card-box' ? command.coverSvg : undefined,
+      coverSvg:
+        command.modelId === 'card-box' || command.modelId === 'game-box'
+          ? command.coverSvg
+          : undefined,
       getModularGridBaseTemplate: () =>
         context.assets.getModularGridBaseTemplate(),
       getHswCellTemplate: () => context.assets.getHswCellTemplate(),
@@ -242,6 +244,7 @@ export async function generateCadCandidate(
       command.modelId === 'opengrid-wall-cover' ||
       command.modelId === 'opengrid-label-card' ||
       command.modelId === 'card-box' ||
+      command.modelId === 'game-box' ||
       (command.modelId === 'opengrid-stackable-cylinder' &&
         Boolean(
           (generationParameters as Record<string, unknown>).topRimEnabled,
@@ -483,6 +486,16 @@ export async function generateCadCandidate(
     if (command.modelId === 'game-box') {
       if (!isGameBoxParameters(generationParameters)) {
         throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
+      }
+      const bodyPart = nativeParts?.find((part) => part.name === 'body')
+      const accentPart = nativeParts?.find((part) => part.name === 'accent')
+      if (bodyPart && accentPart) {
+        const bodyMesh = meshBRep(bodyPart.shape, command.previewConfig)
+        const accentMesh = meshBRep(accentPart.shape, command.previewConfig)
+        nativePartMeshes = [
+          { name: 'body', mesh: bodyMesh },
+          { name: 'accent', mesh: accentMesh },
+        ]
       }
       mesh.bounds = boundsForGameBox(generationParameters)
     }

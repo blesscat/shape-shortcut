@@ -15,8 +15,8 @@ import type { NativeModelPart } from '../lifetime'
 export type KernelBuildContext = {
   getModularGridBaseTemplate: () => Promise<Shape3D>
   getHswCellTemplate: () => Promise<Shape3D>
-  /** card-box only: cleaned cover-SVG outlines from the generate command. */
-  cardBoxCoverSvg?: CardBoxSvgOutlineData
+  /** Cover art: cleaned cover-SVG outlines from the generate command. */
+  coverSvg?: CardBoxSvgOutlineData
   getHexagonalColumnReference?: () => Promise<Shape3D>
   getOpenGridPrototype?: (variant: OpenGridVariant) => Promise<Shape3D>
   getOpenGridCanonicalTile?: (

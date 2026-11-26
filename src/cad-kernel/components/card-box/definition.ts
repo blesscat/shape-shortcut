@@ -25,7 +25,7 @@ async function buildCardBoxModel(
   if (!isCardBoxParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
   }
-  const build = await buildCardBox(parameters, context.cardBoxCoverSvg)
+  const build = await buildCardBox(parameters, context.coverSvg)
   return build.shape
 }
 
@@ -36,7 +36,7 @@ async function buildCardBoxWithPartsModel(
   if (!isCardBoxParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:card-box')
   }
-  const build = await buildCardBox(parameters, context.cardBoxCoverSvg)
+  const build = await buildCardBox(parameters, context.coverSvg)
   return {
     shape: build.shape,
     parts: build.parts,

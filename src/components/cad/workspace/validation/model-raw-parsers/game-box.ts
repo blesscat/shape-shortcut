@@ -1,10 +1,15 @@
 import {
   GAME_BOX_CONFIGURATION,
+  GAME_BOX_DIVIDER_INDICES,
   GAME_BOX_MODULE_INDICES,
   GAME_BOX_PARAMETER_KEYS,
+  gameBoxDividerStyleKey,
+  gameBoxDividerTabPositionKey,
+  gameBoxDividerTextKey,
   gameBoxModuleDiceSizeKey,
   gameBoxModuleTypeKey,
   parseDimensionInput,
+  parseFiniteDecimalInput,
   parseHalfStepInput,
   validateModelParameters,
   type GameBoxModuleType,
@@ -14,6 +19,33 @@ import {
 import type { DiagnosticParams } from '../../../../../cad-contract/diagnostics'
 import type { RawParameters } from '../../types'
 import { modelParameterFieldFromDiagnostic } from '../raw-input-parsers'
+
+// The imported cover's height/width ratio is a finite decimal.
+const GAME_BOX_DECIMAL_KEYS: Record<string, true> = {
+  coverSvgAspect: true,
+}
+
+const GAME_BOX_TEXT_KEYS: Record<string, true> = {
+  coverTitle: true,
+  coverSubtitle: true,
+  coverSvgFingerprint: true,
+  ...Object.fromEntries(
+    GAME_BOX_DIVIDER_INDICES.map((index) => [
+      gameBoxDividerTextKey(index),
+      true,
+    ]),
+  ),
+}
+
+// `part` is handled with its own default before this map matters; the
+// generic enum branch serves the cover style alone.
+const GAME_BOX_ENUM_KEYS: Record<string, true> = {
+  coverStyle: true,
+}
+
+const GAME_BOX_BOOLEAN_KEYS: Record<string, true> = {
+  usesCoverSvg: true,
+}
 
 /**
  * Game-box raw parameters mix the part and module type enums with plain
@@ -30,7 +62,7 @@ export function parseGameBoxRawParameters(raw: RawParameters):
       field?: ModelParameterKey
       params?: DiagnosticParams
     } {
-  const parsed: Record<string, number | string> = {}
+  const parsed: Record<string, number | string | boolean> = {}
   for (const key of GAME_BOX_PARAMETER_KEYS) {
     const rawValue = raw[key]
     if (key === 'part') {
@@ -44,6 +76,41 @@ export function parseGameBoxRawParameters(raw: RawParameters):
       const fallback: GameBoxModuleType =
         moduleIndex === 1 ? GAME_BOX_CONFIGURATION.defaults.moduleType : 'none'
       parsed[key] = rawValue ?? fallback
+      continue
+    }
+    if (GAME_BOX_TEXT_KEYS[key]) {
+      parsed[key] = rawValue ?? ''
+      continue
+    }
+    if (
+      GAME_BOX_DIVIDER_INDICES.some(
+        (index) => gameBoxDividerTabPositionKey(index) === key,
+      )
+    ) {
+      parsed[key] = rawValue ?? GAME_BOX_CONFIGURATION.defaultTabPosition
+      continue
+    }
+    if (
+      GAME_BOX_DIVIDER_INDICES.some(
+        (index) => gameBoxDividerStyleKey(index) === key,
+      )
+    ) {
+      parsed[key] = rawValue ?? GAME_BOX_CONFIGURATION.defaultStyle
+      continue
+    }
+    if (GAME_BOX_ENUM_KEYS[key]) {
+      parsed[key] = rawValue ?? GAME_BOX_CONFIGURATION.defaultStyle
+      continue
+    }
+    if (GAME_BOX_BOOLEAN_KEYS[key]) {
+      parsed[key] = rawValue === 'true'
+      continue
+    }
+    if (GAME_BOX_DECIMAL_KEYS[key]) {
+      // A missing ratio is unknown (0), like the contract default; an
+      // unreadable value also becomes 0, because the ratio has no panel
+      // control to carry an error.
+      parsed[key] = parseFiniteDecimalInput(rawValue ?? '') ?? 0
       continue
     }
     parsed[key] = parseGameBoxNumber(key, rawValue)

@@ -12,6 +12,25 @@ import type {
 } from '../error-mapping-rules'
 
 export const codeRules: readonly CadErrorCodeRule[] = [
+  // The game-box art rules run ahead of card-box's art rules (1500ff): the
+  // game-box builder re-prefixes the reused card-box builder errors, so its
+  // own messages must resolve through game-box's descriptors and leave
+  // card-box's rules free for card-box builds to delete at retirement.
+  {
+    order: 1410,
+    pattern: 'GAME_BOX_DIVIDER_TEXT_TOO_WIDE',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
+  },
+  {
+    order: 1411,
+    pattern: 'GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
+  },
+  {
+    order: 1412,
+    pattern: 'GAME_BOX_SVG_',
+    code: 'GAME_BOX_GEOMETRY_INVALID',
+  },
   {
     order: 1700,
     pattern: 'GAME_BOX_GEOMETRY_INVALID',
@@ -25,5 +44,12 @@ export const codeRules: readonly CadErrorCodeRule[] = [
 ]
 
 export const stageRules: readonly CadErrorStageRule[] = [
+  { order: 410, pattern: 'GAME_BOX_DIVIDER_TEXT_TOO_WIDE', stage: 'building' },
+  {
+    order: 411,
+    pattern: 'GAME_BOX_COVER_ART_OUTSIDE_SAFE_AREA',
+    stage: 'building',
+  },
+  { order: 412, pattern: 'GAME_BOX_SVG_', stage: 'building' },
   { order: 800, pattern: 'GAME_BOX_GEOMETRY_INVALID', stage: 'building' },
 ]

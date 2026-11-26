@@ -5,6 +5,7 @@ import {
   GAME_BOX_CONFIGURATION,
   gameBoxFileName,
   gameBoxStlFileName,
+  gameBoxThreeMfFileName,
   isGameBoxParameters,
   validateGameBoxParameters,
 } from '../../../../cad-contract/units'
@@ -104,6 +105,16 @@ function validateGameBoxDefinitionParameters(value: unknown) {
   }
 }
 
+function threeMfFileNameForGameBox(parameters: ModelParameterValues) {
+  if (!isGameBoxParameters(parameters)) {
+    throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
+  }
+  // Exactly the art parts export a two-color 3MF: a cover with title,
+  // subtitle or SVG and a labelled divider card. Blank plates and the box
+  // parts return null.
+  return gameBoxThreeMfFileName(parameters)
+}
+
 function boundsForGameBoxDefinition(parameters: ModelParameterValues) {
   if (!isGameBoxParameters(parameters)) {
     throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
@@ -144,6 +155,7 @@ export const gameBoxDefinition: ModelDefinition = {
     }
     return gameBoxStlFileName(parameters)
   },
+  threeMfFileName: threeMfFileNameForGameBox,
   exportBlockedHintKey: (parameters) => {
     if (!isGameBoxParameters(parameters)) {
       throw new Error('MODEL_PARAMETERS_MISMATCH:game-box')
