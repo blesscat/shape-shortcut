@@ -4,6 +4,8 @@ import { rawFromParameters } from '../../src/components/cad/workspace/validation
 import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_PARAMETER_KEYS,
+  parseDimensionInput,
+  parseHalfStepInput,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
 
@@ -91,5 +93,117 @@ describe('game-box raw parameters', () => {
     if (parsed.valid) return
     expect(parsed.messageId).toBe('validation.gameBoxPartUnavailable')
     expect(parsed.field).toBe('part')
+  })
+})
+
+describe('game-box panel slider stops parse valid', () => {
+  // Every range-text control the game-box panel builds: the four cover
+  // number fields (from rangesCover, exactly what the panel's numericField
+  // reads) and one of each module field family. Every slider stop from min
+  // to max by the field's step must parse valid through the raw parser with
+  // the other fields at defaults.
+  const stopValues = (field: {
+    min: number
+    max: number
+    step: number
+    default: number
+  }): number[] => {
+    const values: number[] = []
+    for (let value = field.min; value <= field.max; value += field.step) {
+      values.push(Math.round(value * 100) / 100)
+    }
+    return values
+  }
+
+  const coverFields = [
+    {
+      name: 'coverTitleTextHeight',
+      range: GAME_BOX_CONFIGURATION.rangesCover.coverTitleTextHeight,
+    },
+    {
+      name: 'coverSubtitleTextHeight',
+      range: GAME_BOX_CONFIGURATION.rangesCover.coverSubtitleTextHeight,
+    },
+    {
+      name: 'coverSvgWidth',
+      range: GAME_BOX_CONFIGURATION.rangesCover.coverSvgWidth,
+    },
+    {
+      name: 'coverVerticalPosition',
+      range: {
+        ...GAME_BOX_CONFIGURATION.rangesCover.coverVerticalPosition,
+        step: 1,
+      },
+    },
+  ] as const
+
+  it('parses every cover slider stop as valid', () => {
+    for (const { name, range } of coverFields) {
+      for (const value of stopValues(range)) {
+        const raw: Record<string, string> = {
+          ...Object.fromEntries(
+            GAME_BOX_PARAMETER_KEYS.map((key) => [
+              key,
+              String(GAME_BOX_CONFIGURATION.defaultParameters[key]),
+            ]),
+          ),
+          [name]: String(value),
+        } as Record<string, string>
+        const parsed = parseRawParameters(raw as never, 'game-box')
+        expect(parsed.valid, `${name} = ${value}`).toBe(true)
+      }
+    }
+  })
+
+  it('parses every cover slider stop as valid', () => {
+    for (const { name, range } of coverFields) {
+      for (const value of stopValues(range)) {
+        const raw: Record<string, string> = {
+          ...Object.fromEntries(
+            GAME_BOX_PARAMETER_KEYS.map((key) => [
+              key,
+              String(GAME_BOX_CONFIGURATION.defaultParameters[key]),
+            ]),
+          ),
+          [name]: String(value),
+        } as Record<string, string>
+        const parsed = parseRawParameters(raw as never, 'game-box')
+        expect(parsed.valid, `${name} = ${value}`).toBe(true)
+      }
+    }
+  })
+
+  // The module fields have no step/precision mismatch (diceSize uses the
+  // half-step parser, the integer fields the dimension parser), so the
+  // precision property here is: every slider stop is representable by the
+  // field's parser. Some stops still fail validation on business rules
+  // (dice capacity, the 15-150 mm depth range) - those are rejections, not
+  // representation bugs, and out of scope for this sweep.
+  it('accepts every module slider stop by its field parser', () => {
+    const moduleCases = [
+      {
+        key: 'module1CardDepth',
+        values: stopValues({ min: 3, max: 150, step: 1, default: 30 }),
+        parser: parseDimensionInput,
+      },
+      {
+        key: 'module2DiceSize',
+        values: stopValues({ min: 8, max: 30, step: 0.5, default: 16 }),
+        parser: parseHalfStepInput,
+      },
+      {
+        key: 'module2DiceCount',
+        values: stopValues({ min: 1, max: 60, step: 1, default: 9 }),
+        parser: parseDimensionInput,
+      },
+    ]
+    for (const { key, values, parser } of moduleCases) {
+      for (const value of values) {
+        expect(
+          parser(String(value)),
+          `${key} = ${value} must be representable`,
+        ).not.toBeNull()
+      }
+    }
   })
 })

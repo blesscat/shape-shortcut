@@ -289,8 +289,18 @@ export const GAME_BOX_CONFIGURATION = {
   /** Label cap per cover line; the same value the card-box cover uses. */
   coverTextMaxLength: CARD_BOX_CONFIGURATION.coverTextMaxLength,
   rangesCover: {
-    coverTitleTextHeight: CARD_BOX_CONFIGURATION.coverTitleTextHeight,
-    coverSubtitleTextHeight: CARD_BOX_CONFIGURATION.coverSubtitleTextHeight,
+    // Owner decision 2026-11-26 (whole millimetres): the two cover text
+    // heights take whole millimetres only, so the slider cannot stop on a
+    // half value the raw parser would reject. Everything else stays
+    // card-box's range.
+    coverTitleTextHeight: {
+      ...CARD_BOX_CONFIGURATION.coverTitleTextHeight,
+      step: 1,
+    },
+    coverSubtitleTextHeight: {
+      ...CARD_BOX_CONFIGURATION.coverSubtitleTextHeight,
+      step: 1,
+    },
     coverSvgWidth: CARD_BOX_CONFIGURATION.coverSvgWidth,
     coverVerticalPosition: CARD_BOX_CONFIGURATION.coverVerticalPosition,
   },

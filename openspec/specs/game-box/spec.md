@@ -634,7 +634,7 @@ game-box MUST 透過 presets 機制宣告恰七組卡片尺寸預設：Tarot 70�
 
 ### Requirement: 封面片參數
 
-面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）、資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）與高寬比 `coverSvgAspect`（預設 0 代表未知，規則見下方 scenario）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
+面板 MUST 暴露封面片欄位：標題 `coverTitle`（預設 `GAME`，上限 30 字元）、標題文字高 `coverTitleTextHeight`（4–20 mm 的整數 mm，預設 6）、副標題 `coverSubtitle`（預設空字串，上限 30 字元）、副標題文字高 `coverSubtitleTextHeight`（3–12 mm 的整數 mm，預設 5）、SVG 寬 `coverSvgWidth`（10–58 mm，預設 40）、垂直位置 `coverVerticalPosition`（0–100%，預設 30）、樣式 `coverStyle`（`raised`／`flat`，預設 `raised`）、使用 SVG 旗標 `usesCoverSvg`（預設 false）、資料指紋 `coverSvgFingerprint`（使用 SVG 時 MUST 非空）與高寬比 `coverSvgAspect`（預設 0 代表未知，規則見下方 scenario）。全部欄位 MUST 為扁平的單一值，並 MUST 通過與其他 component 相同的驗證、持久化與 Worker 傳遞機制。
 
 #### Scenario: 高寬比隨匯入寫入並隨移除重置
 
