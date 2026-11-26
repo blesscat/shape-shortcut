@@ -9,8 +9,6 @@ import { rawFromParameters } from '../../src/components/cad/workspace/validation
 import {
   GAME_BOX_CONFIGURATION,
   GAME_BOX_PARAMETER_KEYS,
-  parseDimensionInput,
-  parseHalfStepInput,
   type GameBoxParameters,
 } from '../../src/cad-contract/units'
 
