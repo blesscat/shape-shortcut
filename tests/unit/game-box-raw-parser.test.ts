@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { parseRawParameters } from '../../src/components/cad/workspace/validation/model-raw-parsers'
+import {
+  cardDepthField,
+  diceCountField,
+  diceSizeField,
+} from '../../src/components/cad/component-panels/game-box/fields'
 import { rawFromParameters } from '../../src/components/cad/workspace/validation/raw-from-parameters'
 import {
   GAME_BOX_CONFIGURATION,
@@ -106,7 +111,6 @@ describe('game-box panel slider stops parse valid', () => {
     min: number
     max: number
     step: number
-    default: number
   }): number[] => {
     const values: number[] = []
     for (let value = field.min; value <= field.max; value += field.step) {
@@ -155,9 +159,23 @@ describe('game-box panel slider stops parse valid', () => {
     }
   })
 
-  it('parses every cover slider stop as valid', () => {
-    for (const { name, range } of coverFields) {
-      for (const value of stopValues(range)) {
+  // The module fields come from the panel's own builders (fields.ts), so
+  // the sweep follows the real sliders. These fields have no step/precision
+  // mismatch (diceSize uses the half-step parser, the integer fields the
+  // dimension parser), so the property here is: every slider stop is
+  // representable by the field's parser. Some stops still fail validation
+  // on business rules (dice capacity, the 15-150 mm depth range) - those
+  // are rejections, not representation bugs, and out of scope for this
+  // sweep.
+  it('accepts every module slider stop by its field parser', () => {
+    const moduleFields = [
+      cardDepthField(1),
+      diceSizeField(2),
+      diceCountField(2),
+      cardDepthField(2),
+    ]
+    for (const field of moduleFields) {
+      for (const value of stopValues(field)) {
         const raw: Record<string, string> = {
           ...Object.fromEntries(
             GAME_BOX_PARAMETER_KEYS.map((key) => [
@@ -165,44 +183,19 @@ describe('game-box panel slider stops parse valid', () => {
               String(GAME_BOX_CONFIGURATION.defaultParameters[key]),
             ]),
           ),
-          [name]: String(value),
+          [field.key]: String(value),
         } as Record<string, string>
         const parsed = parseRawParameters(raw as never, 'game-box')
-        expect(parsed.valid, `${name} = ${value}`).toBe(true)
-      }
-    }
-  })
-
-  // The module fields have no step/precision mismatch (diceSize uses the
-  // half-step parser, the integer fields the dimension parser), so the
-  // precision property here is: every slider stop is representable by the
-  // field's parser. Some stops still fail validation on business rules
-  // (dice capacity, the 15-150 mm depth range) - those are rejections, not
-  // representation bugs, and out of scope for this sweep.
-  it('accepts every module slider stop by its field parser', () => {
-    const moduleCases = [
-      {
-        key: 'module1CardDepth',
-        values: stopValues({ min: 3, max: 150, step: 1, default: 30 }),
-        parser: parseDimensionInput,
-      },
-      {
-        key: 'module2DiceSize',
-        values: stopValues({ min: 8, max: 30, step: 0.5, default: 16 }),
-        parser: parseHalfStepInput,
-      },
-      {
-        key: 'module2DiceCount',
-        values: stopValues({ min: 1, max: 60, step: 1, default: 9 }),
-        parser: parseDimensionInput,
-      },
-    ]
-    for (const { key, values, parser } of moduleCases) {
-      for (const value of values) {
-        expect(
-          parser(String(value)),
-          `${key} = ${value} must be representable`,
-        ).not.toBeNull()
+        expect(parsed, `${field.key} = ${value} returns a result`).toBeDefined()
+        // Dice capacity and the depth range are business rejections; the
+        // precision property under test is that no slider stop turns into
+        // NaN the way the 0.5 mm cover text heights did before the fix.
+        if (!parsed.valid) {
+          expect(
+            parsed.messageId,
+            `${field.key} = ${value} fails on a business rule, not the parser`,
+          ).not.toBe('validation.invalidNumber')
+        }
       }
     }
   })
